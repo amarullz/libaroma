@@ -1,0 +1,200 @@
+/********************************************************************[libaroma]*
+ * Copyright (C) 2011-2015 Ahmad Amarullah (http://amarullz.com/)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *______________________________________________________________________________
+ *
+ * Filename    : version.c
+ * Description : libaroma version
+ *
+ * + This is part of libaroma, an embedded ui toolkit.
+ * + 19/01/15 - Author(s): Ahmad Amarullah
+ *
+ */
+#ifndef __libaroma_aroma_c__
+  #error "Should be inside aroma.c."
+#endif
+#ifndef __libaroma_version_c__
+#define __libaroma_version_c__
+
+/* GET AROMA CORE INFO */
+/*
+ * Variable    : _LIBAROMA_VERSION*
+ * Type        : char []
+ * Descriptions: version storage
+ */
+static char _LIBAROMA_VERSION[10] = {0};
+static char _LIBAROMA_VERSION_BUILD[6] = {0};
+static char _LIBAROMA_VERSION_FULLVER[50] = {0};
+static char _LIBAROMA_VERSION_SIGNATURE[80] = {0};
+
+/*
+ * Function    : _libaroma_version
+ * Return Value: char *
+ * Descriptions: Get libaroma version string
+ */
+char * _libaroma_version() {
+  if (_LIBAROMA_VERSION[0] == 0) {
+    snprintf(_LIBAROMA_VERSION,
+             50,
+             "%i.%i.%i",
+             LIBAROMA_CONFIG_VERSION_MAJOR,
+             LIBAROMA_CONFIG_VERSION_MINOR,
+             LIBAROMA_CONFIG_VERSION_MICRO
+            );
+  }
+  return _LIBAROMA_VERSION;
+}
+
+/*
+ * Function    : _libaroma_version_build
+ * Return Value: char *
+ * Descriptions: Get libaroma build number
+ */
+char * _libaroma_version_build() {
+  if (_LIBAROMA_VERSION_BUILD[0] == 0) {
+    const char * ts = __DATE__;
+    _LIBAROMA_VERSION_BUILD[0] = ts[9];
+    _LIBAROMA_VERSION_BUILD[1] = ts[10];
+    char mn = 1;
+    if (ts[0] == 'J' && ts[1] == 'a' && ts[2] == 'n') {
+      mn = 1;
+    }
+    else if (ts[0] == 'F') {
+      mn = 2;
+    }
+    else if (ts[0] == 'M' && ts[1] == 'a' && ts[2] == 'r') {
+      mn = 3;
+    }
+    else if (ts[0] == 'A' && ts[1] == 'p') {
+      mn = 4;
+    }
+    else if (ts[0] == 'M' && ts[1] == 'a' && ts[2] == 'y') {
+      mn = 5;
+    }
+    else if (ts[0] == 'J' && ts[1] == 'u' && ts[2] == 'n') {
+      mn = 6;
+    }
+    else if (ts[0] == 'J' && ts[1] == 'u' && ts[2] == 'l') {
+      mn = 7;
+    }
+    else if (ts[0] == 'A' && ts[1] == 'u') {
+      mn = 8;
+    }
+    else if (ts[0] == 'S') {
+      mn = 9;
+    }
+    else if (ts[0] == 'O') {
+      mn = 10;
+    }
+    else if (ts[0] == 'N') {
+      mn = 11;
+    }
+    else if (ts[0] == 'D') {
+      mn = 12;
+    }
+    if (mn < 10) {
+      _LIBAROMA_VERSION_BUILD[2] = '0';
+      _LIBAROMA_VERSION_BUILD[3] = '0' + mn;
+    }
+    else {
+      _LIBAROMA_VERSION_BUILD[2] = '1';
+      _LIBAROMA_VERSION_BUILD[3] = '0' + (mn - 10);
+    }
+    
+    _LIBAROMA_VERSION_BUILD[4] = ts[4];
+    _LIBAROMA_VERSION_BUILD[5] = ts[5];
+    _LIBAROMA_VERSION_BUILD[6] = 0;
+  }
+  return _LIBAROMA_VERSION_BUILD;
+}
+
+/*
+ * Function    : _libaroma_version_fullver
+ * Return Value: char *
+ * Descriptions: Get libaroma full version string
+ */
+char * _libaroma_version_fullver() {
+  if (_LIBAROMA_VERSION_FULLVER[0] == 0) {
+    snprintf(_LIBAROMA_VERSION_FULLVER,
+             50,
+             "%s (%s;%s;%s)",
+             _libaroma_version(),
+             _libaroma_version_build(),
+             LIBAROMA_CONFIG_OS,
+             LIBAROMA_CONFIG_CODENAME
+            );
+  }
+  return _LIBAROMA_VERSION_FULLVER;
+}
+
+/*
+ * Function    : _libaroma_version_signature
+ * Return Value: char *
+ * Descriptions: Get libaroma version signature string
+ */
+char * _libaroma_version_signature() {
+  if (_LIBAROMA_VERSION_SIGNATURE[0] == 0) {
+    snprintf(_LIBAROMA_VERSION_SIGNATURE,
+             80,
+             "%s Version %s",
+             LIBAROMA_CONFIG_NAME,
+             _libaroma_version_fullver()
+            );
+  }
+  return _LIBAROMA_VERSION_SIGNATURE;
+}
+
+/*
+ * Function    : libaroma_info
+ * Return Value: char *
+ * Descriptions: Get libaroma version information
+ */
+char * libaroma_info(int type) {
+  switch (type) {
+    case LIBAROMA_INFO_VERSION:
+      return _libaroma_version();
+      break;
+      
+    case LIBAROMA_INFO_OS:
+      return LIBAROMA_CONFIG_OS;
+      break;
+      
+    case LIBAROMA_INFO_AUTHOR:
+      return LIBAROMA_CONFIG_AUTHOR;
+      break;
+      
+    case LIBAROMA_INFO_CODENAME:
+      return LIBAROMA_CONFIG_CODENAME;
+      break;
+      
+    case LIBAROMA_INFO_BUILD:
+      return _libaroma_version_build();
+      break;
+      
+    case LIBAROMA_INFO_FULLVER:
+      return _libaroma_version_fullver();
+      break;
+      
+    case LIBAROMA_INFO_COPYRIGHT:
+      return
+        "Copyright (c) " LIBAROMA_CONFIG_YEAR " " LIBAROMA_CONFIG_CODENAME;
+        
+    case LIBAROMA_INFO_SIGNATURE:
+      return _libaroma_version_signature();
+      break;
+  }
+  return LIBAROMA_CONFIG_NAME;
+}
+
+#endif /* __libaroma_version_c__ */
