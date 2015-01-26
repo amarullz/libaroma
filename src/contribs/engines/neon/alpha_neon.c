@@ -1,5 +1,5 @@
-/*
- * Copyright (C) 2011-2013 Ahmad Amarullah ( http://amarullz.com/ )
+/********************************************************************[libaroma]*
+ * Copyright (C) 2011-2015 Ahmad Amarullah (http://amarullz.com/)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,25 +12,31 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-
-/*
- * AROMA CORE - Framebuffer Alphablending Engine Module (NEON)
- *    - WITH NEON SIMD
- *    - Alphablending With Constant Alpha
- *    - Alphablending With Dynamic Alpha
-  *   - Alphablending With With Black
+ *______________________________________________________________________________
+ *
+ * Filename    : alpha_neon.c
+ * Description : neon simd alpha blend engine
+ *
+ * + This is part of libaroma, an embedded ui toolkit.
+ * + 26/01/15 - Author(s): Ahmad Amarullah
  *
  */
+#ifndef __libaroma_aroma_c__
+  #error "Should be inside aroma.c."
+#endif
+#ifndef __libaroma_alpha_neon_c__
+#define __libaroma_alpha_neon_c__
+#ifdef __ARM_HAVE_NEON
 
 /* NEON SIMD Alphablending With Dynamic Alpha Line */
-void aAlphaPxLine(int _Y, int n, wordp dst, wordp bottom, wordp top, bytep alpha) {
+void libaroma_alpha_px_line(int _Y, int n, wordp dst,
+    wordp bottom, wordp top, bytep alpha){
   int i;
-  
   /* use non simd */
   if (n < 8) {
     for (i = 0; i < n; i++) {
-      dst[i] = aDither(i, _Y, aAlpha32(bottom[i], top[i], alpha[i]));
+      dst[i] = libaroma_dither(
+        i, _Y, libaroma_alpha32(bottom[i], top[i], alpha[i]));
     }
     
     return;
@@ -40,43 +46,34 @@ void aAlphaPxLine(int _Y, int n, wordp dst, wordp bottom, wordp top, bytep alpha
   uint16x8_t msk_r = vdupq_n_u16(0xF800); /* Red Mask */
   uint16x8_t msk_g = vdupq_n_u16(0x07E0); /* Green Mask */
   uint16x8_t msk_b = vdupq_n_u16(0x001F); /* Blue Mask */
-  /* Dithering Data */
+  /* dithering data */
   uint8x8_t table_r, table_g, table_b;
-  aNeon_DitherTable(_Y, &table_r, &table_g, &table_b);
+  _libaroma_neon_dither_table(_Y, &table_r, &table_g, &table_b);
   uint16x8_t table_r16 = vmovl_u8(table_r);
   uint16x8_t table_g16 = vmovl_u8(table_g);
   uint16x8_t table_b16 = vmovl_u8(table_b);
   uint16x8_t max_255 = vmovq_n_u16(255);
-  /* Neon Loop */
+  /* neon loop */
   int nn = n / 8, left = n % 8;
-  
   for (i = 0; i < nn; i++) {
-    /* Prepare Opacity and Reversed Opacity Value */
+    /* prepare opacity and reversed opacity value */
     uint8x8_t   od = vld1_u8(alpha + 8 * i);
     uint16x8_t  op = vmovl_u8(od);
-    // op = vaddq_u16(op, vshrq_n_u16(op, 7));
+
     uint16x8_t  ro = vsubq_u16(falph, op);
-    /* Get 8 pixels data from Top & Bottom layer */
-    uint16x8_t pxb = vld1q_u16(bottom + 8 * i); /* Bottom Layer Pixels */
-    uint16x8_t pxt = vld1q_u16(top + 8 * i); /* Top Layer Pixels */
-    /* Get Subpixels of Bottom Layer */
+    /* get 8 pixels data from top & bottom layer */
+    uint16x8_t pxb = vld1q_u16(bottom + 8 * i); /* bottom layer pixels */
+    uint16x8_t pxt = vld1q_u16(top + 8 * i); /* top layer pixels */
+    /* get subpixels of bottom layer */
     uint8x8_t rb = vshrn_n_u16(vandq_u16(pxb, msk_r), 8);
     uint8x8_t gb = vshrn_n_u16(vandq_u16(pxb, msk_g), 3);
     uint8x8_t bb = vmovn_u16(vshlq_n_u16(vandq_u16(pxb, msk_b), 3));
-#ifdef AROMA_CORE_COLOR_FILL_LOWER_BITS
-    rb = vorr_u8(rb, vshr_n_u8(rb, 5));
-    gb = vorr_u8(gb, vshr_n_u8(gb, 6));
-    bb = vorr_u8(bb, vshr_n_u8(bb, 5));
-#endif
+
     /* Get Subpixels of Top Layer */
     uint8x8_t rt = vshrn_n_u16(vandq_u16(pxt, msk_r), 8);
     uint8x8_t gt = vshrn_n_u16(vandq_u16(pxt, msk_g), 3);
     uint8x8_t bt = vmovn_u16(vshlq_n_u16(vandq_u16(pxt, msk_b), 3));
-#ifdef AROMA_CORE_COLOR_FILL_LOWER_BITS
-    rt = vorr_u8(rt, vshr_n_u8(rt, 5));
-    gt = vorr_u8(gt, vshr_n_u8(gt, 6));
-    bt = vorr_u8(bt, vshr_n_u8(bt, 5));
-#endif
+
     /* Bottom Blend */
     uint16x8_t rbl = vmulq_u16(vmovl_u8(rb), ro);
     uint16x8_t gbl = vmulq_u16(vmovl_u8(gb), ro);
@@ -103,7 +100,8 @@ void aAlphaPxLine(int _Y, int n, wordp dst, wordp bottom, wordp top, bytep alpha
     /* leftover */
     if ((i + 1 == nn) && (left > 0)) {
       for (i = n - left; i < n; i++) {
-        dst[i] = aDither(i, _Y, aAlpha32(bottom[i], top[i], alpha[i]));
+        dst[i] = libaroma_dither(
+          i, _Y, libaroma_alpha32(bottom[i], top[i], alpha[i]));
       }
       
       return;
@@ -112,14 +110,14 @@ void aAlphaPxLine(int _Y, int n, wordp dst, wordp bottom, wordp top, bytep alpha
 }
 
 /* NEON SIMD Alphablending With Dynamic Alpha */
-void aAlphaPx(int n, wordp dst, wordp bottom,
-              wordp top, bytep alpha) {
+void libaroma_alpha_px(int n, wordp dst, wordp bottom,
+    wordp top, bytep alpha) {
   int i;
   
   /* use non simd */
   if (n < 8) {
     for (i = 0; i < n; i++) {
-      dst[i] = aAlpha(bottom[i], top[i], alpha[i]);
+      dst[i] = libaroma_alpha(bottom[i], top[i], alpha[i]);
     }
     
     return;
@@ -145,20 +143,12 @@ void aAlphaPx(int n, wordp dst, wordp bottom,
     uint8x8_t rb = vshrn_n_u16(vandq_u16(pxb, msk_r), 8);
     uint8x8_t gb = vshrn_n_u16(vandq_u16(pxb, msk_g), 3);
     uint8x8_t bb = vmovn_u16(vshlq_n_u16(vandq_u16(pxb, msk_b), 3));
-#ifdef AROMA_CORE_COLOR_FILL_LOWER_BITS
-    rb = vorr_u8(rb, vshr_n_u8(rb, 5));
-    gb = vorr_u8(gb, vshr_n_u8(gb, 6));
-    bb = vorr_u8(bb, vshr_n_u8(bb, 5));
-#endif
+
     /* Get Subpixels of Top Layer */
     uint8x8_t rt = vshrn_n_u16(vandq_u16(pxt, msk_r), 8);
     uint8x8_t gt = vshrn_n_u16(vandq_u16(pxt, msk_g), 3);
     uint8x8_t bt = vmovn_u16(vshlq_n_u16(vandq_u16(pxt, msk_b), 3));
-#ifdef AROMA_CORE_COLOR_FILL_LOWER_BITS
-    rt = vorr_u8(rt, vshr_n_u8(rt, 5));
-    gt = vorr_u8(gt, vshr_n_u8(gt, 6));
-    bt = vorr_u8(bt, vshr_n_u8(bt, 5));
-#endif
+
     /* Bottom Blend */
     uint16x8_t rbl = vmulq_u16(vmovl_u8(rb), ro);
     uint16x8_t gbl = vmulq_u16(vmovl_u8(gb), ro);
@@ -182,7 +172,7 @@ void aAlphaPx(int n, wordp dst, wordp bottom,
     /* leftover */
     if ((i + 1 == nn) && (left > 0)) {
       for (i = n - left; i < n; i++) {
-        dst[i] = aAlpha(bottom[i], top[i], alpha[i]);
+        dst[i] = libaroma_alpha(bottom[i], top[i], alpha[i]);
       }
       
       return;
@@ -191,14 +181,15 @@ void aAlphaPx(int n, wordp dst, wordp bottom,
 }
 
 /* NEON SIMD Alphablending With Constant Alpha - PERLINE */
-void aAlphaConstLine(int _Y, int n, wordp dst, wordp bottom,
-                     wordp top, byte alpha) {
+void libaroma_alpha_const_line(int _Y, int n, wordp dst,
+    wordp bottom, wordp top, byte alpha) {
   int i;
   
   /* use non simd */
   if (n < 8) {
     for (i = 0; i < n; i++) {
-      dst[i] = aDither(i, _Y, aAlpha32(bottom[i], top[i], alpha));
+      dst[i] = libaroma_dither(
+        i, _Y, libaroma_alpha32(bottom[i], top[i], alpha));
     }
     
     return;
@@ -209,7 +200,7 @@ void aAlphaConstLine(int _Y, int n, wordp dst, wordp bottom,
   uint16x8_t msk_b = vdupq_n_u16(0x001F); /* Blue Mask */
   /* Dithering Data */
   uint8x8_t table_r, table_g, table_b;
-  aNeon_DitherTable(_Y, &table_r, &table_g, &table_b);
+  _libaroma_neon_dither_table(_Y, &table_r, &table_g, &table_b);
   uint16x8_t table_r16 = vmovl_u8(table_r);
   uint16x8_t table_g16 = vmovl_u8(table_g);
   uint16x8_t table_b16 = vmovl_u8(table_b);
@@ -229,20 +220,12 @@ void aAlphaConstLine(int _Y, int n, wordp dst, wordp bottom,
     uint8x8_t rb = vshrn_n_u16(vandq_u16(pxb, msk_r), 8);
     uint8x8_t gb = vshrn_n_u16(vandq_u16(pxb, msk_g), 3);
     uint8x8_t bb = vmovn_u16(vshlq_n_u16(vandq_u16(pxb, msk_b), 3));
-#ifdef AROMA_CORE_COLOR_FILL_LOWER_BITS
-    rb = vorr_u8(rb, vshr_n_u8(rb, 5));
-    gb = vorr_u8(gb, vshr_n_u8(gb, 6));
-    bb = vorr_u8(bb, vshr_n_u8(bb, 5));
-#endif
+
     /* Get Subpixels of Top Layer */
     uint8x8_t rt = vshrn_n_u16(vandq_u16(pxt, msk_r), 8);
     uint8x8_t gt = vshrn_n_u16(vandq_u16(pxt, msk_g), 3);
     uint8x8_t bt = vmovn_u16(vshlq_n_u16(vandq_u16(pxt, msk_b), 3));
-#ifdef AROMA_CORE_COLOR_FILL_LOWER_BITS
-    rt = vorr_u8(rt, vshr_n_u8(rt, 5));
-    gt = vorr_u8(gt, vshr_n_u8(gt, 6));
-    bt = vorr_u8(bt, vshr_n_u8(bt, 5));
-#endif
+
     /* Bottom Blend */
     uint16x8_t rbl = vmulq_u16(vmovl_u8(rb), ro);
     uint16x8_t gbl = vmulq_u16(vmovl_u8(gb), ro);
@@ -269,7 +252,8 @@ void aAlphaConstLine(int _Y, int n, wordp dst, wordp bottom,
     /* leftover */
     if ((i + 1 == nn) && (left > 0)) {
       for (i = n - left; i < n; i++) {
-        dst[i] = aDither(i, _Y, aAlpha32(bottom[i], top[i], alpha));
+        dst[i] = libaroma_dither(
+          i, _Y, libaroma_alpha32(bottom[i], top[i], alpha));
       }
       
       return;
@@ -278,14 +262,14 @@ void aAlphaConstLine(int _Y, int n, wordp dst, wordp bottom,
 }
 
 /* NEON SIMD Alphablending With Constant Alpha */
-void aAlphaConst(int n, wordp dst, wordp bottom,
-                 wordp top, byte alpha) {
+void libaroma_alpha_const(int n, wordp dst,
+    wordp bottom, wordp top, byte alpha) {
   int i;
   
   /* use non simd */
   if (n < 8) {
     for (i = 0; i < n; i++) {
-      dst[i] = aAlpha(bottom[i], top[i], alpha);
+      dst[i] = libaroma_alpha(bottom[i], top[i], alpha);
     }
     
     return;
@@ -309,20 +293,12 @@ void aAlphaConst(int n, wordp dst, wordp bottom,
     uint8x8_t rb = vshrn_n_u16(vandq_u16(pxb, msk_r), 8);
     uint8x8_t gb = vshrn_n_u16(vandq_u16(pxb, msk_g), 3);
     uint8x8_t bb = vmovn_u16(vshlq_n_u16(vandq_u16(pxb, msk_b), 3));
-#ifdef AROMA_CORE_COLOR_FILL_LOWER_BITS
-    rb = vorr_u8(rb, vshr_n_u8(rb, 5));
-    gb = vorr_u8(gb, vshr_n_u8(gb, 6));
-    bb = vorr_u8(bb, vshr_n_u8(bb, 5));
-#endif
+
     /* Get Subpixels of Top Layer */
     uint8x8_t rt = vshrn_n_u16(vandq_u16(pxt, msk_r), 8);
     uint8x8_t gt = vshrn_n_u16(vandq_u16(pxt, msk_g), 3);
     uint8x8_t bt = vmovn_u16(vshlq_n_u16(vandq_u16(pxt, msk_b), 3));
-#ifdef AROMA_CORE_COLOR_FILL_LOWER_BITS
-    rt = vorr_u8(rt, vshr_n_u8(rt, 5));
-    gt = vorr_u8(gt, vshr_n_u8(gt, 6));
-    bt = vorr_u8(bt, vshr_n_u8(bt, 5));
-#endif
+
     /* Bottom Blend */
     uint16x8_t rbl = vmulq_u16(vmovl_u8(rb), ro);
     uint16x8_t gbl = vmulq_u16(vmovl_u8(gb), ro);
@@ -345,7 +321,7 @@ void aAlphaConst(int n, wordp dst, wordp bottom,
     /* leftover */
     if ((i + 1 == nn) && (left > 0)) {
       for (i = n - left; i < n; i++) {
-        dst[i] = aAlpha(bottom[i], top[i], alpha);
+        dst[i] = libaroma_alpha(bottom[i], top[i], alpha);
       }
       
       return;
@@ -354,13 +330,13 @@ void aAlphaConst(int n, wordp dst, wordp bottom,
 }
 
 /* NEON SIMD Alphablending With Black */
-void aAlphaBlack(int n, wordp dst, wordp top, byte alpha) {
+void libaroma_alpha_black(int n, wordp dst, wordp top, byte alpha) {
   int i;
   
   /* use non simd */
   if (n < 8) {
     for (i = 0; i < n; i++) {
-      dst[i] = aAlphaB(top[i], alpha);
+      dst[i] = libaroma_alphab(top[i], alpha);
     }
     
     return;
@@ -382,11 +358,7 @@ void aAlphaBlack(int n, wordp dst, wordp top, byte alpha) {
     uint8x8_t rt = vshrn_n_u16(vandq_u16(pxt, msk_r), 8);
     uint8x8_t gt = vshrn_n_u16(vandq_u16(pxt, msk_g), 3);
     uint8x8_t bt = vmovn_u16(vshlq_n_u16(vandq_u16(pxt, msk_b), 3));
-#ifdef AROMA_CORE_COLOR_FILL_LOWER_BITS
-    rt = vorr_u8(rt, vshr_n_u8(rt, 5));
-    gt = vorr_u8(gt, vshr_n_u8(gt, 6));
-    bt = vorr_u8(bt, vshr_n_u8(bt, 5));
-#endif
+
     /* Top Blend Only */
     uint16x8_t r = vshrq_n_u16(vmulq_u16(vmovl_u8(rt), op), 11);
     uint16x8_t g = vshrq_n_u16(vmulq_u16(vmovl_u8(gt), op), 10);
@@ -401,7 +373,7 @@ void aAlphaBlack(int n, wordp dst, wordp top, byte alpha) {
     /* leftover */
     if ((i + 1 == nn) && (left > 0)) {
       for (i = n - left; i < n; i++) {
-        dst[i] = aAlphaB(top[i], alpha);
+        dst[i] = libaroma_alphab(top[i], alpha);
       }
       
       return;
@@ -410,14 +382,14 @@ void aAlphaBlack(int n, wordp dst, wordp top, byte alpha) {
 }
 
 /* NEON SIMD Alphablending With Static Alpha & Color */
-void aAlphaRGBAFill(int n, wordp dst, wordp bottom,
-                    word top, byte alpha) {
+void libaroma_alpha_rgba_fill(int n, wordp dst, wordp bottom,
+    word top, byte alpha) {
   int i;
   
   /* use non simd */
   if (n < 8) {
     for (i = 0; i < n; i++) {
-      dst[i] = aAlpha(bottom[i], top, alpha);
+      dst[i] = libaroma_alpha(bottom[i], top, alpha);
     }
     
     return;
@@ -436,11 +408,7 @@ void aAlphaRGBAFill(int n, wordp dst, wordp bottom,
   uint8x8_t rt = vshrn_n_u16(vandq_u16(pxt, msk_r), 8);
   uint8x8_t gt = vshrn_n_u16(vandq_u16(pxt, msk_g), 3);
   uint8x8_t bt = vmovn_u16(vshlq_n_u16(vandq_u16(pxt, msk_b), 3));
-#ifdef AROMA_CORE_COLOR_FILL_LOWER_BITS
-  rt = vorr_u8(rt, vshr_n_u8(rt, 5));
-  gt = vorr_u8(gt, vshr_n_u8(gt, 6));
-  bt = vorr_u8(bt, vshr_n_u8(bt, 5));
-#endif
+
   /* Top Blend */
   uint16x8_t rtl = vmulq_u16(vmovl_u8(rt), op);
   uint16x8_t gtl = vmulq_u16(vmovl_u8(gt), op);
@@ -455,11 +423,7 @@ void aAlphaRGBAFill(int n, wordp dst, wordp bottom,
     uint8x8_t rb = vshrn_n_u16(vandq_u16(pxb, msk_r), 8);
     uint8x8_t gb = vshrn_n_u16(vandq_u16(pxb, msk_g), 3);
     uint8x8_t bb = vmovn_u16(vshlq_n_u16(vandq_u16(pxb, msk_b), 3));
-#ifdef AROMA_CORE_COLOR_FILL_LOWER_BITS
-    rb = vorr_u8(rb, vshr_n_u8(rb, 5));
-    gb = vorr_u8(gb, vshr_n_u8(gb, 6));
-    bb = vorr_u8(bb, vshr_n_u8(bb, 5));
-#endif
+
     /* Bottom Blend */
     uint16x8_t rbl = vmulq_u16(vmovl_u8(rb), ro);
     uint16x8_t gbl = vmulq_u16(vmovl_u8(gb), ro);
@@ -478,7 +442,7 @@ void aAlphaRGBAFill(int n, wordp dst, wordp bottom,
     /* leftover */
     if ((i + 1 == nn) && (left > 0)) {
       for (i = n - left; i < n; i++) {
-        dst[i] = aAlpha(bottom[i], top, alpha);
+        dst[i] = libaroma_alpha(bottom[i], top, alpha);
       }
       
       return;
@@ -487,14 +451,14 @@ void aAlphaRGBAFill(int n, wordp dst, wordp bottom,
 }
 
 /* NEON SIMD Alphablending With Dynamic Alpha Fixed Color */
-void aAlphaMono(int n, wordp dst, wordp bottom,
-                word top, bytep alpha) {
+void libaroma_alpha_mono(int n, wordp dst, wordp bottom,
+    word top, bytep alpha){
   int i;
   
   /* use non simd */
   if (n < 8) {
     for (i = 0; i < n; i++) {
-      dst[i] = aAlpha(bottom[i], top, alpha[i]);
+      dst[i] = libaroma_alpha(bottom[i], top, alpha[i]);
     }
     
     return;
@@ -510,11 +474,7 @@ void aAlphaMono(int n, wordp dst, wordp bottom,
   uint8x8_t rt = vshrn_n_u16(vandq_u16(pxt, msk_r), 8);
   uint8x8_t gt = vshrn_n_u16(vandq_u16(pxt, msk_g), 3);
   uint8x8_t bt = vmovn_u16(vshlq_n_u16(vandq_u16(pxt, msk_b), 3));
-#ifdef AROMA_CORE_COLOR_FILL_LOWER_BITS
-  rt = vorr_u8(rt, vshr_n_u8(rt, 5));
-  gt = vorr_u8(gt, vshr_n_u8(gt, 6));
-  bt = vorr_u8(bt, vshr_n_u8(bt, 5));
-#endif
+
   uint16x8_t rt16 = vmovl_u8(rt);
   uint16x8_t gt16 = vmovl_u8(gt);
   uint16x8_t bt16 = vmovl_u8(bt);
@@ -533,11 +493,7 @@ void aAlphaMono(int n, wordp dst, wordp bottom,
     uint8x8_t rb = vshrn_n_u16(vandq_u16(pxb, msk_r), 8);
     uint8x8_t gb = vshrn_n_u16(vandq_u16(pxb, msk_g), 3);
     uint8x8_t bb = vmovn_u16(vshlq_n_u16(vandq_u16(pxb, msk_b), 3));
-#ifdef AROMA_CORE_COLOR_FILL_LOWER_BITS
-    rb = vorr_u8(rb, vshr_n_u8(rb, 5));
-    gb = vorr_u8(gb, vshr_n_u8(gb, 6));
-    bb = vorr_u8(bb, vshr_n_u8(bb, 5));
-#endif
+
     /* Bottom Blend */
     uint16x8_t rbl = vmulq_u16(vmovl_u8(rb), ro);
     uint16x8_t gbl = vmulq_u16(vmovl_u8(gb), ro);
@@ -560,7 +516,7 @@ void aAlphaMono(int n, wordp dst, wordp bottom,
     /* leftover */
     if ((i + 1 == nn) && (left > 0)) {
       for (i = n - left; i < n; i++) {
-        dst[i] = aAlpha(bottom[i], top, alpha[i]);
+        dst[i] = libaroma_alpha(bottom[i], top, alpha[i]);
       }
       
       return;
@@ -569,15 +525,20 @@ void aAlphaMono(int n, wordp dst, wordp bottom,
 }
 
 /* NEON SIMD Alphablending With Dynamic Alpha Fixed Color */
-void aAlphaMultiLine(int n, wordp dst, wordp bottom,
-                     word top, bytep alphargb) {
+void libaroma_alpha_multi_line(int n, wordp dst, wordp bottom,
+    word top, bytep alphargb) {
   int i;
   
   /* use non simd */
   if (n < 8) {
     for (i = 0; i < n; i++) {
       int j = i * 3;
-      dst[i] = aAlphaMulti(bottom[i], top, alphargb[j], alphargb[j + 1],  alphargb[j + 2]);
+      dst[i] = libaroma_alpha_multi(
+        bottom[i],
+        top,
+        alphargb[j],
+        alphargb[j + 1],
+        alphargb[j + 2]);
     }
     
     return;
@@ -593,11 +554,7 @@ void aAlphaMultiLine(int n, wordp dst, wordp bottom,
   uint8x8_t rt = vshrn_n_u16(vandq_u16(pxt, msk_r), 8);
   uint8x8_t gt = vshrn_n_u16(vandq_u16(pxt, msk_g), 3);
   uint8x8_t bt = vmovn_u16(vshlq_n_u16(vandq_u16(pxt, msk_b), 3));
-#ifdef AROMA_CORE_COLOR_FILL_LOWER_BITS
-  rt = vorr_u8(rt, vshr_n_u8(rt, 5));
-  gt = vorr_u8(gt, vshr_n_u8(gt, 6));
-  bt = vorr_u8(bt, vshr_n_u8(bt, 5));
-#endif
+
   uint16x8_t rt16 = vmovl_u8(rt);
   uint16x8_t gt16 = vmovl_u8(gt);
   uint16x8_t bt16 = vmovl_u8(bt);
@@ -619,11 +576,7 @@ void aAlphaMultiLine(int n, wordp dst, wordp bottom,
     uint8x8_t rb = vshrn_n_u16(vandq_u16(pxb, msk_r), 8);
     uint8x8_t gb = vshrn_n_u16(vandq_u16(pxb, msk_g), 3);
     uint8x8_t bb = vmovn_u16(vshlq_n_u16(vandq_u16(pxb, msk_b), 3));
-#ifdef AROMA_CORE_COLOR_FILL_LOWER_BITS
-    rb = vorr_u8(rb, vshr_n_u8(rb, 5));
-    gb = vorr_u8(gb, vshr_n_u8(gb, 6));
-    bb = vorr_u8(bb, vshr_n_u8(bb, 5));
-#endif
+
     /* Bottom Blend */
     uint16x8_t rbl = vmulq_u16(vmovl_u8(rb), ro_r);
     uint16x8_t gbl = vmulq_u16(vmovl_u8(gb), ro_g);
@@ -647,10 +600,28 @@ void aAlphaMultiLine(int n, wordp dst, wordp bottom,
     if ((i + 1 == nn) && (left > 0)) {
       for (i = n - left; i < n; i++) {
         int j = i * 3;
-        dst[i] = aAlphaMulti(bottom[i], top, alphargb[j], alphargb[j + 1],  alphargb[j + 2]);
+        dst[i] = libaroma_alpha_multi(
+          bottom[i],
+          top,
+          alphargb[j],
+          alphargb[j + 1],
+          alphargb[j + 2]);
       }
       
       return;
     }
   }
 }
+
+/* set available engine */
+#define __engine_have_libaroma_alpha_black 1
+#define __engine_have_libaroma_alpha_const 1
+#define __engine_have_libaroma_alpha_const_line 1
+#define __engine_have_libaroma_alpha_px 1
+#define __engine_have_libaroma_alpha_px_line 1
+#define __engine_have_libaroma_alpha_rgba_fill 1
+#define __engine_have_libaroma_alpha_mono 1
+#define __engine_have_libaroma_alpha_multi_line 1
+
+#endif /* __ARM_HAVE_NEON */
+#endif /* __libaroma_alpha_neon_c__ */

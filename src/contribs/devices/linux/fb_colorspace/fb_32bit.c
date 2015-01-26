@@ -1,5 +1,5 @@
-/*
- * Copyright (C) 2011-2013 Ahmad Amarullah ( http://amarullz.com/ )
+/********************************************************************[libaroma]*
+ * Copyright (C) 2011-2015 Ahmad Amarullah (http://amarullz.com/)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,34 +12,33 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-
-/*
- * UNIVERSAL DEVICE - FRAMEBUFFER 32BIT DRIVER
+ *______________________________________________________________________________
+ *
+ * Filename    : fb_32bit.c
+ * Description : linux framebuffer driver for 32bit framebuffer
+ *
+ * + This is part of libaroma, an embedded ui toolkit.
+ * + 26/01/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __AROMA_CORE_UNIVERSAL_FRAMEBUFFER_32BIT_DRIVER__
-#define __AROMA_CORE_UNIVERSAL_FRAMEBUFFER_32BIT_DRIVER__
+#ifndef __libaroma_linux_fb32bit_driver_c__
+#define __libaroma_linux_fb32bit_driver_c__
 
 /*
- * Function : Set Framebuffer RGB Position
- *
+ * function : set framebuffer rgb position
  */
-void FBDR_setrgbpos(LIBAROMA_FBP me, byte r, byte g, byte b) {
-  /* Is Framebuffer Initialized ? */
+void LINUXFBDR_setrgbpos(LIBAROMA_FBP me, byte r, byte g, byte b) {
+  /* is framebuffer initialized ? */
   if (me == NULL) {
     return;
   }
-  
-  /* Get Internal Data */
-  FBDR_INTERNALP mi = (FBDR_INTERNALP) me->internal;
-  
-  /* Check Normal RGB Position */
+  /* get internal data */
+  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
+  /* check normal rgb position */
   if ((r == 16) && (g == 8) && (b == 0)) {
     mi->rgb_pos_normal = 1;
   }
-  
-  /* Save Color Position */
+  /* save color position */
   mi->rgb_pos[0] = r;
   mi->rgb_pos[1] = g;
   mi->rgb_pos[2] = b;
@@ -49,103 +48,110 @@ void FBDR_setrgbpos(LIBAROMA_FBP me, byte r, byte g, byte b) {
 }
 
 /*
- * Function : Init Framebuffer Colorspace
- *
+ * function : init framebuffer colorspace
  */
-void FBDR_init_32bit(LIBAROMA_FBP me) {
-  /* Is Framebuffer Initialized ? */
+void LINUXFBDR_init_32bit(LIBAROMA_FBP me) {
+  /* is framebuffer initialized ? */
   if (me == NULL) {
     return;
   }
-  
-  /* Show Info */
+  /* show info */
   ALOGS("FBDRIVER Init 32bit Colorspace");
-  /* Get Internal Data */
-  FBDR_INTERNALP mi = (FBDR_INTERNALP) me->internal;
-  /* Calculate Stride Size */
+  /* get internal data */
+  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
+  /* calculate stride size */
   mi->stride = mi->line - (me->w * mi->pixsz);
-  /* Save Color Position */
-  FBDR_setrgbpos(me,
+  /* save color position */
+  LINUXFBDR_setrgbpos(me,
                  mi->var.red.offset,
                  mi->var.green.offset,
                  mi->var.blue.offset);
+  /* refresh framebuffer */
+  LINUXFBDR_refresh(me);
 }
 
 /*
- * Function : Save display canvas into framebuffer
- *
+ * function : save display canvas into framebuffer
  */
-void FBDR_sync_32bit(LIBAROMA_FBP me, wordp src, int x, int y, int w, int h) {
-  /* Is Framebuffer Initialized ? */
-  if (me == NULL) {
-    return;
-  }
-  
-  /* Get Internal Data */
-  FBDR_INTERNALP mi = (FBDR_INTERNALP) me->internal;
-  
-  /* Defined Area Only */
-  if ((w > 0) && (h > 0)) {
-    int     copy_stride = me->w - w;
-    dwordp  copy_dst    = (dwordp) (((bytep) mi->buffer) + (mi->line * y) + (x * mi->pixsz));
-    wordp  copy_src     = (wordp) (src + (me->w * y) + x);
-    
-    /* is 32bit framebuffer - with alignment */
-    if (mi->rgb_pos_normal) {
-      /* Normal RGB Position */
-      libaroma_blt_align16_to32(copy_dst, copy_src, w, h,
-                      mi->stride + (copy_stride * mi->pixsz),
-                      copy_stride * 2
-                     );
-    }
-    else {
-      libaroma_blt_align_to32_pos(copy_dst, copy_src, w, h,
-                       mi->stride + (copy_stride * mi->pixsz),
-                       copy_stride * 2, mi->rgb_pos
-                      );
-    }
-  }
-  else {
-    /* is 32bit framebuffer - with alignment */
-    if (mi->rgb_pos_normal) {
-      /* Normal RGB Position */
-      libaroma_blt_align16_to32((dwordp) mi->buffer,
-                      src, me->w, me->h, mi->stride, 0);
-    }
-    else {
-      /* Different RGB Position */
-      libaroma_blt_align_to32_pos((dwordp) mi->buffer,
-                       src, me->w, me->h,
-                       mi->stride, 0, mi->rgb_pos);
-    }
-  }
-}
-
-/*
- * Function : Save framebuffer into display canvas
- *
- */
-byte FBDR_snapshoot_32bit(LIBAROMA_FBP me, wordp dst) {
-  /* Is Framebuffer Initialized ? */
+byte LINUXFBDR_sync_32bit(
+    LIBAROMA_FBP me,
+    wordp src,
+    int x,
+    int y,
+    int w,
+    int h) {
+  /* is framebuffer initialized ? */
   if (me == NULL) {
     return 0;
   }
+  /* get internal data */
+  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
   
-  /* Get Internal Data */
-  FBDR_INTERNALP mi = (FBDR_INTERNALP) me->internal;
-  
-  /* is 32bit framebuffer - with alignment */
-  if (mi->rgb_pos_normal) {
-    /* Normal RGB Position */
-    libaroma_blt_align32_to16(dst, (dwordp) mi->buffer, me->w, me->h, 0, mi->stride);
+  /* defined area only */
+  if ((w > 0) && (h > 0)) {
+    int copy_stride = me->w - w;
+    dwordp copy_dst =
+      (dwordp) (((bytep) mi->buffer) + (mi->line * y) + (x * mi->pixsz));
+    wordp copy_src =
+      (wordp) (src + (me->w * y) + x);
+    
+    /* is 32bit framebuffer - with alignment */
+    if (mi->rgb_pos_normal) {
+      /* normal rgb position */
+      libaroma_blt_align16_to32(copy_dst, copy_src, w, h,
+        mi->stride + (copy_stride * mi->pixsz),
+        copy_stride * 2
+      );
+    }
+    else {
+      libaroma_blt_align_to32_pos(copy_dst, copy_src, w, h,
+        mi->stride + (copy_stride * mi->pixsz),
+        copy_stride * 2, mi->rgb_pos
+      );
+    }
   }
   else {
-    /* Different RGB Position */
-    libaroma_blt_align_to16_pos(dst, (dwordp) mi->buffer, me->w, me->h,
-                     0, mi->stride, mi->rgb_pos);
+    /* is 32bit framebuffer - with alignment */
+    if (mi->rgb_pos_normal) {
+      /* normal rgb position */
+      libaroma_blt_align16_to32((dwordp) mi->buffer,
+        src, me->w, me->h, mi->stride, 0);
+    }
+    else {
+      /* different rgb position */
+      libaroma_blt_align_to32_pos((dwordp) mi->buffer,
+        src, me->w, me->h,
+        mi->stride, 0, mi->rgb_pos);
+    }
   }
-  
+  /* refresh framebuffer */
+  LINUXFBDR_refresh(me);
   return 1;
 }
 
-#endif // __AROMA_CORE_UNIVERSAL_FRAMEBUFFER_32BIT_DRIVER__ 
+/*
+ * function : save framebuffer into display canvas
+ */
+byte LINUXFBDR_snapshoot_32bit(LIBAROMA_FBP me, wordp dst) {
+  /* is framebuffer initialized ? */
+  if (me == NULL) {
+    return 0;
+  }
+  /* get internal data */
+  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
+  /* is 32bit framebuffer - with alignment */
+  if (mi->rgb_pos_normal) {
+    /* normal rgb position */
+    libaroma_blt_align32_to16(
+      dst, (dwordp) mi->buffer, me->w, me->h, 0, mi->stride);
+  }
+  else {
+    /* different rgb position */
+    libaroma_blt_align_to16_pos(
+      dst, (dwordp) mi->buffer, me->w, me->h,
+      0, mi->stride, mi->rgb_pos);
+  }
+  return 1;
+}
+
+#endif /* __libaroma_linux_fb32bit_driver_c__ */ 

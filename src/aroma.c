@@ -23,7 +23,8 @@
  */
 #ifndef __libaroma_aroma_c__
 #define __libaroma_aroma_c__
-#include "config.h"     /* libaroma config header */
+#include "config.h"           /* libaroma config header */
+#include "config_features.h"  /* libaroma features config header */
 
 /* Debugging */
 #ifdef LIBAROMA_CONFIG_COMPILER_MESSAGE

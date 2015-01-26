@@ -1,5 +1,5 @@
-/*
- * Copyright (C) 2011-2013 Ahmad Amarullah ( http://amarullz.com/ )
+/********************************************************************[libaroma]*
+ * Copyright (C) 2011-2015 Ahmad Amarullah (http://amarullz.com/)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,24 +12,30 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-
-/*
- * AROMA CORE - Framebuffer BitBlt Engine Module (NEON)
- *    - WITH NEON SIMD
- *    - 32bit depth to 16bit depth
- *    - 16bit depth to 32bit depth
+ *______________________________________________________________________________
+ *
+ * Filename    : blt_neon.c
+ * Description : neon simd blit engine
+ *
+ * + This is part of libaroma, an embedded ui toolkit.
+ * + 26/01/15 - Author(s): Ahmad Amarullah
  *
  */
+#ifndef __libaroma_aroma_c__
+  #error "Should be inside aroma.c."
+#endif
+#ifndef __libaroma_blt_neon_c__
+#define __libaroma_blt_neon_c__
+#ifdef __ARM_HAVE_NEON
 
 /* NEON SIMD 32bit to 16bit BLT */
-void aBlt16(int n, wordp dst, const dwordp src) {
+void libaroma_btl16(int n, wordp dst, const dwordp src) {
   int i;
   
   /* use non simd */
   if (n < 8) {
     for (i = 0; i < n; i++) {
-      dst[i] = aRGBto16(src[i]);
+      dst[i] = libaroma_rgb_to16(src[i]);
     }
     
     return;
@@ -63,13 +69,13 @@ void aBlt16(int n, wordp dst, const dwordp src) {
 }
 
 /* NEON SIMD 16bit to 32bit BLT */
-void aBlt32(int n, dwordp dst, const wordp src) {
+void libaroma_btl32(int n, dwordp dst, const wordp src) {
   int i;
   
   /* use non simd */
   if (n < 8) {
     for (i = 0; i < n; i++) {
-      dst[i] = aRGBto32(src[i]);
+      dst[i] = libaroma_rgb_to32(src[i]);
     }
     
     return;
@@ -97,12 +103,7 @@ void aBlt32(int n, dwordp dst, const wordp src) {
     red = vand_u8(red, mask5);
     grn = vand_u8(grn, mask6);
     blu = vshl_n_u8(blu, 3);
-    /* Small Byte Left : 11111xxx 111111xx 11111xxx */
-#ifdef AROMA_CORE_COLOR_FILL_LOWER_BITS
-    red = vorr_u8(red, vshr_n_u8(red, 5));
-    grn = vorr_u8(grn, vshr_n_u8(grn, 6));
-    blu = vorr_u8(blu, vshr_n_u8(blu, 5));
-#endif
+
     /* dump */
     rgb.val[3] = alp;
     rgb.val[2] = red;
@@ -119,3 +120,10 @@ void aBlt32(int n, dwordp dst, const wordp src) {
     }
   }
 }
+
+/* set available engine */
+#define __engine_have_libaroma_btl16 1
+#define __engine_have_libaroma_btl32 1
+
+#endif /* __ARM_HAVE_NEON */
+#endif /* __libaroma_blt_neon_c__ */

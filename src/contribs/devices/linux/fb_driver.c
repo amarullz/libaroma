@@ -1,5 +1,5 @@
-/*
- * Copyright (C) 2011-2013 Ahmad Amarullah ( http://amarullz.com/ )
+/********************************************************************[libaroma]*
+ * Copyright (C) 2011-2015 Ahmad Amarullah (http://amarullz.com/)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,76 +12,76 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *______________________________________________________________________________
+ *
+ * Filename    : fb_driver.c
+ * Description : linux framebuffer driver
+ *
+ * + This is part of libaroma, an embedded ui toolkit.
+ * + 26/01/15 - Author(s): Ahmad Amarullah
+ *
+ */
+#ifndef __libaroma_linux_fb_driver_c__
+#define __libaroma_linux_fb_driver_c__
+
+/*
+ *   Using Linux Framebuffer for Android & Linux
+ *   Prefix : LINUXFBDR_
  */
 
 /*
- * UNIVERSAL DEVICE - FRAMEBUFFER DRIVER
- *   Using Linux Framebuffer for Android
- *   Prefix : FBDR_
- *
- */
-#ifndef __AROMA_CORE_UNIVERSAL_FRAMEBUFFER_DRIVER__
-#define __AROMA_CORE_UNIVERSAL_FRAMEBUFFER_DRIVER__
-
-/*
- * Headers Includes
- *
+ * headers
  */
 #include <linux/fb.h>
-#include <aroma_core.h>
+#include <aroma.h>
 
 /*
- * Defines & Macros
- *
+ * device path
  */
-#define FBDR_DEVICE              "/dev/graphics/fb0"
-#define FBDR_DEVICE_NON_ANDROID  "/dev/fb0"
+#define LINUXFBDR_DEVICE              "/dev/graphics/fb0"
+#define LINUXFBDR_DEVICE_NON_ANDROID  "/dev/fb0"
 
 /*
- * Structure : Internal Framebuffer Data
- *
+ * structure : internal framebuffer data
  */
 typedef struct {
-  int       fb;                         /* Framebuffer Handler */
-  byte      is32;                       /* Is 32bit Framebuffer? */
-  struct    fb_fix_screeninfo   fix;    /* Linux Framebuffer Fix Info */
-  struct    fb_var_screeninfo   var;    /* Linux Framebuffer Var Info */
-  int       fb_sz;                      /* Framebuffer Memory Size */
-  voidp     buffer;                     /* Direct Buffer */
-  int       stride;                     /* Stride Size */
-  int       line;                       /* Line Size */
-  byte      depth;                      /* Color Depth */
-  byte      pixsz;                      /* Memory Size per pixel */
+  int       fb;                         /* framebuffer handler */
+  byte      is32;                       /* is 32bit framebuffer? */
+  struct    fb_fix_screeninfo   fix;    /* linux framebuffer fix info */
+  struct    fb_var_screeninfo   var;    /* linux framebuffer var info */
+  int       fb_sz;                      /* framebuffer memory size */
+  voidp     buffer;                     /* direct buffer */
+  int       stride;                     /* stride size */
+  int       line;                       /* line size */
+  byte      depth;                      /* color depth */
+  byte      pixsz;                      /* memory size per pixel */
   
-  /* Needed By 32Bit Colorspace */
-  byte      rgb_pos[6];                 /* Framebuffer RGB Position */
-  byte      rgb_pos_normal;             /* Is RGB Position = 16,8,0,24 ? */
-} FBDR_INTERNAL, *FBDR_INTERNALP;
+  /* needed by 32bit colorspace */
+  byte      rgb_pos[6];                 /* framebuffer rgb position */
+  byte      rgb_pos_normal;             /* is rgb position = 16,8,0,24 ? */
+} LINUXFBDR_INTERNAL, *LINUXFBDR_INTERNALP;
 
 /*
- * Include Colorspace Drivers
- *
+ * forward functions
  */
-#include "fb_colorspace/fb_16bit.c" /* 16 Bit */
-#include "fb_colorspace/fb_32bit.c" /* 32 Bit */
+void LINUXFBDR_release(LIBAROMA_FBP me);
+void LINUXFBDR_refresh(LIBAROMA_FBP me);
+void LINUXFBDR_dump(LINUXFBDR_INTERNALP mi);
 
 /*
- * Forward Functions
- *
+ * include colorspace drivers
  */
-void FBDR_release(LIBAROMA_FBP me);
-void FBDR_refresh(LIBAROMA_FBP me, int x, int y, int w, int h);
-void FBDR_dump(FBDR_INTERNALP mi);
+#include "fb_colorspace/fb_16bit.c" /* 16 bit */
+#include "fb_colorspace/fb_32bit.c" /* 32 bit */
 
 /*
- * Function : Framebuffer Driver Initializer
- *
+ * function : framebuffer driver initializer
  */
-byte FBDR_init(LIBAROMA_FBP me) {
+byte LINUXFBDR_init(LIBAROMA_FBP me) {
   /* Allocating Internal Data */
   ALOGV("FBDRIVER Initialized Internal Data");
-  FBDR_INTERNALP mi = (FBDR_INTERNALP)
-                      malloc(sizeof(FBDR_INTERNAL));
+  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP)
+                      malloc(sizeof(LINUXFBDR_INTERNAL));
                       
   if (!mi) {
     ALOGE("FBDRIVER malloc internal data - Memory Error");
@@ -89,38 +89,37 @@ byte FBDR_init(LIBAROMA_FBP me) {
   }
   
   /* Cleanup */
-  memset(mi, 0, sizeof(FBDR_INTERNAL));
+  memset(mi, 0, sizeof(LINUXFBDR_INTERNAL));
   /* Set Internal Address */
   me->internal = (voidp) mi;
   /* Set Release and Refresh Callback */
-  me->release = &FBDR_release;
-  me->refresh = &FBDR_refresh;
+  me->release = &LINUXFBDR_release;
   /* Open Framebuffer Device */
-  mi->fb = open(FBDR_DEVICE, O_RDWR, 0);
+  mi->fb = open(LINUXFBDR_DEVICE, O_RDWR, 0);
   
   /* If Not Works, Try Non Android Standard Device Path */
   if (mi->fb < 1) {
-    mi->fb = open(FBDR_DEVICE_NON_ANDROID, O_RDWR, 0);
+    mi->fb = open(LINUXFBDR_DEVICE_NON_ANDROID, O_RDWR, 0);
   }
   
-  /* Check Device Access */
+  /* check device access */
   if (mi->fb < 1) {
     ALOGE("FBDRIVER No Framebuffer Device");
     goto error; /* Exit If Error */
   }
   
-  /* Get IO Data */
-  ioctl(mi->fb, FBIOGET_FSCREENINFO, &mi->fix); /* Get Framebuffer Fix Info */
-  ioctl(mi->fb, FBIOGET_VSCREENINFO, &mi->var); /* Get Framebuffer Var Info */
+  /* get io data */
+  ioctl(mi->fb, FBIOGET_FSCREENINFO, &mi->fix); /* fix info */
+  ioctl(mi->fb, FBIOGET_VSCREENINFO, &mi->var); /* var info */
   
-  /* 24bit is not supported - Sorry */
+  /* 24bit is not supported - sorry */
   if (mi->var.bits_per_pixel == 24) {
     ALOGE("FBDRIVER 24bit Framebuffer not supported");
     goto error; /* Exit If Error */
   }
   
   /*
-  /-- Try Force 32bit standard color mode (BGRA)
+  //-- try force 32bit standard color mode (bgra)
   if (mi->var.bits_per_pixel==32){
     mi->var.red.offset         = 16;
     mi->var.red.length         = 8;
@@ -135,24 +134,26 @@ byte FBDR_init(LIBAROMA_FBP me) {
     mi->var.transp.length      = 8;
     mi->var.transp.msb_right   = 0;
   
-    //-- Activating
+    //-- activating
     mi->var.activate |= FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
     ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var);
   
-    //-- Get Forced Data
+    //-- get forced data
     ioctl(mi->fb, FBIOGET_FSCREENINFO, &mi->fix);
     ioctl(mi->fb, FBIOGET_VSCREENINFO, &mi->var);
   }
   */
-  /* Set AROMA Core Framebuffer Instance Values */
-  me->w        = mi->var.xres;                              /* Width */
-  me->h        = mi->var.yres;                              /* Height */
-  me->sz       = me->w * me->h;                             /* Width x Height */
-  mi->line     = mi->fix.line_length;                       /* Line Memory Size */
-  mi->depth    = mi->var.bits_per_pixel;                    /* Color Depth */
-  mi->pixsz    = mi->depth >> 3;                            /* Pixel size per byte */
-  mi->fb_sz    = (me->sz * mi->pixsz);                      /* FrameBuffer Size */
-  /* Map Framebuffer */
+  
+  /* set libaroma framebuffer instance values */
+  me->w        = mi->var.xres;              /* width */
+  me->h        = mi->var.yres;              /* height */
+  me->sz       = me->w * me->h;             /* width x height */
+  mi->line     = mi->fix.line_length;       /* line memory size */
+  mi->depth    = mi->var.bits_per_pixel;    /* color depth */
+  mi->pixsz    = mi->depth >> 3;            /* pixel size per byte */
+  mi->fb_sz    = (me->sz * mi->pixsz);      /* framebuffer size */
+  
+  /* map framebuffer */
   ALOGV("FBDRIVER mmap Framebuffer Memory");
   mi->buffer  = (voidp) mmap(
                   0, mi->fix.smem_len,
@@ -173,22 +174,22 @@ byte FBDR_init(LIBAROMA_FBP me) {
     /* Not 32bit Depth */
     mi->is32 = 0;
     /* Init Colorspace */
-    FBDR_init_16bit(me);
+    LINUXFBDR_init_16bit(me);
     /* Set Sync Callbacks */
-    me->sync     = &FBDR_sync_16bit;
-    me->snapshoot = &FBDR_snapshoot_16bit;
+    me->sync     = &LINUXFBDR_sync_16bit;
+    me->snapshoot = &LINUXFBDR_snapshoot_16bit;
   }
   else {
     mi->is32 = 1; /* It is 32bit Depth */
     /* Init Colorspace */
-    FBDR_init_32bit(me);
+    LINUXFBDR_init_32bit(me);
     /* Set Sync Callbacks */
-    me->sync     = &FBDR_sync_32bit;
-    me->snapshoot = &FBDR_snapshoot_32bit;
+    me->sync     = &LINUXFBDR_sync_32bit;
+    me->snapshoot = &LINUXFBDR_snapshoot_32bit;
   }
   
   /* DUMP INFO */
-  FBDR_dump(mi);
+  LINUXFBDR_dump(mi);
   /* Calculate DPI */
   me->dpi = round(mi->var.xres / (mi->var.width * 0.039370) / 80) * 80;
   /* OK */
@@ -205,14 +206,14 @@ ok:
  * Function : Release Framebuffer Instance (Same For All Colorspace)
  *
  */
-void FBDR_release(LIBAROMA_FBP me) {
+void LINUXFBDR_release(LIBAROMA_FBP me) {
   /* Is Framebuffer Initialized ? */
   if (me == NULL) {
     return;
   }
   
   /* Get Internal Data */
-  FBDR_INTERNALP mi = (FBDR_INTERNALP) me->internal;
+  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
   /* Release framebuffer memory map */
   ALOGV("FBDRIVER munmap buffer");
   munmap(mi->buffer, mi->fix.smem_len);
@@ -228,16 +229,17 @@ void FBDR_release(LIBAROMA_FBP me) {
  * Function : Refresh Display Framebuffer (Same For All Colorspace)
  *
  */
-void FBDR_refresh(LIBAROMA_FBP me, int x, int y, int w, int h) {
+void LINUXFBDR_refresh(LIBAROMA_FBP me) {
   /* Is Framebuffer Initialized ? */
   if (me == NULL) {
     return;
   }
   
   /* Get Internal Data */
-  FBDR_INTERNALP mi = (FBDR_INTERNALP) me->internal;
+  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
   /* Sync Data */
   fsync(mi->fb);
+  
   /* Refresh Display - Ignore area for now */
   mi->var.yoffset   = 0;
   mi->var.activate |= FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
@@ -248,7 +250,7 @@ void FBDR_refresh(LIBAROMA_FBP me, int x, int y, int w, int h) {
  * Function : Dump Framebuffer Informations
  *
  */
-void FBDR_dump(FBDR_INTERNALP mi) {
+void LINUXFBDR_dump(LINUXFBDR_INTERNALP mi) {
   ALOGI("FRAMEBUFFER INFORMATIONS:");
   ALOGI("VAR");
   ALOGI(" xres           : %i", mi->var.xres);
@@ -258,10 +260,14 @@ void FBDR_dump(FBDR_INTERNALP mi) {
   ALOGV(" xoffset        : %i", mi->var.xoffset);
   ALOGV(" yoffset        : %i", mi->var.yoffset);
   ALOGI(" bits_per_pixel : %i", mi->var.bits_per_pixel);
-  ALOGI(" red            : %i, %i, %i", mi->var.red.offset, mi->var.red.length, mi->var.red.msb_right);
-  ALOGI(" green          : %i, %i, %i", mi->var.green.offset, mi->var.green.length, mi->var.red.msb_right);
-  ALOGI(" blue           : %i, %i, %i", mi->var.blue.offset, mi->var.blue.length, mi->var.red.msb_right);
-  ALOGV(" transp         : %i, %i, %i", mi->var.transp.offset, mi->var.transp.length, mi->var.red.msb_right);
+  ALOGI(" red            : %i, %i, %i", 
+    mi->var.red.offset, mi->var.red.length, mi->var.red.msb_right);
+  ALOGI(" green          : %i, %i, %i", 
+    mi->var.green.offset, mi->var.green.length, mi->var.red.msb_right);
+  ALOGI(" blue           : %i, %i, %i", 
+    mi->var.blue.offset, mi->var.blue.length, mi->var.red.msb_right);
+  ALOGV(" transp         : %i, %i, %i", 
+    mi->var.transp.offset, mi->var.transp.length, mi->var.red.msb_right);
   ALOGV(" nonstd         : %i", mi->var.nonstd);
   ALOGV(" activate       : %i", mi->var.activate);
   ALOGV(" height         : %i", mi->var.height);
@@ -284,7 +290,8 @@ void FBDR_dump(FBDR_INTERNALP mi) {
 /*
  * Function : libaroma init fb driver
  */
-byte __universal_fb_driver_init(LIBAROMA_FBP me) {
-  return FBDR_init(me);
+byte __linux_fb_driver_init(LIBAROMA_FBP me) {
+  return LINUXFBDR_init(me);
 }
-#endif // __AROMA_CORE_UNIVERSAL_FRAMEBUFFER_DRIVER__ 
+
+#endif /* __libaroma_linux_fb_driver_c__ */

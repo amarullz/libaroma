@@ -14,40 +14,29 @@
  * limitations under the License.
  *______________________________________________________________________________
  *
- * Filename    : sys.h
- * Description : libaroma system headers
+ * Filename    : config_features.h
+ * Description : features configuration - PLEASE USE CFLAGS
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 19/01/15 - Author(s): Ahmad Amarullah
+ * + 26/01/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_h__
-  #error "Include <aroma.h> instead."
+#ifndef __libaroma_aroma_c__
+  #error "Should be inside aroma.c."
 #endif
-#ifndef __libaroma_sys_h__
-#define __libaroma_sys_h__
+#ifndef __libaroma_config_features_h__
+#define __libaroma_config_features_h__
 
-/* main */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <math.h>
-#include <signal.h>
-#include <dirent.h>
-#include <limits.h>
-#include <time.h>
+/* Libaroma feature configs - Please use CFLAGS */
+/* ============================================
+#define LIBAROMA_CONFIG_SHMEMFB           1
+#define LIBAROMA_CONFIG_NOJPEG            1
+#define LIBAROMA_CONFIG_NOFONT_SUBPIXEL   1
+#define LIBAROMA_CONFIG_DEBUG             5
+#define LIBAROMA_CONFIG_DEBUG_FILE        2
+#define LIBAROMA_CONFIG_DEBUG_MEMORY      1
+#define LIBAROMA_CONFIG_COMPILER_MESSAGE  1
+#define LIBAROMA_CONFIG_OPENMP            1
+*/
 
-/* thread & fork */
-#include <fcntl.h>
-#include <pthread.h>
-
-/* sys */
-#include <sys/time.h>
-#include <sys/poll.h>
-#include <sys/stat.h>
-#include <sys/ioctl.h>
-#include <sys/wait.h>
-#include <sys/mman.h>
-
-#endif /* __libaroma_sys_h__ */
+#endif /* __libaroma_config_features_h__ */

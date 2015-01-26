@@ -57,10 +57,8 @@ typedef struct {
  *
  */
 void QNXGF_release(LIBAROMA_FBP me);
-void QNXGF_refresh(LIBAROMA_FBP me, int x, int y, int w, int h);
 void QNXGF_dump(QNXGF_INTERNALP mi);
-void QNXGF_sync(LIBAROMA_FBP me, wordp src, int x, int y, int w, int h);
-byte QNXGF_snapshoot(LIBAROMA_FBP me, wordp dst);
+byte QNXGF_sync(LIBAROMA_FBP me, wordp src, int x, int y, int w, int h);
 
 /*
  * Function : Framebuffer Driver Initializer
@@ -82,7 +80,6 @@ byte QNXGF_init(LIBAROMA_FBP me) {
   me->internal = (voidp) mi;
   /* Set Release and Refresh Callback */
   me->release = &QNXGF_release;
-  me->refresh = &QNXGF_refresh;
   
   /*****************************************************************************
    *
@@ -166,7 +163,7 @@ byte QNXGF_init(LIBAROMA_FBP me) {
   me->sz      = me->w * me->h;                    /* Width x Height */
   /* Set Sync Callbacks */
   me->sync      = &QNXGF_sync;
-  me->snapshoot = &QNXGF_snapshoot;
+  me->snapshoot = NULL;
   /* DUMP INFO */
   QNXGF_dump(mi);
   /* Fixed DPI */
@@ -206,14 +203,6 @@ void QNXGF_release(LIBAROMA_FBP me) {
 }
 
 /*
- * Function : Refresh Display Framebuffer (Same For All Colorspace)
- *
- */
-void QNXGF_refresh(LIBAROMA_FBP me, int x, int y, int w, int h) {
-  /* none */
-}
-
-/*
  * Function : Dump Framebuffer Informations
  *
  */
@@ -228,10 +217,10 @@ void QNXGF_dump(QNXGF_INTERNALP mi) {
  * Function : Save display canvas into framebuffer
  *
  */
-void QNXGF_sync(LIBAROMA_FBP me, wordp src, int x, int y, int w, int h) {
+byte QNXGF_sync(LIBAROMA_FBP me, wordp src, int x, int y, int w, int h) {
   /* Is Framebuffer Initialized ? */
   if (me == NULL) {
-    return;
+    return 0;
   }
   
   /* Get Internal Data */
@@ -266,11 +255,7 @@ void QNXGF_sync(LIBAROMA_FBP me, wordp src, int x, int y, int w, int h) {
   
   gf_draw_flush(mi->context);
   gf_draw_end(mi->context);
-}
-
-/* Dummy Snapshoot */
-byte QNXGF_snapshoot(LIBAROMA_FBP me, wordp dst) {
-  return 0;
+  return 1;
 }
 
 /*

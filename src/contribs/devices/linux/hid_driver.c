@@ -1,5 +1,5 @@
-/*
- * Copyright (C) 2011-2013 Ahmad Amarullah ( http://amarullz.com/ )
+/********************************************************************[libaroma]*
+ * Copyright (C) 2011-2015 Ahmad Amarullah (http://amarullz.com/)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,472 +12,463 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *______________________________________________________________________________
+ *
+ * Filename    : hid_driver.c
+ * Description : linux input hid driver
+ *
+ * + This is part of libaroma, an embedded ui toolkit.
+ * + 26/01/15 - Author(s): Ahmad Amarullah
+ *
  */
+#ifndef __libaroma_linux_hid_driver_c__
+#define __libaroma_linux_hid_driver_c__
 
 /*
  * UNIVERSAL DEVICE - INPUT DRIVER
- *   Using Linux Input Device for Android
- *   Prefix : INDR_
- *
+ *   Using Linux Input Device for Android & Linux
+ *   Prefix : LINUXHIDRV_
  */
-#ifndef __AROMA_CORE_UNIVERSAL_INPUT_DRIVER__
-#define __AROMA_CORE_UNIVERSAL_INPUT_DRIVER__
 
 /*
- * Headers Includes
- *
+ * headers
  */
 #include <linux/input.h>
-#include <aroma_core.h>
+#include <aroma.h>
 
 /*
- * Defines & Macros
- *
+ * defines & macros
  */
-#define INDR_DEVPATH                  "/dev/input"
-#define INDR_MAXDEV                   0xf
-#define INDR_SIZEOF_BIT_ARRAY(bits)   ((bits + 7) / 8)
-#define INDR_TEST_BIT(bit, array)     (array[bit/8] & (1<<(bit%8)))
+#define LINUXHIDRV_DEVPATH "/dev/input"
+#define LINUXHIDRV_BOARD_VKEY_PATH "/sys/board_properties/virtualkeys."
+#define LINUXHIDRV_MAXDEV 0xf
+#define LINUXHIDRV_SIZEOF_BIT_ARRAY(bits) ((bits + 7) / 8)
+#define LINUXHIDRV_TEST_BIT(bit, array) (array[bit/8] & (1<<(bit%8)))
 
 /*
- * Enum : Device Type
- *
+ * enum : device type
  */
 enum {
-  INDR_DEVCLASS_KEYBOARD    = 0x01,
-  INDR_DEVCLASS_TOUCH       = 0x02,
-  INDR_DEVCLASS_MULTITOUCH  = 0x04
+  LINUXHIDRV_DEVCLASS_KEYBOARD    = 0x01,
+  LINUXHIDRV_DEVCLASS_TOUCH       = 0x02,
+  LINUXHIDRV_DEVCLASS_MULTITOUCH  = 0x04
 };
 
 /*
- * Enum : Position State
- *
+ * enum : position state
  */
 enum {
-  INDR_POS_ST_SYNC_X    = 0x01,
-  INDR_POS_ST_SYNC_Y    = 0x02,
-  INDR_POS_ST_DOWNED    = 0x04,
-  INDR_POS_ST_LASTSYNC  = 0x08,
-  INDR_POS_ST_RLS_NEXT  = 0x10,
-  INDR_POS_ST_IS_VKEY   = 0x20
+  LINUXHIDRV_POS_ST_SYNC_X    = 0x01,
+  LINUXHIDRV_POS_ST_SYNC_Y    = 0x02,
+  LINUXHIDRV_POS_ST_DOWNED    = 0x04,
+  LINUXHIDRV_POS_ST_LASTSYNC  = 0x08,
+  LINUXHIDRV_POS_ST_RLS_NEXT  = 0x10,
+  LINUXHIDRV_POS_ST_IS_VKEY   = 0x20
 };
 
 /*
- * Structure : Position
- *
+ * structure : position
  */
 typedef struct {
-  int     x;                /* Last Raw X Event */
-  int     y;                /* Last Raw Y Event */
-  int     tx;               /* Translated X Position */
-  int     ty;               /* Translated Y Position */
-  int     vk;               /* Virtual Key Code ID */
-  byte    state;            /* State */
-  struct  input_absinfo xi; /* Calibrate X */
-  struct  input_absinfo yi; /* Calibrate Y */
-} INDR_POS, *INDR_POSP;
+  int x;                    /* last raw x event */
+  int y;                    /* last raw y event */
+  int tx;                   /* translated x position */
+  int ty;                   /* translated y position */
+  int vk;                   /* virtual key code id */
+  byte state;               /* state */
+  struct input_absinfo xi;  /* calibrate x */
+  struct input_absinfo yi;  /* calibrate y */
+} LINUXHIDRV_POS, *LINUXHIDRV_POSP;
 
 /*
- * Structure : Virtual Keys Data
- *
+ * structure : virtual keys data
  */
 typedef struct {
-  int scan;                 /* Scan Code */
+  int scan;                 /* scan code */
   int x;                    /* x */
   int y;                    /* y */
   int w;                    /* width */
   int h;                    /* height */
-} INDR_VK, *INDR_VKP;
+} LINUXHIDRV_VK, *LINUXHIDRV_VKP;
 
 /*
- * Structure : Device Data
- *
+ * structure : device data
  */
 typedef struct {
   /* Device Into */
-  int       id;              /* device id */
-  byte      devclass;        /* Device Class */
-  char      file[10];        /* Input Device Filename */
-  char      name[64];        /* device name */
-  byte      down;            /* pressed */
-  int       vkn;             /* Virtual Key Count */
-  INDR_VKP  vks;             /* Virtual Keys */
-  INDR_POS  p;               /* ABS Position */
-} INDR_DEVICE, *INDR_DEVICEP;
+  int id;                   /* device id */
+  byte devclass;            /* device class */
+  char file[10];            /* input device filename */
+  char name[64];            /* device name */
+  byte down;                /* pressed */
+  int vkn;                  /* virtual key count */
+  LINUXHIDRV_VKP  vks;      /* virtual keys */
+  LINUXHIDRV_POS  p;        /* abs position */
+} LINUXHIDRV_DEVICE, *LINUXHIDRV_DEVICEP;
 
 /*
- * Structure : Internal Driver Data
- *
+ * structure : internal driver data
  */
 typedef struct {
-  int           n;                /* Devices Count */
-  struct pollfd fds[INDR_MAXDEV]; /* Devices Pool FD */
-  INDR_DEVICE   dev[INDR_MAXDEV]; /* Devices Data */
-  
-  /* Configurations */
-  byte          touch_swap_xy;    /* Swap X with Y */
-  byte          touch_flip_x;     /* X was Flipped */
-  byte          touch_flip_y;     /* Y was Flipped */
-} INDR_INTERNAL,
-*INDR_INTERNALP;
+  int n; /* number of devices*/
+  /* pool */
+  struct pollfd fds[LINUXHIDRV_MAXDEV];
+  /* device data */
+  LINUXHIDRV_DEVICE   dev[LINUXHIDRV_MAXDEV]; /* Devices Data */
+  /* configurations */
+  byte touch_swap_xy;   /* swap x with y */
+  byte touch_flip_x;    /* x was flipped */
+  byte touch_flip_y;    /* y was flipped */
+} LINUXHIDRV_INTERNAL, *LINUXHIDRV_INTERNALP;
 
 /*
- * Include Input Translator
- *
+ * input translator
  */
-#include "input_translate/translate_keyboard.c" /* Keyboard */
-#include "input_translate/translate_touch.c" /* Touch */
+#include "input_translate/translate_keyboard.c" /* keyboard */
+#include "input_translate/translate_touch.c" /* touch */
 
 /*
- * Forward Functions
- *
+ * forward functions
  */
-void INDR_release(LIBAROMA_HIDP me);
-byte INDR_getinput(LIBAROMA_HIDP me, LIBAROMA_HID_EVENTP dest_ev);
-byte INDR_init_device(INDR_INTERNALP mi, int fd, INDR_DEVICEP dev);
+void LINUXHIDRV_release(
+    LIBAROMA_HIDP me);
+byte LINUXHIDRV_getinput(
+    LIBAROMA_HIDP me,
+    LIBAROMA_HID_EVENTP dest_ev);
+byte LINUXHIDRV_init_device(
+    LINUXHIDRV_INTERNALP mi,
+    int fd,
+    LINUXHIDRV_DEVICEP dev);
 
 /*
- * Function : Check Blacklisted Devices
- *
+ * function : check blacklisted devices
  */
-byte INDR_blacklist(char * name) {
-  /* Not Blacklisted */
+byte LINUXHIDRV_blacklist(
+    char * name) {
+  /* no blacklisted */
   return 0;
 }
 
 /*
- * Function : Dump Device Info
- *
+ * function : dump device info
  */
-void INDR_dumpdev(INDR_DEVICEP dev) {
-  /* Print Logs */
-  ALOGI("INDR Input Device: %s (%s) - Class : %x", dev->name, dev->file, dev->devclass);
+void LINUXHIDRV_dumpdev(
+    LINUXHIDRV_DEVICEP dev) {
+  /* print logs */
+  ALOGI("INDR Input Device: %s (%s) - Class : %x",
+    dev->name, dev->file, dev->devclass
+  );
   ALOGV("  VKN : %d, CALIB : (%d,%d,%d,%d)", dev->vkn,
-        dev->p.xi.minimum, dev->p.xi.maximum, dev->p.yi.minimum, dev->p.yi.maximum
-       );
+    dev->p.xi.minimum,
+    dev->p.xi.maximum,
+    dev->p.yi.minimum,
+    dev->p.yi.maximum
+  );
 }
 
 /*
- * Function : Init Input Device
- *
+ * function : init input device
  */
-byte INDR_init(LIBAROMA_HIDP me) {
-  /* Allocating Internal Data */
-  INDR_INTERNALP mi = (INDR_INTERNALP) malloc(sizeof(INDR_INTERNAL));
-  /* Cleanup */
-  memset(mi, 0, sizeof(INDR_INTERNAL));
-  /* Set Internal Address */
+byte LINUXHIDRV_init(
+    LIBAROMA_HIDP me) {
+  /* allocating internal data */
+  LINUXHIDRV_INTERNALP mi = (LINUXHIDRV_INTERNALP) malloc(sizeof(LINUXHIDRV_INTERNAL));
+  /* cleanup */
+  memset(mi, 0, sizeof(LINUXHIDRV_INTERNAL));
+  /* set internal address */
   me->internal = (voidp) mi;
-  /* Set Initial Value */
+  /* set initial value */
   mi->n = 0;
-  /* Open Input Device Directory */
-  DIR * dir = opendir(INDR_DEVPATH);
-  
+  /* open input device directory */
+  DIR * dir = opendir(LINUXHIDRV_DEVPATH);
   if (dir != 0) {
-    struct dirent * de; /* DIRENT */
-    int             fd; /* Temporary Device FD */
+    struct dirent * de; /* dirent */
+    int fd; /* temporary device fd */
     
-    /* Read Input Device Directory */
+    /* read input device directory */
     while ((de = readdir(dir))) {
-      /* Continue if filename not contain "event" */
+      /* continue if filename not contain "event" */
       if (strncmp(de->d_name, "event", 5)) {
         continue;
       }
-      
-      /* Open File Handler */
+      /* open file handler */
       fd = openat(dirfd(dir), de->d_name, O_RDONLY);
-      
-      /* Continue if openat failed */
+      /* continue if openat failed */
       if (fd < 0) {
         continue;
       }
-      
-      /* Cleanup Device Data */
-      memset(&mi->dev[mi->n], 0, sizeof(INDR_DEVICE));
-      /* Set Device ID */
-      mi->dev[mi->n].id     = mi->n;
-      /* Set Device Filename */
+      /* cleanup device data */
+      memset(&mi->dev[mi->n], 0, sizeof(LINUXHIDRV_DEVICE));
+      /* set device id */
+      mi->dev[mi->n].id = mi->n;
+      /* set device filename */
       snprintf(mi->dev[mi->n].file, 10, "%s", de->d_name);
       
-      /* Load virtualkeys if there are any */
-      if (INDR_init_device(mi, fd, &mi->dev[mi->n])) {
-        /* Dump Device Information */
-        INDR_dumpdev(&mi->dev[mi->n]);
-        /* Set Pooling Data and Monitor it */
+      /* load virtualkeys if there are any */
+      if (LINUXHIDRV_init_device(mi, fd, &mi->dev[mi->n])) {
+        /* dump device information */
+        LINUXHIDRV_dumpdev(&mi->dev[mi->n]);
+        /* set pooling data and monitor it */
         mi->fds[mi->n].fd     = fd;
         mi->fds[mi->n].events = POLLIN;
-        /* Increment the polling count */
+        /* increment the polling count */
         mi->n++;
       }
       else {
-        /* Dump Device Information */
-        INDR_dumpdev(&mi->dev[mi->n]);
-        /* Cleanup Device Data */
-        memset(&mi->dev[mi->n], 0, sizeof(INDR_DEVICE));
-        /* Don't Monitor This Device */
+        /* dump device information */
+        LINUXHIDRV_dumpdev(&mi->dev[mi->n]);
+        /* cleanup device data */
+        memset(&mi->dev[mi->n], 0, sizeof(LINUXHIDRV_DEVICE));
+        /* don't monitor this device */
         close(fd);
-        /* Ignore It */
+        /* ignore it */
       }
-      
-      /* Break when maximum device */
-      if (mi->n == INDR_MAXDEV) {
+      /* break when maximum device */
+      if (mi->n == LINUXHIDRV_MAXDEV) {
         break;
       }
     }
-    
-    /* Close Dir */
+    /* close dir */
     closedir(dir);
     
-    /* Input Device Not Found */
+    /* input device not found */
     if (mi->n == 0) {
-      /* Free Internal Data */
+      /* free internal data */
       free(mi);
       ALOGE("INDR ERROR: Input Device Not Found...");
-      /* Error */
+      /* error */
       return 0;
     }
     
-    /* Set Driver Callbacks */
-    me->release    = &INDR_release;
-    me->getinput   = &INDR_getinput;
+    /* set driver callbacks */
+    me->release    = &LINUXHIDRV_release;
+    me->getinput   = &LINUXHIDRV_getinput;
     /* ok */
     return 1;
   }
   
-  /* Free Internal Data */
+  /* free internal data */
   free(mi);
   ALOGE("INDR ERROR: Can't access /dev/input...");
-  /* Error */
+  /* error */
   return 0;
 }
 
 /*
- * Function : Release Input Driver Instance
- *
+ * function : release input driver instance
  */
-void INDR_release(LIBAROMA_HIDP me) {
-  /* Is Input Instance Initialized ? */
+void LINUXHIDRV_release(
+    LIBAROMA_HIDP me) {
+  /* is input instance initialized ? */
   if (me == NULL) {
     return;
   }
-  
-  /* Get Internal Data */
-  INDR_INTERNALP mi = (INDR_INTERNALP)
+  /* get internal data */
+  LINUXHIDRV_INTERNALP mi = (LINUXHIDRV_INTERNALP)
                       me->internal;
-                      
-  /* Release Devices Data */
+  /* release devices data */
   while (mi->n-- > 0) {
-    /* Release Virtual Keys */
+    /* release virtual keys */
     if (mi->dev[mi->n].vkn) {
       free(mi->dev[mi->n].vks);
       mi->dev[mi->n].vkn = 0;
     }
-    
-    /* Close FD */
+    /* close fd */
     close(mi->fds[mi->n].fd);
   }
-  
-  /* Free Internal Data */
+  /* free internal data */
   free(me->internal);
   me->internal = NULL;
 }
 
 /*
- * Function : Returns empty tokens
- *
+ * function : returns empty tokens
  */
-static char * INDR_strtok_r(
-  char * str, const char * delim, char ** save_str) {
+static char * LINUXHIDRV_strtok_r(
+    char * str,
+    const char * delim,
+    char ** save_str){
   if (!str) {
     if (!*save_str) {
       return NULL;
     }
-    
     str = (*save_str) + 1;
   }
-  
   *save_str = strpbrk(str, delim);
-  
   if (*save_str) {
     **save_str = '\0';
   }
-  
   return str;
 }
 
-
 /*
- * Function : Check Non Zero
- *
+ * function : check non zero
  */
-static byte INDR_nonzero(const bytep array_s,
-                         dword startIndex, dword endIndex) {
+static byte LINUXHIDRV_nonzero(
+    const bytep array_s,
+    dword startIndex,
+    dword endIndex) {
   const bytep end   = array_s + endIndex;
-  bytep array = array_s + startIndex;
-  
+  bytep array = array_s + startIndex;  
   while (array != end) {
     if (*(array++) != 0) {
       return 1;
     }
   }
-  
   return 0;
 }
 
 /*
- * Function : Get Device Type
- *
+ * function : get device type
  */
-byte INDR_getdevclass(int fd) {
-  /* Figure out the kinds of events the device reports. */
+byte LINUXHIDRV_getdevclass(
+    int fd) {
+  /* figure out the kinds of events the device reports. */
   byte keyBitmask[(KEY_MAX + 1) / 8];
   byte absBitmask[(ABS_MAX + 1) / 8];
   ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keyBitmask)), keyBitmask);
   ioctl(fd, EVIOCGBIT(EV_ABS, sizeof(absBitmask)), absBitmask);
-  /* Reset Return Value */
+  
+  /* reset return value */
   byte ret = 0;
-  /* Check Keyboard */
+  
+  /* check keyboard */
   byte haveKeyboardKeys =
-    INDR_nonzero(keyBitmask, 0,
-                 INDR_SIZEOF_BIT_ARRAY(BTN_MISC)) ||
-    INDR_nonzero(keyBitmask,
-                 INDR_SIZEOF_BIT_ARRAY(KEY_OK),
-                 INDR_SIZEOF_BIT_ARRAY(KEY_MAX + 1));
-  /* Check Gamepad */
+    LINUXHIDRV_nonzero(keyBitmask, 0,
+                 LINUXHIDRV_SIZEOF_BIT_ARRAY(BTN_MISC)) ||
+    LINUXHIDRV_nonzero(keyBitmask,
+                 LINUXHIDRV_SIZEOF_BIT_ARRAY(KEY_OK),
+                 LINUXHIDRV_SIZEOF_BIT_ARRAY(KEY_MAX + 1));
+  
+  /* check gamepad */
   byte haveGamepadButtons =
-    INDR_nonzero(keyBitmask,
-                 INDR_SIZEOF_BIT_ARRAY(BTN_MISC),
-                 INDR_SIZEOF_BIT_ARRAY(BTN_MOUSE)) ||
-    INDR_nonzero(keyBitmask,
-                 INDR_SIZEOF_BIT_ARRAY(BTN_JOYSTICK),
-                 INDR_SIZEOF_BIT_ARRAY(BTN_DIGI));
+    LINUXHIDRV_nonzero(keyBitmask,
+                 LINUXHIDRV_SIZEOF_BIT_ARRAY(BTN_MISC),
+                 LINUXHIDRV_SIZEOF_BIT_ARRAY(BTN_MOUSE)) ||
+    LINUXHIDRV_nonzero(keyBitmask,
+                 LINUXHIDRV_SIZEOF_BIT_ARRAY(BTN_JOYSTICK),
+                 LINUXHIDRV_SIZEOF_BIT_ARRAY(BTN_DIGI));
                  
   if (haveKeyboardKeys) {
-    ret |= INDR_DEVCLASS_KEYBOARD;
+    ret |= LINUXHIDRV_DEVCLASS_KEYBOARD;
   }
   
-  /* Check Touch Screen */
-  if (INDR_TEST_BIT(ABS_MT_POSITION_X, absBitmask) &&
-      INDR_TEST_BIT(ABS_MT_POSITION_Y, absBitmask)) {
-    /* Multitouch */
-    if (INDR_TEST_BIT(BTN_TOUCH, keyBitmask) ||
+  /* check touch screen */
+  if (LINUXHIDRV_TEST_BIT(ABS_MT_POSITION_X, absBitmask) &&
+      LINUXHIDRV_TEST_BIT(ABS_MT_POSITION_Y, absBitmask)) {
+    /* multitouch */
+    if (LINUXHIDRV_TEST_BIT(BTN_TOUCH, keyBitmask) ||
         !haveGamepadButtons) {
-      ret |= INDR_DEVCLASS_TOUCH;
-      ret |= INDR_DEVCLASS_MULTITOUCH;
+      ret |= LINUXHIDRV_DEVCLASS_TOUCH;
+      ret |= LINUXHIDRV_DEVCLASS_MULTITOUCH;
     }
   }
-  else if (INDR_TEST_BIT(BTN_TOUCH, keyBitmask) &&
-           INDR_TEST_BIT(ABS_X, absBitmask) &&
-           INDR_TEST_BIT(ABS_Y, absBitmask)) {
-    /* Single Touch */
-    ret |= INDR_DEVCLASS_TOUCH;
+  else if (LINUXHIDRV_TEST_BIT(BTN_TOUCH, keyBitmask) &&
+           LINUXHIDRV_TEST_BIT(ABS_X, absBitmask) &&
+           LINUXHIDRV_TEST_BIT(ABS_Y, absBitmask)) {
+    /* single touch */
+    ret |= LINUXHIDRV_DEVCLASS_TOUCH;
   }
-  
   return ret;
 }
 
 /*
- * Function : Init Device
- *
+ * function : init device
  */
-byte INDR_init_device(INDR_INTERNALP mi, int fd, INDR_DEVICEP dev) {
-  /* Virtual Key Path */
-  char    vk_path[PATH_MAX] = "/sys/board_properties/virtualkeys.";
+byte LINUXHIDRV_init_device(
+    LINUXHIDRV_INTERNALP mi,
+    int fd,
+    LINUXHIDRV_DEVICEP dev) {
+  /* virtual key path */
+  char    vk_path[PATH_MAX] = LINUXHIDRV_BOARD_VKEY_PATH;
   char  * ts = NULL;
   char    vks[2048];
-  /* Get Device Name */
-  ssize_t len = ioctl(fd, EVIOCGNAME(sizeof(dev->name)), dev->name);
   
+  /* get device name */
+  ssize_t len = ioctl(fd, EVIOCGNAME(sizeof(dev->name)), dev->name);
   if (len <= 0) {
     ALOGW("INDR ERROR: EVIOCGNAME for %d", dev->id);
     return 0;
   }
   
-  /* Blacklisted Devices */
-  if (INDR_blacklist(dev->name)) {
+  /* blacklisted devices */
+  if (LINUXHIDRV_blacklist(dev->name)) {
     return 0;
   }
   
-  /* Get device class */
-  dev->devclass = INDR_getdevclass(fd);
+  /* get device class */
+  dev->devclass = LINUXHIDRV_getdevclass(fd);
   
-  /* If Class is none, Ignore it */
+  /* if class is none, ignore it */
   if (!dev->devclass) {
     return 0;
   }
   
-  /* Reset All Values */
-  memset(&dev->p, 0, sizeof(INDR_POS));
+  /* reset all values */
+  memset(&dev->p, 0, sizeof(LINUXHIDRV_POS));
   dev->p.tx       = -1;
   dev->p.ty       = -1;
   dev->p.vk       = -1;
   dev->vkn        = 0;
   dev->down       = 0;
   
-  /* If Touchscreen, Get Calibration data & VirtualKeys */
-  if ((dev->devclass & INDR_DEVCLASS_TOUCH)) {
-    /* Calibration */
-    if (dev->devclass & INDR_DEVCLASS_MULTITOUCH) {
-      /* Get Multitouch Calibrations Data */
+  /* if touchscreen, get calibration data & virtualkeys */
+  if ((dev->devclass & LINUXHIDRV_DEVCLASS_TOUCH)) {
+    /* calibration */
+    if (dev->devclass & LINUXHIDRV_DEVCLASS_MULTITOUCH) {
+      /* get multitouch calibrations data */
       ioctl(fd, EVIOCGABS(ABS_MT_POSITION_X), &dev->p.xi);
       ioctl(fd, EVIOCGABS(ABS_MT_POSITION_Y), &dev->p.yi);
     }
     else {
-      /* Get Singletouch Calibrations Data */
+      /* get singletouch calibrations data */
       ioctl(fd, EVIOCGABS(ABS_X), &dev->p.xi);
       ioctl(fd, EVIOCGABS(ABS_Y), &dev->p.yi);
     }
     
     /* virtualkeys.{device_name} */
     strcat(vk_path, dev->name);
-    /* Some devices split the keys from the touchscreen */
+    /* some devices split the keys from the touchscreen */
     int vk_fd = open(vk_path, O_RDONLY);
     
     if (vk_fd >= 0) {
-      /* Read Contents */
+      /* read contents */
       len = read(vk_fd, vks, sizeof(vks) - 1);
       close(vk_fd);
       
-      /* Return False on Failed */
+      /* return false on failed */
       if (len > 0) {
-        /* Add string break */
+        /* add string break */
         vks[len] = 0;
-        
-        /* Parse a line like:
-         * keytype:keycode:centerx:centery:width:height:keytype2:keycode2:centerx2:...
+        /* parse a line like:
+         * keytype:keycode:centerx:centery:width:height:keytype2:...
          */
         for (ts = vks, dev->vkn = 1; *ts; ++ts) {
           if (*ts == ':') {
             dev->vkn++;
           }
         }
-        
         dev->vkn /= 6;
-        
         if (dev->vkn <= 0) {
           dev->vkn = 0;
         }
       }
     }
     
-    /* Allocate Virtualkeys Count */
+    /* allocate virtualkeys count */
     if (dev->vkn > 0) {
-      dev->vks = malloc(sizeof(INDR_VK) * dev->vkn);
+      dev->vks = malloc(sizeof(LINUXHIDRV_VK) * dev->vkn);
       int i;
-      
       for (i = 0; i < dev->vkn; i++) {
         char * token[6];
         int j;
-        
         for (j = 0; j < 6; j++) {
-          token[j] = INDR_strtok_r((i || j) ? NULL : vks, ":", &ts);
+          token[j] = LINUXHIDRV_strtok_r((i || j) ? NULL : vks, ":", &ts);
         }
-        
         if (strcmp(token[0], "0x01") != 0) {
           continue;
         }
-        
-        /* Save It */
+        /* save it */
         dev->vks[i].scan  = strtol(token[1], NULL, 0);
         dev->vks[i].x     = strtol(token[2], NULL, 0);
         dev->vks[i].y     = strtol(token[3], NULL, 0);
@@ -496,63 +487,59 @@ byte INDR_init_device(INDR_INTERNALP mi, int fd, INDR_DEVICEP dev) {
     }
   }
   
-  /* OK */
+  /* ok */
   return 1;
 }
 
 /*
- * Function : Translate RAW data
- *
+ * function : translate raw data
  */
-byte INDR_translate(LIBAROMA_HIDP me, INDR_DEVICEP dev,
+byte LINUXHIDRV_translate(LIBAROMA_HIDP me, LINUXHIDRV_DEVICEP dev,
                     LIBAROMA_HID_EVENTP dest_ev, struct input_event * ev) {
-  if (dev->devclass & INDR_DEVCLASS_TOUCH) {
-    /* It's Touch Device - input_translate/translate_touch.c */
-    return INDR_translate_touch(me, dev, dest_ev, ev);
+  if (dev->devclass & LINUXHIDRV_DEVCLASS_TOUCH) {
+    /* it's touch device - input_translate/translate_touch.c */
+    return LINUXHIDRV_translate_touch(me, dev, dest_ev, ev);
   }
-  else if (dev->devclass & INDR_DEVCLASS_KEYBOARD) {
-    /* It's Key Device - input_translate/translate_key.c */
-    return INDR_translate_keyboard(me, dev, dest_ev, ev);
+  else if (dev->devclass & LINUXHIDRV_DEVCLASS_KEYBOARD) {
+    /* it's key device - input_translate/translate_key.c */
+    return LINUXHIDRV_translate_keyboard(me, dev, dest_ev, ev);
   }
-  
-  /* Don't Process It */
+  /* don't process it */
   return LIBAROMA_HID_EV_RET_NONE;
 }
 
 /*
- * Function : Get Input
- *
+ * function : get input callback
  */
-byte INDR_getinput(LIBAROMA_HIDP me, LIBAROMA_HID_EVENTP dest_ev) {
-  /* Get Internal Data */
-  INDR_INTERNALP mi = (INDR_INTERNALP)
-                      me->internal;
-                      
-  /* Polling Loop */
+byte LINUXHIDRV_getinput(
+    LIBAROMA_HIDP me,
+    LIBAROMA_HID_EVENTP dest_ev) {
+  /* get internal data */
+  LINUXHIDRV_INTERNALP mi = (LINUXHIDRV_INTERNALP) me->internal;
+
+  /* polling loop */
   do {
     int r = poll(mi->fds, mi->n, -1);
-    
     if (me->internal == NULL) {
-      /* If Released */
+      /* if released */
       break;
     }
     else if (r > 0) {
-      /* Events Loop */
+      /* events loop */
       int n;
-      
       for (n = 0; n < mi->n; n++) {
         if (mi->fds[n].revents & POLLIN) {
-          /* Read Data */
+          /* read data */
           struct input_event ev;
           r = read(mi->fds[n].fd, &ev, sizeof(ev));
-          
           if (r == sizeof(ev)) {
-            /* Translate It */
-            byte translate_ret = INDR_translate(me, &mi->dev[n], dest_ev, &ev);
+            /* translate it */
+            byte translate_ret =
+              LINUXHIDRV_translate(me, &mi->dev[n], dest_ev, &ev);
             
-            /* Check */
+            /* check */
             if (translate_ret != LIBAROMA_HID_EV_RET_NONE) {
-              /* Don't Process It */
+              /* don't process it */
               return translate_ret;
             }
           }
@@ -562,15 +549,16 @@ byte INDR_getinput(LIBAROMA_HIDP me, LIBAROMA_HID_EVENTP dest_ev) {
   }
   while (me->internal != NULL);
   
-  /* It was exit message */
-  ALOGV("INDR_getinput Input Driver Already Released");
+  /* it was exit message */
+  ALOGV("LINUXHIDRV_getinput Input Driver Already Released");
   return LIBAROMA_HID_EV_RET_EXIT;
 }
 
 /*
- * Function : libaroma init hid driver
+ * function : libaroma init hid driver
  */
-byte __universal_hid_driver_init(LIBAROMA_HIDP me) {
-  return INDR_init(me);
+byte __linux_hid_driver_init(LIBAROMA_HIDP me) {
+  return LINUXHIDRV_init(me);
 }
-#endif // __AROMA_CORE_UNIVERSAL_INPUT_DRIVER__
+
+#endif /* __libaroma_linux_hid_driver_c__ */

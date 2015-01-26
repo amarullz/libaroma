@@ -46,12 +46,10 @@ typedef struct _LIBAROMA_FB * LIBAROMA_FBP;
  */
 typedef void (*LIBAROMA_FBCB_RELEASE) \
   (LIBAROMA_FBP);
-typedef void (*LIBAROMA_FBCB_SYNC) \
+typedef byte (*LIBAROMA_FBCB_SYNC) \
   (LIBAROMA_FBP, wordp, int, int, int, int);
 typedef byte (*LIBAROMA_FBCB_SNAPSHOOT) \
   (LIBAROMA_FBP, wordp);
-typedef void (*LIBAROMA_FBCB_REFRESH) \
-  (LIBAROMA_FBP, int, int, int, int);
 typedef byte (*LIBAROMA_FBCB_CONFIG) \
   (LIBAROMA_FBP, const char *, const char *, dword);
 
@@ -69,7 +67,6 @@ struct _LIBAROMA_FB{
   
   /* callbacks */
   LIBAROMA_FBCB_RELEASE release;
-  LIBAROMA_FBCB_REFRESH refresh;
   LIBAROMA_FBCB_SYNC sync;
   LIBAROMA_FBCB_SNAPSHOOT snapshoot;
   LIBAROMA_FBCB_CONFIG config;
@@ -90,30 +87,11 @@ struct _LIBAROMA_FB{
 LIBAROMA_FBP libaroma_fb();
 
 /*
- * Function    : libaroma_fb_refresh
- * Return Value: byte
- * Descriptions: refresh display
- */
-byte libaroma_fb_refresh();
-
-/*
  * Function    : libaroma_fb_sync
  * Return Value: byte
  * Descriptions: sync framebuffer
  */
-byte libaroma_fb_sync(
-    byte refresh);
-
-/*
- * Function    : libaroma_fb_refresh_area
- * Return Value: byte
- * Descriptions: refresh display area
- */
-byte libaroma_fb_refresh_area(
-    int x,
-    int y,
-    int w,
-    int h);
+byte libaroma_fb_sync();
 
 /*
  * Function    : libaroma_fb_sync_area
@@ -121,7 +99,6 @@ byte libaroma_fb_refresh_area(
  * Descriptions: sync framebuffer area
  */
 byte libaroma_fb_sync_area(
-  byte refresh,
   int x,
   int y,
   int w,
@@ -189,14 +166,10 @@ byte libaroma_fb_snapshoot();
 LIBAROMA_CANVASP libaroma_fb_snapshoot_canvas();
 
 /* sync & refresh aliases */
-#define libaroma_sync(r) \
-    libaroma_fb_sync(r)
-#define libaroma_sync_ex(r,x,y,w,h) \
-    libaroma_fb_sync_area(r,x,y,w,h)
-#define libaroma_refresh() \
-    libaroma_fb_refresh()
-#define libaroma_refresh_ex(x,y,w,h) \
-    libaroma_fb_refresh_area(x,y,w,h)
+#define libaroma_sync() \
+    libaroma_fb_sync()
+#define libaroma_sync_ex(x,y,w,h) \
+    libaroma_fb_sync_area(x,y,w,h)
 
 /* fb info shortcuts */
 #define _LIBAROMA_FB_VALUE(X,ifnull) (libaroma_fb()?(libaroma_fb()->X):ifnull)
