@@ -94,6 +94,11 @@ byte libaroma_start(
     return 0;
   }
   
+  if (!libaroma_wm_init()){
+    ALOGE("libaroma_start cannot start window manager...");
+    return 0;
+  }
+  
   ALOGI("___________________________________________________");
   ALOGI(" ");
   return 1;
@@ -109,6 +114,7 @@ byte libaroma_end() {
   ALOGI(" ");
   
   /* Release Engines */
+  libaroma_wm_release();
   libaroma_timer_release();
   libaroma_lang_release();
   libaroma_msg_release();
