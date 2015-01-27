@@ -63,9 +63,9 @@ byte libaroma_draw_scale_nearest(
   if (src->alpha == NULL) {
     if (src->hicolor != NULL) {
       for (i = 0; i < dh; i++) {
-        y2       = ((i * y_ratio) >> 16);
-        z       = (y2 + sy) * src->l + sx;
-        v       = (i + dy) * dst->l + dx;
+        y2 = ((i * y_ratio) >> 16);
+        z = (y2 + sy) * src->l + sx;
+        v = (i + dy) * dst->l + dx;
         wordp t = dst->data + v;
         wordp p = src->data + z;
         bytep h = src->hicolor + z;
@@ -82,8 +82,8 @@ byte libaroma_draw_scale_nearest(
     }
     else {
       for (i = 0; i < dh; i++) {
-        y2       = ((i * y_ratio) >> 16);
-        v       = (i + dy) * dst->l + dx;
+        y2 = ((i * y_ratio) >> 16);
+        v = (i + dy) * dst->l + dx;
         wordp t = dst->data + v;
         wordp p = src->data + (y2 + sy) * src->l + sx;
         int rat = 0;
@@ -101,9 +101,9 @@ byte libaroma_draw_scale_nearest(
   else {
     if (src->hicolor != NULL) {
       for (i = 0; i < dh; i++) {
-        y2      = ((i * y_ratio) >> 16);
-        z       = (y2 + sy) * src->l + sx;
-        v       = (i + dy) * dst->l + dx;
+        y2 = ((i * y_ratio) >> 16);
+        z = (y2 + sy) * src->l + sx;
+        v = (i + dy) * dst->l + dx;
         wordp t = dst->data + v;
         wordp p = src->data + z ;
         bytep h = src->hicolor + z;
@@ -111,7 +111,10 @@ byte libaroma_draw_scale_nearest(
         int rat = 0;
         for (j = 0; j < dw; j++) {
           x2   = (rat >> 16);
-          word merge = libaroma_color_merge(p[x2], h[x2]);
+          word merge = libaroma_dither(
+            dx+j, dy+i,
+            libaroma_color_merge(p[x2], h[x2])
+          );
           if (dst->alpha) {
             *t = libaroma_alpha(
               libaroma_alpha(merge, *t, dst->alpha[v + j]), merge, a[x2]);
@@ -127,19 +130,19 @@ byte libaroma_draw_scale_nearest(
     }
     else {
       for (i = 0; i < dh; i++) {
-        y2      = ((i * y_ratio) >> 16);
-        z       = (y2 + sy) * src->l + sx;
-        v       = (i + dy) * dst->l + dx;
+        y2 = ((i * y_ratio) >> 16);
+        z = (y2 + sy) * src->l + sx;
+        v = (i + dy) * dst->l + dx;
         wordp t = dst->data + v;
         wordp p = src->data + z;
         bytep a = src->alpha + z;
         int rat = 0;
         for (j = 0; j < dw; j++) {
           x2   = (rat >> 16);
-          
           if (dst->alpha) {
             *t = libaroma_alpha(
-              libaroma_alpha(p[x2], *t, dst->alpha[v + j]), p[x2], a[x2]);
+                libaroma_alpha(p[x2], *t, dst->alpha[v + j]),
+              p[x2], a[x2]);
             dst->alpha[v + j] = min(dst->alpha[v + j] + a[x2], 0xff);
           }
           else {
@@ -183,9 +186,10 @@ byte libaroma_draw_scale_smooth(
   if (sh + sy >= src->h) {
     sh -= (sh + sy) - src->h;
   }
-  if ((dh < 2) || (dw < 2) || (sh < 2) || (sw < 2)) {
-    return libaroma_draw_scale_nearest(dst, src, dx, dy, dw, dh,
-      sx, sy, sw, sh);
+  if ((dh < 2) || (dw < 2)) {
+    /* Use Nearest */
+    return libaroma_draw_scale_nearest(
+      dst, src, dx, dy, dw, dh, sx, sy, sw, sh);
   }
   dword wStepFixed16b, hStepFixed16b, wCoef, hCoef, x, y;
   dword wc1, wc2, offsetX, offsetY, line1, line2, dline, p1, p2, p3, p4;
@@ -204,7 +208,7 @@ byte libaroma_draw_scale_smooth(
     hc1     = 128 - hc2;
     wCoef   = 0;
     line1   = (offsetY + sy) * src->l;
-    line2   = (offsetY + sy + 1) * src->l;
+    line2   = libaroma_draw_limit(offsetY+sy+1, sy+sh) * src->l;
     for (x = 0 ; x < (dword)dw ; x++) {
       int dst_pos  = dline + dx + x;
       if (dst_pos * 2 > dst->sz) {
@@ -214,10 +218,11 @@ byte libaroma_draw_scale_smooth(
       offsetX = (wCoef >> 16);
       wc2 = (wCoef >> 9) & 127;
       wc1 = 128 - wc2;
+      int sx1 = libaroma_draw_limit(sx+offsetX+1, sx+sw);
       p1 = line1 + offsetX + sx;
       p2 = line2 + offsetX + sx;
-      p3 = line1 + offsetX + sx + 1;
-      p4 = line2 + offsetX + sx + 1;
+      p3 = line1 + sx1;
+      p4 = line2 + sx1;
       if (p4 * 2 > (dword)src->sz) {
         break;
       }

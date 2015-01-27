@@ -102,7 +102,7 @@ LIBAROMA_STREAMP libaroma_stream_shmem(
   char nm[LIBAROMA_STREAM_URI_LENGTH];
   if (memname[0]=='@'){
     snprintf(nm, LIBAROMA_STREAM_URI_LENGTH,
-      "%s%s.mem", LIBAROMA_CONFIG_SHMEM_PREFIX, memname+1);
+      "%s%s", LIBAROMA_CONFIG_SHMEM_PREFIX, memname+1);
   }
   else{
     snprintf(nm, LIBAROMA_STREAM_URI_LENGTH,
@@ -314,7 +314,7 @@ LIBAROMA_SHMEMP libaroma_shmem(
   char nm[LIBAROMA_STREAM_URI_LENGTH];
   if (name[0]=='@'){
     snprintf(nm, LIBAROMA_STREAM_URI_LENGTH,
-      "%s%s.mem", LIBAROMA_CONFIG_SHMEM_PREFIX, name+1);
+      "%s%s", LIBAROMA_CONFIG_SHMEM_PREFIX, name+1);
   }
   else{
     snprintf(nm, LIBAROMA_STREAM_URI_LENGTH,

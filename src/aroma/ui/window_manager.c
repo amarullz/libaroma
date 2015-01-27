@@ -404,7 +404,7 @@ byte libaroma_wm_set_theme_stream(
     return 0;
   }
   /* check 9patch png from filename */
-  int png9pos = strlen(stream->uri)-7;
+  int png9pos = strlen(stream->uri)-6;
   byte png9p_flag = 0;
   if (png9pos>0){
     char * ext_uri = (char *) (stream->uri+png9pos);
@@ -417,7 +417,7 @@ byte libaroma_wm_set_theme_stream(
     return 0;
   }
   return libaroma_wm_set_theme(
-    name, cv, dpi, LIBAROMA_WM_FLAG_THEME_WMFREE|png9p_flag);
+    name, cv, LIBAROMA_WM_FLAG_THEME_WMFREE|png9p_flag, dpi);
 } /* End of libaroma_wm_set_theme_stream */
 
 /*

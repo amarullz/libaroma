@@ -158,7 +158,7 @@ LIBAROMA_CANVASP libaroma_canvas_new_ex(
     /* copy shmem name */
     if (shmemname[0]=='@'){
       snprintf(nm, LIBAROMA_STREAM_URI_LENGTH,
-        "%s%s.mem", LIBAROMA_CONFIG_SHMEM_PREFIX, shmemname+1);
+        "%s%s", LIBAROMA_CONFIG_SHMEM_PREFIX, shmemname+1);
     }
     else{
       snprintf(nm, LIBAROMA_STREAM_URI_LENGTH,

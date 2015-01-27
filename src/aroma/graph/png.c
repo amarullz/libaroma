@@ -344,6 +344,7 @@ byte libaroma_png9p(
     v->pad.top--;
     v->pad.bottom--;
   }
+  
   return 1;
 } /* End of libaroma_png9p */
 
@@ -373,7 +374,7 @@ byte libaroma_png9p_draw(
   }
   
   LIBAROMA_PNG9 v;
-  if (!libaroma_png9p(src, &v, padding!=NULL)) {
+  if (!libaroma_png9p(src, &v, (padding!=NULL)?1:0)) {
     ALOGW("libaroma_png9p_draw -> libaroma_png9p_draw ERROR");
     return 0;
   }
@@ -383,7 +384,7 @@ byte libaroma_png9p_draw(
     source_dp = libaroma_fb()->dpi;
   }
   
-  int dp_scale = (libaroma_fb()->dpi * 0xff) / source_dp;
+  int dp_scale = (libaroma_fb()->dpi * 0x100) / source_dp;
   
   /* fix */
   int maxW  = floor((dw - 2) / 2);

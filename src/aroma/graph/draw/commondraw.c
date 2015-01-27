@@ -35,10 +35,10 @@
 int libaroma_draw_limit(
     int x, int max) {
   if (x<0) {
-    return ((-x) % max) - 1;
+    return 0;
   }  
   if (x>=max) {
-    return (max) - (x % max) - 1;
+    return max-1;
   }
   return x;
 } /* End of libaroma_draw_limit */
