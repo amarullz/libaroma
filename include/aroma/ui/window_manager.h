@@ -196,6 +196,14 @@ byte libaroma_wm_draw_theme(
     LIBAROMA_PNG9_PADP padding);
 
 /*
+ * Function    : libaroma_wm_del_theme
+ * Return Value: byte
+ * Descriptions: delete theme item
+ */
+byte libaroma_wm_del_theme(char * name);
+#define libaroma_wm_delete_theme(n) libaroma_wm_del_theme(n)
+
+/*
  * Function    : libaroma_wm_set_color
  * Return Value: byte
  * Descriptions: set colorset
@@ -208,5 +216,13 @@ byte libaroma_wm_set_color(char * name, word color);
  * Descriptions: get colorset
  */
 word libaroma_wm_get_color(char * name);
+
+/*
+ * Function    : libaroma_wm_del_color
+ * Return Value: byte
+ * Descriptions: delete color item
+ */
+byte libaroma_wm_del_color(char * name);
+#define libaroma_wm_delete_color(n) libaroma_wm_del_color(n)
 
 #endif /* __libaroma_window_manager_h__ */

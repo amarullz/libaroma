@@ -431,6 +431,15 @@ LIBAROMA_WM_THEMEP libaroma_wm_get_theme(char * name){
 } /* End of libaroma_wm_get_theme */
 
 /*
+ * Function    : libaroma_wm_del_theme
+ * Return Value: byte
+ * Descriptions: delete theme item
+ */
+byte libaroma_wm_del_theme(char * name){
+  return libaroma_sarray_delete(_libaroma_wm->theme, name);
+} /* End of libaroma_wm_del_theme */
+
+/*
  * Function    : libaroma_wm_draw_theme
  * Return Value: byte
  * Descriptions: draw theme into canvas
@@ -514,5 +523,13 @@ word libaroma_wm_get_color(char * name) {
   return *color;
 } /* End of libaroma_wm_get_color */
 
+/*
+ * Function    : libaroma_wm_del_color
+ * Return Value: byte
+ * Descriptions: delete color item
+ */
+byte libaroma_wm_del_color(char * name){
+  return libaroma_sarray_delete(_libaroma_wm->color, name);
+} /* End of libaroma_wm_del_color */
 
 #endif /* __libaroma_window_manager_c__ */
