@@ -156,8 +156,14 @@ LIBAROMA_CANVASP libaroma_canvas_new_ex(
     bytep mem = NULL;
     
     /* copy shmem name */
-    snprintf(nm, LIBAROMA_STREAM_URI_LENGTH,
-      "/libaromashm-%s.canvas", shmemname);
+    if (shmemname[0]=='@'){
+      snprintf(nm, LIBAROMA_STREAM_URI_LENGTH,
+        "%s%s.mem", LIBAROMA_CONFIG_SHMEM_PREFIX, shmemname+1);
+    }
+    else{
+      snprintf(nm, LIBAROMA_STREAM_URI_LENGTH,
+        "%s", shmemname);
+    }
 
     /* open shared memory */
     int fd = shm_open(nm, O_RDWR, 0666);

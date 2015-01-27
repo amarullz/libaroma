@@ -29,6 +29,7 @@
 
 /* Libaroma feature configs - Please use CFLAGS */
 /* ============================================
+#define LIBAROMA_CONFIG_SHMEM_PREFIX      "/libaromashm-"
 #define LIBAROMA_CONFIG_SHMEMFB           1
 #define LIBAROMA_CONFIG_NOJPEG            1
 #define LIBAROMA_CONFIG_NOFONT_SUBPIXEL   1

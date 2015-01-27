@@ -59,18 +59,32 @@ void _libaroma_wm_default_set(byte set_flags){
     return;
   }
   if (set_flags&LIBAROMA_WM_FLAG_RESET_COLOR){
-    /* most primitive colorset */
-    libaroma_wm_set_color("window",RGB(111111));
-    libaroma_wm_set_color("window_gradient",RGB(000000));
+    /*
+     * primitive colorset - use lollipop
+     */
+    /* window */
+    libaroma_wm_set_color("window",RGB(37474F));
+    libaroma_wm_set_color("window_gradient",RGB(37474F));
     libaroma_wm_set_color("window_text",RGB(ffffff));
     libaroma_wm_set_color("window_text_shadow",RGB(000000));
-    libaroma_wm_set_color("control",RGB(111111));
+    
+    /* actionbar & title */
+    libaroma_wm_set_color("actionbar",RGB(263238));
+    libaroma_wm_set_color("actionbar_gradient",RGB(263238));
+    libaroma_wm_set_color("actionbar_text",RGB(ffffff));
+    libaroma_wm_set_color("actionbar_text_shadow",RGB(000000));
+    
+    /* default control */
+    libaroma_wm_set_color("control",RGB(384248));
+    libaroma_wm_set_color("control_gradient",RGB(384248));
     libaroma_wm_set_color("control_text",RGB(cccccc));
     libaroma_wm_set_color("control_text_shadow",RGB(000000));
-    libaroma_wm_set_color("selected",RGB(446688));
-    libaroma_wm_set_color("selected_gradient",RGB(335577));
-    libaroma_wm_set_color("selected_text",RGB(ffffff));
-    libaroma_wm_set_color("selected_text_shadow",RGB(000000));
+    
+    /* highlight */
+    libaroma_wm_set_color("highlight",RGB(80CBC4));
+    libaroma_wm_set_color("highlight_gradient",RGB(80CBC4));
+    libaroma_wm_set_color("highlight_text",RGB(ffffff));
+    libaroma_wm_set_color("highlight_text_shadow",RGB(000000));
   }
   if (set_flags&LIBAROMA_WM_FLAG_RESET_THEME){
     /* TODO: Default themeset */

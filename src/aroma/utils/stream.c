@@ -100,8 +100,14 @@ LIBAROMA_STREAMP libaroma_stream_shmem(
   }
   /* set name */
   char nm[LIBAROMA_STREAM_URI_LENGTH];
-  snprintf(nm, LIBAROMA_STREAM_URI_LENGTH,
-    "/libaromashm-%s.mem", memname);
+  if (memname[0]=='@'){
+    snprintf(nm, LIBAROMA_STREAM_URI_LENGTH,
+      "%s%s.mem", LIBAROMA_CONFIG_SHMEM_PREFIX, memname+1);
+  }
+  else{
+    snprintf(nm, LIBAROMA_STREAM_URI_LENGTH,
+      "%s", memname);
+  }
   
   /* open */
   int fd = shm_open(nm, O_RDWR, 0666);
@@ -306,7 +312,15 @@ LIBAROMA_SHMEMP libaroma_shmem(
     int sz) {
   /* Copy Name */
   char nm[LIBAROMA_STREAM_URI_LENGTH];
-  snprintf(nm, LIBAROMA_STREAM_URI_LENGTH, "/libaromashm-%s.mem", name);
+  if (name[0]=='@'){
+    snprintf(nm, LIBAROMA_STREAM_URI_LENGTH,
+      "%s%s.mem", LIBAROMA_CONFIG_SHMEM_PREFIX, name+1);
+  }
+  else{
+    snprintf(nm, LIBAROMA_STREAM_URI_LENGTH,
+      "%s", name);
+  }
+  
   /* Open Shared Memory */
   int fd;
   if (sz < 1) {

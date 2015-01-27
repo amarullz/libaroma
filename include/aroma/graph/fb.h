@@ -30,7 +30,7 @@
 #ifndef LIBAROMA_CONFIG_SHMEMFB
 #define LIBAROMA_FB_SHMEM_NAME NULL
 #else
-#define LIBAROMA_FB_SHMEM_NAME "fb_main_canvas"
+#define LIBAROMA_FB_SHMEM_NAME "@fb_main_canvas"
 #endif
 
 /*

@@ -14,23 +14,19 @@
  * limitations under the License.
  *______________________________________________________________________________
  *
- * Filename    : ui.h
- * Description : user interface & hid handler
+ * Filename    : window.c
+ * Description : window api
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 21/01/15 - Author(s): Ahmad Amarullah
+ * + 27/01/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_h__
-  #error "Include <aroma.h> instead."
+#ifndef __libaroma_aroma_c__
+  #error "Should be inside aroma.c."
 #endif
-#ifndef __libaroma_ui_h__
-#define __libaroma_ui_h__
+#ifndef __libaroma_window_c__
+#define __libaroma_window_c__
 
-#include "ui/hid.h"
-#include "ui/messages.h"
-#include "ui/motions.h"
-#include "ui/window_manager.h"
-#include "ui/window.h"
 
-#endif /* __libaroma_ui_h__ */
+
+#endif /* __libaroma_window_c__ */

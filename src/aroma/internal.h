@@ -66,4 +66,9 @@ byte LIBAROMA_FB_INIT_FUNCTION(
 byte LIBAROMA_HID_INIT_FUNCTION(
     LIBAROMA_HIDP);
 
+/* check shared memory config */
+#ifndef LIBAROMA_CONFIG_SHMEM_PREFIX
+  #define LIBAROMA_CONFIG_SHMEM_PREFIX "/libaromashm-"
+#endif
+
 #endif /* __libaroma_internal_h__ */
