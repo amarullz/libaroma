@@ -244,7 +244,8 @@ byte libaroma_msg_post(
   byte    state,
   int     key,
   int     x,
-  int     y
+  int     y,
+  voidp   d
 ) {
   /* Ignore Non-Start Messages */
   if (_libaroma_msgqueue_isrun != 2) {
@@ -257,6 +258,7 @@ byte libaroma_msg_post(
   _msg.key    = key;
   _msg.x      = x;
   _msg.y      = y;
+  _msg.d      = d;
   _msg.sent   = libaroma_nano_tick();
   /* mutex lock */
   pthread_mutex_lock(&_libaroma_msgqueue_mutex);
@@ -297,6 +299,7 @@ byte libaroma_msg_post_hid(
   _msg.key    = key;
   _msg.x      = x;
   _msg.y      = y;
+  _msg.d      = NULL;
   _msg.sent   = libaroma_nano_tick();
   /* mutex lock */
   pthread_mutex_lock(&_libaroma_msgqueue_mutex);

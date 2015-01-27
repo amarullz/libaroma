@@ -35,12 +35,16 @@ void ___mtrack_dump_leak();
 void * ___mtrack_realloc(void * x, size_t size, char * filename, long line);
 void * ___mtrack_malloc(size_t size, char * filename, long line);
 void ___mtrack_free(void ** x, char * filename, long line);
+char * ___mtrack_strdup(char * str, char * filename, long line);
+
 #define malloc(x) \
   ___mtrack_malloc (x, ___MEMTRACK_FILE(),___MEMTRACK_LINE())
 #define realloc(x,s) \
   ___mtrack_realloc(x,s, ___MEMTRACK_FILE(),___MEMTRACK_LINE())
 #define free(x) \
   ___mtrack_free((void **) &x, ___MEMTRACK_FILE(),___MEMTRACK_LINE())
+#define strdup(x) \
+  ___mtrack_strdup(x, ___MEMTRACK_FILE(),___MEMTRACK_LINE())
 #endif /* LIBAROMA_CONFIG_DEBUG_MEMORY */
 
 /* Debugging Tag */

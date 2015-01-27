@@ -35,6 +35,15 @@
 static LIBAROMA_WMP _libaroma_wm=NULL;
 
 /*
+ * Function    : libaroma_wm
+ * Return Value: LIBAROMA_WMP
+ * Descriptions: get window manager instance
+ */
+LIBAROMA_WMP libaroma_wm(){
+  return _libaroma_wm;
+} /* End of libaroma_wm */
+
+/*
  * Function    : _libaroma_wm_theme_release
  * Return Value: void
  * Descriptions: string array theme release callback
@@ -92,6 +101,76 @@ void _libaroma_wm_default_set(byte set_flags){
 } /* End of _libaroma_wm_default_set */
 
 /*
+ * Function    : _libaroma_wm_workspace_canvas_update
+ * Return Value: byte
+ * Descriptions: update workspace canvas content
+ */
+byte _libaroma_wm_workspace_canvas_update(){
+  if (_libaroma_wm==NULL){
+    ALOGW("window manager uninitialized");
+    return 0;
+  }
+  if (_libaroma_wm->workspace_bg){
+    libaroma_draw_ex(
+      _libaroma_wm->workspace_bg,
+      libaroma_fb()->canvas,
+      0, 0,
+      _libaroma_wm->x, _libaroma_wm->y,
+      _libaroma_wm->w, _libaroma_wm->h,
+      0, 0xff
+    );
+    return 1;
+  }
+  return 0;
+} /* End of _libaroma_wm_workspace_canvas_update */
+
+/*
+ * Function    : libaroma_wm_clean_workspace
+ * Return Value: byte
+ * Descriptions: update workspace content before window resize
+ */
+byte libaroma_wm_clean_workspace(){
+  if (_libaroma_wm==NULL){
+    ALOGW("window manager uninitialized");
+    return 0;
+  }
+  if (_libaroma_wm->workspace_bg){
+    libaroma_draw_ex(
+      libaroma_fb()->canvas,
+      _libaroma_wm->workspace_bg,
+      _libaroma_wm->x, _libaroma_wm->y,
+      0, 0,
+      _libaroma_wm->w, _libaroma_wm->h,
+      0, 0xff
+    );
+    libaroma_wm_sync(0,0,_libaroma_wm->w, _libaroma_wm->h);
+    return 1;
+  }
+  return 0;
+} /* End of libaroma_wm_clean_workspace */
+
+/*
+ * Function    : _libaroma_wm_workspace_canvas
+ * Return Value: byte
+ * Descriptions: update workspace canvas size
+ */
+byte _libaroma_wm_workspace_canvas(){
+  if (_libaroma_wm==NULL){
+    ALOGW("window manager uninitialized");
+    return 0;
+  }
+  if (_libaroma_wm->workspace_bg){
+    libaroma_canvas_free(_libaroma_wm->workspace_bg);
+  }
+  _libaroma_wm->workspace_bg = libaroma_canvas(
+    _libaroma_wm->w,
+    _libaroma_wm->h
+  );
+  _libaroma_wm_workspace_canvas_update();
+  return 1;
+} /* End of _libaroma_wm_workspace_canvas */
+
+/*
  * Function    : libaroma_wm_init
  * Return Value: byte
  * Descriptions: init window manager
@@ -115,6 +194,7 @@ byte libaroma_wm_init(){
   _libaroma_wm_default_set(
     LIBAROMA_WM_FLAG_RESET_COLOR|
     LIBAROMA_WM_FLAG_RESET_THEME);
+  _libaroma_wm_workspace_canvas();
   return 1;
 } /* End of libaroma_wm_init */
 
@@ -131,6 +211,9 @@ byte libaroma_wm_release(){
   ALOGV("libaroma_wm_release release window manager");
   libaroma_sarray_free(_libaroma_wm->color);
   libaroma_sarray_free(_libaroma_wm->theme);
+  if (_libaroma_wm->workspace_bg){
+    libaroma_canvas_free(_libaroma_wm->workspace_bg);
+  }
   free(_libaroma_wm);
   _libaroma_wm=NULL;
   return 1;
@@ -180,13 +263,41 @@ byte libaroma_wm_set_workspace(int x, int y, int w, int h){
     ALOGW("workspace size should smaller than fb size");
     return 0;
   }
-  
   _libaroma_wm->x = x;
   _libaroma_wm->y = y;
   _libaroma_wm->w = w;
   _libaroma_wm->h = h;
+  _libaroma_wm_workspace_canvas();
+  
+  if (_libaroma_wm->active_window!=NULL){
+    /* send refresh event */
+    LIBAROMA_MSG _msg;
+    _msg.msg    = LIBAROMA_MSG_WIN_REFRESH;
+    _msg.state  = 0;
+    _msg.key    = 0;
+    _msg.x      = 0;
+    _msg.y      = 0;
+    _msg.d      = NULL;
+    _msg.sent   = libaroma_nano_tick();
+    libaroma_window_event(
+      _libaroma_wm->active_window,
+      &_msg
+    );
+  }
+  
   return 1;
 } /* End of libaroma_wm_set_workspace */
+
+byte libaroma_wm_erasebg_workspace(int x, int y, int w, int h){
+  if (_libaroma_wm==NULL){
+    ALOGW("window manager uninitialized");
+    return 0;
+  }
+  return libaroma_draw_ex(
+    libaroma_fb()->canvas, _libaroma_wm->workspace_bg,
+    x, y, x, y, w, h, 0, 0xff
+  );
+}
 
 /*
  * Function    : libaroma_wm_set_message_handler
@@ -229,7 +340,7 @@ byte libaroma_wm_sync(int x, int y, int w, int h){
     return 0;
   }
   int x2 = x+_libaroma_wm->x;
-  int y2 = x+_libaroma_wm->y;
+  int y2 = y+_libaroma_wm->y;
   int w2 = w;
   int h2 = h;
   if (x2<_libaroma_wm->x){
@@ -251,7 +362,7 @@ byte libaroma_wm_sync(int x, int y, int w, int h){
     h2=_libaroma_wm->h-y2;
   }
   /* now sync fb */
-  return libaroma_sync_area(x2,y2,w2,h2);
+  return libaroma_sync_ex(x2,y2,w2,h2);
 } /* End of libaroma_wm_sync */
 
 /*
@@ -265,7 +376,7 @@ LIBAROMA_CANVASP libaroma_wm_canvas(int x, int y, int w, int h){
     return NULL;
   }
   int x2 = x+_libaroma_wm->x;
-  int y2 = x+_libaroma_wm->y;
+  int y2 = y+_libaroma_wm->y;
   int w2 = w;
   int h2 = h;
   if (x2<_libaroma_wm->x){
@@ -426,9 +537,29 @@ byte libaroma_wm_set_theme_stream(
  * Descriptions: get theme
  */
 LIBAROMA_WM_THEMEP libaroma_wm_get_theme(char * name){
+  if (_libaroma_wm==NULL){
+    ALOGW("window manager uninitialized");
+    return NULL;
+  }
   return (LIBAROMA_WM_THEMEP)
     libaroma_sarray_get(_libaroma_wm->theme, name);
 } /* End of libaroma_wm_get_theme */
+
+/*
+ * Function    : libaroma_wm_theme_exists
+ * Return Value: byte
+ * Descriptions: is theme exists
+ */
+byte libaroma_wm_theme_exists(char * name){
+  if (_libaroma_wm==NULL){
+    ALOGW("window manager uninitialized");
+    return 0;
+  }
+  if(libaroma_sarray_get(_libaroma_wm->theme, name)==NULL){
+    return 0;
+  }
+  return 1;
+} /* End of libaroma_wm_theme_exists */
 
 /*
  * Function    : libaroma_wm_del_theme
@@ -436,33 +567,32 @@ LIBAROMA_WM_THEMEP libaroma_wm_get_theme(char * name){
  * Descriptions: delete theme item
  */
 byte libaroma_wm_del_theme(char * name){
+  if (_libaroma_wm==NULL){
+    ALOGW("window manager uninitialized");
+    return 0;
+  }
   return libaroma_sarray_delete(_libaroma_wm->theme, name);
 } /* End of libaroma_wm_del_theme */
 
 /*
- * Function    : libaroma_wm_draw_theme
+ * Function    : libaroma_wm_draw_themep
  * Return Value: byte
- * Descriptions: draw theme into canvas
+ * Descriptions: draw theme struct into canvas
  */
-byte libaroma_wm_draw_theme(
-    LIBAROMA_CANVASP dest, char * name,
+byte libaroma_wm_draw_themep(
+    LIBAROMA_CANVASP dest, LIBAROMA_WM_THEMEP th,
     int dx, int dy, int dw, int dh,
     LIBAROMA_PNG9_PADP padding){
   if (_libaroma_wm==NULL){
     ALOGW("window manager uninitialized");
     return 0;
   }
-  if (!name){
-    ALOGW("libaroma_wm_draw_theme invalid name");
+  if (!th){
+    ALOGV("libaroma_wm_draw_theme theme is null");
     return 0;
   }
   if (!dest){
     dest=libaroma_fb()->canvas;
-  }
-  LIBAROMA_WM_THEMEP th=libaroma_wm_get_theme(name);
-  if (!th){
-    ALOGV("libaroma_wm_draw_theme '%s' theme not found", name);
-    return 0;
   }
   if (th->theme_flags&LIBAROMA_WM_FLAG_THEME_PNG9P){
     if (dw<1){
@@ -487,11 +617,50 @@ byte libaroma_wm_draw_theme(
   if (dh<1){
     dh = th->canvas->h;
   }
+  if ((th->canvas->w==dw)&&(th->canvas->h==dh)){
+    if (!th->canvas->hicolor){
+      return libaroma_draw(
+        dest, th->canvas, dx, dy, 1
+      );
+    }
+    else{
+      return libaroma_draw_scale_nearest(
+        dest, th->canvas,
+        dx, dy, dw, dh,
+        0, 0, th->canvas->w, th->canvas->h
+      );
+    }
+  }
   return libaroma_draw_scale_smooth(
     dest, th->canvas,
     dx, dy, dw, dh,
     0, 0, th->canvas->w, th->canvas->h
   );
+} /* End of libaroma_wm_draw_themep */
+
+/*
+ * Function    : libaroma_wm_draw_theme
+ * Return Value: byte
+ * Descriptions: draw theme into canvas
+ */
+byte libaroma_wm_draw_theme(
+    LIBAROMA_CANVASP dest, char * name,
+    int dx, int dy, int dw, int dh,
+    LIBAROMA_PNG9_PADP padding){
+  if (_libaroma_wm==NULL){
+    ALOGW("window manager uninitialized");
+    return 0;
+  }
+  if (!name){
+    ALOGW("libaroma_wm_draw_theme invalid name");
+    return 0;
+  }
+  LIBAROMA_WM_THEMEP th=libaroma_wm_get_theme(name);
+  if (!th){
+    ALOGV("libaroma_wm_draw_theme '%s' theme not found", name);
+    return 0;
+  }
+  return libaroma_wm_draw_themep(dest, th, dx, dy, dw, dh, padding);
 } /* End of libaroma_wm_draw_theme */
 
 /*
@@ -500,6 +669,10 @@ byte libaroma_wm_draw_theme(
  * Descriptions: set colorset
  */
 byte libaroma_wm_set_color(char * name, word color){
+  if (_libaroma_wm==NULL){
+    ALOGW("window manager uninitialized");
+    return 0;
+  }
   return libaroma_sarray_set(
     _libaroma_wm->color,
     name,
@@ -517,6 +690,10 @@ word libaroma_wm_get_color(char * name) {
   wordp color = (wordp) libaroma_sarray_get(
     _libaroma_wm->color,
     name);
+  if (_libaroma_wm==NULL){
+    ALOGW("window manager uninitialized");
+    return 0;
+  }
   if (color == NULL) {
     return 0;
   }
@@ -529,7 +706,77 @@ word libaroma_wm_get_color(char * name) {
  * Descriptions: delete color item
  */
 byte libaroma_wm_del_color(char * name){
+  if (_libaroma_wm==NULL){
+    ALOGW("window manager uninitialized");
+    return 0;
+  }
   return libaroma_sarray_delete(_libaroma_wm->color, name);
 } /* End of libaroma_wm_del_color */
+
+/*
+ * Function    : libaroma_wm_set_active_window
+ * Return Value: byte
+ * Descriptions: get current active window
+ */
+byte libaroma_wm_set_active_window(LIBAROMA_WINDOWP win){
+  if (_libaroma_wm==NULL){
+    ALOGW("window manager uninitialized");
+    return 0;
+  }
+  if (_libaroma_wm->active_window==win){
+    return 1;
+  }
+  LIBAROMA_MSG _msg;
+  if (_libaroma_wm->active_window!=NULL){
+    /* send inactive event */
+    _msg.msg    = LIBAROMA_MSG_WIN_INACTIVE;
+    _msg.state  = 0;
+    _msg.key    = 0;
+    _msg.x      = 0;
+    _msg.y      = 0;
+    _msg.d      = (voidp) win;
+    _msg.sent   = libaroma_nano_tick();
+    libaroma_window_event(
+      _libaroma_wm->active_window,
+      &_msg
+    );
+  }
+  
+  _libaroma_wm_workspace_canvas_update();
+  
+  if (win!=NULL){
+    /* send active event */
+    _msg.msg    = LIBAROMA_MSG_WIN_ACTIVE;
+    _msg.state  = 0;
+    _msg.key    = 0;
+    _msg.x      = 0;
+    _msg.y      = 0;
+    _msg.d      = (voidp) _libaroma_wm->active_window;
+    _msg.sent   = libaroma_nano_tick();
+    _libaroma_wm->active_window = win;
+    libaroma_window_event(
+      _libaroma_wm->active_window,
+      &_msg
+    );
+  }
+  else{
+    _libaroma_wm->active_window = NULL;
+  }
+  return 1;
+} /* End of libaroma_wm_set_active_window */
+
+/*
+ * Function    : libaroma_wm_get_active_window
+ * Return Value: LIBAROMA_WINDOWP
+ * Descriptions: get current active window
+ */
+LIBAROMA_WINDOWP libaroma_wm_get_active_window(){
+  if (_libaroma_wm==NULL){
+    ALOGW("window manager uninitialized");
+    return NULL;
+  }
+  return _libaroma_wm->active_window;
+} /* End of libaroma_wm_get_active_window */
+
 
 #endif /* __libaroma_window_manager_c__ */

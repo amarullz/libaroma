@@ -14,32 +14,22 @@
  * limitations under the License.
  *______________________________________________________________________________
  *
- * Filename    : types.h
- * Description : libaroma standard types
+ * Filename    : controls.h
+ * Description : controlset
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 19/01/15 - Author(s): Ahmad Amarullah
+ * + 28/01/15 - Author(s): Ahmad Amarullah
  *
  */
 #ifndef __libaroma_aroma_h__
   #error "Include <aroma.h> instead."
 #endif
-#ifndef __libaroma_types_h__
-#define __libaroma_types_h__
+#ifndef __libaroma_controls_h__
+#define __libaroma_controls_h__
 
-/* primitive unsigneds */
-typedef uint8_t byte;
-typedef uint16_t word;
-typedef uint32_t dword;
+LIBAROMA_CONTROLP libaroma_control_label(
+  LIBAROMA_WINDOWP win, word id, char * text,
+  int x, int y, int w, int h
+);
 
-/* primitive pointers */
-typedef byte * bytep;
-typedef word * wordp;
-typedef dword * dwordp;
-typedef void * voidp;
-
-/* unicode char */
-typedef uint32_t uchar;
-typedef uchar * ucharp;
-
-#endif /* __libaroma_types_h__ */
+#endif /* __libaroma_controls_h__ */

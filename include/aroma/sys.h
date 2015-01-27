@@ -37,6 +37,7 @@
 #include <dirent.h>
 #include <limits.h>
 #include <time.h>
+#include <stdint.h>
 
 /* thread & fork */
 #include <fcntl.h>

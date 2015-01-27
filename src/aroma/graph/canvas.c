@@ -341,19 +341,24 @@ LIBAROMA_CANVASP libaroma_canvas_new_ex(
 } /* End of libaroma_canvas_new_ex */
 
 /*
- * Function    : libaroma_canvas_area
- * Return Value: LIBAROMA_CANVASP
- * Descriptions: create child canvas
+ * Function    : libaroma_canvas_area_update
+ * Return Value: byte
+ * Descriptions: update child canvas
  */
-LIBAROMA_CANVASP libaroma_canvas_area(
+byte libaroma_canvas_area_update(
+    LIBAROMA_CANVASP c,
     LIBAROMA_CANVASP parent,
     int x,
     int y,
     int w,
     int h) {
   if (!parent) {
-    ALOGW("libaroma_canvas_area parent is null");
-    return NULL;
+    ALOGW("canvas_area_update parent is null");
+    return 0;
+  }
+  if (!c) {
+    ALOGW("canvas_area_update canvas is null");
+    return 0;
   }
   
   /* Set Target Positions */
@@ -382,16 +387,8 @@ LIBAROMA_CANVASP libaroma_canvas_area(
   h = y2 - y;
   
   if ((w < 1) || (h < 1)) {
-    ALOGW("libaroma_canvas_area calculated width or height < 1");
-    return NULL;
-  }
-  
-  /* Initializing Canvas Memory */
-  LIBAROMA_CANVASP c = (LIBAROMA_CANVASP) malloc(sizeof(LIBAROMA_CANVAS));
-  
-  if (!c) {
-    ALOGW("libaroma_canvas_area malloc(LIBAROMA_CANVASP) Error");
-    return NULL;
+    ALOGW("canvas_area_update calculated width or height < 1");
+    return 0;
   }
   
   c->w      = w;
@@ -421,6 +418,34 @@ LIBAROMA_CANVASP libaroma_canvas_area(
     c->alpha = NULL;
   }
   
+  return 1;
+} /* End of libaroma_canvas_area_update */
+
+/*
+ * Function    : libaroma_canvas_area
+ * Return Value: LIBAROMA_CANVASP
+ * Descriptions: create child canvas
+ */
+LIBAROMA_CANVASP libaroma_canvas_area(
+    LIBAROMA_CANVASP parent,
+    int x,
+    int y,
+    int w,
+    int h) {
+  if (!parent) {
+    ALOGW("canvas_area parent is null");
+    return NULL;
+  }
+  /* initializing canvas memory */
+  LIBAROMA_CANVASP c = (LIBAROMA_CANVASP) malloc(sizeof(LIBAROMA_CANVAS));
+  if (!c) {
+    ALOGW("canvas_area malloc(LIBAROMA_CANVASP) Error");
+    return NULL;
+  }
+  if (!libaroma_canvas_area_update(c,parent,x,y,w,h)){
+    free(c);
+    return NULL;
+  }
   return c;
 } /* End of libaroma_canvas_area */
 

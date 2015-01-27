@@ -30,7 +30,8 @@
 #include "ui/hid.c"
 #include "ui/messages.c"
 #include "ui/motions.c"
-#include "ui/window_manager.c"
 #include "ui/window.c"
+#include "ui/window_manager.c"
+#include "ui/controls.c"
 
 #endif /* __libaroma_ui_c__ */

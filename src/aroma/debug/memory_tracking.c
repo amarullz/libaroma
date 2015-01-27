@@ -273,5 +273,18 @@ void ___mtrack_free(void ** x, char * filename, long line) {
   pthread_mutex_unlock(&___mtrack_mutex);
 }
 
+char * ___mtrack_strdup(char * str, char * filename, long line){
+  pthread_mutex_lock(&___mtrack_mutex);
+  void * ret = (void *) strdup(str);
+  if (ret) {
+    if (!___mtrack_set(ret, strlen(ret)+1, filename, line)) {
+      printf("MEM-TRACK[W]: strdup: allocated used address on %s line %d\n", 
+        filename, (int) line);
+    }
+  }
+  pthread_mutex_unlock(&___mtrack_mutex);
+  return (char *) ret;
+}
+
 #endif /* LIBAROMA_CONFIG_DEBUG_MEMORY */
 #endif /* __libaroma_memory_tracking_c__ */

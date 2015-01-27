@@ -225,9 +225,9 @@ byte QNXGF_sync(LIBAROMA_FBP me, wordp src, int x, int y, int w, int h) {
   
   /* Get Internal Data */
   QNXGF_INTERNALP mi = (QNXGF_INTERNALP) me->internal;
+  
   /* BLIT */
   gf_draw_begin(mi->context);
-  
   /* Defined Area Only */
   if ((w > 0) && (h > 0)) {
     wordp copy_src = (wordp) (src + (me->w * y) + x);
@@ -252,9 +252,9 @@ byte QNXGF_sync(LIBAROMA_FBP me, wordp src, int x, int y, int w, int h) {
       0
     );
   }
-  
   gf_draw_flush(mi->context);
   gf_draw_end(mi->context);
+  
   return 1;
 }
 

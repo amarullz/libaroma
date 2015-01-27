@@ -41,12 +41,14 @@ struct _LIBAROMA_MSG{
   int     key;    /* key code */
   int     x;      /* x parameter */
   int     y;      /* y parameter */
+  voidp   d;      /* pointer parameter */
   long    sent;   /* send time */
 };
 
 /* Message Values */
-#define LIBAROMA_MSG_USR(X)       (0x20+X)  /* user messages */
-#define LIBAROMA_MSG_KEY(X)       (0x10+X)  /* key event */
+#define LIBAROMA_MSG_USR(X)       (0xC0|X)  /* user messages */
+#define LIBAROMA_MSG_SYS(X)       (0x80|X)  /* system/window messages */
+#define LIBAROMA_MSG_KEY(X)       (0x40|X)  /* key event */
 #define LIBAROMA_MSG_NONE         0x00      /* not valid message */
 #define LIBAROMA_MSG_EXIT         0x01      /* should break the dispatch */
 #define LIBAROMA_MSG_OK           0x02      /* ok message */
@@ -60,8 +62,9 @@ struct _LIBAROMA_MSG{
 #define LIBAROMA_MSG_KEY_UP       LIBAROMA_MSG_KEY(LIBAROMA_HID_EV_RET_UP)
 #define LIBAROMA_MSG_KEY_DOWN     LIBAROMA_MSG_KEY(LIBAROMA_HID_EV_RET_DOWN)
 #define LIBAROMA_MSG_KEY_RAWKEY   LIBAROMA_MSG_KEY(LIBAROMA_HID_EV_RET_RAWKEY)
-#define LIBAROMA_MSG_ISUSER(X)    (0x20&X)   /* user event */
-#define LIBAROMA_MSG_ISKEY(X)     ((0x10&X)&&(!LIBAROMA_MSG_ISUSER(X)))
+#define LIBAROMA_MSG_ISUSER(X)    ((0xC0&X)==0xC0)  /* user event */
+#define LIBAROMA_MSG_ISSYS(X)     ((0xC0&X)==0x80)  /* sys event */
+#define LIBAROMA_MSG_ISKEY(X)     ((0xC0&X)==0x40)  /* key event */
 
 /*
  * Function    : libaroma_msg_start
@@ -87,7 +90,8 @@ byte libaroma_msg_post(
   byte    state,
   int     key,
   int     x,
-  int     y
+  int     y,
+  voidp   d
 );
 
 /*

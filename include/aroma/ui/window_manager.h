@@ -31,10 +31,8 @@
 #define LIBAROMA_WM_MSG_UNHANDLED       0x0
 #define LIBAROMA_WM_MSG_HANDLED         0x1
 #define LIBAROMA_WM_MSG_EXIT            0x2
-
 #define LIBAROMA_WM_FLAG_RESET_COLOR    0x1
 #define LIBAROMA_WM_FLAG_RESET_THEME    0x2
-
 #define LIBAROMA_WM_FLAG_THEME_PNG9P    0x1
 #define LIBAROMA_WM_FLAG_THEME_WMFREE   0x2
 
@@ -76,6 +74,8 @@ struct _LIBAROMA_WM{
   
   /* message state */
   byte client_started;
+  LIBAROMA_WINDOWP active_window;
+  LIBAROMA_CANVASP workspace_bg;
 };
 
 /*
@@ -90,6 +90,20 @@ struct _LIBAROMA_WM_THEME{
   byte theme_flags;
   int dpi;
 };
+
+/*
+ * Function    : libaroma_wm
+ * Return Value: LIBAROMA_WMP
+ * Descriptions: get window manager instance
+ */
+LIBAROMA_WMP libaroma_wm();
+
+/*
+ * Function    : libaroma_wm_clean_workspace
+ * Return Value: byte
+ * Descriptions: update workspace content before window resize
+ */
+byte libaroma_wm_clean_workspace();
 
 /*
  * Function    : libaroma_wm_reset
@@ -186,6 +200,23 @@ byte libaroma_wm_set_theme_stream(
 LIBAROMA_WM_THEMEP libaroma_wm_get_theme(char * name);
 
 /*
+ * Function    : libaroma_wm_theme_exists
+ * Return Value: byte
+ * Descriptions: is theme exists
+ */
+byte libaroma_wm_theme_exists(char * name);
+
+/*
+ * Function    : libaroma_wm_draw_themep
+ * Return Value: byte
+ * Descriptions: draw theme struct into canvas
+ */
+byte libaroma_wm_draw_themep(
+    LIBAROMA_CANVASP dest, LIBAROMA_WM_THEMEP th,
+    int dx, int dy, int dw, int dh,
+    LIBAROMA_PNG9_PADP padding);
+
+/*
  * Function    : libaroma_wm_draw_theme
  * Return Value: byte
  * Descriptions: draw theme into canvas
@@ -224,5 +255,19 @@ word libaroma_wm_get_color(char * name);
  */
 byte libaroma_wm_del_color(char * name);
 #define libaroma_wm_delete_color(n) libaroma_wm_del_color(n)
+
+/*
+ * Function    : libaroma_wm_set_active_window
+ * Return Value: byte
+ * Descriptions: get current active window
+ */
+byte libaroma_wm_set_active_window(LIBAROMA_WINDOWP win);
+
+/*
+ * Function    : libaroma_wm_get_active_window
+ * Return Value: LIBAROMA_WINDOWP
+ * Descriptions: get current active window
+ */
+LIBAROMA_WINDOWP libaroma_wm_get_active_window();
 
 #endif /* __libaroma_window_manager_h__ */

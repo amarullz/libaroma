@@ -78,6 +78,19 @@ LIBAROMA_CANVASP libaroma_canvas_new_ex(
     const char * shmemname);
 
 /*
+ * Function    : libaroma_canvas_area_update
+ * Return Value: byte
+ * Descriptions: update child canvas
+ */
+byte libaroma_canvas_area_update(
+    LIBAROMA_CANVASP c,
+    LIBAROMA_CANVASP parent,
+    int x,
+    int y,
+    int w,
+    int h);
+    
+/*
  * Function    : libaroma_canvas_area
  * Return Value: LIBAROMA_CANVASP
  * Descriptions: create child canvas
