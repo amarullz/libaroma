@@ -41,27 +41,41 @@ static LIBAROMA_WMP _libaroma_wm=NULL;
  */
 void _libaroma_wm_theme_release(void * val) {
   LIBAROMA_WM_THEMEP theme = (LIBAROMA_WM_THEMEP) val;
-  if (theme->freebywm){
-    libaroma_canvas_free(theme->canvas);
-    free(theme->png9p);
+  if (theme->theme_flags&LIBAROMA_WM_FLAG_THEME_WMFREE){
+    if (theme->canvas){
+      libaroma_canvas_free(theme->canvas);
+    }
   }
 } /* End of _libaroma_wm_theme_release */
 
+/*
+ * Function    : _libaroma_wm_default_set
+ * Return Value: void
+ * Descriptions: default theme/colorset
+ */
 void _libaroma_wm_default_set(byte set_flags){
   if (_libaroma_wm==NULL){
     ALOGW("window manager uninitialized");
     return;
   }
   if (set_flags&LIBAROMA_WM_FLAG_RESET_COLOR){
+    /* most primitive colorset */
     libaroma_wm_set_color("window",RGB(111111));
     libaroma_wm_set_color("window_gradient",RGB(000000));
     libaroma_wm_set_color("window_text",RGB(ffffff));
     libaroma_wm_set_color("window_text_shadow",RGB(000000));
+    libaroma_wm_set_color("control",RGB(111111));
+    libaroma_wm_set_color("control_text",RGB(cccccc));
+    libaroma_wm_set_color("control_text_shadow",RGB(000000));
+    libaroma_wm_set_color("selected",RGB(446688));
+    libaroma_wm_set_color("selected_gradient",RGB(335577));
+    libaroma_wm_set_color("selected_text",RGB(ffffff));
+    libaroma_wm_set_color("selected_text_shadow",RGB(000000));
   }
   if (set_flags&LIBAROMA_WM_FLAG_RESET_THEME){
     /* TODO: Default themeset */
   }
-}
+} /* End of _libaroma_wm_default_set */
 
 /*
  * Function    : libaroma_wm_init
@@ -70,11 +84,11 @@ void _libaroma_wm_default_set(byte set_flags){
  */
 byte libaroma_wm_init(){
   if (_libaroma_wm){
-    ALOGW("window manager already initialized");
+    ALOGW("libaroma_wm_init window manager already initialized");
     return 0;
   }
-  ALOGV("init window manager");
-  _libaroma_wm = (LIBAROMA_WMP) malloc(sizeof(LIBAROMA_WMP));
+  ALOGV("libaroma_wm_init init window manager");
+  _libaroma_wm = (LIBAROMA_WMP) malloc(sizeof(LIBAROMA_WM));
   _libaroma_wm->theme = libaroma_sarray(_libaroma_wm_theme_release);
   _libaroma_wm->color = libaroma_sarray(NULL);
   _libaroma_wm->x = 0;
@@ -100,14 +114,39 @@ byte libaroma_wm_release(){
     ALOGW("window manager uninitialized");
     return 0;
   }
-  ALOGV("release window manager");
+  ALOGV("libaroma_wm_release release window manager");
   libaroma_sarray_free(_libaroma_wm->color);
   libaroma_sarray_free(_libaroma_wm->theme);
-  _libaroma_wm->message_handler = NULL;
   free(_libaroma_wm);
   _libaroma_wm=NULL;
   return 1;
 } /* End of libaroma_wm_release */
+
+/*
+ * Function    : libaroma_wm_reset
+ * Return Value: byte
+ * Descriptions: reset theme and colorset
+ */
+byte libaroma_wm_reset(byte reset_flag){
+  if (_libaroma_wm==NULL){
+    ALOGW("window manager uninitialized");
+    return 0;
+  }
+  /* reinit theme and colorset */
+  if (reset_flag&LIBAROMA_WM_FLAG_RESET_COLOR){
+    libaroma_sarray_free(_libaroma_wm->color);
+    _libaroma_wm->color = libaroma_sarray(NULL);
+  }
+  if (reset_flag&LIBAROMA_WM_FLAG_RESET_THEME){
+    libaroma_sarray_free(_libaroma_wm->theme);
+    _libaroma_wm->theme = libaroma_sarray(_libaroma_wm_theme_release);
+  }
+  _libaroma_wm_default_set(reset_flag);
+  if (_libaroma_wm->reset_handler!=NULL){
+    _libaroma_wm->reset_handler(_libaroma_wm, reset_flag);
+  }
+  return 1;
+} /* End of libaroma_wm_reset */
 
 /*
  * Function    : libaroma_wm_set_workspace
@@ -305,17 +344,19 @@ byte libaroma_wm_getmessage(LIBAROMA_MSGP msg){
 byte libaroma_wm_set_theme(
     char * name,
     LIBAROMA_CANVASP canvas,
-    LIBAROMA_PNG9P png9p,
-    byte freebywm){
+    byte theme_flags,
+    int dpi){
   if (_libaroma_wm==NULL){
     ALOGW("window manager uninitialized");
     return 0;
   }
   LIBAROMA_WM_THEME save_data;
   save_data.canvas = canvas;
-  save_data.png9p = png9p;
-  save_data.freebywm = freebywm;
-  
+  save_data.theme_flags = theme_flags;
+  if (dpi==0){
+    dpi=libaroma_fb()->dpi;
+  }
+  save_data.dpi = dpi;
   if (libaroma_sarray_set(
       _libaroma_wm->theme,
       name,
@@ -328,6 +369,44 @@ byte libaroma_wm_set_theme(
 } /* End of libaroma_wm_set_theme */
 
 /*
+ * Function    : libaroma_wm_set_theme_stream
+ * Return Value: byte
+ * Descriptions: set theme from stream
+ */
+byte libaroma_wm_set_theme_stream(
+    char * name,
+    LIBAROMA_STREAMP stream,
+    byte freestream,
+    int dpi){
+  if (!stream){
+    ALOGW("libaroma_wm_set_theme_stream stream is NULL");
+    return 0;
+  }
+  if (_libaroma_wm==NULL){
+    if (freestream){
+      libaroma_stream_close(stream);
+    }
+    ALOGW("window manager uninitialized");
+    return 0;
+  }
+  /* check 9patch png from filename */
+  int png9pos = strlen(stream->uri)-7;
+  byte png9p_flag = 0;
+  if (png9pos>0){
+    char * ext_uri = (char *) (stream->uri+png9pos);
+    png9p_flag=(strcmp(ext_uri,".9.png")==0)?LIBAROMA_WM_FLAG_THEME_PNG9P:0;
+  }
+  /* load image */
+  LIBAROMA_CANVASP cv = libaroma_image_ex(stream, freestream, 1);
+  if (!cv){
+    ALOGW("libaroma_wm_set_theme_stream cannot load image '%s'", stream->uri);
+    return 0;
+  }
+  return libaroma_wm_set_theme(
+    name, cv, dpi, LIBAROMA_WM_FLAG_THEME_WMFREE|png9p_flag);
+} /* End of libaroma_wm_set_theme_stream */
+
+/*
  * Function    : libaroma_wm_get_theme
  * Return Value: LIBAROMA_WM_THEMEP
  * Descriptions: get theme
@@ -336,6 +415,61 @@ LIBAROMA_WM_THEMEP libaroma_wm_get_theme(char * name){
   return (LIBAROMA_WM_THEMEP)
     libaroma_sarray_get(_libaroma_wm->theme, name);
 } /* End of libaroma_wm_get_theme */
+
+/*
+ * Function    : libaroma_wm_draw_theme
+ * Return Value: byte
+ * Descriptions: draw theme into canvas
+ */
+byte libaroma_wm_draw_theme(
+    LIBAROMA_CANVASP dest, char * name,
+    int dx, int dy, int dw, int dh,
+    LIBAROMA_PNG9_PADP padding){
+  if (_libaroma_wm==NULL){
+    ALOGW("window manager uninitialized");
+    return 0;
+  }
+  if (!name){
+    ALOGW("libaroma_wm_draw_theme invalid name");
+    return 0;
+  }
+  if (!dest){
+    dest=libaroma_fb()->canvas;
+  }
+  LIBAROMA_WM_THEMEP th=libaroma_wm_get_theme(name);
+  if (!th){
+    ALOGV("libaroma_wm_draw_theme '%s' theme not found", name);
+    return 0;
+  }
+  if (th->theme_flags&LIBAROMA_WM_FLAG_THEME_PNG9P){
+    if (dw<1){
+      dw = th->canvas->w - 2;
+    }
+    if (dh<1){
+      dh = th->canvas->h - 2;
+    }
+    return libaroma_png9p_draw(
+      dest,
+      th->canvas,
+      dx,dy,dw,dh,th->dpi,
+      padding
+    );
+  }
+  if (padding!=NULL){
+    memset(padding,0,sizeof(LIBAROMA_PNG9_PAD));
+  }
+  if (dw<1){
+    dw = th->canvas->w;
+  }
+  if (dh<1){
+    dh = th->canvas->h;
+  }
+  return libaroma_draw_scale_smooth(
+    dest, th->canvas,
+    dx, dy, dw, dh,
+    0, 0, th->canvas->w, th->canvas->h
+  );
+} /* End of libaroma_wm_draw_theme */
 
 /*
  * Function    : libaroma_wm_set_color
@@ -366,30 +500,5 @@ word libaroma_wm_get_color(char * name) {
   return *color;
 } /* End of libaroma_wm_get_color */
 
-/*
- * Function    : libaroma_wm_reset
- * Return Value: byte
- * Descriptions: reset theme and colorset
- */
-byte libaroma_wm_reset(byte reset_flag){
-  if (_libaroma_wm==NULL){
-    ALOGW("window manager uninitialized");
-    return 0;
-  }
-  /* reinit theme and colorset */
-  if (reset_flag&LIBAROMA_WM_FLAG_RESET_COLOR){
-    libaroma_sarray_free(_libaroma_wm->color);
-    _libaroma_wm->color = libaroma_sarray(NULL);
-  }
-  if (reset_flag&LIBAROMA_WM_FLAG_RESET_THEME){
-    libaroma_sarray_free(_libaroma_wm->theme);
-    _libaroma_wm->theme = libaroma_sarray(_libaroma_wm_theme_release);
-  }
-  _libaroma_wm_default_set(reset_flag);
-  if (_libaroma_wm->reset_handler!=NULL){
-    _libaroma_wm->reset_handler(_libaroma_wm, reset_flag);
-  }
-  return 1;
-} /* End of libaroma_wm_reset */
 
 #endif /* __libaroma_window_manager_c__ */

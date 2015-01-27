@@ -76,6 +76,9 @@ LIBAROMA_CANVASP libaroma_png_ex(
   _LIBAROMA_PNG_ADAPTERP adapter = (_LIBAROMA_PNG_ADAPTERP)
     malloc(sizeof(_LIBAROMA_PNG_ADAPTER));
   if (!adapter) {
+    if (freeStream){
+      libaroma_stream_close(stream);
+    }
     ALOGW("libaroma_png_ex cannot allocating adapter");
     return NULL;
   }

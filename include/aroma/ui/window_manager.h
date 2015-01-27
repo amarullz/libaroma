@@ -28,10 +28,15 @@
 #define __libaroma_window_manager_h__
 
 /* defines */
-#define LIBAROMA_WM_MSG_UNHANDLED     0x0
-#define LIBAROMA_WM_MSG_HANDLED       0x1
-#define LIBAROMA_WM_FLAG_RESET_COLOR  0x1
-#define LIBAROMA_WM_FLAG_RESET_THEME  0x2
+#define LIBAROMA_WM_MSG_UNHANDLED       0x0
+#define LIBAROMA_WM_MSG_HANDLED         0x1
+#define LIBAROMA_WM_MSG_EXIT            0x2
+
+#define LIBAROMA_WM_FLAG_RESET_COLOR    0x1
+#define LIBAROMA_WM_FLAG_RESET_THEME    0x2
+
+#define LIBAROMA_WM_FLAG_THEME_PNG9P    0x1
+#define LIBAROMA_WM_FLAG_THEME_WMFREE   0x2
 
 /*
  * Structure   : _LIBAROMA_WM
@@ -82,10 +87,16 @@ typedef struct _LIBAROMA_WM_THEME LIBAROMA_WM_THEME;
 typedef struct _LIBAROMA_WM_THEME * LIBAROMA_WM_THEMEP;
 struct _LIBAROMA_WM_THEME{
   LIBAROMA_CANVASP canvas;
-  LIBAROMA_PNG9P png9p;
-  byte freebywm;
+  byte theme_flags;
+  int dpi;
 };
 
+/*
+ * Function    : libaroma_wm_reset
+ * Return Value: byte
+ * Descriptions: reset theme and colorset
+ */
+byte libaroma_wm_reset(byte reset_flag);
 
 /*
  * Function    : libaroma_wm_set_workspace
@@ -153,8 +164,19 @@ byte libaroma_wm_getmessage(LIBAROMA_MSGP msg);
 byte libaroma_wm_set_theme(
     char * name,
     LIBAROMA_CANVASP canvas,
-    LIBAROMA_PNG9P png9p,
-    byte freebywm);
+    byte theme_flags,
+    int dpi);
+
+/*
+ * Function    : libaroma_wm_set_theme_stream
+ * Return Value: byte
+ * Descriptions: set theme from stream
+ */
+byte libaroma_wm_set_theme_stream(
+    char * name,
+    LIBAROMA_STREAMP stream,
+    byte freestream,
+    int dpi);
 
 /*
  * Function    : libaroma_wm_get_theme
@@ -162,6 +184,16 @@ byte libaroma_wm_set_theme(
  * Descriptions: get theme
  */
 LIBAROMA_WM_THEMEP libaroma_wm_get_theme(char * name);
+
+/*
+ * Function    : libaroma_wm_draw_theme
+ * Return Value: byte
+ * Descriptions: draw theme into canvas
+ */
+byte libaroma_wm_draw_theme(
+    LIBAROMA_CANVASP dest, char * name,
+    int dx, int dy, int dw, int dh,
+    LIBAROMA_PNG9_PADP padding);
 
 /*
  * Function    : libaroma_wm_set_color
@@ -176,12 +208,5 @@ byte libaroma_wm_set_color(char * name, word color);
  * Descriptions: get colorset
  */
 word libaroma_wm_get_color(char * name);
-
-/*
- * Function    : libaroma_wm_reset
- * Return Value: byte
- * Descriptions: reset theme and colorset
- */
-byte libaroma_wm_reset(byte reset_flag);
 
 #endif /* __libaroma_window_manager_h__ */
