@@ -32,6 +32,9 @@
 #include "ui/motions.h"
 #include "ui/window.h"
 #include "ui/window_manager.h"
-#include "ui/controls.h"
+#include "ui/control.h"
+
+/* control set */
+#include "ui/controls/ctl_label.h"
 
 #endif /* __libaroma_ui_h__ */

@@ -14,8 +14,8 @@
  * limitations under the License.
  *______________________________________________________________________________
  *
- * Filename    : controls.h
- * Description : controlset
+ * Filename    : ctl_label.h
+ * Description : label control
  *
  * + This is part of libaroma, an embedded ui toolkit.
  * + 28/01/15 - Author(s): Ahmad Amarullah
@@ -24,12 +24,14 @@
 #ifndef __libaroma_aroma_h__
   #error "Include <aroma.h> instead."
 #endif
-#ifndef __libaroma_controls_h__
-#define __libaroma_controls_h__
+#ifndef __libaroma_ctl_label_h__
+#define __libaroma_ctl_label_h__
+
 
 LIBAROMA_CONTROLP libaroma_control_label(
   LIBAROMA_WINDOWP win, word id, char * text,
   int x, int y, int w, int h
 );
 
-#endif /* __libaroma_controls_h__ */
+
+#endif /* __libaroma_ctl_label_h__ */

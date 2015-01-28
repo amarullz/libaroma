@@ -33,7 +33,6 @@
 #define LIBAROMA_MSG_WIN_ACTIVE       LIBAROMA_MSG_SYS(0x1)
 #define LIBAROMA_MSG_WIN_INACTIVE     LIBAROMA_MSG_SYS(0x2)
 #define LIBAROMA_MSG_WIN_INVALIDATE   LIBAROMA_MSG_SYS(0x3)
-#define LIBAROMA_MSG_WIN_REFRESH      LIBAROMA_MSG_SYS(0x4)
 
 #define LIBAROMA_MSG_WIN_FOCUS        LIBAROMA_MSG_SYS(0x4)
 #define LIBAROMA_MSG_WIN_BLUR         LIBAROMA_MSG_SYS(0x5)
@@ -52,20 +51,10 @@ typedef struct _LIBAROMA_WINDOW * LIBAROMA_WINDOWP;
  * Structure   : _LIBAROMA_CONTROL
  * Typedef     : LIBAROMA_CONTROL, * LIBAROMA_CONTROLP
  * Descriptions: control structure
+ * Struct File : control.h
  */
 typedef struct _LIBAROMA_CONTROL LIBAROMA_CONTROL;
 typedef struct _LIBAROMA_CONTROL * LIBAROMA_CONTROLP;
-
-/*
- * Typedef     : LIBAROMA_CTLCB_*
- * Descriptions: control callbacks
- */
-typedef byte (*LIBAROMA_CTLCB_MESSAGE) \
-  (LIBAROMA_CONTROLP, LIBAROMA_MSGP);
-typedef void (*LIBAROMA_CTLCB_DRAW) \
-  (LIBAROMA_CONTROLP, byte);
-typedef void (*LIBAROMA_CTLCB_DESTROY) \
-  (LIBAROMA_CONTROLP);
 
 /*
  * Structure   : _LIBAROMA_WINDOW
@@ -89,27 +78,6 @@ struct _LIBAROMA_WINDOW{
   LIBAROMA_CONTROLP * childs;
   LIBAROMA_CONTROLP focused;
   LIBAROMA_CONTROLP touched;
-};
-
-/*
- * Structure   : _LIBAROMA_CONTROL
- * Typedef     : LIBAROMA_CONTROL, * LIBAROMA_CONTROLP
- * Descriptions: control structure
- */
-struct _LIBAROMA_CONTROL{
-  byte signature;
-  word id;
-  voidp internal;
-  LIBAROMA_WINDOWP window;
-  int x;
-  int y;
-  int w;
-  int h;
-  
-  /* callback */
-  LIBAROMA_CTLCB_MESSAGE message;
-  LIBAROMA_CTLCB_DRAW draw;
-  LIBAROMA_CTLCB_DESTROY destroy;
 };
 
 /*
@@ -149,6 +117,13 @@ byte libaroma_window_resize(
 );
 
 /*
+ * Function    : libaroma_window_isactive
+ * Return Value: byte
+ * Descriptions: check if window is active
+ */
+byte libaroma_window_isactive(LIBAROMA_WINDOWP win);
+
+/*
  * Function    : libaroma_window_add_control
  * Return Value: byte
  * Descriptions: add control into window
@@ -168,56 +143,6 @@ byte libaroma_window_del_control(
 );
 
 /*
- * Function    : libaroma_window_control_draw
- * Return Value: byte
- * Descriptions: draw control into window
- */
-byte libaroma_window_control_draw(
-  LIBAROMA_CONTROLP ctl,
-  LIBAROMA_CANVASP canvas,
-  byte sync
-);
-
-/*
- * Function    : libaroma_window_control_erasebg
- * Return Value: byte
- * Descriptions: erase control background
- */
-byte libaroma_window_control_erasebg(
-  LIBAROMA_CONTROLP ctl,
-  LIBAROMA_CANVASP canvas
-);
-
-/*
- * Function    : libaroma_window_control_isvisible
- * Return Value: byte
- * Descriptions: check if control visible
- */
-byte libaroma_window_control_isvisible(LIBAROMA_CONTROLP ctl);
-
-/*
- * Function    : libaroma_window_control_new
- * Return Value: LIBAROMA_CONTROLP
- * Descriptions: create primitive control
- */
-LIBAROMA_CONTROLP libaroma_window_control_new(
-  byte signature, word id,
-  int x, int y, int w, int h,
-  LIBAROMA_CTLCB_MESSAGE message,
-  LIBAROMA_CTLCB_DRAW draw,
-  LIBAROMA_CTLCB_DESTROY destroy
-);
-
-/*
- * Function    : libaroma_control_free
- * Return Value: byte
- * Descriptions: free control
- */
-byte libaroma_control_free(
-  LIBAROMA_CONTROLP ctl
-);
-
-/*
  * Function    : libaroma_window_attach
  * Return Value: LIBAROMA_CONTROLP
  * Descriptions: attach control into window
@@ -225,6 +150,22 @@ byte libaroma_control_free(
 LIBAROMA_CONTROLP libaroma_window_attach(
   LIBAROMA_WINDOWP win,
   LIBAROMA_CONTROLP ctl);
+
+/*
+ * Function    : libaroma_window_control_id
+ * Return Value: LIBAROMA_CONTROLP
+ * Descriptions: get control by id
+ */
+LIBAROMA_CONTROLP libaroma_window_control_id(
+    LIBAROMA_WINDOWP win, word id);
+
+/*
+ * Function    : libaroma_window_setfocus
+ * Return Value: LIBAROMA_CONTROLP
+ * Descriptions: set control focus
+ */
+LIBAROMA_CONTROLP libaroma_window_setfocus(
+    LIBAROMA_WINDOWP win, LIBAROMA_CONTROLP ctl);
 
 /*
  * Function    : libaroma_window_event

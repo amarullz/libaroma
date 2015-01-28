@@ -14,8 +14,8 @@
  * limitations under the License.
  *______________________________________________________________________________
  *
- * Filename    : controls.c
- * Description : controlset
+ * Filename    : ctl_label.c
+ * Description : label control
  *
  * + This is part of libaroma, an embedded ui toolkit.
  * + 28/01/15 - Author(s): Ahmad Amarullah
@@ -24,8 +24,8 @@
 #ifndef __libaroma_aroma_c__
   #error "Should be inside aroma.c."
 #endif
-#ifndef __libaroma_controls_c__
-#define __libaroma_controls_c__
+#ifndef __libaroma_ctl_label_c__
+#define __libaroma_ctl_label_c__
 
 #define _LIBAROMA_CONTROL_LABEL_SIGNATURE 0x01
 /*
@@ -51,38 +51,37 @@ void _libaroma_control_label_destroy(LIBAROMA_CONTROLP ctl){
   }
   free(me);
 }
-void _libaroma_control_label_draw(LIBAROMA_CONTROLP ctl, byte sync){
-  if (libaroma_window_control_isvisible(ctl)){
-    _LIBAROMA_CONTROL_LABELP me = 
+
+void _libaroma_control_label_draw(
+    LIBAROMA_CONTROLP ctl, LIBAROMA_CANVASP c){
+  _LIBAROMA_CONTROL_LABELP me = 
       (_LIBAROMA_CONTROL_LABELP) ctl->internal;
+  libaroma_control_erasebg(ctl,c);
     
-    LIBAROMA_CANVASP c = libaroma_canvas(ctl->w, ctl->h);
-    libaroma_window_control_erasebg(ctl,c);
     
-    /* draw now */
-    libaroma_wm_draw_theme(c,"button",
-      0,0,ctl->w,ctl->h,NULL);
+  libaroma_wm_draw_theme(c,"button",
+    0,0,ctl->w,ctl->h,NULL);
     
-    libaroma_text_draw(c,me->textp,0,0);
-    
-    libaroma_window_control_draw(ctl,c,sync);
-    libaroma_canvas_free(c);
-  }
+  libaroma_text_draw(c,me->textp,0,0);
 }
+
 byte _libaroma_control_label_msg(LIBAROMA_CONTROLP ctl, LIBAROMA_MSGP msg){
   _LIBAROMA_CONTROL_LABELP me = 
     (_LIBAROMA_CONTROL_LABELP) ctl->internal;
   return msg->msg;
 }
+
 LIBAROMA_CONTROLP libaroma_control_label(
   LIBAROMA_WINDOWP win, word id, char * text,
   int x, int y, int w, int h
 ){
-  LIBAROMA_CONTROLP ctl = libaroma_window_control_new(
+  LIBAROMA_CONTROLP ctl =
+  libaroma_control_new(
     _LIBAROMA_CONTROL_LABEL_SIGNATURE,
     id, x, y, w, h,
     _libaroma_control_label_msg,
     _libaroma_control_label_draw,
+    NULL,
     _libaroma_control_label_destroy
   );
   
@@ -102,4 +101,4 @@ LIBAROMA_CONTROLP libaroma_control_label(
   return libaroma_window_attach(win,ctl);
 }
 
-#endif /* __libaroma_controls_c__ */
+#endif /* __libaroma_ctl_label_c__ */

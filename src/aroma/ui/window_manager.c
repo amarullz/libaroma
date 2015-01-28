@@ -272,7 +272,7 @@ byte libaroma_wm_set_workspace(int x, int y, int w, int h){
   if (_libaroma_wm->active_window!=NULL){
     /* send refresh event */
     LIBAROMA_MSG _msg;
-    _msg.msg    = LIBAROMA_MSG_WIN_REFRESH;
+    _msg.msg    = LIBAROMA_MSG_WIN_ACTIVE;
     _msg.state  = 0;
     _msg.key    = 0;
     _msg.x      = 0;

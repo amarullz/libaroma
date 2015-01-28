@@ -176,7 +176,7 @@ byte _libaroma_window_recalculate(LIBAROMA_WINDOWP win){
   if (win->scroll_y<0){
     win->scroll_y=0;
   }
-  if (win==libaroma_wm_get_active_window()){
+  if (libaroma_window_isactive(win)){
     _libaroma_window_updatebg(win);
     libaroma_window_invalidate(win);
   }
@@ -190,6 +190,9 @@ byte _libaroma_window_recalculate(LIBAROMA_WINDOWP win){
  */
 byte libaroma_window_show(LIBAROMA_WINDOWP win){
   __CHECK_WM(0);
+  /* set first focus */
+  libaroma_window_setfocus(win);
+  
   return libaroma_wm_set_active_window(win);
 } /* End of libaroma_window_show */
 
@@ -224,7 +227,7 @@ byte libaroma_window_resize(
     ALOGW("window_resize cannot allocate drawing canvas");
     return 0;
   }
-  if (win==libaroma_wm_get_active_window()){
+  if (!libaroma_window_isactive(win)){
     libaroma_wm_clean_workspace();
   }
   win->x = x;
@@ -235,6 +238,18 @@ byte libaroma_window_resize(
   _libaroma_window_recalculate(win);
   return 1;
 } /* End of libaroma_window_resize */
+
+/*
+ * Function    : libaroma_window_isactive
+ * Return Value: byte
+ * Descriptions: check if window is active
+ */
+byte libaroma_window_isactive(LIBAROMA_WINDOWP win){
+  if (win!=NULL){
+    return ((win==libaroma_wm_get_active_window())?1:0);
+  }
+  return 0;
+} /* End of libaroma_window_isactive */
 
 /*
  * Function    : libaroma_window_add_control
@@ -346,162 +361,6 @@ byte libaroma_window_del_control(
 } /* End of libaroma_window_del_control */
 
 /*
- * Function    : libaroma_window_control_draw
- * Return Value: byte
- * Descriptions: draw control into window
- */
-byte libaroma_window_control_draw(
-  LIBAROMA_CONTROLP ctl,
-  LIBAROMA_CANVASP canvas,
-  byte sync
-){
-  __CHECK_WM(0);
-  if (ctl==NULL){
-    ALOGW("window_control_draw ctl is null");
-    return 0;
-  }
-  if (ctl->window==NULL){
-    ALOGW("window_control_draw ctl doesn't have window");
-    return 0;
-  }
-  LIBAROMA_WINDOWP win = ctl->window;
-  if (win->dc==NULL){
-    ALOGW("window_control_draw window dc uninitialized");
-    return 0;
-  }
-  int sx = ctl->x-win->scroll_x;
-  int sy = ctl->y-win->scroll_y;
-  libaroma_draw(
-    win->dc,
-    canvas,
-    sx, sy,
-    0
-  );
-  if (sync){
-    libaroma_wm_sync(
-      win->x+sx,
-      win->y+sy,
-      ctl->w,
-      ctl->h
-    );
-  }
-  return 1;
-} /* End of libaroma_window_control_draw */
-
-/*
- * Function    : libaroma_window_control_erasebg
- * Return Value: byte
- * Descriptions: erase control background
- */
-byte libaroma_window_control_erasebg(
-  LIBAROMA_CONTROLP ctl,
-  LIBAROMA_CANVASP canvas
-){
-  __CHECK_WM(0);
-  if (ctl==NULL){
-    ALOGW("window_control_erasebg ctl is null");
-    return 0;
-  }
-  if (ctl->window==NULL){
-    ALOGW("window_control_erasebg ctl doesn't have window");
-    return 0;
-  }
-  LIBAROMA_WINDOWP win = ctl->window;
-  if (win->bg==NULL){
-    ALOGW("window_control_erasebg window bg uninitialized");
-    return 0;
-  }
-  libaroma_draw_ex(
-    canvas,
-    win->bg,
-    0, 0, ctl->x, ctl->y, ctl->w, ctl->h,
-    0, 0xff
-  );
-  return 1;
-} /* End of libaroma_window_control_erasebg */
-
-/*
- * Function    : libaroma_window_control_isvisible
- * Return Value: byte
- * Descriptions: check if control visible
- */
-byte libaroma_window_control_isvisible(LIBAROMA_CONTROLP ctl){
-  __CHECK_WM(0);
-  if (ctl==NULL){
-    ALOGW("window_control_dc ctl is null");
-    return 0;
-  }
-  if (ctl->window==NULL){
-    ALOGW("window_control_dc ctl doesn't have window");
-    return 0;
-  }
-  LIBAROMA_WINDOWP win = ctl->window;
-  int sx = ctl->x-win->scroll_x;
-  int sy = ctl->y-win->scroll_y;
-  if (sx+ctl->w<0){
-    return 0;
-  }
-  if (sx>win->w){
-    return 0;
-  }
-  if (sy+ctl->h<0){
-    return 0;
-  }
-  if (sy>win->h){
-    return 0;
-  }
-  return 1;
-} /* End of libaroma_window_control_isvisible */
-
-/*
- * Function    : libaroma_window_control_new
- * Return Value: LIBAROMA_CONTROLP
- * Descriptions: create primitive control
- */
-LIBAROMA_CONTROLP libaroma_window_control_new(
-  byte signature, word id,
-  int x, int y, int w, int h,
-  LIBAROMA_CTLCB_MESSAGE message,
-  LIBAROMA_CTLCB_DRAW draw,
-  LIBAROMA_CTLCB_DESTROY destroy
-){
-  LIBAROMA_CONTROLP ret = (LIBAROMA_CONTROLP)
-    malloc(sizeof(LIBAROMA_CONTROL));
-  if (!ret){
-    ALOGW("window_control_new cannot allocating memory");
-    return NULL;
-  }
-  ret->x = x;
-  ret->y = y;
-  ret->w = w;
-  ret->h = h;
-  ret->id = id;
-  ret->signature = signature;
-  ret->message = message;
-  ret->draw = draw;
-  ret->destroy = destroy;
-  ret->window = NULL;
-  ret->internal = NULL;
-  return ret;
-} /* End of libaroma_window_control_new */
-
-/*
- * Function    : libaroma_control_free
- * Return Value: byte
- * Descriptions: free control
- */
-byte libaroma_control_free(
-  LIBAROMA_CONTROLP ctl
-){
-  if (!ctl){
-    return 0;
-  }
-  ctl->destroy(ctl);
-  free(ctl);
-  return 1;
-} /* End of libaroma_control_free */
-
-/*
  * Function    : libaroma_window_attach
  * Return Value: LIBAROMA_CONTROLP
  * Descriptions: attach control into window
@@ -521,7 +380,72 @@ LIBAROMA_CONTROLP libaroma_window_attach(
   return ctl;
 } /* End of libaroma_window_attach */
 
+/*
+ * Function    : libaroma_window_control_id
+ * Return Value: LIBAROMA_CONTROLP
+ * Descriptions: get control by id
+ */
+LIBAROMA_CONTROLP libaroma_window_control_id(
+    LIBAROMA_WINDOWP win, word id){
+  __CHECK_WM(NULL);
+  if (win==NULL){
+    ALOGW("window_control_id win is null");
+    return NULL;
+  }
+  int i;
+  for (i=0;i<win->childn;i++){
+    if (win->childs[i]->id==id){
+      return win->childs[i];
+    }
+  }
+  return NULL; /* not found */
+} /* End of libaroma_window_control_id */
 
+/*
+ * Function    : libaroma_window_setfocus
+ * Return Value: LIBAROMA_CONTROLP
+ * Descriptions: set control focus
+ */
+LIBAROMA_CONTROLP libaroma_window_setfocus(
+    LIBAROMA_WINDOWP win, LIBAROMA_CONTROLP ctl){
+  if (!win){
+    ALOGW("window_setfocus window is null");
+    return NULL;
+  }
+  if (ctl!=NULL){
+    /* set */
+    if (win!=ctl->window){
+      ALOGW("window_setfocus control is not window child");
+      return NULL;
+    }
+    if (ctl->focus!=NULL){
+      if (ctl->focus(ctl,1)){
+        if (win->focused){
+          win->focused->focus(win->focused,0);
+        }
+        win->focused=ctl;
+        return ctl;
+      }
+    }
+    return NULL;
+  }
+  else{
+    /* find focus */
+    if (win->focused){
+      return win->focused;
+    }
+    int i;
+    for (i=0;i<win->childn;i++){
+      if (win->childs[i]->focus!=NULL){
+        if (win->childs[i]->focus(win->childs[i],1)){
+          win->focused = win->childs[i];
+          return win->childs[i];
+        }
+      }
+    }
+  }
+  return NULL;
+} /* End of libaroma_window_setfocus */
 
 /*
  * Function    : libaroma_window_event
@@ -536,7 +460,6 @@ byte libaroma_window_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
   }
   switch (msg->msg){
     case LIBAROMA_MSG_WIN_ACTIVE:
-    case LIBAROMA_MSG_WIN_REFRESH:
       {
         libaroma_window_resize(win, win->x, win->y, win->w, win->h);
       }
@@ -570,7 +493,7 @@ byte libaroma_window_invalidate(LIBAROMA_WINDOWP win){
     ALOGW("window_invalidate win is null");
     return 0;
   }
-  if (win!=libaroma_wm_get_active_window()){
+  if (!libaroma_window_isactive(win)){
     ALOGW("window_invalidate win is not active window");
     return 0;
   }
@@ -589,16 +512,13 @@ byte libaroma_window_invalidate(LIBAROMA_WINDOWP win){
   int i;
   for (i=0;i<win->childn;i++){
     /* draw no sync */
-    win->childs[i]->draw(win->childs[i], 0);
+    libaroma_control_draw(win->childs[i], 0);
   }
   
   /* sync */
   libaroma_wm_sync(win->x, win->y, win->w, win->h);
   return 1;
 } /* End of libaroma_window_invalidate */
-
-
-
 
 #undef __CHECK_WM
 #endif /* __libaroma_window_c__ */
