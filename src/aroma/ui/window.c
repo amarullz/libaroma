@@ -191,7 +191,7 @@ byte _libaroma_window_recalculate(LIBAROMA_WINDOWP win){
 byte libaroma_window_show(LIBAROMA_WINDOWP win){
   __CHECK_WM(0);
   /* set first focus */
-  libaroma_window_setfocus(win);
+  libaroma_window_setfocus(win, NULL);
   
   return libaroma_wm_set_active_window(win);
 } /* End of libaroma_window_show */
@@ -227,7 +227,7 @@ byte libaroma_window_resize(
     ALOGW("window_resize cannot allocate drawing canvas");
     return 0;
   }
-  if (!libaroma_window_isactive(win)){
+  if (libaroma_window_isactive(win)){
     libaroma_wm_clean_workspace();
   }
   win->x = x;

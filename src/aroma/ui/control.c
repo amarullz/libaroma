@@ -70,7 +70,6 @@ byte libaroma_control_draw_flush(
   LIBAROMA_CANVASP canvas,
   byte sync
 ){
-  __CHECK_WM(0);
   if (ctl==NULL){
     ALOGW("window_control_draw ctl is null");
     return 0;
@@ -112,7 +111,6 @@ byte libaroma_control_erasebg(
   LIBAROMA_CONTROLP ctl,
   LIBAROMA_CANVASP canvas
 ){
-  __CHECK_WM(0);
   if (ctl==NULL){
     ALOGW("window_control_erasebg ctl is null");
     return 0;
@@ -141,7 +139,6 @@ byte libaroma_control_erasebg(
  * Descriptions: check if control visible
  */
 byte libaroma_control_isvisible(LIBAROMA_CONTROLP ctl){
-  __CHECK_WM(0);
   if (ctl==NULL){
     ALOGW("window_control_dc ctl is null");
     return 0;
@@ -203,7 +200,7 @@ void libaroma_control_draw_end(
 byte libaroma_control_draw(
   LIBAROMA_CONTROLP ctl, byte sync
 ){
-  LIBAROMA_CANVASP c = libaroma_control_draw_begin(ctl, 1);
+  LIBAROMA_CANVASP c = libaroma_control_draw_begin(ctl);
   if (c!=NULL){
     if (ctl->draw){
       ctl->draw(ctl,c);
