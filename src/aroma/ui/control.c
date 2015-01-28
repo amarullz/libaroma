@@ -172,8 +172,8 @@ byte libaroma_control_isvisible(LIBAROMA_CONTROLP ctl){
  */
 LIBAROMA_CANVASP libaroma_control_draw_begin(
   LIBAROMA_CONTROLP ctl){
-  if (libaroma_window_isactive(ctl->window)||
-      libaroma_control_isvisible(ctl)){
+  if (!libaroma_window_isactive(ctl->window)||
+      !libaroma_control_isvisible(ctl)){
     return NULL;
   }
   LIBAROMA_CANVASP c = libaroma_canvas(ctl->w, ctl->h);
@@ -202,10 +202,11 @@ byte libaroma_control_draw(
 ){
   LIBAROMA_CANVASP c = libaroma_control_draw_begin(ctl);
   if (c!=NULL){
-    if (ctl->draw){
+    if (ctl->draw!=NULL){
       ctl->draw(ctl,c);
     }
     libaroma_control_draw_end(ctl, c, sync);
+    return 1;
   }
   return 0;
 } /* End of libaroma_control_draw */

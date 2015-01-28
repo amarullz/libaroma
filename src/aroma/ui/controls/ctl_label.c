@@ -58,7 +58,6 @@ void _libaroma_control_label_draw(
       (_LIBAROMA_CONTROL_LABELP) ctl->internal;
   libaroma_control_erasebg(ctl,c);
     
-    
   libaroma_wm_draw_theme(c,"button",
     0,0,ctl->w,ctl->h,NULL);
     

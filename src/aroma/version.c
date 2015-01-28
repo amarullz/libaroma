@@ -188,7 +188,7 @@ char * libaroma_info(int type) {
       
     case LIBAROMA_INFO_COPYRIGHT:
       return
-        "Copyright (c) " LIBAROMA_CONFIG_YEAR " " LIBAROMA_CONFIG_CODENAME;
+        "Copyright (c) " LIBAROMA_CONFIG_YEAR " " LIBAROMA_CONFIG_AUTHOR;
         
     case LIBAROMA_INFO_SIGNATURE:
       return _libaroma_version_signature();

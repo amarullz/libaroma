@@ -190,9 +190,10 @@ byte _libaroma_window_recalculate(LIBAROMA_WINDOWP win){
  */
 byte libaroma_window_show(LIBAROMA_WINDOWP win){
   __CHECK_WM(0);
-  /* set first focus */
-  libaroma_window_setfocus(win, NULL);
-  
+  if (win!=NULL){
+    /* set initial focus */
+    libaroma_window_setfocus(win, NULL);
+  }
   return libaroma_wm_set_active_window(win);
 } /* End of libaroma_window_show */
 
@@ -373,7 +374,7 @@ LIBAROMA_CONTROLP libaroma_window_attach(
     if (libaroma_window_add_control(win,ctl)){
       return ctl;
     }
-    ALOGW("control_label cannot attach into window");
+    ALOGW("window_attach cannot attach into window");
     libaroma_control_free(ctl);
     return NULL;
   }
@@ -408,7 +409,7 @@ LIBAROMA_CONTROLP libaroma_window_control_id(
  */
 LIBAROMA_CONTROLP libaroma_window_setfocus(
     LIBAROMA_WINDOWP win, LIBAROMA_CONTROLP ctl){
-  if (!win){
+  if (win==NULL){
     ALOGW("window_setfocus window is null");
     return NULL;
   }
