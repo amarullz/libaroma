@@ -73,7 +73,6 @@ struct _LIBAROMA_WINDOW{
   int client_h;
   int scroll_x;
   int scroll_y;
-  int threadn;
   int childn;
   LIBAROMA_CONTROLP * childs;
   LIBAROMA_CONTROLP focused;

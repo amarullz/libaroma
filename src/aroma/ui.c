@@ -34,7 +34,16 @@
 #include "ui/window_manager.c"
 #include "ui/control.c"
 
-/* control set */
+/*
+ * control set - libaroma_ctl_*
+ */
+#define _LIBAROMA_CTL_CHECK(SIG, TYPE, RET) \
+    if (ctl->signature!=SIG){ return RET; } \
+    TYPE me = (TYPE) ctl->internal
+
 #include "ui/controls/ctl_label.c"
+#include "ui/controls/ctl_progress.c"
+
+#undef _LIBAROMA_CTL_CHECK
 
 #endif /* __libaroma_ui_c__ */

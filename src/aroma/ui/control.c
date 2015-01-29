@@ -26,6 +26,7 @@
 #endif
 #ifndef __libaroma_control_c__
 #define __libaroma_control_c__
+
 /*
  * Function    : libaroma_control_new
  * Return Value: LIBAROMA_CONTROLP

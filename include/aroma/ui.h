@@ -36,5 +36,6 @@
 
 /* control set */
 #include "ui/controls/ctl_label.h"
+#include "ui/controls/ctl_progress.h"
 
 #endif /* __libaroma_ui_h__ */

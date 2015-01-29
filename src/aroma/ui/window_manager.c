@@ -219,6 +219,30 @@ byte libaroma_wm_release(){
   return 1;
 } /* End of libaroma_wm_release */
 
+
+/*
+ * Function    : libaroma_wm_compose
+ * Return Value: LIBAROMA_MSGP
+ * Descriptions: compose window message
+ */
+LIBAROMA_MSGP libaroma_wm_compose(
+    LIBAROMA_MSGP msg,
+    byte m,
+    voidp data,
+    int param1,
+    int param2){
+  msg->msg    = m;
+  msg->state  = 0;
+  msg->key    = 0;
+  msg->x      = param1;
+  msg->y      = param2;
+  msg->d      = data;
+  msg->sent   = libaroma_nano_tick();
+  return msg;
+} /* End of libaroma_wm_compose */
+
+
+
 /*
  * Function    : libaroma_wm_reset
  * Return Value: byte
@@ -272,16 +296,10 @@ byte libaroma_wm_set_workspace(int x, int y, int w, int h){
   if (_libaroma_wm->active_window!=NULL){
     /* send refresh event */
     LIBAROMA_MSG _msg;
-    _msg.msg    = LIBAROMA_MSG_WIN_ACTIVE;
-    _msg.state  = 0;
-    _msg.key    = 0;
-    _msg.x      = 0;
-    _msg.y      = 0;
-    _msg.d      = NULL;
-    _msg.sent   = libaroma_nano_tick();
     libaroma_window_event(
       _libaroma_wm->active_window,
-      &_msg
+      libaroma_wm_compose(
+        &_msg, LIBAROMA_MSG_WIN_ACTIVE, NULL, 0, 0)
     );
   }
   
@@ -444,6 +462,9 @@ byte libaroma_wm_getmessage(LIBAROMA_MSGP msg){
   if (_libaroma_wm==NULL){
     ALOGW("window manager uninitialized");
     return ret;
+  }
+  if (!_libaroma_wm->client_started){
+    return 0;
   }
   do{
     ret=libaroma_msg(msg);
@@ -729,16 +750,10 @@ byte libaroma_wm_set_active_window(LIBAROMA_WINDOWP win){
   LIBAROMA_MSG _msg;
   if (_libaroma_wm->active_window!=NULL){
     /* send inactive event */
-    _msg.msg    = LIBAROMA_MSG_WIN_INACTIVE;
-    _msg.state  = 0;
-    _msg.key    = 0;
-    _msg.x      = 0;
-    _msg.y      = 0;
-    _msg.d      = (voidp) win;
-    _msg.sent   = libaroma_nano_tick();
     libaroma_window_event(
       _libaroma_wm->active_window,
-      &_msg
+      libaroma_wm_compose(
+        &_msg, LIBAROMA_MSG_WIN_INACTIVE, (voidp) win, 0, 0)
     );
   }
   
@@ -746,13 +761,9 @@ byte libaroma_wm_set_active_window(LIBAROMA_WINDOWP win){
   
   if (win!=NULL){
     /* send active event */
-    _msg.msg    = LIBAROMA_MSG_WIN_ACTIVE;
-    _msg.state  = 0;
-    _msg.key    = 0;
-    _msg.x      = 0;
-    _msg.y      = 0;
-    _msg.d      = (voidp) _libaroma_wm->active_window;
-    _msg.sent   = libaroma_nano_tick();
+    libaroma_wm_compose(
+        &_msg, LIBAROMA_MSG_WIN_ACTIVE, 
+        (voidp) _libaroma_wm->active_window, 0, 0);
     _libaroma_wm->active_window = win;
     libaroma_window_event(
       _libaroma_wm->active_window,

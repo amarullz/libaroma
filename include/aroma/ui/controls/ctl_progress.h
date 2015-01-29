@@ -14,33 +14,50 @@
  * limitations under the License.
  *______________________________________________________________________________
  *
- * Filename    : motions.h
- * Description : motions and physics engine
+ * Filename    : ctl_progress.h
+ * Description : progress control
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 21/01/15 - Author(s): Ahmad Amarullah
+ * + 29/01/15 - Author(s): Ahmad Amarullah
  *
  */
 #ifndef __libaroma_aroma_h__
   #error "Include <aroma.h> instead."
 #endif
-#ifndef __libaroma_motions_h__
-#define __libaroma_motions_h__
+#ifndef __libaroma_ctl_progress_h__
+#define __libaroma_ctl_progress_h__
+
+#define LIBAROMA_CTL_PROGRESS_DETERMINATE   0x0
+#define LIBAROMA_CTL_PROGRESS_INDETERMINATE 0x1
+#define LIBAROMA_CTL_PROGRESS_QUERY         0x2
 
 /*
- * Function    : libaroma_cubic_bezier
- * Return Value: float
- * Descriptions: calculate cubic bezier value from t
+ * Function    : libaroma_ctl_progress
+ * Return Value: LIBAROMA_CONTROLP
+ * Descriptions: create new progress control
  */
-float libaroma_cubic_bezier(float x1,float y1,float x2,float y2,float t);
-#define libaroma_cubic_bezier_ease(t) \
-  libaroma_cubic_bezier(0.25,0.1,0.25,0.1,t)
-#define libaroma_cubic_bezier_easein(t) \
-  libaroma_cubic_bezier(0.42,0,1,1,t)
-#define libaroma_cubic_bezier_easeout(t) \
-  libaroma_cubic_bezier(0,0,0.58,1,t)
-#define libaroma_cubic_bezier_easeiout(t) \
-  libaroma_cubic_bezier(0.42,0,0.58,1,t) 
-#define libaroma_cubic_bezier_linear(t) (t)
+LIBAROMA_CONTROLP libaroma_ctl_progress(
+    LIBAROMA_WINDOWP win,
+    word id,
+    int x, int y, int w, int h,
+    byte type,
+    int max,
+    int value
+);
 
-#endif /* __libaroma_motions_h__ */
+byte libaroma_ctl_progress_type(
+  LIBAROMA_CONTROLP ctl,
+  byte type
+);
+
+byte libaroma_ctl_progress_value(
+  LIBAROMA_CONTROLP ctl,
+  int value
+);
+
+byte libaroma_ctl_progress_max(
+  LIBAROMA_CONTROLP ctl,
+  int max
+);
+
+#endif /* __libaroma_ctl_progress_h__ */

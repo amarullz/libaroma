@@ -99,6 +99,18 @@ struct _LIBAROMA_WM_THEME{
 LIBAROMA_WMP libaroma_wm();
 
 /*
+ * Function    : libaroma_wm_compose
+ * Return Value: LIBAROMA_MSGP
+ * Descriptions: compose window message
+ */
+LIBAROMA_MSGP libaroma_wm_compose(
+    LIBAROMA_MSGP msg,
+    byte m,
+    voidp data,
+    int param1,
+    int param2);
+
+/*
  * Function    : libaroma_wm_clean_workspace
  * Return Value: byte
  * Descriptions: update workspace content before window resize

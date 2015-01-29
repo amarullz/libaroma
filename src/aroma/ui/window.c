@@ -45,7 +45,7 @@ LIBAROMA_WINDOWP libaroma_window(
   __CHECK_WM(NULL);
   LIBAROMA_WINDOWP win = (LIBAROMA_WINDOWP) malloc(sizeof(LIBAROMA_WINDOW));
   /* zero values */
-  win->threadn = win->childn = 
+  win->childn = 
   win->client_w = win->client_h =
   win->scroll_x = win->scroll_y = 0;
   if (bg_theme_name){
@@ -81,11 +81,8 @@ byte libaroma_window_free(
   
   /* inactivate it */
   LIBAROMA_MSG _msg;
-  _msg.msg    = LIBAROMA_MSG_WIN_INACTIVE;
-  _msg.state = _msg.key = _msg.x = _msg.y= 0;
-  _msg.d      = NULL;
-  _msg.sent   = libaroma_nano_tick();
-  libaroma_window_event(win,&_msg);
+  libaroma_window_event(win,
+    libaroma_wm_compose(&_msg, LIBAROMA_MSG_WIN_INACTIVE, NULL, 0, 0));
   
   /* delete childs */
   int i;
@@ -462,14 +459,21 @@ byte libaroma_window_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
   switch (msg->msg){
     case LIBAROMA_MSG_WIN_ACTIVE:
       {
+        /* set current window size */
         libaroma_window_resize(win, win->x, win->y, win->w, win->h);
+        /* send active message to child */
+        int i;
+        for (i=0;i<win->childn;i++){
+          win->childs[i]->message(win->childs[i], msg);
+        }
       }
       break;
     case LIBAROMA_MSG_WIN_INACTIVE:
       {
-        /* wait for thread if any */
-        while (win->threadn>0) {
-          usleep(500);
+        /* send inactive message to child */
+        int i;
+        for (i=0;i<win->childn;i++){
+          win->childs[i]->message(win->childs[i], msg);
         }
       }
       break;
