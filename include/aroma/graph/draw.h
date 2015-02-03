@@ -151,6 +151,17 @@ word libaroma_draw_filter_saturation(
 LIBAROMA_CANVASP libaroma_art_busy_progress(
     word basecolor);
 
+/*
+ * Function    : libaroma_draw_subpixel
+ * Return Value: byte
+ * Descriptions: draw subpixel
+ */
+byte libaroma_draw_subpixel(
+    LIBAROMA_CANVASP dest,
+    float dx, float dy, float tickness,
+    word color,
+    byte alpha);
+
 /* libaroma_draw_ex1 aliases */
 #define libaroma_draw_filter(dst,src,dx,dy,a,fcb,fparam) \
   libaroma_draw_ex1(dst,src,dx,dy,0,0,src->w, \

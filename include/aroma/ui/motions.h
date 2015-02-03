@@ -39,7 +39,7 @@ float libaroma_cubic_bezier(float x1,float y1,float x2,float y2,float t);
   libaroma_cubic_bezier(0.42,0,1,1,t)
 #define libaroma_cubic_bezier_easeout(t) \
   libaroma_cubic_bezier(0,0,0.58,1,t)
-#define libaroma_cubic_bezier_easeiout(t) \
+#define libaroma_cubic_bezier_easeinout(t) \
   libaroma_cubic_bezier(0.42,0,0.58,1,t) 
 #define libaroma_cubic_bezier_linear(t) (t)
 

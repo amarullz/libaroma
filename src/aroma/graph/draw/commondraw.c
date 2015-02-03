@@ -298,5 +298,47 @@ byte libaroma_draw_rect(
 } /* End of libaroma_draw_rect */
 
 
+/*
+ * Function    : libaroma_draw_subpixel
+ * Return Value: byte
+ * Descriptions: draw subpixel
+ */
+byte libaroma_draw_subpixel(
+    LIBAROMA_CANVASP dest,
+    float dx, float dy, float tickness,
+    word color,
+    byte alpha){
+  if (!dest){
+    dest=libaroma_fb()->canvas;
+  }
+  if ((dx<=-1)||(dy<=-1)||(dy>=dest->h)||(dx>=dest->w)){
+    return 0;
+  }
+  int x, y;
+  float px, py;
+  float ht=(tickness-1.0)/2;
+  for (y=floor(dy-ht);y<=ceil(dy+ht);y++){
+    if ((y>=0)&&(y<dest->h)){
+      int pos = y * dest->l;
+      for (x=floor(dx-ht);x<=ceil(dx+ht);x++){
+        if ((x>=0)&&(x<dest->w)){
+          px = abs((dx<x)?dx-x:x-dx)/ht;
+          py = abs((dy<y)?dy-y:y-dy)/ht;
+          int alp = min(0xff,max((1-(px+py)) * 0xff,0));
+          wordp d = dest->data + pos + x;
+          word cl = libaroma_alpha(*d, color, alp);
+          if (alpha!=0xff){
+            cl=libaroma_alpha(*d,cl,alpha);
+          }
+          *d=cl;
+        }
+      }
+    }
+  }
+  return 1;
+} /* End of libaroma_draw_subpixel */
+
+
+
 
 #endif /* __libaroma_commondraw_c__ */

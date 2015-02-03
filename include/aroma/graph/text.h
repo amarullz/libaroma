@@ -240,10 +240,10 @@ byte libaroma_text_draw_ex(
 
 /*
  * Function    : libaroma_draw_text_ex
- * Return Value: byte
+ * Return Value: int
  * Descriptions: direct text directly from string - extended
  */
-byte libaroma_draw_text_ex(
+int libaroma_draw_text_ex(
   LIBAROMA_CANVASP dest,
   const char * text,
   int x, int y,

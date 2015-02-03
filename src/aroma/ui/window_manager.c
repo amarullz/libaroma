@@ -241,8 +241,6 @@ LIBAROMA_MSGP libaroma_wm_compose(
   return msg;
 } /* End of libaroma_wm_compose */
 
-
-
 /*
  * Function    : libaroma_wm_reset
  * Return Value: byte
@@ -299,13 +297,18 @@ byte libaroma_wm_set_workspace(int x, int y, int w, int h){
     libaroma_window_event(
       _libaroma_wm->active_window,
       libaroma_wm_compose(
-        &_msg, LIBAROMA_MSG_WIN_ACTIVE, NULL, 0, 0)
+        &_msg, LIBAROMA_MSG_WIN_RESIZE, NULL, 0, 0)
     );
   }
   
   return 1;
 } /* End of libaroma_wm_set_workspace */
 
+/*
+ * Function    : libaroma_wm_erasebg_workspace
+ * Return Value: byte
+ * Descriptions: erase workspace background
+ */
 byte libaroma_wm_erasebg_workspace(int x, int y, int w, int h){
   if (_libaroma_wm==NULL){
     ALOGW("window manager uninitialized");
@@ -313,9 +316,9 @@ byte libaroma_wm_erasebg_workspace(int x, int y, int w, int h){
   }
   return libaroma_draw_ex(
     libaroma_fb()->canvas, _libaroma_wm->workspace_bg,
-    x, y, x, y, w, h, 0, 0xff
+    x+_libaroma_wm->x, y+_libaroma_wm->y, x, y, w, h, 0, 0xff
   );
-}
+} /* End of libaroma_wm_erasebg_workspace */
 
 /*
  * Function    : libaroma_wm_set_message_handler
@@ -373,11 +376,11 @@ byte libaroma_wm_sync(int x, int y, int w, int h){
     /* sync doesn't needed */
     return 1;
   }
-  if (w2+x2>_libaroma_wm->w){
-    w2=_libaroma_wm->w-x2;
+  if (w2+x2>_libaroma_wm->x+_libaroma_wm->w){
+    w2=(_libaroma_wm->x+_libaroma_wm->w)-x2;
   }
-  if (h2+y2>_libaroma_wm->h){
-    h2=_libaroma_wm->h-y2;
+  if (h2+y2>_libaroma_wm->y+_libaroma_wm->h){
+    h2=(_libaroma_wm->y+_libaroma_wm->h)-y2;
   }
   /* now sync fb */
   return libaroma_sync_ex(x2,y2,w2,h2);

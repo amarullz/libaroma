@@ -36,6 +36,13 @@ dword libaroma_hash(
   char * str);
 
 /*
+ * Function    : libaroma_stristr
+ * Return Value: char *
+ * Descriptions: stristr
+ */
+char * libaroma_stristr(char *ch1, char *ch2, int sz);
+
+/*
  * Function    : libaroma_lang_get
  * Return Value: char *
  * Descriptions: get language item

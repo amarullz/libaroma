@@ -458,10 +458,11 @@ byte libaroma_window_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
   }
   switch (msg->msg){
     case LIBAROMA_MSG_WIN_ACTIVE:
+    case LIBAROMA_MSG_WIN_RESIZE:
       {
         /* set current window size */
         libaroma_window_resize(win, win->x, win->y, win->w, win->h);
-        /* send active message to child */
+        /* send active/resize message to child */
         int i;
         for (i=0;i<win->childn;i++){
           win->childs[i]->message(win->childs[i], msg);

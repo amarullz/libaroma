@@ -514,7 +514,7 @@ byte QNXID_getinput(LIBAROMA_HIDP me, LIBAROMA_HID_EVENTP dest_ev) {
           dest_ev->type   = LIBAROMA_HID_EV_TYPE_KEY;
           dest_ev->key    = code;
           dest_ev->x      = scode; /* Scan Code */
-          dest_ev->y      = 0;
+          dest_ev->y      = c;
           dest_ev->state  = (
             isup ? LIBAROMA_HID_EV_STATE_UP : LIBAROMA_HID_EV_STATE_DOWN
           );

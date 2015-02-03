@@ -207,7 +207,7 @@ byte _libaroma_text_parse_next(
               /* is it string resource ?? */
               if (cur[0] == '~') {
                 /* string resource */
-                const char * string_val = libaroma_lang_get(cur + 1);
+                char * string_val = libaroma_lang_get(cur + 1);
                 if (string_val == NULL) {
                   string_val = _libaroma_text_parse_strdup(cur + 1);
                 }

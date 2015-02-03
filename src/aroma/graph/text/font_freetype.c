@@ -479,7 +479,7 @@ byte libaroma_font_glyph_draw(
       int ypos = (y + yglp) * dest->l;
       
       /* check position */
-      if ((ypos + draw_w > dest->s) || (ypos < 0)) {
+      if ((ypos + draw_w > (dest->sz/2)) || (ypos < 0)) {
         continue;
       }
       
@@ -520,7 +520,7 @@ byte libaroma_font_glyph_draw(
       int yglp = (yy - bit->top);
       int ypos = (y + yglp) * dest->l;
       /* check position */
-      if ((ypos + draw_w > dest->s) || (ypos < 0)) {
+      if ((ypos + draw_w > (dest->sz/2)) || (ypos < 0)) {
         continue;
       }
       /* source & destination pointers */

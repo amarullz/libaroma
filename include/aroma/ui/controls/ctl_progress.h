@@ -27,6 +27,9 @@
 #ifndef __libaroma_ctl_progress_h__
 #define __libaroma_ctl_progress_h__
 
+/*
+ * LIBAROMA_CTL_PROGRESS_* - progress type
+ */
 #define LIBAROMA_CTL_PROGRESS_DETERMINATE   0x0
 #define LIBAROMA_CTL_PROGRESS_INDETERMINATE 0x1
 #define LIBAROMA_CTL_PROGRESS_QUERY         0x2
@@ -45,19 +48,34 @@ LIBAROMA_CONTROLP libaroma_ctl_progress(
     int value
 );
 
+/*
+ * Function    : libaroma_ctl_progress_type
+ * Return Value: byte
+ * Descriptions: set progress type
+ */
 byte libaroma_ctl_progress_type(
-  LIBAROMA_CONTROLP ctl,
-  byte type
+    LIBAROMA_CONTROLP ctl,
+    byte type
 );
 
+/*
+ * Function    : libaroma_ctl_progress_value
+ * Return Value: byte
+ * Descriptions: set progress value
+ */
 byte libaroma_ctl_progress_value(
-  LIBAROMA_CONTROLP ctl,
-  int value
+    LIBAROMA_CONTROLP ctl,
+    int value
 );
 
+/*
+ * Function    : libaroma_ctl_progress_max
+ * Return Value: byte
+ * Descriptions: set progress max value
+ */
 byte libaroma_ctl_progress_max(
-  LIBAROMA_CONTROLP ctl,
-  int max
+    LIBAROMA_CONTROLP ctl,
+    int max
 );
 
 #endif /* __libaroma_ctl_progress_h__ */

@@ -394,7 +394,7 @@ byte libaroma_canvas_area_update(
   c->w      = w;
   c->h      = h;
   c->s      = w * h;
-  c->sz     = ((parent->l * h) * 2);
+  c->sz     = ((parent->l * h)-(parent->l-w)) * 2;
   c->flags  = LIBAROMA_CANVAS_CHILD;
   
   if (((y * parent->l) + x + c->sz) > parent->sz) {
