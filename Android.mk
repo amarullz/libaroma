@@ -50,7 +50,7 @@ LIBAROMA_MK_DEVICE_FILES := \
 ##
 LIBAROMA_MK_ZLIB_PATH := external/zlib
 LIBAROMA_MK_PNG_PATH := external/libpng
-LIBAROMA_MK_JPEG_PATH := external/libjpeg
+LIBAROMA_MK_JPEG_PATH := external/jpeg
 LIBAROMA_MK_FREETYPE_PATH := $(LIBAROMA_PATH)/libs/freetype
 LIBAROMA_MK_HARFBUZZNG_PATH := $(LIBAROMA_PATH)/libs/harfbuzz-ng
 LIBAROMA_MK_MINZIP_PATH := $(LIBAROMA_PATH)/libs/minzip
