@@ -16,6 +16,7 @@ echo Compiling Libaroma
   -DLIBAROMA_CONFIG_DEBUG_MEMORY=%LIBAROMA_CONFIG_DEBUG_MEMORY% ^
   -DLIBAROMA_CONFIG_COMPILER_MESSAGE=%LIBAROMA_CONFIG_COMPILER_MESSAGE% ^
   -DLIBAROMA_CONFIG_SHMEMFB=%LIBAROMA_CONFIG_SHMEMFB% ^
+  -DANDROID=1 ^
  ^
   ../../../src/contribs/devices/linux/fb_driver.c ^
   ../../../src/contribs/devices/linux/hid_driver.c ^

@@ -14,13 +14,14 @@ echo Compiling TEST
     -DLIBAROMA_CONFIG_DEBUG_MEMORY=%LIBAROMA_CONFIG_DEBUG_MEMORY% ^
     -DLIBAROMA_CONFIG_COMPILER_MESSAGE=%LIBAROMA_CONFIG_COMPILER_MESSAGE% ^
     -DLIBAROMA_CONFIG_SHMEMFB=%LIBAROMA_CONFIG_SHMEMFB% ^
+    -DANDROID=1 ^
   ^
     ./*.o ^
     ../../test/libaroma_test.c ^
   ^
   -I../../../include ^
   -I../../../src ^
-  -o ../bin/zip/META-INF/com/google/android/update-binary ^
+  -o ../bin/libaroma_test ^
   ^
   -lm -lpthread -lstdc++ -lrt
 
