@@ -391,10 +391,10 @@ void libaroma_textline_add_span_img(
       while (next) {
         if ((next->type == _LIBAROMA_TEXTSPAN_IMAGE) && (next->data != NULL)) {
           /* only non-floating images */
-          _LIBAROMA_TEXTSPAN_IMGP imgspan =
+          _LIBAROMA_TEXTSPAN_IMGP local_imgspan =
             (_LIBAROMA_TEXTSPAN_IMGP) next->data;
-          if (imgspan->s == 0) {
-            next->x += imgspan->w;
+          if (local_imgspan->s == 0) {
+            next->x += local_imgspan->w;
           }
         }
         else {

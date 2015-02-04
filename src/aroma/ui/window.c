@@ -338,7 +338,7 @@ byte libaroma_window_del_control(
     ALOGW("window_del_control malloc temp childs failed");
     return 0;
   }
-  int j;
+  int j = 0;
   int i;
   for (i=0;i<win->childn;i++){
     if (win->childs[i]!=ctl){

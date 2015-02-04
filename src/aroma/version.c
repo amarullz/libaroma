@@ -34,7 +34,7 @@
  * Descriptions: version storage
  */
 static char _LIBAROMA_VERSION[10] = {0};
-static char _LIBAROMA_VERSION_BUILD[6] = {0};
+static char _LIBAROMA_VERSION_BUILD[7] = {0};
 static char _LIBAROMA_VERSION_FULLVER[50] = {0};
 static char _LIBAROMA_VERSION_SIGNATURE[80] = {0};
 

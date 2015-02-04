@@ -118,7 +118,7 @@ byte libaroma_draw_scale_nearest(
           if (dst->alpha) {
             *t = libaroma_alpha(
               libaroma_alpha(merge, *t, dst->alpha[v + j]), merge, a[x2]);
-            dst->alpha[v + j] = min(dst->alpha[v + j] + a[x2], 0xff);
+            dst->alpha[v + j] = MIN(dst->alpha[v + j] + a[x2], 0xff);
           }
           else {
             *t = libaroma_alpha(*t, merge, a[x2]);
@@ -143,7 +143,7 @@ byte libaroma_draw_scale_nearest(
             *t = libaroma_alpha(
                 libaroma_alpha(p[x2], *t, dst->alpha[v + j]),
               p[x2], a[x2]);
-            dst->alpha[v + j] = min(dst->alpha[v + j] + a[x2], 0xff);
+            dst->alpha[v + j] = MIN(dst->alpha[v + j] + a[x2], 0xff);
           }
           else {
             *t = libaroma_alpha(*t, p[x2], a[x2]);
@@ -273,7 +273,7 @@ byte libaroma_draw_scale_smooth(
             wc1 + (al3 * hc1 + al4 * hc2) * wc2) >> 14);
           *dstp = libaroma_alpha(
               libaroma_alpha(res, *dstp, dst->alpha[dst_pos]), res, asz);
-          dst->alpha[dst_pos] = min(dst->alpha[dst_pos] + asz, 0xff);
+          dst->alpha[dst_pos] = MIN(dst->alpha[dst_pos] + asz, 0xff);
         }
         else {
           *dstp = libaroma_alpha(*dstp, res, (((al1 * hc1 + al2 * hc2) *

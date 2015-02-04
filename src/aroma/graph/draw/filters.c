@@ -43,9 +43,9 @@ word libaroma_draw_filter_saturation(
                b * b * 0.114
              );
   double ch = ((double) param) / 255.0;
-  r = max(0, min(0xff, P + (r - P) * ch));
-  g = max(0, min(0xff, P + (g - P) * ch));
-  b = max(0, min(0xff, P + (b - P) * ch));
+  r = MAX(0, MIN(0xff, P + (r - P) * ch));
+  g = MAX(0, MIN(0xff, P + (g - P) * ch));
+  b = MAX(0, MIN(0xff, P + (b - P) * ch));
   return libaroma_rgb(r, g, b);
 } /* End of libaroma_draw_filter_saturation */
 
