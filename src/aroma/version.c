@@ -57,69 +57,6 @@ char * _libaroma_version() {
 }
 
 /*
- * Function    : _libaroma_version_build
- * Return Value: char *
- * Descriptions: Get libaroma build number
- */
-char * _libaroma_version_build() {
-  if (_LIBAROMA_VERSION_BUILD[0] == 0) {
-    const char * ts = __DATE__;
-    _LIBAROMA_VERSION_BUILD[0] = ts[9];
-    _LIBAROMA_VERSION_BUILD[1] = ts[10];
-    char mn = 1;
-    if (ts[0] == 'J' && ts[1] == 'a' && ts[2] == 'n') {
-      mn = 1;
-    }
-    else if (ts[0] == 'F') {
-      mn = 2;
-    }
-    else if (ts[0] == 'M' && ts[1] == 'a' && ts[2] == 'r') {
-      mn = 3;
-    }
-    else if (ts[0] == 'A' && ts[1] == 'p') {
-      mn = 4;
-    }
-    else if (ts[0] == 'M' && ts[1] == 'a' && ts[2] == 'y') {
-      mn = 5;
-    }
-    else if (ts[0] == 'J' && ts[1] == 'u' && ts[2] == 'n') {
-      mn = 6;
-    }
-    else if (ts[0] == 'J' && ts[1] == 'u' && ts[2] == 'l') {
-      mn = 7;
-    }
-    else if (ts[0] == 'A' && ts[1] == 'u') {
-      mn = 8;
-    }
-    else if (ts[0] == 'S') {
-      mn = 9;
-    }
-    else if (ts[0] == 'O') {
-      mn = 10;
-    }
-    else if (ts[0] == 'N') {
-      mn = 11;
-    }
-    else if (ts[0] == 'D') {
-      mn = 12;
-    }
-    if (mn < 10) {
-      _LIBAROMA_VERSION_BUILD[2] = '0';
-      _LIBAROMA_VERSION_BUILD[3] = '0' + mn;
-    }
-    else {
-      _LIBAROMA_VERSION_BUILD[2] = '1';
-      _LIBAROMA_VERSION_BUILD[3] = '0' + (mn - 10);
-    }
-    
-    _LIBAROMA_VERSION_BUILD[4] = ts[4];
-    _LIBAROMA_VERSION_BUILD[5] = ts[5];
-    _LIBAROMA_VERSION_BUILD[6] = 0;
-  }
-  return _LIBAROMA_VERSION_BUILD;
-}
-
-/*
  * Function    : _libaroma_version_fullver
  * Return Value: char *
  * Descriptions: Get libaroma full version string
@@ -130,7 +67,7 @@ char * _libaroma_version_fullver() {
              50,
              "%s (%s;%s;%s)",
              _libaroma_version(),
-             _libaroma_version_build(),
+             LIBAROMA_CONFIG_VERSION_BUILD,
              LIBAROMA_CONFIG_OS,
              LIBAROMA_CONFIG_CODENAME
             );
@@ -179,7 +116,7 @@ char * libaroma_info(int type) {
       break;
       
     case LIBAROMA_INFO_BUILD:
-      return _libaroma_version_build();
+      return LIBAROMA_CONFIG_VERSION_BUILD;
       break;
       
     case LIBAROMA_INFO_FULLVER:

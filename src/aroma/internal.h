@@ -66,9 +66,20 @@ byte LIBAROMA_FB_INIT_FUNCTION(
 byte LIBAROMA_HID_INIT_FUNCTION(
     LIBAROMA_HIDP);
 
-/* check shared memory config */
-#ifndef LIBAROMA_CONFIG_SHMEM_PREFIX
-  #define LIBAROMA_CONFIG_SHMEM_PREFIX "/libaromashm-"
+#if ANDROID
+  #ifdef LIBAROMA_CONFIG_SHMEM_PREFIX
+    #undef LIBAROMA_CONFIG_SHMEM_PREFIX
+  #endif
+  
+  /* wrapper for shm_* */
+  #define LIBAROMA_CONFIG_SHMEM_PREFIX "/tmp/libaromashm-"
+  #define shm_open open
+  #define shm_unlink unlink
+#else
+  /* check shared memory config */
+  #ifndef LIBAROMA_CONFIG_SHMEM_PREFIX
+    #define LIBAROMA_CONFIG_SHMEM_PREFIX "/libaromashm-"
+  #endif
 #endif
 
 #endif /* __libaroma_internal_h__ */

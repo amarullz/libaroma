@@ -90,28 +90,37 @@ int main(int argc, char **argv){
   /* start libaroma process
    *  + LIBAROMA_START_MUTEPARENT - For android recovery apps
    */
-  libaroma_start(LIBAROMA_START_MUTEPARENT);
+  libaroma_start(0);
   
   /* load font - id=0 */
   libaroma_font(0,
     libaroma_stream_mzip(
       _libaroma_test.zip,
-      "/assets/DroidSans.ttf"
+      "assets/DroidSans.ttf"
     )
   );
   
+  libaroma_wm_set_theme_stream(
+    "window",
+    libaroma_stream_mzip(
+      _libaroma_test.zip,
+      "assets/window.9.png"
+    ),
+    1,
+    160);
+  
   /* create window */
   LIBAROMA_WINDOWP win = libaroma_window(
-    NULL, 0, 0, 0, 0); /* fullscreen */
+    "window", 0, 0, 0, 0); /* fullscreen */
   
-  /* progress bar */
+  /* progress bar 
   LIBAROMA_CONTROLP progress = libaroma_ctl_progress(
     win, 1,
     libaroma_dp(20), libaroma_dp(20), libaroma_dp(100), libaroma_dp(6),
     LIBAROMA_CTL_PROGRESS_QUERY,
     100,
     0
-  );
+  );*/
   
   /* show window */
   libaroma_window_show(win);
@@ -121,6 +130,9 @@ int main(int argc, char **argv){
   
   /* free window */
   libaroma_window_free(win);
+  
+  /* free zip */
+  libaroma_zip_release(_libaroma_test.zip);
   
   /* end libaroma process */
   libaroma_end();

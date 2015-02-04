@@ -43,6 +43,10 @@ char * ___mtrack_strdup(char * str, char * filename, long line);
   ___mtrack_realloc(x,s, ___MEMTRACK_FILE(),___MEMTRACK_LINE())
 #define free(x) \
   ___mtrack_free((void **) &x, ___MEMTRACK_FILE(),___MEMTRACK_LINE())
+
+#ifdef strdup
+#undef strdup
+#endif
 #define strdup(x) \
   ___mtrack_strdup(x, ___MEMTRACK_FILE(),___MEMTRACK_LINE())
 #endif /* LIBAROMA_CONFIG_DEBUG_MEMORY */
