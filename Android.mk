@@ -99,9 +99,6 @@ LIBAROMA_MK_MINZIP_LIB := libminzip_libaroma
     -O3 \
     -ffunction-sections -Wl,--gc-sections \
     -fPIC -DPIC -Wl,-s -Wall -Wextra -Wshadow -Werror -Wno-unused-parameter
-
-  ## shm
-  LOCAL_CFLAGS += -Wno-implicit-function-declaration
   
   ##
   ## static libraries
