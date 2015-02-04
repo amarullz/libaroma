@@ -26,6 +26,7 @@
 ## local path
 ##
 LOCAL_PATH := $(call my-dir)
+LIBAROMA_PATH := $(LOCAL_PATH)
 
 ##
 ## features configurations
@@ -50,17 +51,17 @@ LIBAROMA_MK_DEVICE_FILES := \
 LIBAROMA_MK_ZLIB_PATH := external/zlib
 LIBAROMA_MK_PNG_PATH := external/libpng
 LIBAROMA_MK_JPEG_PATH := external/libjpeg
-LIBAROMA_MK_FREETYPE_PATH := external/freetype
-LIBAROMA_MK_HARFBUZZNG_PATH := $(LOCAL_PATH)/libs/harfbuzz-ng
-LIBAROMA_MK_MINZIP_PATH := $(LOCAL_PATH)/libs/minzip
+LIBAROMA_MK_FREETYPE_PATH := $(LIBAROMA_PATH)/libs/freetype
+LIBAROMA_MK_HARFBUZZNG_PATH := $(LIBAROMA_PATH)/libs/harfbuzz-ng
+LIBAROMA_MK_MINZIP_PATH := $(LIBAROMA_PATH)/libs/minzip
 
 ##
 ## libs module name
 ##
 LIBAROMA_MK_ZLIB_LIB := libz
 LIBAROMA_MK_PNG_LIB := libpng
-LIBAROMA_MK_JPEG_LIB := libjpeg
-LIBAROMA_MK_FREETYPE_LIB := libft2
+LIBAROMA_MK_JPEG_LIB := libjpeg_static
+LIBAROMA_MK_FREETYPE_LIB := libft2_libaroma
 LIBAROMA_MK_HARFBUZZNG_LIB := libharfbuzz_ng_libaroma
 LIBAROMA_MK_MINZIP_LIB := libminzip_libaroma
 
@@ -83,7 +84,7 @@ LIBAROMA_MK_MINZIP_LIB := libminzip_libaroma
   ## includes
   ##
   LOCAL_C_INCLUDES := \
-    $(LOCAL_PATH)/include \
+    $(LIBAROMA_PATH)/include \
     $(LIBAROMA_MK_ZLIB_PATH) \
     $(LIBAROMA_MK_PNG_PATH) \
     $(LIBAROMA_MK_FREETYPE_PATH)/include \
@@ -154,7 +155,7 @@ LIBAROMA_MK_MINZIP_LIB := libminzip_libaroma
 ##
 ## include minzip & harfbuzz-ng
 ##
-include $(LOCAL_PATH)/libs/minzip/Android.mk
-include $(LOCAL_PATH)/libs/harfbuzz-ng/Android.mk
+include $(LIBAROMA_PATH)/libs/minzip/Android.mk
+include $(LIBAROMA_PATH)/libs/harfbuzz-ng/Android.mk
 
 ##[EOF]

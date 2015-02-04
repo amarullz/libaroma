@@ -124,8 +124,8 @@ typedef struct {
 /*
  * input translator
  */
-#include "input_translate/translate_keyboard.c" /* keyboard */
-#include "input_translate/translate_touch.c" /* touch */
+#include "hid_translate/translate_keyboard.c" /* keyboard */
+#include "hid_translate/translate_touch.c" /* touch */
 
 /*
  * forward functions
