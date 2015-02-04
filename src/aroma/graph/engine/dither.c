@@ -41,20 +41,20 @@ byte libaroma_dither_b(byte p) {
 }
 word libaroma_dither_rgb(int x, int y, byte sr, byte sg, byte sb) {
   byte dither_xy = ((y & 7) << 3) + (x & 7);
-  byte r = libaroma_color_close_r(min(sr +
+  byte r = libaroma_color_close_r(MIN(sr +
                     libaroma_dither_tresshold_r[dither_xy], 0xff));
-  byte g = libaroma_color_close_g(min(sg +
+  byte g = libaroma_color_close_g(MIN(sg +
                     libaroma_dither_tresshold_g[dither_xy], 0xff));
-  byte b = libaroma_color_close_b(min(sb +
+  byte b = libaroma_color_close_b(MIN(sb +
                     libaroma_dither_tresshold_b[dither_xy], 0xff));
   return libaroma_rgb(r, g, b);
 }
 word libaroma_dither_mono_rgb(int x, int y, byte sr, byte sg, byte sb) {
   byte dither_xy = libaroma_dither_tresshold_g[((y & 7) << 3) + (x & 7)];
   byte dither_xyrb = dither_xy * 2;
-  byte r = libaroma_color_close_r(min(sr + dither_xyrb, 0xff));
-  byte g = libaroma_color_close_g(min(sg + dither_xy, 0xff));
-  byte b = libaroma_color_close_b(min(sb + dither_xyrb, 0xff));
+  byte r = libaroma_color_close_r(MIN(sr + dither_xyrb, 0xff));
+  byte g = libaroma_color_close_g(MIN(sg + dither_xy, 0xff));
+  byte b = libaroma_color_close_b(MIN(sb + dither_xyrb, 0xff));
   return libaroma_rgb(r, g, b);
 }
 word libaroma_dither_mono(int x, int y, dword col) {

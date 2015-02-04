@@ -96,8 +96,8 @@ LIBAROMA_CANVASP libaroma_art_busy_progress(
         basecolor,
         dp28,
         0x1111,
-        min(0xff, ((i + 1) * 18) + 39),
-        min(0xff, ((i + 1) * 18))
+        MIN(0xff, ((i + 1) * 18) + 39),
+        MIN(0xff, ((i + 1) * 18))
       );
       
       /* Stretch Copy to load1 */

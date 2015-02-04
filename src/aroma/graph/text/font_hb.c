@@ -240,7 +240,7 @@ static hb_bool_t _libaroma_font_hb_glyph_from_name_func(
   }
   else {
     char buf[128];
-    len = min(len, (int) sizeof (buf) - 1);
+    len = MIN(len, (int) sizeof (buf) - 1);
     strncpy (buf, name, len);
     buf[len] = '\0';
     *glyph = FT_Get_Name_Index (ft_face, buf);

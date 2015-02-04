@@ -129,12 +129,12 @@ int libaroma_utf8c(
  * Descriptions: decode extended
  */
 void libaroma_utf8_dec_ex(
-    int * d,
+    ucharp d,
     int dl,
     const char * s) {
   unsigned char  a, b, t = 9;
   int u       = 0;
-  int * e     = d + dl;
+  ucharp e     = d + dl;
   while ((b = *s++)) {
     a = _libaroma_utf8d[b];
     t = _libaroma_utf8d[ 256 + (t << 4) + (a >> 4) ];
@@ -158,14 +158,14 @@ void libaroma_utf8_dec_ex(
  * Return Value: int *
  * Descriptions: decode
  */
-int * libaroma_utf8_dec(
+ucharp libaroma_utf8_dec(
     const char * s) {
   if (s == NULL) {
     return NULL;
   }
   int   dl          = libaroma_utf8_len(s) + 1;
   int   sz          = sizeof(int) * dl;
-  int * r  = malloc(sz);
+  ucharp r  = malloc(sz);
   if (r != NULL) {
     memset(r, 0, sz);
     libaroma_utf8_dec_ex(r, dl, s);

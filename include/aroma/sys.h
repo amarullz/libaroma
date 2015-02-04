@@ -38,6 +38,7 @@
 #include <limits.h>
 #include <time.h>
 #include <stdint.h>
+#include <ctype.h>
 
 /* thread & fork */
 #include <fcntl.h>
@@ -50,5 +51,6 @@
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 #include <sys/mman.h>
+#include <sys/param.h>
 
 #endif /* __libaroma_sys_h__ */

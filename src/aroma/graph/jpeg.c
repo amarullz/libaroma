@@ -137,6 +137,8 @@ LIBAROMA_CANVASP libaroma_jpeg_ex(
     byte freeStream,
     byte hicolor) {
 
+  LIBAROMA_CANVASP cv = NULL;
+
   if (!stream) {
     return NULL;
   }
@@ -167,12 +169,15 @@ LIBAROMA_CANVASP libaroma_jpeg_ex(
   /* verbose */
   /*ALOGS("load jpeg \"%s\" (%ix%i:%i)", stream->uri, pcv_w, pcv_h, pcv_c);*/
   /* Create Canvas */
-  LIBAROMA_CANVASP cv = libaroma_canvas_new(
+  cv = libaroma_canvas_new(
      pcv_w,
      pcv_h,
      0,
      hicolor
    );
+  if(!cv) {
+    return NULL;
+  }
   
   /* image loop */
   dword row_sz    = pcv_w * pcv_c;

@@ -266,7 +266,7 @@ byte _libaroma_ctl_progress_msg(
       {
         me->active=0;
         pthread_join(me->drawthread, NULL);
-        me->drawthread = NULL;
+        me->drawthread = 0;
       }
       break;
   }
@@ -312,7 +312,7 @@ LIBAROMA_CONTROLP libaroma_ctl_progress(
   me->state= 1;
   me->tick = 0;
   me->currx = 0;
-  me->drawthread = NULL;
+  me->drawthread = 0;
   
   /* attach internal data & return*/
   ctl->internal = (voidp) me;

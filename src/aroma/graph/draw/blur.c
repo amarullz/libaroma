@@ -108,17 +108,17 @@ LIBAROMA_CANVASP libaroma_blur_ex(
       }
       int dpos = drw + x;
       if (!isMask) {
-        r = max(min(r, 0xff), 0);
-        g = max(min(g, 0xff), 0);
-        b = max(min(b, 0xff), 0);
+        r = MAX(MIN(r, 0xff), 0);
+        g = MAX(MIN(g, 0xff), 0);
+        b = MAX(MIN(b, 0xff), 0);
         t1->data[dpos] = libaroma_dither_rgb(x, y, r, g, b);
         if (usealpha) {
-          a = max(min(a, 0xff), 0);
+          a = MAX(MIN(a, 0xff), 0);
           t1->alpha[dpos] = a;
         }
       }
       else {
-        a = max(min(a, 0xff), 0);
+        a = MAX(MIN(a, 0xff), 0);
         t1->alpha[dpos] = a;
       }
     }
@@ -148,17 +148,17 @@ LIBAROMA_CANVASP libaroma_blur_ex(
       }
       int dpos = row + x;
       if (!isMask) {
-        r = max(min(r, 0xff), 0);
-        g = max(min(g, 0xff), 0);
-        b = max(min(b, 0xff), 0);
+        r = MAX(MIN(r, 0xff), 0);
+        g = MAX(MIN(g, 0xff), 0);
+        b = MAX(MIN(b, 0xff), 0);
         t2->data[dpos] = libaroma_dither_rgb(x, y, r, g, b);
         if (usealpha) {
-          a = max(min(a, 0xff), 0);
+          a = MAX(MIN(a, 0xff), 0);
           t2->alpha[dpos] = a;
         }
       }
       else {
-        a = max(min(a, 0xff), 0);
+        a = MAX(MIN(a, 0xff), 0);
         t2->alpha[dpos] = a;
         t2->data[dpos] = maskColor;
       }

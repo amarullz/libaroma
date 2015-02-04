@@ -110,9 +110,9 @@ void libaroma_dither_line_const(int y, int w, wordp dst, const dword src) {
   _libaroma_neon_dither_table(y, &table_r, &table_g, &table_b);
   uint16x8_t max_255 = vmovq_n_u16(255);
   /* Get Source Color Channels */
-  uint8x8_t src_r   = vmov_n_u8(aR32(src));
-  uint8x8_t src_g   = vmov_n_u8(aG32(src));
-  uint8x8_t src_b   = vmov_n_u8(aB32(src));
+  uint8x8_t src_r   = vmov_n_u8(libaroma_color_r32(src));
+  uint8x8_t src_g   = vmov_n_u8(libaroma_color_g32(src));
+  uint8x8_t src_b   = vmov_n_u8(libaroma_color_b32(src));
   /* Change Types */
   int nn = w / 8, left = w % 8;
   

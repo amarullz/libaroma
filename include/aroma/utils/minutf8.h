@@ -51,7 +51,7 @@ int libaroma_utf8c(
  * Descriptions: decode extended
  */
 void libaroma_utf8_dec_ex(
-    int * d,
+    ucharp d,
     int dl,
     const char * s);
 
@@ -60,7 +60,7 @@ void libaroma_utf8_dec_ex(
  * Return Value: int *
  * Descriptions: decode
  */
-int * libaroma_utf8_dec(
+ucharp libaroma_utf8_dec(
     const char * s);
 
 #endif /* __libaroma_minutf8_h__ */

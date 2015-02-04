@@ -51,7 +51,7 @@ dword libaroma_hash(
  */
 char * libaroma_stristr(char *ch1, char *ch2, int sz){
   int i=0;
-  int j=0;
+  size_t j=0;
   char * found=NULL;
   char * out=NULL;
   for (i=0;i<sz;i++){

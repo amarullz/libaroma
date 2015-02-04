@@ -42,11 +42,11 @@ bytep _libaroma_gradient_corner(
   for (i = 1; i <= r; i++) {
     float w   = sqrt(sz - i * i);
     int fw    = (int) floor(w);
-    byte t    = (byte) min(round((w - ((float) fw)) * 0xff), 0xff);
+    byte t    = (byte) MIN(round((w - ((float) fw)) * 0xff), 0xff);
     int idx   = ((r - i)   * r) + (r - fw - 1);
-    out[idx]  = (byte) max(t, out[idx]);
+    out[idx]  = (byte) MAX(t, out[idx]);
     idx       = ((r - fw - 1) * r) + (r - i);
-    out[idx]  = (byte) max(t, out[idx]);
+    out[idx]  = (byte) MAX(t, out[idx]);
     /* Set opaque for leftover pixels */
     for (n = 1; n <= fw; n++) {
       idx = ((r - i) * r) + (r - n);
@@ -63,13 +63,13 @@ void _libaroma_gradient_draw_rounded(
   if (line_alpha != NULL) {
     if (isRight) {
       for (i = 0; i < roundSize; i++) {
-        line_alpha[i] = max(line_alpha[i] +
+        line_alpha[i] = MAX(line_alpha[i] +
           roundData[y * roundSize + (roundSize - i) - 1] - 0xff, 0);
       }
     }
     else {
       for (i = 0; i < roundSize; i++) {
-        line_alpha[i] = max(line_alpha[i] +
+        line_alpha[i] = MAX(line_alpha[i] +
           roundData[y * roundSize + i] - 0xff, 0);
       }
     }
@@ -172,15 +172,15 @@ byte libaroma_gradient_ex(
 #ifdef LIBAROMA_CONFIG_GRADIENT_FLOAT
     float intensity   = ((float) _Y) / ((float) h);
     float r_intensity = 1.0 - intensity;
-    byte cR = ((byte) min(((libaroma_color_r(startColor) * r_intensity) + (libaroma_color_r(endColor) * intensity)), 0xff) );
-    byte cG = ((byte) min(((libaroma_color_g(startColor) * r_intensity) + (libaroma_color_g(endColor) * intensity)), 0xff) );
-    byte cB = ((byte) min(((libaroma_color_b(startColor) * r_intensity) + (libaroma_color_b(endColor) * intensity)), 0xff) );
+    byte cR = ((byte) MIN(((libaroma_color_r(startColor) * r_intensity) + (libaroma_color_r(endColor) * intensity)), 0xff) );
+    byte cG = ((byte) MIN(((libaroma_color_g(startColor) * r_intensity) + (libaroma_color_g(endColor) * intensity)), 0xff) );
+    byte cB = ((byte) MIN(((libaroma_color_b(startColor) * r_intensity) + (libaroma_color_b(endColor) * intensity)), 0xff) );
 #else
     byte intensity   = (_Y * 0xff) / h;
     byte r_intensity = 0xff - intensity;
-    byte cR = ((byte) min((((libaroma_color_r(startColor) * r_intensity) >> 8) + ((libaroma_color_r(endColor) * intensity) >> 8)), 0xff) );
-    byte cG = ((byte) min((((libaroma_color_g(startColor) * r_intensity) >> 8) + ((libaroma_color_g(endColor) * intensity) >> 8)), 0xff) );
-    byte cB = ((byte) min((((libaroma_color_b(startColor) * r_intensity) >> 8) + ((libaroma_color_b(endColor) * intensity) >> 8)), 0xff) );
+    byte cR = ((byte) MIN((((libaroma_color_r(startColor) * r_intensity) >> 8) + ((libaroma_color_r(endColor) * intensity) >> 8)), 0xff) );
+    byte cG = ((byte) MIN((((libaroma_color_g(startColor) * r_intensity) >> 8) + ((libaroma_color_g(endColor) * intensity) >> 8)), 0xff) );
+    byte cB = ((byte) MIN((((libaroma_color_b(startColor) * r_intensity) >> 8) + ((libaroma_color_b(endColor) * intensity) >> 8)), 0xff) );
 #endif
     int data_posxy = (ypos * dst->l) + x;
     wordp line_mem = (wordp) dst->data + data_posxy;
@@ -217,10 +217,10 @@ byte libaroma_gradient_ex(
     /* Draw Now */
     if (useAlpha) {
 #ifdef LIBAROMA_CONFIG_GRADIENT_FLOAT
-      byte cA = ((byte) min(
+      byte cA = ((byte) MIN(
         ((startAlpha * r_intensity) + (endAlpha * intensity)), 0xff));
 #else
-      byte cA = ((byte) min(
+      byte cA = ((byte) MIN(
         (((startAlpha * r_intensity) >> 8) +
         ((endAlpha * intensity) >> 8)), 0xff));
 #endif
@@ -235,10 +235,10 @@ byte libaroma_gradient_ex(
       
       if (useCanvasAlpha) {
 #ifdef LIBAROMA_CONFIG_GRADIENT_FLOAT
-        byte cA = ((byte) min(((startAlpha * r_intensity) +
+        byte cA = ((byte) MIN(((startAlpha * r_intensity) +
           (endAlpha * intensity)), 0xff));
 #else
-        byte cA = ((byte) min((((startAlpha * r_intensity) >> 8) +
+        byte cA = ((byte) MIN((((startAlpha * r_intensity) >> 8) +
           ((endAlpha * intensity) >> 8)), 0xff));
 #endif
         memset(line_alpha, cA, w);

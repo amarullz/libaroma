@@ -324,7 +324,7 @@ byte libaroma_draw_subpixel(
         if ((x>=0)&&(x<dest->w)){
           px = abs((dx<x)?dx-x:x-dx)/ht;
           py = abs((dy<y)?dy-y:y-dy)/ht;
-          int alp = min(0xff,max((1-(px+py)) * 0xff,0));
+          int alp = MIN(0xff,MAX((1-(px+py)) * 0xff,0));
           wordp d = dest->data + pos + x;
           word cl = libaroma_alpha(*d, color, alp);
           if (alpha!=0xff){

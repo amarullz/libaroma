@@ -393,12 +393,12 @@ byte libaroma_png9p_draw(
   int BY = v.y + v.h;
   int RW = src->w - 1 - RX;
   int BH = src->h - 1 - BY;
-  int drawX   = min(((v.x - 1) * dp_scale) >> 8, maxW);
-  int drawY   = min(((v.y - 1) * dp_scale) >> 8, maxW);
-  int drawW   = min(((v.x + RW) * dp_scale) >> 8, maxW);
-  int drawH   = min(((v.y + BH) * dp_scale) >> 8, maxH);
-  int drawRW  = min((RW * dp_scale) >> 8, maxW);
-  int drawBH  = min((BH * dp_scale) >> 8, maxH);
+  int drawX   = MIN(((v.x - 1) * dp_scale) >> 8, maxW);
+  int drawY   = MIN(((v.y - 1) * dp_scale) >> 8, maxW);
+  int drawW   = MIN(((v.x + RW) * dp_scale) >> 8, maxW);
+  int drawH   = MIN(((v.y + BH) * dp_scale) >> 8, maxH);
+  int drawRW  = MIN((RW * dp_scale) >> 8, maxW);
+  int drawBH  = MIN((BH * dp_scale) >> 8, maxH);
   
   if (padding != NULL) {
     padding->left   = (v.pad.left * dp_scale) >> 8;

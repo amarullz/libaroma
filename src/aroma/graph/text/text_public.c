@@ -77,7 +77,7 @@ LIBAROMA_TEXT libaroma_text(
   if (!linespacing) {
     linespacing = 120;
   }
-  flags = _LIBAROMA_TEXTCHUNK_ALIGN_SET(flags, align);
+  _LIBAROMA_TEXTCHUNK_ALIGN_SET(flags, align);
   _LIBAROMA_TEXTCHUNKP chunk =
     _libaroma_text_parse(
       text,
