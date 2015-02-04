@@ -38,6 +38,7 @@ void LINUXFBDR_setrgbpos(LIBAROMA_FBP me, byte r, byte g, byte b) {
   if ((r == 16) && (g == 8) && (b == 0)) {
     mi->rgb_pos_normal = 1;
   }
+  
   /* save color position */
   mi->rgb_pos[0] = r;
   mi->rgb_pos[1] = g;
@@ -62,10 +63,14 @@ void LINUXFBDR_init_32bit(LIBAROMA_FBP me) {
   /* calculate stride size */
   mi->stride = mi->line - (me->w * mi->pixsz);
   /* save color position */
+
+  /* use msb_right */
   LINUXFBDR_setrgbpos(me,
-                 mi->var.red.offset,
-                 mi->var.green.offset,
-                 mi->var.blue.offset);
+    (mi->var.red.msb_right?mi->var.red.offset:(24-mi->var.red.offset)),
+    (mi->var.green.msb_right?mi->var.green.offset:(24-mi->var.green.offset)),
+    (mi->var.blue.msb_right?mi->var.blue.offset:(24-mi->var.blue.offset))
+  );
+  
   /* refresh framebuffer */
   LINUXFBDR_refresh(me);
 }

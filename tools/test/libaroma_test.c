@@ -49,22 +49,43 @@ int main(int argc, char **argv){
   LIBAROMA_WINDOWP win = libaroma_window(
     NULL, 0, 0, 0, 0); /* fullscreen */
   
-  /* progress bar 
+  /* progress bar */
   LIBAROMA_CONTROLP progress = libaroma_ctl_progress(
     win, 1,
     libaroma_dp(20), libaroma_dp(20), libaroma_dp(100), libaroma_dp(6),
     LIBAROMA_CTL_PROGRESS_QUERY,
     100,
     0
-  );*/
+  );
   
   /* show window */
   libaroma_window_show(win);
+  
+  /* draw text into framebuffer canvas */
+  libaroma_draw_text(
+    libaroma_fb()->canvas, /* destination canvas */
+    "This is <b>Test <u>Text</u></b> Only...", /* text to draw */
+    libaroma_dp(10), /* x */
+    libaroma_dp(80), /* y */
+    RGB(ff6600), /* text color */
+    libaroma_dp(300), /* max-width */
+    LIBAROMA_TEXT_CENTER| /* flags */
+    LIBAROMA_TEXT_SINGLELINE|
+    LIBAROMA_FONT(0,5) /* font_id, font_size */
+    ,
+    120 /* line-spacing (100 = 1.0, 120 = 1.2) */
+  );
+  
+  /* sync whole display */
+  libaroma_sync();
+  
   
   /* Input Handler */
   libaroma_msg_start();
   long last_tick=libaroma_tick();
   int curval=0;
+  int curtype=2;
+  int curvalue=0;
   while(1){
     LIBAROMA_MSG msg;
     byte ret=libaroma_msg(&msg);
@@ -72,8 +93,26 @@ int main(int argc, char **argv){
       printf("---> SELECT/POWER PRESSED - EXIT...\n");
       break;
     }
-    printf("Event(%X) %x %x - %ix%i\n",msg.msg, msg.state, msg.key,
-      msg.x, msg.y);
+    else if ((ret==LIBAROMA_MSG_KEY_UP)&& (!msg.state)) {
+      printf("---> Change Progress Type...\n");
+      curtype++;
+      if (curtype>2){
+        curtype=0;
+      }
+      libaroma_ctl_progress_type(progress,curtype);
+    }
+    else if ((ret==LIBAROMA_MSG_KEY_DOWN)&& (!msg.state)) {
+      curvalue+=10;
+      printf("---> Change Progress value: %i...\n",curvalue);
+      if (curvalue>100){
+        curvalue=0;
+      }
+      libaroma_ctl_progress_value(progress,curvalue);
+    }
+    else{
+      printf("Event(%X) %x %x - %ix%i\n",
+        msg.msg, msg.state, msg.key, msg.x, msg.y);
+    }
   }
   libaroma_msg_stop();
   

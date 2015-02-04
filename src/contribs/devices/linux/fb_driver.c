@@ -118,8 +118,7 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
     goto error; /* Exit If Error */
   }
   
-  /*
-  //-- try force 32bit standard color mode (bgra)
+  /* try to force 32bit libaroma color mode (bgra)
   if (mi->var.bits_per_pixel==32){
     mi->var.red.offset         = 16;
     mi->var.red.length         = 8;
@@ -134,15 +133,14 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
     mi->var.transp.length      = 8;
     mi->var.transp.msb_right   = 0;
   
-    //-- activating
+    // activating
     mi->var.activate |= FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
     ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var);
   
-    //-- get forced data
+    // get forced data
     ioctl(mi->fb, FBIOGET_FSCREENINFO, &mi->fix);
     ioctl(mi->fb, FBIOGET_VSCREENINFO, &mi->var);
-  }
-  */
+  } */
   
   /* set libaroma framebuffer instance values */
   me->w        = mi->var.xres;              /* width */

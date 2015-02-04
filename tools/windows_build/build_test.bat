@@ -1,6 +1,5 @@
 @ECHO OFF
 cd obj
-del /F /Q libaroma_test.*
 
 echo Compiling TEST
 %LIBAROMA_GCC% ^
@@ -26,4 +25,6 @@ echo Compiling TEST
   -lm -lpthread -lstdc++ -lrt
 
 cd ..
+if "%1"=="-f" GOTO DONE
 pause
+:DONE

@@ -70,8 +70,7 @@ byte LIBAROMA_HID_INIT_FUNCTION(
   #ifdef LIBAROMA_CONFIG_SHMEM_PREFIX
     #undef LIBAROMA_CONFIG_SHMEM_PREFIX
   #endif
-  
-  /* wrapper for shm_* */
+  /* android wrapper for shm_* */
   #define LIBAROMA_CONFIG_SHMEM_PREFIX "/tmp/libaromashm-"
   #define shm_open open
   #define shm_unlink unlink

@@ -34,4 +34,6 @@ echo Compiling Libaroma
 
 cd ..
 
+if "%1"=="-f" GOTO DONE
 pause
+:DONE

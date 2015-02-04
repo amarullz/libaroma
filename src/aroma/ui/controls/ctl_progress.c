@@ -60,8 +60,8 @@ static void * _libaroma_ctl_progress_thread(void * cookie) {
   _LIBAROMA_CTL_PROGRESSP me = (_LIBAROMA_CTL_PROGRESSP) ctl->internal;
   float currstate = 0.0;
   int wait_un = _LIBAROMA_CTL_PROGRESS_BEZIER_TIMING*4;
+  ALOGV("Progress Thread Started...");
   while (me->active){
-    long ctick=libaroma_nano_tick();
     if (me->type!=LIBAROMA_CTL_PROGRESS_DETERMINATE){
       long diff = libaroma_tick() - me->tick;
       if (diff>wait_un){
@@ -78,7 +78,7 @@ static void * _libaroma_ctl_progress_thread(void * cookie) {
         me->state=0;
         me->tick=libaroma_tick();
       }
-      usleep(16666-((libaroma_nano_tick()-ctick)/1000));
+      libaroma_sleep(16);
     }
     else if (me->state<1.0){
       long diff = libaroma_tick() - me->tick;
@@ -102,12 +102,13 @@ static void * _libaroma_ctl_progress_thread(void * cookie) {
         currstate = me->state;
         libaroma_control_draw(ctl,1);
       }
-      usleep(16666-((libaroma_nano_tick()-ctick)/1000));
+      libaroma_sleep(16);
     }
     else{
       libaroma_sleep(100);
     }
   }
+  ALOGV("Progress Thread Ended...");
   return NULL;
 } /* End of _libaroma_ctl_progress_thread */
 
@@ -264,9 +265,11 @@ byte _libaroma_ctl_progress_msg(
       break;
     case LIBAROMA_MSG_WIN_INACTIVE:
       {
+        ALOGV("Stoping progress thread...");
         me->active=0;
         pthread_join(me->drawthread, NULL);
         me->drawthread = 0;
+        ALOGV("Stopped progress thread...");
       }
       break;
   }
