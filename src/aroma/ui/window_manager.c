@@ -191,6 +191,8 @@ byte libaroma_wm_init(){
   _libaroma_wm->client_started = 0;
   _libaroma_wm->message_handler = NULL;
   _libaroma_wm->reset_handler = NULL;
+  _libaroma_wm->workspace_bg = NULL;
+  _libaroma_wm->active_window = NULL;
   _libaroma_wm_default_set(
     LIBAROMA_WM_FLAG_RESET_COLOR|
     LIBAROMA_WM_FLAG_RESET_THEME);

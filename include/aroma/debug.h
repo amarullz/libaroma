@@ -29,6 +29,8 @@
 
 /* Memory Tracking */
 #ifdef LIBAROMA_CONFIG_DEBUG_MEMORY
+#if LIBAROMA_CONFIG_DEBUG_MEMORY >=1
+
 #define ___MEMTRACK_FILE() __FILE__
 #define ___MEMTRACK_LINE() __LINE__
 void ___mtrack_dump_leak();
@@ -49,6 +51,8 @@ char * ___mtrack_strdup(char * str, char * filename, long line);
 #endif
 #define strdup(x) \
   ___mtrack_strdup(x, ___MEMTRACK_FILE(),___MEMTRACK_LINE())
+
+#endif /* LIBAROMA_CONFIG_DEBUG_MEMORY >=1 */
 #endif /* LIBAROMA_CONFIG_DEBUG_MEMORY */
 
 /* Debugging Tag */

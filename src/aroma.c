@@ -31,7 +31,9 @@
 #include "aroma/debug/compiler_message.c"
 #endif
 #ifdef LIBAROMA_CONFIG_DEBUG_MEMORY
+#if LIBAROMA_CONFIG_DEBUG_MEMORY >=1
 #include "aroma/debug/memory_tracking.c"
+#endif
 #endif
 
 #include <aroma.h>      /* libaroma main header */
@@ -94,7 +96,9 @@ byte libaroma_start() {
   }
   
 #ifdef LIBAROMA_CONFIG_DEBUG_MEMORY
+#if LIBAROMA_CONFIG_DEBUG_MEMORY >=1
   ALOGV("STARTING MEMORY TRACKING");
+#endif
 #endif
   
   /* Mute Parent */
@@ -158,8 +162,10 @@ byte libaroma_end() {
   
   ALOGI("===================================================");
 #ifdef LIBAROMA_CONFIG_DEBUG_MEMORY
+#if LIBAROMA_CONFIG_DEBUG_MEMORY >=1
   ALOGV("DUMPING MEMORY TRACKING");
   ___mtrack_dump_leak();
+#endif
 #endif
   return 1;
 }

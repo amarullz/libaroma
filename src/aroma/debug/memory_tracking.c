@@ -24,6 +24,7 @@
 #ifndef __libaroma_memory_tracking_c__
 #define __libaroma_memory_tracking_c__
 #ifdef LIBAROMA_CONFIG_DEBUG_MEMORY
+#if LIBAROMA_CONFIG_DEBUG_MEMORY >=1
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -285,6 +286,6 @@ char * ___mtrack_strdup(char * str, char * filename, long line){
   pthread_mutex_unlock(&___mtrack_mutex);
   return (char *) ret;
 }
-
+#endif /* LIBAROMA_CONFIG_DEBUG_MEMORY >=1 */
 #endif /* LIBAROMA_CONFIG_DEBUG_MEMORY */
 #endif /* __libaroma_memory_tracking_c__ */

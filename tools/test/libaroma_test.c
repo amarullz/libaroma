@@ -43,6 +43,11 @@ int main(int argc, char **argv){
   /* start libaroma process */
   libaroma_start();
   
+  
+  /* clean display */
+  libaroma_canvas_blank(libaroma_fb()->canvas);
+  libaroma_sync();
+  
   /* load font - id=0 */
   libaroma_font(0,
     libaroma_stream(
@@ -69,7 +74,7 @@ int main(int argc, char **argv){
     libaroma_window_anishow(win, LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_RIGHT, 1000);
   
   */
-  libaroma_window_anishow(win, LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_RIGHT, 200);
+  libaroma_window_anishow(win, LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_LEFT, 500);
   
   
   
