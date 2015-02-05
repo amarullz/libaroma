@@ -36,6 +36,26 @@
 #include "debug.h"  /* libaroma debug modules */
 
 /*
+ * Structure   : _LIBAROMA_CONFIG
+ * Typedef     : LIBAROMA_CONFIG, * LIBAROMA_CONFIGP
+ * Descriptions: libaroma runtime configuration
+ */
+typedef struct _LIBAROMA_CONFIG LIBAROMA_CONFIG;
+typedef struct _LIBAROMA_CONFIG * LIBAROMA_CONFIGP;
+struct _LIBAROMA_CONFIG{
+  char fb_shm_name[64];
+  byte runtime_monitor;
+  
+};
+
+/*
+ * Function    : libaroma_config
+ * Return Value: LIBAROMA_CONFIGP
+ * Descriptions: get runtime config
+ */
+LIBAROMA_CONFIGP libaroma_config();
+
+/*
  * Function    : libaroma_info
  * Return Value: char *
  * Descriptions: Get libaroma version information

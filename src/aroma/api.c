@@ -14,36 +14,18 @@
  * limitations under the License.
  *______________________________________________________________________________
  *
- * Filename    : ui.c
- * Description : user interface & hid handler
+ * Filename    : api.c
+ * Description : high level api wrapper
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 21/01/15 - Author(s): Ahmad Amarullah
+ * + 05/02/15 - Author(s): Ahmad Amarullah
  *
  */
 #ifndef __libaroma_aroma_c__
   #error "Should be inside aroma.c."
 #endif
-#ifndef __libaroma_ui_c__
-#define __libaroma_ui_c__
+#ifndef __libaroma_api_c__
+#define __libaroma_api_c__
 
-#include "ui/hid.c"
-#include "ui/messages.c"
-#include "ui/motions.c"
-#include "ui/window_manager.c"
-#include "ui/window.c"
-#include "ui/control.c"
 
-/*
- * control set - libaroma_ctl_*
- */
-#define _LIBAROMA_CTL_CHECK(SIG, TYPE, RET) \
-    if (ctl->signature!=SIG){ return RET; } \
-    TYPE me = (TYPE) ctl->internal
-
-#include "ui/controls/ctl_label.c"
-#include "ui/controls/ctl_progress.c"
-
-#undef _LIBAROMA_CTL_CHECK
-
-#endif /* __libaroma_ui_c__ */
+#endif /* __libaroma_api_c__ */

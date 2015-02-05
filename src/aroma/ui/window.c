@@ -54,15 +54,21 @@ LIBAROMA_WINDOWP libaroma_window(
   else{
     snprintf(win->theme_bg,256,"%s","window");
   }
-  win->bg = NULL;
-  win->dc = NULL;
-  win->childs = NULL;
-  win->focused = NULL;
-  win->touched = NULL;
+  win->bg       = NULL;
+  win->dc       = NULL;
+  win->wmc      = NULL;
+  win->childs   = NULL;
+  win->focused  = NULL;
+  win->touched  = NULL;
   win->x = x;
   win->y = y;
   win->w = w;
   win->h = h;
+  win->lock_sync = 0;
+  
+  /* thread manager */
+  win->active=0;
+  win->thread_manager=0;
   return win;
 } /* End of libaroma_window */
 
@@ -94,6 +100,9 @@ byte libaroma_window_free(
   }
   if (win->bg){
     libaroma_canvas_free(win->bg);
+  }
+  if (win->wmc){
+    libaroma_canvas_free(win->wmc);
   }
   if (win->dc){
     libaroma_canvas_free(win->dc);
@@ -175,24 +184,10 @@ byte _libaroma_window_recalculate(LIBAROMA_WINDOWP win){
   }
   if (libaroma_window_isactive(win)){
     _libaroma_window_updatebg(win);
-    libaroma_window_invalidate(win);
+    libaroma_window_invalidate(win, 1);
   }
   return 1;
 } /* End of _libaroma_window_recalculate */
-
-/*
- * Function    : libaroma_window_show
- * Return Value: byte
- * Descriptions: show window
- */
-byte libaroma_window_show(LIBAROMA_WINDOWP win){
-  __CHECK_WM(0);
-  if (win!=NULL){
-    /* set initial focus */
-    libaroma_window_setfocus(win, NULL);
-  }
-  return libaroma_wm_set_active_window(win);
-} /* End of libaroma_window_show */
 
 /*
  * Function    : libaroma_window_resize
@@ -220,8 +215,17 @@ byte libaroma_window_resize(
   if (win->dc!=NULL){
     libaroma_canvas_free(win->dc);
   }
-  win->dc= libaroma_wm_canvas(x, y, w, h);
+  if (win->wmc!=NULL){
+    libaroma_canvas_free(win->wmc);
+  }
+  win->wmc= libaroma_wm_canvas(x, y, w, h);
+  if (win->wmc==NULL){
+    ALOGW("window_resize cannot allocate workspace drawing canvas");
+    return 0;
+  }
+  win->dc = libaroma_canvas(w,h);
   if (win->dc==NULL){
+    libaroma_canvas_free(win->wmc);
     ALOGW("window_resize cannot allocate drawing canvas");
     return 0;
   }
@@ -446,6 +450,29 @@ LIBAROMA_CONTROLP libaroma_window_setfocus(
 } /* End of libaroma_window_setfocus */
 
 /*
+ * Function    : _libaroma_window_thread_manager
+ * Return Value: static void *
+ * Descriptions: window thread manager
+ */
+static void * _libaroma_window_thread_manager(void * cookie) {
+  LIBAROMA_WINDOWP win = (LIBAROMA_WINDOWP) cookie;
+  ALOGV("begin window thread manager...");
+  int i;
+  while(win->active){
+    /* run child thread process */
+    for (i=0;i<win->childn;i++){
+      if (win->childs[i]->thread!=NULL){
+        win->childs[i]->thread(win->childs[i]);
+      }
+    }
+    /* 60hz sleep */
+    libaroma_sleep(16);
+  }
+  ALOGV("end window thread manager...");
+  return NULL;
+} /* End of _libaroma_window_thread_manager */
+
+/*
  * Function    : libaroma_window_event
  * Return Value: byte
  * Descriptions: process message
@@ -462,15 +489,31 @@ byte libaroma_window_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
       {
         /* set current window size */
         libaroma_window_resize(win, win->x, win->y, win->w, win->h);
+        
         /* send active/resize message to child */
         int i;
         for (i=0;i<win->childn;i++){
           win->childs[i]->message(win->childs[i], msg);
         }
+        
+        /* start thread manager */
+        if (msg->msg==LIBAROMA_MSG_WIN_ACTIVE){
+          win->active=1;
+          pthread_create(
+            &win->thread_manager,
+            NULL,
+            _libaroma_window_thread_manager,
+            (voidp) win);
+        }
       }
       break;
     case LIBAROMA_MSG_WIN_INACTIVE:
       {
+        /* stop thread manager */
+        win->active=0;
+        pthread_join(win->thread_manager, NULL);
+        win->thread_manager = 0;
+        
         /* send inactive message to child */
         int i;
         for (i=0;i<win->childn;i++){
@@ -480,7 +523,7 @@ byte libaroma_window_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
       break;
     case LIBAROMA_MSG_WIN_INVALIDATE:
       {
-        libaroma_window_invalidate(win);
+        libaroma_window_invalidate(win, 1);
       }
       break;
   }
@@ -489,11 +532,46 @@ byte libaroma_window_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
 } /* End of libaroma_window_event */
 
 /*
+ * Function    : libaroma_window_sync
+ * Return Value: byte
+ * Descriptions: sync window canvas
+ */
+byte libaroma_window_sync(LIBAROMA_WINDOWP win, int x, int y, int w, int h){
+  __CHECK_WM(0);
+  if (win==NULL){
+    ALOGW("libaroma_window_sync win is null");
+    return 0;
+  }
+  if (!win->lock_sync){
+    if (!libaroma_window_isactive(win)){
+      ALOGW("libaroma_window_sync win is not active window");
+      return 0;
+    }
+    if (win->dc==NULL){
+      ALOGW("window_invalidate dc is null");
+      return 0;
+    }
+    
+    /* draw drawing canvas into workspace canvas */
+    libaroma_draw_ex(
+      win->wmc,
+      win->dc,
+      x, y, x, y, w, h,
+      0, 0xff
+    );
+    
+    /* sync workspace */
+    libaroma_wm_sync(win->x+x,win->y+y,w,h);
+  }
+  return 1;
+} /* End of libaroma_window_sync */
+
+/*
  * Function    : libaroma_window_invalidate
  * Return Value: byte
  * Descriptions: invalidate window drawing
  */
-byte libaroma_window_invalidate(LIBAROMA_WINDOWP win){
+byte libaroma_window_invalidate(LIBAROMA_WINDOWP win, byte sync){
   __CHECK_WM(0);
   if (win==NULL){
     ALOGW("window_invalidate win is null");
@@ -520,11 +598,124 @@ byte libaroma_window_invalidate(LIBAROMA_WINDOWP win){
     /* draw no sync */
     libaroma_control_draw(win->childs[i], 0);
   }
-  
+
   /* sync */
-  libaroma_wm_sync(win->x, win->y, win->w, win->h);
+  if (sync){
+    libaroma_window_sync(win, 0, 0, win->w, win->h);
+  }
   return 1;
 } /* End of libaroma_window_invalidate */
+
+/*
+ * Function    : libaroma_window_anishow
+ * Return Value: byte
+ * Descriptions: show window - animated
+ */
+byte libaroma_window_anishow(
+    LIBAROMA_WINDOWP win,
+    byte animation,
+    int duration){
+  __CHECK_WM(0);
+  if (win!=NULL){
+    /* set initial focus */
+    libaroma_window_setfocus(win, NULL);
+  }
+  if ((!animation)||(duration<50)){
+    return libaroma_wm_set_active_window(win);
+  }
+  win->lock_sync = 1;
+  if (libaroma_wm_set_active_window(win)){
+    long start = libaroma_tick();
+    int delta = 0;
+    int i;
+    LIBAROMA_CANVASP back = libaroma_canvas(win->w, win->h);
+    libaroma_draw(back, win->wmc, 0, 0, 0);
+    while ((delta=libaroma_tick()-start)<duration){
+      float state = ((float) delta)/((float) duration);
+      if (state>=1.0){
+        break;
+      }
+      switch (animation){
+        case LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_LEFT:
+        case LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_LEFT:
+          {
+            float swift_out_state = libaroma_cubic_bezier_swiftout(state);
+            int x = win->w - (swift_out_state * win->w);
+            int w = win->w - x;
+            if (w>0){
+              if (animation==LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_LEFT){
+                if (w<win->w){
+                  libaroma_draw_ex(
+                    win->wmc,
+                    back,
+                    0, 0, win->w - (win->w - w), 0, win->w - w, win->h,
+                    0, 0xff
+                  );
+                }
+              }
+              libaroma_draw_ex(
+                win->wmc,
+                win->dc,
+                x, 0, 0, 0, w, win->h,
+                0, 0xff
+              );
+              if (animation==LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_LEFT){
+                libaroma_wm_sync(win->x,win->y,win->w,win->h);
+              }
+              else{
+                libaroma_wm_sync(win->x+x,win->y,w, win->h);
+              }
+            }
+          }
+          break;
+        case LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_RIGHT:
+        case LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_RIGHT:
+          {
+            float swift_out_state = libaroma_cubic_bezier_swiftout(state);
+            int x = 0 - (win->w - (swift_out_state * win->w));
+            int w = win->w + x;
+            if (w>0){
+              if (animation==LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_RIGHT){
+                if (w<win->w){
+                  libaroma_draw_ex(
+                    win->wmc,
+                    back,
+                    w, 0, 0, 0, win->w - w, win->h,
+                    0, 0xff
+                  );
+                }
+              }
+              libaroma_draw_ex(
+                win->wmc,
+                win->dc,
+                0, 0, win->w-w, 0, w, win->h,
+                0, 0xff
+              );
+              if (animation==LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_RIGHT){
+                libaroma_wm_sync(win->x,win->y,win->w,win->h);
+              }
+              else{
+                libaroma_wm_sync(win->x,win->y,w, win->h);
+              }
+            }
+          }
+          break;
+        default:
+          /* invalid animation */
+          start=0;
+          break;
+      }
+    }
+    libaroma_canvas_free(back);
+    
+    /* sync view now */
+    win->lock_sync = 0;
+    libaroma_window_sync(win, 0, 0, win->w, win->h);
+    return 1;
+  }
+  win->lock_sync = 0;
+  return 0;
+} /* End of libaroma_window_show */
 
 #undef __CHECK_WM
 #endif /* __libaroma_window_c__ */

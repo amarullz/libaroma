@@ -38,9 +38,7 @@
 typedef struct __LIBAROMA_CTL_PROGRESS _LIBAROMA_CTL_PROGRESS;
 typedef struct __LIBAROMA_CTL_PROGRESS * _LIBAROMA_CTL_PROGRESSP;
 struct __LIBAROMA_CTL_PROGRESS{
-  pthread_t drawthread;
   byte type;
-  byte active;
   int max;
   int value;
   int preval;
@@ -48,68 +46,57 @@ struct __LIBAROMA_CTL_PROGRESS{
   int currx;
   long tick;
   float state;
+  float currstate;
 };
 
 /*
  * Function    : _libaroma_ctl_progress_thread
  * Return Value: static void *
- * Descriptions: pthread progress
+ * Descriptions: control thread callback
  */
-static void * _libaroma_ctl_progress_thread(void * cookie) {
-  LIBAROMA_CONTROLP ctl = (LIBAROMA_CONTROLP) cookie;
+void _libaroma_ctl_progress_thread(LIBAROMA_CONTROLP ctl) {
   _LIBAROMA_CTL_PROGRESSP me = (_LIBAROMA_CTL_PROGRESSP) ctl->internal;
-  float currstate = 0.0;
-  int wait_un = _LIBAROMA_CTL_PROGRESS_BEZIER_TIMING*4;
-  ALOGV("Progress Thread Started...");
-  while (me->active){
-    if (me->type!=LIBAROMA_CTL_PROGRESS_DETERMINATE){
-      long diff = libaroma_tick() - me->tick;
-      if (diff>wait_un){
-        me->state=1.0;
-      }
-      else{
-        me->state = ((float) diff)/((float) wait_un);
-      }
-      if (currstate!=me->state){
-        currstate=me->state;
-        libaroma_control_draw(ctl,1);
-      }
-      if (me->state>=1.0){
-        me->state=0;
-        me->tick=libaroma_tick();
-      }
-      libaroma_sleep(16);
-    }
-    else if (me->state<1.0){
-      long diff = libaroma_tick() - me->tick;
-      if (diff>_LIBAROMA_CTL_PROGRESS_BEZIER_TIMING){
-        me->state = 1.0;
-      }
-      else{
-        me->state = libaroma_cubic_bezier_easein(
-          ((float) diff)/((float) _LIBAROMA_CTL_PROGRESS_BEZIER_TIMING)
-        );
-      }
-      me->curval = me->preval+((me->value - me->preval) * me->state);
-      if (currstate!=me->state){
-        if (me->currx>0){
-          me->currx-=(me->currx*me->state);
-          if (me->currx<0){
-            me->currx=0;
-          }
-        }
-        /* redraw */
-        currstate = me->state;
-        libaroma_control_draw(ctl,1);
-      }
-      libaroma_sleep(16);
+  if (me->type!=LIBAROMA_CTL_PROGRESS_DETERMINATE){
+    long diff = libaroma_tick() - me->tick;
+    if (diff>_LIBAROMA_CTL_PROGRESS_BEZIER_TIMING*4){
+      me->state=1.0;
     }
     else{
-      libaroma_sleep(100);
+      me->state = ((float) diff)/
+        ((float) _LIBAROMA_CTL_PROGRESS_BEZIER_TIMING*4);
+    }
+    if (me->currstate!=me->state){
+      me->currstate=me->state;
+      libaroma_control_draw(ctl,1);
+    }
+    if (me->state>=1.0){
+      me->state=0;
+      me->tick=libaroma_tick();
     }
   }
-  ALOGV("Progress Thread Ended...");
-  return NULL;
+  else if (me->state<1.0){
+    long diff = libaroma_tick() - me->tick;
+    if (diff>_LIBAROMA_CTL_PROGRESS_BEZIER_TIMING){
+      me->state = 1.0;
+    }
+    else{
+      me->state = libaroma_cubic_bezier_swiftout(
+        ((float) diff)/((float) _LIBAROMA_CTL_PROGRESS_BEZIER_TIMING)
+      );
+    }
+    me->curval = me->preval+((me->value - me->preval) * me->state);
+    if (me->currstate!=me->state){
+      if (me->currx>0){
+        me->currx-=(me->currx*me->state);
+        if (me->currx<0){
+          me->currx=0;
+        }
+      }
+      /* redraw */
+      me->currstate = me->state;
+      libaroma_control_draw(ctl,1);
+    }
+  }
 } /* End of _libaroma_ctl_progress_thread */
 
 /*
@@ -255,21 +242,11 @@ byte _libaroma_ctl_progress_msg(
   switch(msg->msg){
     case LIBAROMA_MSG_WIN_ACTIVE:
       {
-        me->active=1;
-        pthread_create(
-          &me->drawthread,
-          NULL,
-          _libaroma_ctl_progress_thread,
-          (voidp) ctl);
+        me->currstate = 0.0;
       }
       break;
     case LIBAROMA_MSG_WIN_INACTIVE:
       {
-        ALOGV("Stoping progress thread...");
-        me->active=0;
-        pthread_join(me->drawthread, NULL);
-        me->drawthread = 0;
-        ALOGV("Stopped progress thread...");
       }
       break;
   }
@@ -298,7 +275,8 @@ LIBAROMA_CONTROLP libaroma_ctl_progress(
       _libaroma_ctl_progress_msg,
       _libaroma_ctl_progress_draw,
       NULL,
-      _libaroma_ctl_progress_destroy
+      _libaroma_ctl_progress_destroy,
+      _libaroma_ctl_progress_thread
     );
   
   /* init internal data */
@@ -306,7 +284,6 @@ LIBAROMA_CONTROLP libaroma_ctl_progress(
       malloc(sizeof(_LIBAROMA_CTL_PROGRESS));
   
   /* set internal data */
-  me->active=0;
   me->type = type;
   me->max  = max;
   me->value= value;
@@ -315,7 +292,6 @@ LIBAROMA_CONTROLP libaroma_ctl_progress(
   me->state= 1;
   me->tick = 0;
   me->currx = 0;
-  me->drawthread = 0;
   
   /* attach internal data & return*/
   ctl->internal = (voidp) me;

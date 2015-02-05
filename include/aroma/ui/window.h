@@ -63,9 +63,13 @@ typedef struct _LIBAROMA_CONTROL * LIBAROMA_CONTROLP;
  * Descriptions: window structure
  */
 struct _LIBAROMA_WINDOW{
+  byte active;
+  byte lock_sync;
+  LIBAROMA_CANVASP wmc;
   LIBAROMA_CANVASP dc;
   char theme_bg[256];
   LIBAROMA_CANVASP bg;
+  pthread_t thread_manager;
   int x;
   int y;
   int w;
@@ -98,13 +102,6 @@ LIBAROMA_WINDOWP libaroma_window(
 byte libaroma_window_free(
   LIBAROMA_WINDOWP win
 );
-
-/*
- * Function    : libaroma_window_show
- * Return Value: byte
- * Descriptions: show window
- */
-byte libaroma_window_show(LIBAROMA_WINDOWP win);
 
 /*
  * Function    : libaroma_window_resize
@@ -175,10 +172,36 @@ LIBAROMA_CONTROLP libaroma_window_setfocus(
 byte libaroma_window_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg);
 
 /*
+ * Function    : libaroma_window_sync
+ * Return Value: byte
+ * Descriptions: sync window canvas
+ */
+byte libaroma_window_sync(LIBAROMA_WINDOWP win, int x, int y, int w, int h);
+
+/*
  * Function    : libaroma_window_invalidate
  * Return Value: byte
  * Descriptions: invalidate window drawing
  */
-byte libaroma_window_invalidate(LIBAROMA_WINDOWP win);
+byte libaroma_window_invalidate(LIBAROMA_WINDOWP win, byte sync);
+
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_NONE 0
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_LEFT 1
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_RIGHT 2
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_LEFT 3
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_RIGHT 4
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_STACKIN 5
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_STACKOUT 6
+
+/*
+ * Function    : libaroma_window_anishow
+ * Return Value: byte
+ * Descriptions: show window - animated
+ */
+byte libaroma_window_anishow(
+  LIBAROMA_WINDOWP win, byte animation, int duration);
+
+#define libaroma_window_show(win) \
+  libaroma_window_anishow(win,0,0)
 
 #endif /* __libaroma_window_h__ */

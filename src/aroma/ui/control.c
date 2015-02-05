@@ -38,7 +38,8 @@ LIBAROMA_CONTROLP libaroma_control_new(
   LIBAROMA_CTLCB_MESSAGE message,
   LIBAROMA_CTLCB_DRAW draw,
   LIBAROMA_CTLCB_FOCUS focus,
-  LIBAROMA_CTLCB_DESTROY destroy
+  LIBAROMA_CTLCB_DESTROY destroy,
+  LIBAROMA_CTLCB_THREAD thread
 ){
   LIBAROMA_CONTROLP ret = (LIBAROMA_CONTROLP)
     malloc(sizeof(LIBAROMA_CONTROL));
@@ -56,6 +57,7 @@ LIBAROMA_CONTROLP libaroma_control_new(
   ret->draw = draw;
   ret->focus = focus;
   ret->destroy = destroy;
+  ret->thread = thread;
   ret->window = NULL;
   ret->internal = NULL;
   return ret;
@@ -93,11 +95,8 @@ byte libaroma_control_draw_flush(
     0
   );
   if (sync){
-    libaroma_wm_sync(
-      win->x+sx,
-      win->y+sy,
-      ctl->w,
-      ctl->h
+    libaroma_window_sync(
+      win, sx, sy, ctl->w, ctl->h
     );
   }
   return 1;

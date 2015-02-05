@@ -101,8 +101,10 @@ LIBAROMA_FBP libaroma_fb_init() {
       _libaroma_fb->w,
       _libaroma_fb->h,
       0,
-      LIBAROMA_FB_SHMEM_NAME);
-    
+      (libaroma_config()->fb_shm_name[0]!=0)?
+        libaroma_config()->fb_shm_name:NULL
+    );
+
   /* Show Information */
   ALOGI("Framebuffer Initialized (%ix%ipx - %i dpi)",
     _libaroma_fb->w,

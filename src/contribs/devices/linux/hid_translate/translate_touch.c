@@ -65,14 +65,16 @@ static byte LINUXHIDRV_calibrate(
   *y = (p->y - p->yi.minimum) * (fb_height - 1) /
     (p->yi.maximum - p->yi.minimum);
   
-  /* check result */
+  return 1;
+  
+  /* check result - disabled for capacitive button
   if (*x >= 0 && *x < fb_width &&
       *y >= 0 && *y < fb_height) {
     return 1;
   }
   
-  /* not ok */
   return 0;
+  */
 }
 
 /*

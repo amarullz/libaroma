@@ -33,10 +33,15 @@
  * Descriptions: main executable function
  */
 int main(int argc, char **argv){
-  /* start libaroma process
-   *  + LIBAROMA_START_MUTEPARENT - For android recovery apps
-   */
-  libaroma_start(0);
+  /* set libaroma runtime configuration */
+  /*
+    snprintf(libaroma_config()->fb_shm_name,64,"recovery-mainfb");
+    libaroma_config()->runtime_monitor = LIBAROMA_START_UNSAFE;
+    
+  */
+  
+  /* start libaroma process */
+  libaroma_start();
   
   /* load font - id=0 */
   libaroma_font(0,
@@ -59,25 +64,15 @@ int main(int argc, char **argv){
   );
   
   /* show window */
-  libaroma_window_show(win);
+  //libaroma_window_show(win);
+  /*
+    libaroma_window_anishow(win, LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_RIGHT, 1000);
   
-  /* draw text into framebuffer canvas */
-  libaroma_draw_text(
-    libaroma_fb()->canvas, /* destination canvas */
-    "This is <b>Test <u>Text</u></b> Only...", /* text to draw */
-    libaroma_dp(10), /* x */
-    libaroma_dp(80), /* y */
-    RGB(ff6600), /* text color */
-    libaroma_dp(300), /* max-width */
-    LIBAROMA_TEXT_CENTER| /* flags */
-    LIBAROMA_TEXT_SINGLELINE|
-    LIBAROMA_FONT(0,5) /* font_id, font_size */
-    ,
-    120 /* line-spacing (100 = 1.0, 120 = 1.2) */
-  );
+  */
+  libaroma_window_anishow(win, LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_RIGHT, 200);
   
-  /* sync whole display */
-  libaroma_sync();
+  
+  
   
   
   /* Input Handler */

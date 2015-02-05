@@ -38,12 +38,47 @@
 #include "aroma/core.c" /* libaroma core module */
 
 /*
+ * Variable    : _libaroma_config
+ * Type        : LIBAROMA_CONFIG
+ * Descriptions: runtime configuration
+ */
+static LIBAROMA_CONFIG _libaroma_config;
+static byte _libaroma_config_ready=0;
+
+/*
+ * Function    : _libaroma_config_default
+ * Return Value: void
+ * Descriptions: set default runtime configuration
+ */
+void _libaroma_config_default() {
+  if (LIBAROMA_FB_SHMEM_NAME){
+    snprintf(_libaroma_config.fb_shm_name,64,"%s",LIBAROMA_FB_SHMEM_NAME);
+  }
+  else{
+    _libaroma_config.fb_shm_name[0]=0;
+  }
+  _libaroma_config.runtime_monitor = LIBAROMA_START_UNSAFE;
+  _libaroma_config_ready = 1;
+} /* End of libaroma_config_default */
+
+/*
+ * Function    : libaroma_config
+ * Return Value: LIBAROMA_CONFIGP
+ * Descriptions: get runtime config
+ */
+LIBAROMA_CONFIGP libaroma_config(){
+  if (!_libaroma_config_ready){
+    _libaroma_config_default();
+  }
+  return &_libaroma_config;
+} /* End of libaroma_config */
+
+/*
  * Function    : libaroma_start
  * Return Value: byte
  * Descriptions: Start libaroma application
  */
-byte libaroma_start(
-    byte mute_parent) {
+byte libaroma_start() {
   /* Welcome Message */
   ALOGI(
     "%s Version %s",
@@ -54,7 +89,7 @@ byte libaroma_start(
   ALOGI(" ");
   
   /* Init Safe Process Monitoring */
-  if (mute_parent) {
+  if (libaroma_config()->runtime_monitor) {
     libaroma_runtime_init();
   }
   
@@ -63,7 +98,7 @@ byte libaroma_start(
 #endif
   
   /* Mute Parent */
-  if (mute_parent == 2) {
+  if (libaroma_config()->runtime_monitor == LIBAROMA_START_MUTEPARENT) {
     libaroma_runtime_mute_parent();
   }
   
@@ -128,6 +163,9 @@ byte libaroma_end() {
 #endif
   return 1;
 }
+
+/* libaroma high level api */
+#include "aroma/api.c"
 
 #ifdef LIBAROMA_CONFIG_COMPILER_MESSAGE
 #include "aroma/debug/compiler_message.c"

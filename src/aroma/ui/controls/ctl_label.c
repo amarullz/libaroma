@@ -81,7 +81,8 @@ LIBAROMA_CONTROLP libaroma_control_label(
     _libaroma_control_label_msg,
     _libaroma_control_label_draw,
     NULL,
-    _libaroma_control_label_destroy
+    _libaroma_control_label_destroy,
+    NULL
   );
   
   _LIBAROMA_CONTROL_LABELP me = (_LIBAROMA_CONTROL_LABELP)
