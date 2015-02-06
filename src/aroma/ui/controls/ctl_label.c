@@ -65,8 +65,9 @@ void _libaroma_control_label_draw(
 }
 
 byte _libaroma_control_label_msg(LIBAROMA_CONTROLP ctl, LIBAROMA_MSGP msg){
+  /*
   _LIBAROMA_CONTROL_LABELP me = 
-    (_LIBAROMA_CONTROL_LABELP) ctl->internal;
+    (_LIBAROMA_CONTROL_LABELP) ctl->internal;*/
   return msg->msg;
 }
 

@@ -351,7 +351,6 @@ void _libaroma_font_hb_update_scale(
     byte fontid) {
   _LIBAROMA_FONT_FACEP aface =
     (_LIBAROMA_FONT_FACEP) (&_libaroma_font_faces[fontid]);
-  FT_Face ft_face = aface->face;
   if (aface->hb_font) {
     /* set scale */
     int v1 = (int) (((uint64_t) aface->face->size->metrics.x_scale *

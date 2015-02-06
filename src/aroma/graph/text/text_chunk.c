@@ -181,8 +181,6 @@ byte _libaroma_text_parse_next(
   /* local variables */
   char * cur = chunk->text;
   char   chr = *cur;
-  char * ret = NULL;
-  char * tmp = NULL;
   int  bufn  = 0;
   
   /* characters loop */

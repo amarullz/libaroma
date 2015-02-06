@@ -34,7 +34,7 @@
  */
 LIBAROMA_CANVASP libaroma_art_busy_progress(
     word basecolor) {
-  int i, j, k;
+  int i, j;
   
   /* calculate size */
   int dp1   = libaroma_dp(1);

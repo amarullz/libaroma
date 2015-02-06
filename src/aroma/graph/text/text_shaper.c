@@ -104,7 +104,6 @@ _LIBAROMA_TEXTSHAPEDP libaroma_text_shaper(
   int   min_y   = INT_MAX;
   int   x       = 0;
   int   y       = 0;
-  int   p = -1;
   int   u = 0;
   
   for (i = 0; i < glyph_count; i++) {
@@ -264,7 +263,6 @@ _LIBAROMA_TEXTSHAPED_GROUPP libaroma_text_group_split(
   int * shaped_x = (int *) malloc(sizeof(int) * shaped_n);
   memset(shaped_x, 0, sizeof(int) * shaped_n);
   shaped = group->shaped;
-  _LIBAROMA_TEXTSHAPEDP prev = NULL;
   byte rtl = 0;
   int rtl_id = -1;
   shaped_n = 0;
@@ -503,7 +501,6 @@ _LIBAROMA_TEXTSHAPED_GROUPP libaroma_text_group(
       /* shaping data */
       _LIBAROMA_TEXTSHAPEDP first_shaped = NULL;
       _LIBAROMA_TEXTSHAPEDP last_shaped = NULL;
-      int shape_len = 0;
       int group_w = 0;
       int group_h = 0;
       while (clen > 0) {

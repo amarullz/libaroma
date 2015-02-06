@@ -94,7 +94,6 @@ _LIBAROMA_TEXTLINEP libaroma_textline_align(
     int line_width,
     int indent_size,
     int limit_width) {
-  int i;
   if (indent_size == -1) {
     indent_size = 0;
   }
@@ -545,8 +544,6 @@ _LIBAROMA_TEXTLINEP libaroma_textline(
       _LIBAROMA_TEXTCHUNK_GETFONTSIZE(chunk->curr_state.font);
     short font_size_px = libaroma_font_size_px(font_size);
     short space_w = font_size_px / 3;
-    byte lflags_val =
-      _LIBAROMA_TEXTCHUNK_LINE_GETFLAGS(chunk->curr_state.lflags);
     /* set indentation */
     if (indent_size == -1) {
       int size_perindent = (font_size_px * 3) >> 2;

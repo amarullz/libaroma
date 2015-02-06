@@ -153,9 +153,10 @@ LIBAROMA_MK_MINZIP_LIB := libminzip_libaroma
 ################################################################################
 
 ##
-## include minzip & harfbuzz-ng
+## include minzip, harfbuzz-ng, freetype
 ##
 include $(LIBAROMA_PATH)/libs/minzip/Android.mk
 include $(LIBAROMA_PATH)/libs/harfbuzz-ng/Android.mk
+include $(LIBAROMA_PATH)/libs/freetype/Android.mk
 
 ##[EOF]

@@ -27,9 +27,6 @@
 #include "config_features.h"  /* libaroma features config header */
 
 /* Debugging */
-#ifdef LIBAROMA_CONFIG_COMPILER_MESSAGE
-#include "aroma/debug/compiler_message.c"
-#endif
 #ifdef LIBAROMA_CONFIG_DEBUG_MEMORY
 #if LIBAROMA_CONFIG_DEBUG_MEMORY >=1
 #include "aroma/debug/memory_tracking.c"
@@ -173,7 +170,9 @@ byte libaroma_end() {
 /* libaroma high level api */
 #include "aroma/api.c"
 
+/* show compiler info */
 #ifdef LIBAROMA_CONFIG_COMPILER_MESSAGE
 #include "aroma/debug/compiler_message.c"
 #endif
+
 #endif /* __libaroma_aroma_c__ */

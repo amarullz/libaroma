@@ -6,10 +6,10 @@ del /F /Q hid_driver.*
 
 echo Compiling Libaroma
 %LIBAROMA_GCC% -c ^
-  -save-temps -O2 ^
+  -save-temps -O2 -fopenmp ^
   -fdata-sections -ffunction-sections -Wl,--gc-sections ^
   -D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG ^
-  -fPIC -DPIC -Wl,-s -Werror -fopenmp ^
+  -fPIC -DPIC -Wl,-s -Wall -Wextra -Wshadow -Werror -Wno-unused-parameter ^
  ^
   -D__ARM_HAVE_NEON ^
   -mfloat-abi=hard ^
@@ -21,7 +21,7 @@ echo Compiling Libaroma
   -DLIBAROMA_CONFIG_COMPILER_MESSAGE=%LIBAROMA_CONFIG_COMPILER_MESSAGE% ^
   -DLIBAROMA_CONFIG_SHMEMFB=%LIBAROMA_CONFIG_SHMEMFB% ^
   -DLIBAROMA_CONFIG_OPENMP=1 ^
-  -DANDROID=1 ^
+  -DANDROID=1 -D__ANDROID__ ^
  ^
   ../../../src/contribs/devices/linux/fb_driver.c ^
   ../../../src/contribs/devices/linux/hid_driver.c ^

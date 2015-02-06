@@ -72,8 +72,6 @@ LIBAROMA_CANVASP libaroma_blur_ex(
   int pixels_on_row = radius2 + 1;
   int height = src->h;
   int width = src->w;
-  int height_clamp = height - 1;
-  int width_clamp = width - 1;
   int x, y, o;
   int nwidth = width + pixels_on_row;
   int nheight = height + pixels_on_row;

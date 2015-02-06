@@ -627,7 +627,6 @@ byte libaroma_window_anishow(
   if (libaroma_wm_set_active_window(win)){
     long start = libaroma_tick();
     int delta = 0;
-    int i;
     LIBAROMA_CANVASP back = libaroma_canvas(win->w, win->h);
     libaroma_draw(back, win->wmc, 0, 0, 0);
     while ((delta=libaroma_tick()-start)<duration){

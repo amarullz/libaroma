@@ -146,7 +146,6 @@ char ___mtrack_del(void * key) {
 ___MTRACKIP ___mtrack_get(void * key) {
   /* Fetch Item */
   ___MTRACKIP item = ___mtrack.first;
-  ___MTRACKIP prev = NULL;
   
   /* Find Key */
   while (item != NULL) {
@@ -181,7 +180,6 @@ void ___mtrack_dump_leak() {
   printf(  "\n___________________________________________________\n\n");
   /* Fetch Item */
   ___MTRACKIP item = ___mtrack.first;
-  ___MTRACKIP prev = NULL;
   
   /* Find Key and Dump */
   while (item != NULL) {
