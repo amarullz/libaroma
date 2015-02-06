@@ -4,7 +4,7 @@
 /*                                                                         */
 /*    PNG Bitmap glyph support.                                            */
 /*                                                                         */
-/*  Copyright 2013 by Google, Inc.                                         */
+/*  Copyright 2013, 2014 by Google, Inc.                                   */
 /*  Written by Stuart Gill and Behdad Esfahbod.                            */
 /*                                                                         */
 /*  This file is part of the FreeType project, and may only be used,       */
@@ -122,14 +122,14 @@
   error_callback( png_structp      png,
                   png_const_charp  error_msg )
   {
-    FT_Error*  error = png_get_error_ptr( png );
+    FT_Error*  error = (FT_Error*)png_get_error_ptr( png );
 
     FT_UNUSED( error_msg );
 
 
     *error = FT_THROW( Out_Of_Memory );
 #ifdef PNG_SETJMP_SUPPORTED
-    longjmp( png_jmpbuf( png ), 1 );
+    ft_longjmp( png_jmpbuf( png ), 1 );
 #endif
     /* if we get here, then we have no choice but to abort ... */
   }
@@ -159,7 +159,7 @@
 
     if ( FT_FRAME_ENTER( length ) )
     {
-      FT_Error*  e = png_get_error_ptr( png );
+      FT_Error*  e = (FT_Error*)png_get_error_ptr( png );
 
 
       *e = FT_THROW( Invalid_Stream_Read );
@@ -174,16 +174,18 @@
   }
 
 
-  static FT_Error
-  Load_SBit_Png( FT_Bitmap*       map,
+  FT_LOCAL_DEF( FT_Error )
+  Load_SBit_Png( FT_GlyphSlot     slot,
                  FT_Int           x_offset,
                  FT_Int           y_offset,
                  FT_Int           pix_bits,
                  TT_SBit_Metrics  metrics,
                  FT_Memory        memory,
                  FT_Byte*         data,
-                 FT_UInt          png_len )
+                 FT_UInt          png_len,
+                 FT_Bool          populate_map_and_metrics )
   {
+    FT_Bitmap    *map   = &slot->bitmap;
     FT_Error      error = FT_Err_Ok;
     FT_StreamRec  stream;
 
@@ -193,12 +195,21 @@
 
     int         bitdepth, color_type, interlace;
     FT_Int      i;
-    png_byte*  *rows;
+    png_byte*  *rows = NULL; /* pacify compiler */
 
 
-    if ( x_offset < 0 || x_offset + metrics->width  > map->width ||
-         y_offset < 0 || y_offset + metrics->height > map->rows  ||
-         pix_bits != 32 || map->pixel_mode != FT_PIXEL_MODE_BGRA )
+    if ( x_offset < 0 ||
+         y_offset < 0 )
+    {
+      error = FT_THROW( Invalid_Argument );
+      goto Exit;
+    }
+
+    if ( !populate_map_and_metrics                            &&
+         ( (FT_UInt)x_offset + metrics->width  > map->width ||
+           (FT_UInt)y_offset + metrics->height > map->rows  ||
+           pix_bits != 32                                   ||
+           map->pixel_mode != FT_PIXEL_MODE_BGRA            ) )
     {
       error = FT_THROW( Invalid_Argument );
       goto Exit;
@@ -238,10 +249,40 @@
                   &bitdepth, &color_type, &interlace,
                   NULL, NULL );
 
-    if ( error != FT_Err_Ok                   ||
-         (FT_Int)imgWidth  != metrics->width  ||
-         (FT_Int)imgHeight != metrics->height )
+    if ( error                                        ||
+         ( !populate_map_and_metrics                &&
+           ( (FT_Int)imgWidth  != metrics->width  ||
+             (FT_Int)imgHeight != metrics->height ) ) )
       goto DestroyExit;
+
+    if ( populate_map_and_metrics )
+    {
+      FT_Long  size;
+
+
+      metrics->width  = (FT_Int)imgWidth;
+      metrics->height = (FT_Int)imgHeight;
+
+      map->width      = metrics->width;
+      map->rows       = metrics->height;
+      map->pixel_mode = FT_PIXEL_MODE_BGRA;
+      map->pitch      = map->width * 4;
+      map->num_grays  = 256;
+
+      /* reject too large bitmaps similarly to the rasterizer */
+      if ( map->rows > 0x7FFF || map->width > 0x7FFF )
+      {
+        error = FT_THROW( Array_Too_Large );
+        goto DestroyExit;
+      }
+
+      /* this doesn't overflow: 0x7FFF * 0x7FFF * 4 < 2^32 */
+      size = map->rows * map->pitch;
+
+      error = ft_glyphslot_alloc_bitmap( slot, size );
+      if ( error )
+        goto DestroyExit;
+    }
 
     /* convert palette/gray image to rgb */
     if ( color_type == PNG_COLOR_TYPE_PALETTE )

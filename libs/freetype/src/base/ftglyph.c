@@ -4,7 +4,7 @@
 /*                                                                         */
 /*    FreeType convenience functions to handle glyphs (body).              */
 /*                                                                         */
-/*  Copyright 1996-2005, 2007, 2008, 2010, 2012, 2013 by                   */
+/*  Copyright 1996-2005, 2007, 2008, 2010, 2012-2014 by                    */
 /*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
 /*                                                                         */
 /*  This file is part of the FreeType project, and may only be used,       */
@@ -314,13 +314,13 @@
 
 
     /* check arguments */
-    if ( !target )
+    if ( !target || !source || !source->clazz )
     {
       error = FT_THROW( Invalid_Argument );
       goto Exit;
     }
 
-    *target = 0;
+    *target = NULL;
 
     if ( !source || !source->clazz )
     {
@@ -359,7 +359,7 @@
     FT_Error    error;
     FT_Glyph    glyph;
 
-    const FT_Glyph_Class*  clazz = 0;
+    const FT_Glyph_Class*  clazz = NULL;
 
 
     if ( !slot )
@@ -424,15 +424,16 @@
                       FT_Matrix*  matrix,
                       FT_Vector*  delta )
   {
-    const FT_Glyph_Class*  clazz;
-    FT_Error               error = FT_Err_Ok;
+    FT_Error  error = FT_Err_Ok;
 
 
     if ( !glyph || !glyph->clazz )
       error = FT_THROW( Invalid_Argument );
     else
     {
-      clazz = glyph->clazz;
+      const FT_Glyph_Class*  clazz = glyph->clazz;
+
+
       if ( clazz->glyph_transform )
       {
         /* transform glyph image */
@@ -466,38 +467,33 @@
 
     if ( !glyph || !glyph->clazz )
       return;
-    else
+
+    clazz = glyph->clazz;
+    if ( !clazz->glyph_bbox )
+      return;
+
+    /* retrieve bbox in 26.6 coordinates */
+    clazz->glyph_bbox( glyph, acbox );
+
+    /* perform grid fitting if needed */
+    if ( bbox_mode == FT_GLYPH_BBOX_GRIDFIT ||
+         bbox_mode == FT_GLYPH_BBOX_PIXELS  )
     {
-      clazz = glyph->clazz;
-      if ( !clazz->glyph_bbox )
-        return;
-      else
-      {
-        /* retrieve bbox in 26.6 coordinates */
-        clazz->glyph_bbox( glyph, acbox );
-
-        /* perform grid fitting if needed */
-        if ( bbox_mode == FT_GLYPH_BBOX_GRIDFIT ||
-             bbox_mode == FT_GLYPH_BBOX_PIXELS  )
-        {
-          acbox->xMin = FT_PIX_FLOOR( acbox->xMin );
-          acbox->yMin = FT_PIX_FLOOR( acbox->yMin );
-          acbox->xMax = FT_PIX_CEIL( acbox->xMax );
-          acbox->yMax = FT_PIX_CEIL( acbox->yMax );
-        }
-
-        /* convert to integer pixels if needed */
-        if ( bbox_mode == FT_GLYPH_BBOX_TRUNCATE ||
-             bbox_mode == FT_GLYPH_BBOX_PIXELS   )
-        {
-          acbox->xMin >>= 6;
-          acbox->yMin >>= 6;
-          acbox->xMax >>= 6;
-          acbox->yMax >>= 6;
-        }
-      }
+      acbox->xMin = FT_PIX_FLOOR( acbox->xMin );
+      acbox->yMin = FT_PIX_FLOOR( acbox->yMin );
+      acbox->xMax = FT_PIX_CEIL( acbox->xMax );
+      acbox->yMax = FT_PIX_CEIL( acbox->yMax );
     }
-    return;
+
+    /* convert to integer pixels if needed */
+    if ( bbox_mode == FT_GLYPH_BBOX_TRUNCATE ||
+         bbox_mode == FT_GLYPH_BBOX_PIXELS   )
+    {
+      acbox->xMin >>= 6;
+      acbox->yMin >>= 6;
+      acbox->xMax >>= 6;
+      acbox->yMax >>= 6;
+    }
   }
 
 
@@ -516,7 +512,7 @@
     FT_BitmapGlyph            bitmap = NULL;
     const FT_Glyph_Class*     clazz;
 
-    /* FT_BITMAP_GLYPH_CLASS_GET derefers `library' in PIC mode */
+    /* FT_BITMAP_GLYPH_CLASS_GET dereferences `library' in PIC mode */
     FT_Library                library;
 
 
