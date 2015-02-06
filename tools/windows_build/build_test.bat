@@ -8,9 +8,7 @@ echo Compiling TEST
   -D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG ^
   -fPIC -DPIC -Wl,-s -Werror -fopenmp ^
   ^
-  -D__ARM_HAVE_NEON ^
-  -mfloat-abi=hard ^
-  -mfpu=neon ^
+  %LIBAROMA_CFLAGS% ^
   ^
     -DLIBAROMA_CONFIG_DEBUG=%LIBAROMA_CONFIG_DEBUG% ^
     -DLIBAROMA_CONFIG_DEBUG_FILE=%LIBAROMA_CONFIG_DEBUG_FILE% ^

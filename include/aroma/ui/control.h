@@ -27,12 +27,11 @@
 #ifndef __libaroma_control_h__
 #define __libaroma_control_h__
 
-
 /*
  * Typedef     : LIBAROMA_CTLCB_*
  * Descriptions: control callbacks
  */
-typedef byte (*LIBAROMA_CTLCB_MESSAGE) \
+typedef dword (*LIBAROMA_CTLCB_MESSAGE) \
   (LIBAROMA_CONTROLP, LIBAROMA_MSGP);
 typedef void (*LIBAROMA_CTLCB_DRAW) \
   (LIBAROMA_CONTROLP, LIBAROMA_CANVASP);
@@ -53,10 +52,29 @@ struct _LIBAROMA_CONTROL{
   word id;
   voidp internal;
   LIBAROMA_WINDOWP window;
+  
+  /* px measured */
   int x;
   int y;
   int w;
   int h;
+  
+  /* requested */
+  int rx;
+  int ry;
+  int rw;
+  int rh;
+  
+  /* measured size */
+  int left;
+  int top;
+  int width;
+  int height;
+  
+  /* minimum control size */
+  int minw;
+  int minh;
+  
   /* callbacks */
   LIBAROMA_CTLCB_MESSAGE message;
   LIBAROMA_CTLCB_DRAW draw;
@@ -73,22 +91,12 @@ struct _LIBAROMA_CONTROL{
 LIBAROMA_CONTROLP libaroma_control_new(
   byte signature, word id,
   int x, int y, int w, int h,
+  int minw, int minh,
   LIBAROMA_CTLCB_MESSAGE message,
   LIBAROMA_CTLCB_DRAW draw,
   LIBAROMA_CTLCB_FOCUS focus,
   LIBAROMA_CTLCB_DESTROY destroy,
   LIBAROMA_CTLCB_THREAD thread
-);
-
-/*
- * Function    : libaroma_control_draw_flush
- * Return Value: byte
- * Descriptions: draw control into window
- */
-byte libaroma_control_draw_flush(
-  LIBAROMA_CONTROLP ctl,
-  LIBAROMA_CANVASP canvas,
-  byte sync
 );
 
 /*
@@ -107,23 +115,6 @@ byte libaroma_control_erasebg(
  * Descriptions: check if control visible
  */
 byte libaroma_control_isvisible(LIBAROMA_CONTROLP ctl);
-
-/*
- * Function    : libaroma_control_draw_begin
- * Return Value: LIBAROMA_CANVASP
- * Descriptions: begin control ondraw
- */
-LIBAROMA_CANVASP libaroma_control_draw_begin(
-  LIBAROMA_CONTROLP ctl);
-
-/*
- * Function    : libaroma_control_draw_end
- * Return Value: void
- * Descriptions: end control ondraw
- */
-void libaroma_control_draw_end(
-  LIBAROMA_CONTROLP ctl, LIBAROMA_CANVASP c, byte sync
-);
 
 /*
  * Function    : libaroma_control_draw

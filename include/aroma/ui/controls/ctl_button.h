@@ -14,38 +14,29 @@
  * limitations under the License.
  *______________________________________________________________________________
  *
- * Filename    : ui.h
- * Description : user interface & hid handler
+ * Filename    : ctl_button.h
+ * Description : button control
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 21/01/15 - Author(s): Ahmad Amarullah
+ * + 06/02/15 - Author(s): Ahmad Amarullah
  *
  */
 #ifndef __libaroma_aroma_h__
   #error "Include <aroma.h> instead."
 #endif
-#ifndef __libaroma_ui_h__
-#define __libaroma_ui_h__
+#ifndef __libaroma_ctl_button_h__
+#define __libaroma_ctl_button_h__
 
 /*
- * typedef : Window & Control Structure
+ * Function    : libaroma_ctl_button
+ * Return Value: LIBAROMA_CONTROLP
+ * Descriptions: create button control
  */
-typedef struct _LIBAROMA_WINDOW LIBAROMA_WINDOW;
-typedef struct _LIBAROMA_WINDOW * LIBAROMA_WINDOWP;
-typedef struct _LIBAROMA_CONTROL LIBAROMA_CONTROL;
-typedef struct _LIBAROMA_CONTROL * LIBAROMA_CONTROLP;
+LIBAROMA_CONTROLP libaroma_ctl_button(
+    LIBAROMA_WINDOWP win,
+    word id,
+    int x, int y, int w, int h,
+    char * text
+);
 
-/* include module headers */
-#include "ui/hid.h"
-#include "ui/messages.h"
-#include "ui/motions.h"
-#include "ui/window.h"
-#include "ui/window_manager.h"
-#include "ui/control.h"
-
-/* control set */
-#include "ui/controls/ctl_label.h"
-#include "ui/controls/ctl_progress.h"
-#include "ui/controls/ctl_button.h"
-
-#endif /* __libaroma_ui_h__ */
+#endif /* __libaroma_ctl_button_h__ */

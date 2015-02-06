@@ -8,8 +8,7 @@ echo Compiling PNG
   -D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG ^
   -fPIC -DPIC -Wl,-s -Werror ^
  ^
-  -mfloat-abi=hard -mfpu=neon ^
-  -D__ARM_HAVE_NEON ^
+  %LIBAROMA_CFLAGS% ^
  ^
     ../../../libs/png/png.c ^
   	../../../libs/png/pngerror.c ^

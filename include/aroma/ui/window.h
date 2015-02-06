@@ -26,36 +26,55 @@
 #endif
 #ifndef __libaroma_window_h__
 #define __libaroma_window_h__
+/*
+ * Window Poll Command
+ */
+#define LIBAROMA_CMD_SET(cmd, param, id) \
+  (((cmd&0xff) << 24) | ((param&0xff) << 16) | (id&0xffff))
+#define LIBAROMA_CMD_ID(cmd) (cmd&0xffff)
+#define LIBAROMA_CMD(cmd) ((cmd>>24)&0xff)
+#define LIBAROMA_CMD_PARAM(cmd) ((cmd>>16)&0xff)
+
+/* command id */
+#define LIBAROMA_CMD_NONE       0x0
+#define LIBAROMA_CMD_CLICK      0x1
 
 /*
- * Window Messages
+ * Window Messages Queue
  */
 #define LIBAROMA_MSG_WIN_ACTIVE       LIBAROMA_MSG_SYS(0x1)
 #define LIBAROMA_MSG_WIN_INACTIVE     LIBAROMA_MSG_SYS(0x2)
 #define LIBAROMA_MSG_WIN_INVALIDATE   LIBAROMA_MSG_SYS(0x3)
 #define LIBAROMA_MSG_WIN_RESIZE       LIBAROMA_MSG_SYS(0x4)
+#define LIBAROMA_MSG_WIN_MEASURED     LIBAROMA_MSG_SYS(0x5)
 
-#define LIBAROMA_MSG_WIN_FOCUS        LIBAROMA_MSG_SYS(0x5)
-#define LIBAROMA_MSG_WIN_BLUR         LIBAROMA_MSG_SYS(0x6)
-#define LIBAROMA_MSG_WIN_TITLE        LIBAROMA_MSG_SYS(0x7)
-
-
-/*
- * Structure   : _LIBAROMA_WINDOW
- * Typedef     : LIBAROMA_WINDOW, * LIBAROMA_WINDOWP
- * Descriptions: window structure
- */
-typedef struct _LIBAROMA_WINDOW LIBAROMA_WINDOW;
-typedef struct _LIBAROMA_WINDOW * LIBAROMA_WINDOWP;
+#define LIBAROMA_MSG_WIN_FOCUS        LIBAROMA_MSG_SYS(0x6)
+#define LIBAROMA_MSG_WIN_BLUR         LIBAROMA_MSG_SYS(0x7)
+#define LIBAROMA_MSG_WIN_TITLE        LIBAROMA_MSG_SYS(0x8)
 
 /*
- * Structure   : _LIBAROMA_CONTROL
- * Typedef     : LIBAROMA_CONTROL, * LIBAROMA_CONTROLP
- * Descriptions: control structure
- * Struct File : control.h
+ * Window Show Animation
  */
-typedef struct _LIBAROMA_CONTROL LIBAROMA_CONTROL;
-typedef struct _LIBAROMA_CONTROL * LIBAROMA_CONTROLP;
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_NONE 0
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_LEFT 1
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_RIGHT 2
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_LEFT 3
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_RIGHT 4
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_STACKIN 5
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_STACKOUT 6
+
+/*
+ * Special Size & Position
+ */
+#define LIBAROMA_POS_HALF     -1
+#define LIBAROMA_POS_1P3      -2
+#define LIBAROMA_POS_2P3      -3
+#define LIBAROMA_POS_1P4      -4
+#define LIBAROMA_POS_3P4      -5
+#define LIBAROMA_SIZE_FULL     0
+#define LIBAROMA_SIZE_HALF    -1
+#define LIBAROMA_SIZE_THIRD   -2
+#define LIBAROMA_SIZE_QUARTER -3
 
 /*
  * Structure   : _LIBAROMA_WINDOW
@@ -63,26 +82,53 @@ typedef struct _LIBAROMA_CONTROL * LIBAROMA_CONTROLP;
  * Descriptions: window structure
  */
 struct _LIBAROMA_WINDOW{
-  byte active;
-  byte lock_sync;
-  LIBAROMA_CANVASP wmc;
-  LIBAROMA_CANVASP dc;
-  char theme_bg[256];
-  LIBAROMA_CANVASP bg;
-  pthread_t thread_manager;
+  /* px measured */
   int x;
   int y;
   int w;
   int h;
+  /* requested size */
+  int rx;
+  int ry;
+  int rw;
+  int rh;
+  /* measured size */
+  int left;
+  int top;
+  int width;
+  int height;
+  /* inside size */
   int client_w;
   int client_h;
   int scroll_x;
   int scroll_y;
+  
+  /* states */
+  byte active;
+  byte lock_sync;
+  
+  /* graphs */
+  char theme_bg[256];
+  LIBAROMA_CANVASP wmc;
+  LIBAROMA_CANVASP dc;
+  LIBAROMA_CANVASP bg;
+  
+  /* childs */
   int childn;
   LIBAROMA_CONTROLP * childs;
   LIBAROMA_CONTROLP focused;
   LIBAROMA_CONTROLP touched;
+  
+  /* thread manager */
+  pthread_t thread_manager;
 };
+
+/*
+ * Function    : libaroma_window_usedp
+ * Return Value: byte
+ * Descriptions: use dp for mesurement
+ */
+byte libaroma_window_usedp(byte isdp);
 
 /*
  * Function    : libaroma_window
@@ -121,39 +167,31 @@ byte libaroma_window_resize(
 byte libaroma_window_isactive(LIBAROMA_WINDOWP win);
 
 /*
- * Function    : libaroma_window_add_control
+ * Function    : libaroma_window_add
  * Return Value: byte
  * Descriptions: add control into window
  */
-byte libaroma_window_add_control(
+byte libaroma_window_add(
   LIBAROMA_WINDOWP win,
   LIBAROMA_CONTROLP ctl
 );
 
 /*
- * Function    : libaroma_window_del_control
+ * Function    : libaroma_window_del
  * Return Value: byte
  * Descriptions: delete control from window
  */
-byte libaroma_window_del_control(
+byte libaroma_window_del(
+  LIBAROMA_WINDOWP win,
   LIBAROMA_CONTROLP ctl
 );
 
 /*
- * Function    : libaroma_window_attach
- * Return Value: LIBAROMA_CONTROLP
- * Descriptions: attach control into window
- */
-LIBAROMA_CONTROLP libaroma_window_attach(
-  LIBAROMA_WINDOWP win,
-  LIBAROMA_CONTROLP ctl);
-
-/*
- * Function    : libaroma_window_control_id
+ * Function    : libaroma_window_getid
  * Return Value: LIBAROMA_CONTROLP
  * Descriptions: get control by id
  */
-LIBAROMA_CONTROLP libaroma_window_control_id(
+LIBAROMA_CONTROLP libaroma_window_getid(
     LIBAROMA_WINDOWP win, word id);
 
 /*
@@ -165,35 +203,6 @@ LIBAROMA_CONTROLP libaroma_window_setfocus(
     LIBAROMA_WINDOWP win, LIBAROMA_CONTROLP ctl);
 
 /*
- * Function    : libaroma_window_event
- * Return Value: byte
- * Descriptions: process message
- */
-byte libaroma_window_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg);
-
-/*
- * Function    : libaroma_window_sync
- * Return Value: byte
- * Descriptions: sync window canvas
- */
-byte libaroma_window_sync(LIBAROMA_WINDOWP win, int x, int y, int w, int h);
-
-/*
- * Function    : libaroma_window_invalidate
- * Return Value: byte
- * Descriptions: invalidate window drawing
- */
-byte libaroma_window_invalidate(LIBAROMA_WINDOWP win, byte sync);
-
-#define LIBAROMA_WINDOW_SHOW_ANIMATION_NONE 0
-#define LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_LEFT 1
-#define LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_RIGHT 2
-#define LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_LEFT 3
-#define LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_RIGHT 4
-#define LIBAROMA_WINDOW_SHOW_ANIMATION_STACKIN 5
-#define LIBAROMA_WINDOW_SHOW_ANIMATION_STACKOUT 6
-
-/*
  * Function    : libaroma_window_anishow
  * Return Value: byte
  * Descriptions: show window - animated
@@ -201,7 +210,17 @@ byte libaroma_window_invalidate(LIBAROMA_WINDOWP win, byte sync);
 byte libaroma_window_anishow(
   LIBAROMA_WINDOWP win, byte animation, int duration);
 
+/* no animation */
 #define libaroma_window_show(win) \
   libaroma_window_anishow(win,0,0)
+
+/*
+ * Function    : libaroma_window_pool
+ * Return Value: dword
+ * Descriptions: poll window messages
+ */
+dword libaroma_window_pool(
+    LIBAROMA_WINDOWP win,
+    LIBAROMA_MSGP msg);
 
 #endif /* __libaroma_window_h__ */

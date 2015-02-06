@@ -249,6 +249,7 @@ void libaroma_alpha_const_line(int _Y, int n, wordp dst,
     uint16x8_t o = vorrq_u16(vorrq_u16(r, g), b);
     vst1q_u16(dst + (8 * i), o);
     
+    
     /* leftover */
     if ((i + 1 == nn) && (left > 0)) {
       for (i = n - left; i < n; i++) {

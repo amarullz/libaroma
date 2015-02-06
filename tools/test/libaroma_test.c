@@ -57,15 +57,21 @@ int main(int argc, char **argv){
   
   /* create window */
   LIBAROMA_WINDOWP win = libaroma_window(
-    NULL, 0, 0, 0, 0); /* fullscreen */
+    NULL, 0, 0, LIBAROMA_SIZE_FULL, LIBAROMA_SIZE_FULL); /* fullscreen */
   
   /* progress bar */
   LIBAROMA_CONTROLP progress = libaroma_ctl_progress(
     win, 1,
-    libaroma_dp(20), libaroma_dp(20), libaroma_dp(100), libaroma_dp(6),
+    0, 20, LIBAROMA_SIZE_FULL, 10,
     LIBAROMA_CTL_PROGRESS_QUERY,
     100,
     0
+  );
+  
+  LIBAROMA_CONTROLP button = libaroma_ctl_button(
+    win, 2,
+    0, 40, LIBAROMA_SIZE_FULL, 40,
+    "Test Button"
   );
   
   /* show window */
@@ -80,7 +86,7 @@ int main(int argc, char **argv){
   
   
   
-  /* Input Handler */
+  /* Input Handler 
   libaroma_msg_start();
   long last_tick=libaroma_tick();
   int curval=0;
@@ -115,6 +121,24 @@ int main(int argc, char **argv){
     }
   }
   libaroma_msg_stop();
+  */
+  
+  byte onpool=1;
+  do{
+    LIBAROMA_MSG msg;
+    dword command=libaroma_window_pool(win,&msg);
+    if (msg.msg==LIBAROMA_MSG_KEY_SELECT){
+      onpool = 0;
+    }
+    else if (LIBAROMA_CMD(command)){
+      printf("Window Command = (CMD: %x, ID: %x, Param: %x)\n",
+        LIBAROMA_CMD(command),
+        LIBAROMA_CMD_ID(command),
+        LIBAROMA_CMD_PARAM(command)
+      );
+    }
+  }
+  while(onpool);
   
   /* free window */
   libaroma_window_free(win);

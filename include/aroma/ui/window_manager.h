@@ -73,6 +73,8 @@ struct _LIBAROMA_WM{
   int h;
   
   /* message state */
+  LIBAROMA_STACKP queue;
+  pthread_t message_thread;
   byte client_started;
   LIBAROMA_WINDOWP active_window;
   LIBAROMA_CANVASP workspace_bg;
@@ -174,6 +176,13 @@ byte libaroma_wm_client_start();
  * Descriptions: stop window client message
  */
 byte libaroma_wm_client_stop();
+
+/*
+ * Function    : libaroma_wm_message_clear
+ * Return Value: void
+ * Descriptions: clear window message
+ */
+void libaroma_wm_message_clear();
 
 /*
  * Function    : libaroma_wm_getmessage

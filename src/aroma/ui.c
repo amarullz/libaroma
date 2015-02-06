@@ -27,6 +27,10 @@
 #ifndef __libaroma_ui_c__
 #define __libaroma_ui_c__
 
+/* ui internal header */
+#include "ui/ui_internal.h"
+
+/* ui modules */
 #include "ui/hid.c"
 #include "ui/messages.c"
 #include "ui/motions.c"
@@ -34,16 +38,9 @@
 #include "ui/window.c"
 #include "ui/control.c"
 
-/*
- * control set - libaroma_ctl_*
- */
-#define _LIBAROMA_CTL_CHECK(SIG, TYPE, RET) \
-    if (ctl->signature!=SIG){ return RET; } \
-    TYPE me = (TYPE) ctl->internal
-
+/* control set - libaroma_ctl_* */
 #include "ui/controls/ctl_label.c"
 #include "ui/controls/ctl_progress.c"
-
-#undef _LIBAROMA_CTL_CHECK
+#include "ui/controls/ctl_button.c"
 
 #endif /* __libaroma_ui_c__ */

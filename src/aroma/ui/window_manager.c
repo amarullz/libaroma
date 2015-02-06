@@ -188,11 +188,13 @@ byte libaroma_wm_init(){
   _libaroma_wm->y = 0;
   _libaroma_wm->w = libaroma_fb()->w;
   _libaroma_wm->h = libaroma_fb()->h;
+  _libaroma_wm->queue=NULL;
   _libaroma_wm->client_started = 0;
   _libaroma_wm->message_handler = NULL;
   _libaroma_wm->reset_handler = NULL;
   _libaroma_wm->workspace_bg = NULL;
   _libaroma_wm->active_window = NULL;
+  _libaroma_wm->message_thread = 0;
   _libaroma_wm_default_set(
     LIBAROMA_WM_FLAG_RESET_COLOR|
     LIBAROMA_WM_FLAG_RESET_THEME);
@@ -209,6 +211,9 @@ byte libaroma_wm_release(){
   if (_libaroma_wm==NULL){
     ALOGW("window manager uninitialized");
     return 0;
+  }
+  if (_libaroma_wm->client_started){
+    libaroma_wm_client_stop();
   }
   ALOGV("libaroma_wm_release release window manager");
   libaroma_sarray_free(_libaroma_wm->color);
@@ -296,7 +301,7 @@ byte libaroma_wm_set_workspace(int x, int y, int w, int h){
   if (_libaroma_wm->active_window!=NULL){
     /* send refresh event */
     LIBAROMA_MSG _msg;
-    libaroma_window_event(
+    libaroma_window_process_event(
       _libaroma_wm->active_window,
       libaroma_wm_compose(
         &_msg, LIBAROMA_MSG_WIN_RESIZE, NULL, 0, 0)
@@ -428,6 +433,87 @@ LIBAROMA_CANVASP libaroma_wm_canvas(int x, int y, int w, int h){
 } /* End of libaroma_wm_canvas */
 
 /*
+ * Variable    : _libaroma_wm_mutex
+ * Type        : pthread_mutex_t
+ * Descriptions: window manager message queue pthread mutex
+ */
+static pthread_mutex_t  _libaroma_wm_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+/*
+ * Variable    : _libaroma_wm_cond
+ * Type        : pthread_cond_t
+ * Descriptions: window manager message queue pthread cond
+ */
+static pthread_cond_t   _libaroma_wm_cond  = PTHREAD_COND_INITIALIZER;
+
+/*
+ * Function    : libaroma_wm_getmessage
+ * Return Value: byte
+ * Descriptions: get window manager client message
+ */
+byte libaroma_wm_getmessage(LIBAROMA_MSGP msg){
+  if (!_libaroma_wm->client_started){
+    return LIBAROMA_MSG_NONE;
+  }
+  /* mutex lock */
+  pthread_mutex_lock(&_libaroma_wm_mutex);
+  while (_libaroma_wm->queue->n < 1) {
+    pthread_cond_wait(&_libaroma_wm_cond, &_libaroma_wm_mutex);
+    if (!_libaroma_wm->client_started) {
+      pthread_mutex_unlock(&_libaroma_wm_mutex);
+      return LIBAROMA_MSG_NONE;
+    }
+  }
+  byte ret = LIBAROMA_MSG_NONE;
+  /* shift stack */
+  LIBAROMA_MSGP shift_event =
+    (LIBAROMA_MSGP) libaroma_stack_shift(_libaroma_wm->queue);
+  if (shift_event != NULL) {
+    memcpy(msg, shift_event, sizeof(LIBAROMA_MSG));
+    ret = shift_event->msg;
+    free(shift_event);
+  }
+  pthread_mutex_unlock(&_libaroma_wm_mutex);
+  return ret;
+} /* End of libaroma_wm_getmessage */
+
+/*
+ * Function    : _libaroma_wm_message_thread
+ * Return Value: static void *
+ * Descriptions: window manager message thread
+ */
+static void * _libaroma_wm_message_thread(void * cookie) {
+  ALOGV("starting WMM");
+  while (_libaroma_wm->client_started){
+    LIBAROMA_MSG msg;
+    byte ret=libaroma_msg(&msg);
+    if (ret){
+      if (_libaroma_wm->message_handler!=NULL){
+        ret = _libaroma_wm->message_handler(_libaroma_wm,&msg);
+        if (ret==LIBAROMA_WM_MSG_HANDLED){
+          continue;
+        }
+        else if (ret==LIBAROMA_WM_MSG_EXIT){
+          break;
+        }
+      }
+      /* send to window */
+      if (_libaroma_wm->active_window!=NULL){
+        pthread_mutex_lock(&_libaroma_wm_mutex);
+        if (libaroma_stack_push(
+          _libaroma_wm->queue,&msg,
+          sizeof(LIBAROMA_MSG))){
+          pthread_cond_signal(&_libaroma_wm_cond);
+        }
+        pthread_mutex_unlock(&_libaroma_wm_mutex);
+      }
+    }
+  }
+  ALOGV("WMM ended");
+  return NULL;
+}
+
+/*
  * Function    : libaroma_wm_client_start
  * Return Value: void
  * Descriptions: start window client message
@@ -437,8 +523,15 @@ byte libaroma_wm_client_start(){
     ALOGW("window manager uninitialized");
     return 0;
   }
+  /* start message queue */
   libaroma_msg_start();
+  
+  /* start message thread */
   _libaroma_wm->client_started = 1;
+  _libaroma_wm->queue = libaroma_stack(NULL);
+  pthread_create(&_libaroma_wm->message_thread,
+    NULL, _libaroma_wm_message_thread, NULL);
+
   return 1;
 } /* End of libaroma_wm_client_start */
 
@@ -452,40 +545,37 @@ byte libaroma_wm_client_stop(){
     ALOGW("window manager uninitialized");
     return 0;
   }
-  libaroma_msg_stop();
+  /* set exit state */
   _libaroma_wm->client_started = 0;
+  
+  /* post exit message */
+  libaroma_msg_post(LIBAROMA_MSG_NONE,0,0,0,0,NULL);
+  
+  /* wait message thread */
+  pthread_join(_libaroma_wm->message_thread,NULL);
+  _libaroma_wm->message_thread=0;
+  libaroma_stack_free(_libaroma_wm->queue);
+  
+  /* stop message queue */
+  libaroma_msg_stop();
   return 1;
 } /* End of libaroma_wm_client_stop */
 
 /*
- * Function    : libaroma_wm_getmessage
- * Return Value: byte
- * Descriptions: get window manager client message
+ * Function    : libaroma_wm_message_clear
+ * Return Value: void
+ * Descriptions: clear window message
  */
-byte libaroma_wm_getmessage(LIBAROMA_MSGP msg){
-  byte ret=LIBAROMA_MSG_NONE;
-  if (_libaroma_wm==NULL){
-    ALOGW("window manager uninitialized");
-    return ret;
+void libaroma_wm_message_clear() {
+  if (_libaroma_wm->client_started) {
+    pthread_mutex_lock(&_libaroma_wm_mutex);
+    libaroma_stack_free(_libaroma_wm->queue);
+    _libaroma_wm->queue = libaroma_stack(NULL);
+    pthread_mutex_unlock(&_libaroma_wm_mutex);
   }
-  if (!_libaroma_wm->client_started){
-    return 0;
-  }
-  do{
-    ret=libaroma_msg(msg);
-    /* check hooker/callback */
-    if (_libaroma_wm->message_handler!=NULL){
-      if (_libaroma_wm->message_handler(_libaroma_wm,msg)==
-          LIBAROMA_WM_MSG_HANDLED){
-        if (!_libaroma_wm->client_started){
-          break;
-        }
-        continue;
-      }
-    }
-  } while(0);
-  return ret;
-} /* End of libaroma_wm_getmessage */
+} /* End of libaroma_wm_message_clear */
+
+
 
 /*
  * Function    : libaroma_wm_set_theme
@@ -749,13 +839,19 @@ byte libaroma_wm_set_active_window(LIBAROMA_WINDOWP win){
     ALOGW("window manager uninitialized");
     return 0;
   }
+  if (!_libaroma_wm->client_started){
+    /* start message client if not started yet */
+    libaroma_wm_client_start();
+  }
   if (_libaroma_wm->active_window==win){
     return 1;
   }
+  libaroma_wm_message_clear();
+  
   LIBAROMA_MSG _msg;
   if (_libaroma_wm->active_window!=NULL){
     /* send inactive event */
-    libaroma_window_event(
+    libaroma_window_process_event(
       _libaroma_wm->active_window,
       libaroma_wm_compose(
         &_msg, LIBAROMA_MSG_WIN_INACTIVE, (voidp) win, 0, 0)
@@ -770,7 +866,7 @@ byte libaroma_wm_set_active_window(LIBAROMA_WINDOWP win){
         &_msg, LIBAROMA_MSG_WIN_ACTIVE, 
         (voidp) _libaroma_wm->active_window, 0, 0);
     _libaroma_wm->active_window = win;
-    libaroma_window_event(
+    libaroma_window_process_event(
       _libaroma_wm->active_window,
       &_msg
     );

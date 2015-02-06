@@ -35,6 +35,7 @@
 LIBAROMA_CONTROLP libaroma_control_new(
   byte signature, word id,
   int x, int y, int w, int h,
+  int minw, int minh,
   LIBAROMA_CTLCB_MESSAGE message,
   LIBAROMA_CTLCB_DRAW draw,
   LIBAROMA_CTLCB_FOCUS focus,
@@ -47,10 +48,17 @@ LIBAROMA_CONTROLP libaroma_control_new(
     ALOGW("window_control_new cannot allocating memory");
     return NULL;
   }
-  ret->x = x;
-  ret->y = y;
-  ret->w = w;
-  ret->h = h;
+  ret->minw = minw;
+  ret->minh = minh;
+  ret->x = 0;
+  ret->y = 0;
+  ret->w = 0;
+  ret->h = 0;
+  ret->rx = x;
+  ret->ry = y;
+  ret->rw = w;
+  ret->rh = h;
+  
   ret->id = id;
   ret->signature = signature;
   ret->message = message;

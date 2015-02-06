@@ -64,11 +64,11 @@ void _libaroma_control_label_draw(
   libaroma_text_draw(c,me->textp,0,0);
 }
 
-byte _libaroma_control_label_msg(LIBAROMA_CONTROLP ctl, LIBAROMA_MSGP msg){
+dword _libaroma_control_label_msg(LIBAROMA_CONTROLP ctl, LIBAROMA_MSGP msg){
   /*
   _LIBAROMA_CONTROL_LABELP me = 
     (_LIBAROMA_CONTROL_LABELP) ctl->internal;*/
-  return msg->msg;
+  return 0;
 }
 
 LIBAROMA_CONTROLP libaroma_control_label(
@@ -77,8 +77,9 @@ LIBAROMA_CONTROLP libaroma_control_label(
 ){
   LIBAROMA_CONTROLP ctl =
   libaroma_control_new(
-    _LIBAROMA_CONTROL_LABEL_SIGNATURE,
-    id, x, y, w, h,
+    _LIBAROMA_CONTROL_LABEL_SIGNATURE,id,
+    x, y, w, h,
+    libaroma_dp(28),libaroma_dp(32), /* min size */
     _libaroma_control_label_msg,
     _libaroma_control_label_draw,
     NULL,

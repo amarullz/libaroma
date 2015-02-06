@@ -206,11 +206,11 @@ byte libaroma_draw_ex1(
   else {
     if (useAlpha) {
       /* Blend Destination with Source */
-      wordp tmp_dst = (wordp) malloc(sr_w * 2);
 #ifdef LIBAROMA_CONFIG_OPENMP
   #pragma omp parallel for
 #endif
       for (y = 0; y < sr_h; y++) {
+        wordp tmp_dst = (wordp) malloc(sr_w * 2);
         wordp dst_mem = (wordp) (dst_data + ((ds_y + y) * pos_dc_w) + pos_ds_x);
         wordp src_mem = (wordp) (src_data + ((sr_y + y) * pos_sc_w) + pos_sr_x);
         libaroma_alpha_px_line(
@@ -220,8 +220,8 @@ byte libaroma_draw_ex1(
         libaroma_alpha_const_line(
           y, sr_w, dst_mem, dst_mem, tmp_dst, opacity
         );
+        free(tmp_dst);
       }
-      free(tmp_dst);
     }
     else {
       /* Blend Data Directly */

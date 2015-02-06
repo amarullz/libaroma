@@ -143,29 +143,26 @@ void _libaroma_ctl_progress_draw(
   
   libaroma_control_erasebg(ctl,c);
   
-  /*
-  libaroma_wm_draw_theme(c,"button",
-    0,0,ctl->w,ctl->h,NULL);
-  */
+  int ix = libaroma_dp(4);
+  int iy = libaroma_dp(2);
+  int iw = ctl->w-ix*2;
+  int ih = ctl->h-iy*2;
   libaroma_draw_rect(c,
-    0,0,ctl->w,ctl->h,
+    ix, iy, iw, ih,
     libaroma_wm_get_color("control"),
     0xcc
   );
   
   if (me->type==LIBAROMA_CTL_PROGRESS_DETERMINATE){
-    int val_w = (ctl->w * me->curval) / me->max;
+    int val_w = (iw * me->curval) / me->max;
     libaroma_draw_rect(c,
-      me->currx,0,val_w,ctl->h,
+      me->currx+ix,iy,val_w,ih,
       libaroma_wm_get_color("highlight"),
       0xcc
     );
-    /*
-    libaroma_wm_draw_theme(c,"button.selected",
-      0,0,val_w,ctl->h,NULL);*/
   }
   else{
-    int dw = ctl->w *2;
+    int dw = iw *2;
     float easein  = libaroma_cubic_bezier_easein(me->state);
     float easeout = libaroma_cubic_bezier_easeout(me->state);
     int left, right;
@@ -183,37 +180,37 @@ void _libaroma_ctl_progress_draw(
     int r1=right;
     int l2=0;
     int r2=0;
-    if (right>ctl->w){
-      r1 = ctl->w;
-      r2 = right - ctl->w;
+    if (right>iw){
+      r1 = iw;
+      r2 = right - iw;
     }
-    if (left>ctl->w){
-      l1 = ctl->w;
-      l2 = left - ctl->w;
+    if (left>iw){
+      l1 = iw;
+      l2 = left - iw;
     }
-    if (r2>ctl->w){
-      r2=ctl->w;
+    if (r2>iw){
+      r2=iw;
     }
-    if (r1>ctl->w){
-      r1=ctl->w;
+    if (r1>iw){
+      r1=iw;
     }
     byte hr1=0;
-    if ((r1>0)&&(l1<ctl->w)){
+    if ((r1>0)&&(l1<iw)){
       hr1=1;
       int w = r1-l1;
       if (w>0){
         libaroma_draw_rect(c,
-          l1,0,w,ctl->h,
+          l1+ix,iy,w,ih,
           libaroma_wm_get_color("highlight"),
           0xcc
         );
       }
     }
-    if ((r2>0)&&(l2<ctl->w)){
+    if ((r2>0)&&(l2<iw)){
       int w = r2-l2;
       if (w>0){
         libaroma_draw_rect(c,
-          l2,0,w,ctl->h,
+          l2+ix,iy,w,ih,
           libaroma_wm_get_color("highlight"),
           0xcc
         );
@@ -221,17 +218,17 @@ void _libaroma_ctl_progress_draw(
     }
     
     /* update position */
-    me->curval = ((hr1?r1-l1:r2-l2)*me->max)/ctl->w;
+    me->curval = ((hr1?r1-l1:r2-l2)*me->max)/iw;
     me->currx = (hr1?l1:l2);
   }
 } /* End of _libaroma_ctl_progress_draw */
 
 /*
  * Function    : _libaroma_ctl_progress_msg
- * Return Value: byte
+ * Return Value: dword
  * Descriptions: control message callback
  */
-byte _libaroma_ctl_progress_msg(
+dword _libaroma_ctl_progress_msg(
     LIBAROMA_CONTROLP ctl,
     LIBAROMA_MSGP msg){
   /* internal check */
@@ -245,13 +242,9 @@ byte _libaroma_ctl_progress_msg(
         me->currstate = 0.0;
       }
       break;
-    case LIBAROMA_MSG_WIN_INACTIVE:
-      {
-      }
-      break;
   }
 
-  return msg->msg;
+  return 1;
 } /* End of _libaroma_ctl_progress_msg */
 
 /*
@@ -270,8 +263,9 @@ LIBAROMA_CONTROLP libaroma_ctl_progress(
   /* init control */
   LIBAROMA_CONTROLP ctl =
     libaroma_control_new(
-      _LIBAROMA_CTL_PROGRESS_SIGNATURE,
-      id, x, y, w, h,
+      _LIBAROMA_CTL_PROGRESS_SIGNATURE,id,
+      x, y, w, h,
+      libaroma_dp(48),libaroma_dp(8), /* min size */
       _libaroma_ctl_progress_msg,
       _libaroma_ctl_progress_draw,
       NULL,

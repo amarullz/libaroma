@@ -56,14 +56,14 @@ static byte _libaroma_msgqueue_isrun = 0;
 
 /*
  * Variable    : _libaroma_msgqueue_isrun
- * Type        : byte
+ * Type        : pthread_cond_t
  * Descriptions: message queue pthread mutex
  */
 static pthread_mutex_t  _libaroma_msgqueue_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /*
  * Variable    : _libaroma_msgqueue_isrun
- * Type        : byte
+ * Type        : pthread_cond_t
  * Descriptions: message queue pthread cond
  */
 static pthread_cond_t   _libaroma_msgqueue_cond  = PTHREAD_COND_INITIALIZER;

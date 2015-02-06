@@ -73,10 +73,12 @@ LIBAROMA_CANVASP libaroma_blur_ex(
   int height = src->h;
   int width = src->w;
   int x, y, o;
-  int nwidth = width + pixels_on_row;
-  int nheight = height + pixels_on_row;
+  int nwidth = width + radius2;
+  int nheight = height + radius2;
   LIBAROMA_CANVASP t1 = libaroma_canvas_ex(nwidth, nheight, usealpha);
   LIBAROMA_CANVASP t2 = libaroma_canvas_ex(nwidth, nheight, usealpha);
+  libaroma_canvas_setcolor(t1,0,0);
+  libaroma_canvas_setcolor(t2,0,0);
   int sz = nwidth * nheight;
   if (usealpha) {
     memset(t1->alpha, 0, sz);
@@ -124,13 +126,10 @@ LIBAROMA_CANVASP libaroma_blur_ex(
   /* Y PASS */
   for (y = 0; y < nheight; y++) {
     int row = y * t1->l;
-    
     for (x = 0; x < nwidth; x++) {
       r = g = b = a = 0;
-      
       for (o = 0; o < pixels_on_row; o++) {
-        int sy = (y - radius2) + o;
-        
+        int sy = (y - inRadius) + o;
         if (!libaroma_draw_limited(sy, nheight)) {
           int pos = (sy * t1->l) + x;
           if (!isMask) {
