@@ -64,12 +64,13 @@ void LINUXFBDR_init_32bit(LIBAROMA_FBP me) {
   mi->stride = mi->line - (me->w * mi->pixsz);
   /* save color position */
 
-  /* use msb_right */
-  LINUXFBDR_setrgbpos(me,
-    (mi->var.red.msb_right?mi->var.red.offset:(24-mi->var.red.offset)),
-    (mi->var.green.msb_right?mi->var.green.offset:(24-mi->var.green.offset)),
-    (mi->var.blue.msb_right?mi->var.blue.offset:(24-mi->var.blue.offset))
-  );
+  /* gralloc framebuffer style */
+  if (mi->var.transp.offset){
+    LINUXFBDR_setrgbpos(me,16,8,0);
+  }
+  else{
+    LINUXFBDR_setrgbpos(me,0,8,16);
+  }
   
   /* refresh framebuffer */
   LINUXFBDR_refresh(me);

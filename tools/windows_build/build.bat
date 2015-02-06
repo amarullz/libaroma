@@ -7,4 +7,3 @@ echo.
 call build_test.bat -f
 echo.
 pause
-call upload.bat

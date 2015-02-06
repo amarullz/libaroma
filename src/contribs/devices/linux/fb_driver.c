@@ -188,8 +188,15 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
   
   /* DUMP INFO */
   LINUXFBDR_dump(mi);
-  /* Calculate DPI */
-  me->dpi = round(mi->var.xres / (mi->var.width * 0.039370) / 80) * 80;
+  
+  if ((mi->var.width<= 0)||(mi->var.height <= 0)) {
+    me->dpi = 160;
+  }
+  else{
+    /* Calculate DPI */
+    me->dpi = round(mi->var.xres / (mi->var.width * 0.039370) / 80) * 80;
+  }
+  
   /* OK */
   goto ok;
   /* Return */
@@ -275,6 +282,10 @@ void LINUXFBDR_dump(LINUXFBDR_INTERNALP mi) {
   ALOGV(" upper_margin   : %i", mi->var.upper_margin);
   ALOGV(" lower_margin   : %i", mi->var.lower_margin);
   ALOGV(" rotate         : %i", mi->var.rotate);
+  ALOGV(" reserved[0]    : %i", mi->var.reserved[0]);
+  ALOGV(" reserved[1]    : %i", mi->var.reserved[1]);
+  ALOGV(" reserved[2]    : %i", mi->var.reserved[2]);
+
   ALOGI("FIX");
   ALOGI(" smem_len       : %i", mi->fix.smem_len);
   ALOGV(" type           : %i", mi->fix.type);
