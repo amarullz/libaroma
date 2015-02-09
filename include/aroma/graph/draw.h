@@ -50,6 +50,19 @@ byte libaroma_draw_limited(
     int x, int max);
 
 /*
+ * Function    : libaroma_draw_mask_circle
+ * Return Value: byte
+ * Descriptions: draw masked circle
+ */
+byte libaroma_draw_mask_circle(
+    LIBAROMA_CANVASP dst, 
+    LIBAROMA_CANVASP src,
+    int dx, int dy, 
+    int sx, int sy,
+    int sz,
+    byte alpha);
+
+/*
  * Function    : libaroma_draw_ex1
  * Return Value: byte
  * Descriptions: canvas drawing

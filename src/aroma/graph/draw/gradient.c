@@ -120,6 +120,7 @@ byte libaroma_gradient_ex(
   if (y < 0) {
     y = 0;
   }
+  byte samecolor = (startColor==endColor)?1:0;
   
   /* alpha handling */
   byte useAlpha       = 1;
@@ -172,18 +173,29 @@ byte libaroma_gradient_ex(
       alphaTmpLine = (wordp) malloc(w * 2);
     }
     int ypos = y + _Y;
+    byte cR=0,cG=0,cB=0;
 #ifdef LIBAROMA_CONFIG_GRADIENT_FLOAT
     float intensity   = ((float) _Y) / ((float) h);
     float r_intensity = 1.0 - intensity;
-    byte cR = ((byte) MIN(((libaroma_color_r(startColor) * r_intensity) + (libaroma_color_r(endColor) * intensity)), 0xff) );
-    byte cG = ((byte) MIN(((libaroma_color_g(startColor) * r_intensity) + (libaroma_color_g(endColor) * intensity)), 0xff) );
-    byte cB = ((byte) MIN(((libaroma_color_b(startColor) * r_intensity) + (libaroma_color_b(endColor) * intensity)), 0xff) );
+    if (!samecolor){
+      cR = ((byte) MIN(((libaroma_color_r(startColor) * r_intensity) +
+        (libaroma_color_r(endColor) * intensity)), 0xff) );
+      cG = ((byte) MIN(((libaroma_color_g(startColor) * r_intensity) +
+        (libaroma_color_g(endColor) * intensity)), 0xff) );
+      cB = ((byte) MIN(((libaroma_color_b(startColor) * r_intensity) +
+        (libaroma_color_b(endColor) * intensity)), 0xff) );
+    }
 #else
     byte intensity   = (_Y * 0xff) / h;
     byte r_intensity = 0xff - intensity;
-    byte cR = ((byte) MIN((((libaroma_color_r(startColor) * r_intensity) >> 8) + ((libaroma_color_r(endColor) * intensity) >> 8)), 0xff) );
-    byte cG = ((byte) MIN((((libaroma_color_g(startColor) * r_intensity) >> 8) + ((libaroma_color_g(endColor) * intensity) >> 8)), 0xff) );
-    byte cB = ((byte) MIN((((libaroma_color_b(startColor) * r_intensity) >> 8) + ((libaroma_color_b(endColor) * intensity) >> 8)), 0xff) );
+    if (!samecolor){
+      cR = ((byte) MIN((((libaroma_color_r(startColor) * r_intensity)>>8)+
+        ((libaroma_color_r(endColor) * intensity) >> 8)), 0xff) );
+      cG = ((byte) MIN((((libaroma_color_g(startColor) * r_intensity)>>8)+
+        ((libaroma_color_g(endColor) * intensity) >> 8)), 0xff) );
+      cB = ((byte) MIN((((libaroma_color_b(startColor) * r_intensity)>>8)+
+        ((libaroma_color_b(endColor) * intensity) >> 8)), 0xff) );
+    }
 #endif
     int data_posxy = (ypos * dst->l) + x;
     wordp line_mem = (wordp) dst->data + data_posxy;
@@ -227,14 +239,24 @@ byte libaroma_gradient_ex(
         (((startAlpha * r_intensity) >> 8) +
         ((endAlpha * intensity) >> 8)), 0xff));
 #endif
-      libaroma_dither_line_const(_Y, w,
-        alphaTmpLine, libaroma_rgb32(cR, cG, cB));
-      libaroma_alpha_const_line(_Y, w,
-        line_mem, line_mem, alphaTmpLine, cA);
+      if (!samecolor){
+        libaroma_dither_line_const(_Y, w,
+          alphaTmpLine, libaroma_rgb32(cR, cG, cB));
+        libaroma_alpha_const_line(_Y, w,
+          line_mem, line_mem, alphaTmpLine, cA);
+      }
+      else{
+        libaroma_alpha_rgba_fill(w,line_mem,line_mem,startColor,cA);
+      }
     }
     else {
-      libaroma_dither_line_const(_Y, w, 
-        line_mem, libaroma_rgb32(cR, cG, cB));
+      if (!samecolor){
+        libaroma_dither_line_const(_Y, w, 
+          line_mem, libaroma_rgb32(cR, cG, cB));
+      }
+      else{
+        libaroma_color_set(line_mem, startColor, w);
+      }
       
       if (useCanvasAlpha) {
 #ifdef LIBAROMA_CONFIG_GRADIENT_FLOAT

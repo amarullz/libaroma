@@ -340,5 +340,60 @@ byte libaroma_draw_subpixel(
 
 
 
+/*
+ * Function    : libaroma_draw_mask_circle
+ * Return Value: byte
+ * Descriptions: draw masked circle
+ */
+byte libaroma_draw_mask_circle(
+    LIBAROMA_CANVASP dst, 
+    LIBAROMA_CANVASP src,
+    int dx, int dy, 
+    int sx, int sy,
+    int sz,
+    byte alpha){
+  if (dst == NULL) {
+    dst = libaroma_fb()->canvas;
+  }
+  if (src == NULL) {
+    return 0;
+  }
+  if (sz<2){
+    return 1;
+  }
+  int radius = sz/2;
+  int rad2 = radius * radius;
+  int x,y;
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
+  for(y=-radius; y<=radius; y++){
+    int pdy = dy + y;
+    int psy = sy + y;
+    int pos_d = pdy * dst->l;
+    int pos_s = psy * src->l;
+    if ((pdy<dst->h)&&(pdy>=0)&&(psy<src->h)&&(psy>=0)){
+      for(x=-radius; x<=radius; x++){
+        int pdx = dx + x;
+        int psx = sx + x;
+        if ((pdx<dst->w)&&(pdx>=0)&&(psx<src->w)&&(psx>=0)){
+          if (x*x+y*y<=rad2){
+            if (alpha==0xff){
+              dst->data[pos_d+pdx]=src->data[pos_s+psx];
+            }
+            else if (alpha>0){
+              dst->data[pos_d+pdx]=libaroma_alpha(
+                dst->data[pos_d+pdx],
+                src->data[pos_s+psx],
+                alpha);
+            }
+          }
+        }
+      }
+    }
+  }
+  return 1;
+} /* End of libaroma_draw_mask_circle */
+
 
 #endif /* __libaroma_commondraw_c__ */
