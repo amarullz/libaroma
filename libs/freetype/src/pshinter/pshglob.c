@@ -5,7 +5,7 @@
 /*    PostScript hinter global hinting management (body).                  */
 /*    Inspired by the new auto-hinter module.                              */
 /*                                                                         */
-/*  Copyright 2001-2004, 2006, 2010, 2012 by                               */
+/*  Copyright 2001-2004, 2006, 2010, 2012-2014 by                          */
 /*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
 /*                                                                         */
 /*  This file is part of the FreeType project, and may only be used        */
@@ -750,14 +750,14 @@
   }
 
 
-  FT_LOCAL_DEF( FT_Error )
+  FT_LOCAL_DEF( void )
   psh_globals_set_scale( PSH_Globals  globals,
                          FT_Fixed     x_scale,
                          FT_Fixed     y_scale,
                          FT_Fixed     x_delta,
                          FT_Fixed     y_delta )
   {
-    PSH_Dimension  dim = &globals->dimension[0];
+    PSH_Dimension  dim;
 
 
     dim = &globals->dimension[0];
@@ -780,8 +780,6 @@
       psh_globals_scale_widths( globals, 1 );
       psh_blues_scale_zones( &globals->blues, y_scale, y_delta );
     }
-
-    return 0;
   }
 
 

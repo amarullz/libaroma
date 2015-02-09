@@ -4,7 +4,7 @@
 /*                                                                         */
 /*    TrueType bytecode interpreter (specification).                       */
 /*                                                                         */
-/*  Copyright 1996-2007, 2010, 2012-2013 by                                */
+/*  Copyright 1996-2007, 2010, 2012-2014 by                                */
 /*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
 /*                                                                         */
 /*  This file is part of the FreeType project, and may only be used,       */
@@ -81,6 +81,10 @@ FT_BEGIN_HEADER
   (*TT_Project_Func)( EXEC_OP_ FT_Pos   dx,
                                FT_Pos   dy );
 
+  /* getting current ppem.  Take care of non-square pixels if necessary */
+  typedef FT_Long
+  (*TT_Cur_Ppem_Func)( EXEC_OP );
+
   /* reading a cvt value.  Take care of non-square pixels if necessary */
   typedef FT_F26Dot6
   (*TT_Get_CVT_Func)( EXEC_OP_ FT_ULong  idx );
@@ -101,8 +105,8 @@ FT_BEGIN_HEADER
     FT_Int   Caller_Range;
     FT_Long  Caller_IP;
     FT_Long  Cur_Count;
-    FT_Long  Cur_Restart;
-    FT_Long  Cur_End;
+
+    TT_DefRecord  *Def; /* either FDEF or IDEF */
 
   } TT_CallRec, *TT_CallStack;
 
@@ -228,11 +232,6 @@ FT_BEGIN_HEADER
     FT_F26Dot6         phase;      /* `SuperRounding'     */
     FT_F26Dot6         threshold;
 
-#if 0
-    /* this seems to be unused */
-    FT_Int             cur_ppem;   /* ppem along the current proj vector */
-#endif
-
     FT_Bool            instruction_trap; /* If `True', the interpreter will */
                                          /* exit after each instruction     */
 
@@ -254,6 +253,8 @@ FT_BEGIN_HEADER
     TT_Move_Func       func_move;      /* current point move function */
     TT_Move_Func       func_move_orig; /* move original position function */
 
+    TT_Cur_Ppem_Func   func_cur_ppem;  /* get current proj. ppem value  */
+
     TT_Get_CVT_Func    func_read_cvt;  /* read a cvt entry              */
     TT_Set_CVT_Func    func_write_cvt; /* write a cvt entry (in pixels) */
     TT_Set_CVT_Func    func_move_cvt;  /* incr a cvt entry (in pixels)  */
@@ -263,12 +264,10 @@ FT_BEGIN_HEADER
 #ifdef TT_CONFIG_OPTION_SUBPIXEL_HINTING
     TT_Round_Func      func_round_sphn;   /* subpixel rounding function */
 
-    FT_Bool            grayscale_hinting; /* Using grayscale hinting?      */
-    FT_Bool            subpixel_hinting;  /* Using subpixel hinting?       */
-    FT_Bool            native_hinting;    /* Using native hinting?         */
+    FT_Bool            subpixel;          /* Using subpixel hinting?       */
     FT_Bool            ignore_x_mode;     /* Standard rendering mode for   */
                                           /* subpixel hinting.  On if gray */
-                                          /* or subpixel hinting is on )   */
+                                          /* or subpixel hinting is on.    */
 
     /* The following 4 aren't fully implemented but here for MS rasterizer */
     /* compatibility.                                                      */
@@ -297,18 +296,18 @@ FT_BEGIN_HEADER
 
 
 #ifdef TT_USE_BYTECODE_INTERPRETER
-  FT_LOCAL( FT_Error )
+  FT_LOCAL( void )
   TT_Goto_CodeRange( TT_ExecContext  exec,
                      FT_Int          range,
                      FT_Long         IP );
 
-  FT_LOCAL( FT_Error )
+  FT_LOCAL( void )
   TT_Set_CodeRange( TT_ExecContext  exec,
                     FT_Int          range,
                     void*           base,
                     FT_Long         length );
 
-  FT_LOCAL( FT_Error )
+  FT_LOCAL( void )
   TT_Clear_CodeRange( TT_ExecContext  exec,
                       FT_Int          range );
 
@@ -346,7 +345,7 @@ FT_BEGIN_HEADER
 
 
 #ifdef TT_USE_BYTECODE_INTERPRETER
-  FT_LOCAL( FT_Error )
+  FT_LOCAL( void )
   TT_Done_Context( TT_ExecContext  exec );
 
   FT_LOCAL( FT_Error )
@@ -354,7 +353,7 @@ FT_BEGIN_HEADER
                    TT_Face         face,
                    TT_Size         size );
 
-  FT_LOCAL( FT_Error )
+  FT_LOCAL( void )
   TT_Save_Context( TT_ExecContext  exec,
                    TT_Size         ins );
 

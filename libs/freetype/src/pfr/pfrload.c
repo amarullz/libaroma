@@ -4,7 +4,7 @@
 /*                                                                         */
 /*    FreeType PFR loader (body).                                          */
 /*                                                                         */
-/*  Copyright 2002-2005, 2007, 2009, 2010, 2013 by                         */
+/*  Copyright 2002-2005, 2007, 2009, 2010, 2013, 2014 by                   */
 /*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
 /*                                                                         */
 /*  This file is part of the FreeType project, and may only be used,       */
@@ -179,7 +179,7 @@
     if ( header->signature  != 0x50465230L ||   /* "PFR0" */
          header->version     > 4           ||
          header->header_size < 58          ||
-         header->signature2 != 0x0d0a      )    /* CR/LF  */
+         header->signature2 != 0x0D0A      )    /* CR/LF  */
     {
       result = 0;
     }
@@ -813,7 +813,6 @@
           phy_font->ascent  = PFR_NEXT_SHORT( q );
           phy_font->descent = PFR_NEXT_SHORT( q );
           phy_font->leading = PFR_NEXT_SHORT( q );
-          q += 16;
           break;
 
         case 3:

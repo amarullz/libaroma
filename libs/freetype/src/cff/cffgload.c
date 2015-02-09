@@ -4,7 +4,7 @@
 /*                                                                         */
 /*    OpenType Glyph Loader (body).                                        */
 /*                                                                         */
-/*  Copyright 1996-2013 by                                                 */
+/*  Copyright 1996-2014 by                                                 */
 /*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
 /*                                                                         */
 /*  This file is part of the FreeType project, and may only be used,       */
@@ -434,7 +434,7 @@
         goto Exit;
       }
 
-      FT_TRACE3(( "glyph index %d (subfont %d):\n", glyph_index, fd_index ));
+      FT_TRACE3(( "  in subfont %d:\n", fd_index ));
 
       sub = cff->subfonts[fd_index];
 
@@ -447,10 +447,6 @@
         builder->hints_globals = (void *)internal->subfonts[fd_index];
       }
     }
-#ifdef FT_DEBUG_LEVEL_TRACE
-    else
-      FT_TRACE3(( "glyph index %d:\n", glyph_index ));
-#endif
 
     decoder->num_locals    = sub->local_subrs_index.count;
     decoder->locals        = sub->local_subrs;
@@ -707,7 +703,7 @@
     /* callback function.                                     */
     if ( face->root.internal->incremental_interface )
     {
-      FT_Data data;
+      FT_Data  data;
 
 
       data.pointer = *pointer;
@@ -1993,9 +1989,6 @@
           }
           else
           {
-            if ( !error )
-              error = FT_Err_Ok;
-
             cff_builder_close_contour( builder );
 
             /* close hints recording session */
@@ -2006,10 +1999,12 @@
                 goto Syntax_Error;
 
               /* apply hints to the loaded glyph outline now */
-              hinter->apply( hinter->hints,
-                             builder->current,
-                             (PSH_Globals)builder->hints_globals,
-                             decoder->hint_mode );
+              error = hinter->apply( hinter->hints,
+                                     builder->current,
+                                     (PSH_Globals)builder->hints_globals,
+                                     decoder->hint_mode );
+              if ( error )
+                goto Fail;
             }
 
             /* add current outline to the glyph slot */
@@ -2715,10 +2710,10 @@
 
           /* compute linear advance widths */
 
-          ( (SFNT_Service)face->sfnt )->get_metrics( face, 0,
-                                                     glyph_index,
-                                                     &dummy,
-                                                     &advance );
+          (void)( (SFNT_Service)face->sfnt )->get_metrics( face, 0,
+                                                           glyph_index,
+                                                           &dummy,
+                                                           &advance );
           glyph->root.linearHoriAdvance = advance;
 
           has_vertical_info = FT_BOOL(
@@ -2728,10 +2723,10 @@
           /* get the vertical metrics from the vtmx table if we have one */
           if ( has_vertical_info )
           {
-            ( (SFNT_Service)face->sfnt )->get_metrics( face, 1,
-                                                       glyph_index,
-                                                       &dummy,
-                                                       &advance );
+            (void)( (SFNT_Service)face->sfnt )->get_metrics( face, 1,
+                                                             glyph_index,
+                                                             &dummy,
+                                                             &advance );
             glyph->root.linearVertAdvance = advance;
           }
           else
@@ -2968,10 +2963,10 @@
           FT_UShort  vertAdvance  = 0;
 
 
-          ( (SFNT_Service)face->sfnt )->get_metrics( face, 1,
-                                                     glyph_index,
-                                                     &vertBearingY,
-                                                     &vertAdvance );
+          (void)( (SFNT_Service)face->sfnt )->get_metrics( face, 1,
+                                                           glyph_index,
+                                                           &vertBearingY,
+                                                           &vertAdvance );
           metrics->vertBearingY = vertBearingY;
           metrics->vertAdvance  = vertAdvance;
         }

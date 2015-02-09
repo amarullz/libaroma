@@ -4,7 +4,7 @@
 /*                                                                         */
 /*    FreeType outline management (body).                                  */
 /*                                                                         */
-/*  Copyright 1996-2008, 2010, 2012-2013 by                                */
+/*  Copyright 1996-2008, 2010, 2012-2014 by                                */
 /*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
 /*                                                                         */
 /*  This file is part of the FreeType project, and may only be used,       */
@@ -73,7 +73,10 @@
     FT_Pos   delta;
 
 
-    if ( !outline || !func_interface )
+    if ( !outline )
+      return FT_THROW( Invalid_Outline );
+
+    if ( !func_interface )
       return FT_THROW( Invalid_Argument );
 
     shift = func_interface->shift;
@@ -128,7 +131,7 @@
           v_start.x = ( v_start.x + v_last.x ) / 2;
           v_start.y = ( v_start.y + v_last.y ) / 2;
 
-          v_last = v_start;
+       /* v_last = v_start; */
         }
         point--;
         tags--;
@@ -362,7 +365,7 @@
 
       /* empty glyph? */
       if ( n_points == 0 && n_contours == 0 )
-        return 0;
+        return FT_Err_Ok;
 
       /* check point and contour counts */
       if ( n_points <= 0 || n_contours <= 0 )
@@ -384,7 +387,7 @@
         goto Bad;
 
       /* XXX: check the tags array */
-      return 0;
+      return FT_Err_Ok;
     }
 
   Bad:
@@ -401,8 +404,10 @@
     FT_Int  is_owner;
 
 
-    if ( !source            || !target            ||
-         source->n_points   != target->n_points   ||
+    if ( !source || !target )
+      return FT_THROW( Invalid_Outline );
+
+    if ( source->n_points   != target->n_points   ||
          source->n_contours != target->n_contours )
       return FT_THROW( Invalid_Argument );
 
@@ -430,20 +435,21 @@
   FT_Outline_Done_Internal( FT_Memory    memory,
                             FT_Outline*  outline )
   {
-    if ( memory && outline )
-    {
-      if ( outline->flags & FT_OUTLINE_OWNER )
-      {
-        FT_FREE( outline->points   );
-        FT_FREE( outline->tags     );
-        FT_FREE( outline->contours );
-      }
-      *outline = null_outline;
+    if ( !outline )
+      return FT_THROW( Invalid_Outline );
 
-      return FT_Err_Ok;
-    }
-    else
+    if ( !memory )
       return FT_THROW( Invalid_Argument );
+
+    if ( outline->flags & FT_OUTLINE_OWNER )
+    {
+      FT_FREE( outline->points   );
+      FT_FREE( outline->tags     );
+      FT_FREE( outline->contours );
+    }
+    *outline = null_outline;
+
+    return FT_Err_Ok;
   }
 
 
@@ -576,11 +582,13 @@
       {
         char*  p = outline->tags + first;
         char*  q = outline->tags + last;
-        char   swap;
 
 
         while ( p < q )
         {
+          char  swap;
+
+
           swap = *p;
           *p   = *q;
           *q   = swap;
@@ -612,7 +620,10 @@
     if ( !library )
       return FT_THROW( Invalid_Library_Handle );
 
-    if ( !outline || !params )
+    if ( !outline )
+      return FT_THROW( Invalid_Outline );
+
+    if ( !params )
       return FT_THROW( Invalid_Argument );
 
     renderer = library->cur_renderer;
@@ -641,7 +652,7 @@
     /* if we changed the current renderer for the glyph image format */
     /* we need to select it as the next current one                  */
     if ( !error && update && renderer )
-      FT_Set_Renderer( library, renderer, 0, 0 );
+      error = FT_Set_Renderer( library, renderer, 0, 0 );
 
     return error;
   }
@@ -660,7 +671,7 @@
     if ( !abitmap )
       return FT_THROW( Invalid_Argument );
 
-    /* other checks are delayed to FT_Outline_Render() */
+    /* other checks are delayed to `FT_Outline_Render' */
 
     params.target = abitmap;
     params.flags  = 0;
@@ -721,7 +732,8 @@
 #if 0
 
 #define FT_OUTLINE_GET_CONTOUR( outline, c, first, last )  \
-  do {                                                     \
+  do                                                       \
+  {                                                        \
     (first) = ( c > 0 ) ? (outline)->points +              \
                             (outline)->contours[c - 1] + 1 \
                         : (outline)->points;               \
@@ -908,7 +920,7 @@
 
 
     if ( !outline )
-      return FT_THROW( Invalid_Argument );
+      return FT_THROW( Invalid_Outline );
 
     xstrength /= 2;
     ystrength /= 2;
@@ -1041,6 +1053,10 @@
     /* only which is spanned up by the control points.                */
 
     FT_Outline_Get_CBox( outline, &cbox );
+
+    /* Handle collapsed outlines to avoid undefined FT_MSB. */
+    if ( cbox.xMin == cbox.xMax || cbox.yMin == cbox.yMax )
+      return FT_ORIENTATION_NONE;
 
     xshift = FT_MSB( FT_ABS( cbox.xMax ) | FT_ABS( cbox.xMin ) ) - 14;
     xshift = FT_MAX( xshift, 0 );

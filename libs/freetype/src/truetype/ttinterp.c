@@ -4,7 +4,7 @@
 /*                                                                         */
 /*    TrueType bytecode interpreter (body).                                */
 /*                                                                         */
-/*  Copyright 1996-2013                                                    */
+/*  Copyright 1996-2014                                                    */
 /*  by David Turner, Robert Wilhelm, and Werner Lemberg.                   */
 /*                                                                         */
 /*  This file is part of the FreeType project, and may only be used,       */
@@ -172,6 +172,9 @@
 #define CUR_Func_round( d, c ) \
           CUR.func_round( EXEC_ARG_ d, c )
 
+#define CUR_Func_cur_ppem() \
+          CUR.func_cur_ppem( EXEC_ARG )
+
 #define CUR_Func_read_cvt( index ) \
           CUR.func_read_cvt( EXEC_ARG_ index )
 
@@ -183,12 +186,6 @@
 
 #define CURRENT_Ratio() \
           Current_Ratio( EXEC_ARG )
-
-#define CURRENT_Ppem() \
-          Current_Ppem( EXEC_ARG )
-
-#define CUR_Ppem() \
-          Cur_PPEM( EXEC_ARG )
 
 #define INS_SxVTL( a, b, c, d ) \
           Ins_SxVTL( EXEC_ARG_ a, b, c, d )
@@ -282,10 +279,7 @@
   /* <InOut>                                                               */
   /*    exec  :: The target execution context.                             */
   /*                                                                       */
-  /* <Return>                                                              */
-  /*    FreeType error code.  0 means success.                             */
-  /*                                                                       */
-  FT_LOCAL_DEF( FT_Error )
+  FT_LOCAL_DEF( void )
   TT_Goto_CodeRange( TT_ExecContext  exec,
                      FT_Int          range,
                      FT_Long         IP )
@@ -309,8 +303,6 @@
     exec->codeSize = coderange->size;
     exec->IP       = IP;
     exec->curRange = range;
-
-    return FT_Err_Ok;
   }
 
 
@@ -332,10 +324,7 @@
   /* <InOut>                                                               */
   /*    exec   :: The target execution context.                            */
   /*                                                                       */
-  /* <Return>                                                              */
-  /*    FreeType error code.  0 means success.                             */
-  /*                                                                       */
-  FT_LOCAL_DEF( FT_Error )
+  FT_LOCAL_DEF( void )
   TT_Set_CodeRange( TT_ExecContext  exec,
                     FT_Int          range,
                     void*           base,
@@ -345,8 +334,6 @@
 
     exec->codeRangeTable[range - 1].base = (FT_Byte*)base;
     exec->codeRangeTable[range - 1].size = length;
-
-    return FT_Err_Ok;
   }
 
 
@@ -364,13 +351,7 @@
   /* <InOut>                                                               */
   /*    exec  :: The target execution context.                             */
   /*                                                                       */
-  /* <Return>                                                              */
-  /*    FreeType error code.  0 means success.                             */
-  /*                                                                       */
-  /* <Note>                                                                */
-  /*    Does not set the Error variable.                                   */
-  /*                                                                       */
-  FT_LOCAL_DEF( FT_Error )
+  FT_LOCAL_DEF( void )
   TT_Clear_CodeRange( TT_ExecContext  exec,
                       FT_Int          range )
   {
@@ -378,8 +359,6 @@
 
     exec->codeRangeTable[range - 1].base = NULL;
     exec->codeRangeTable[range - 1].size = 0;
-
-    return FT_Err_Ok;
   }
 
 
@@ -403,13 +382,10 @@
   /*                                                                       */
   /*    memory :: A handle to the parent memory object.                    */
   /*                                                                       */
-  /* <Return>                                                              */
-  /*    FreeType error code.  0 means success.                             */
-  /*                                                                       */
   /* <Note>                                                                */
   /*    Only the glyph loader and debugger should call this function.      */
   /*                                                                       */
-  FT_LOCAL_DEF( FT_Error )
+  FT_LOCAL_DEF( void )
   TT_Done_Context( TT_ExecContext  exec )
   {
     FT_Memory  memory = exec->memory;
@@ -436,8 +412,6 @@
     exec->face = NULL;
 
     FT_FREE( exec );
-
-    return FT_Err_Ok;
   }
 
 
@@ -664,13 +638,10 @@
   /* <InOut>                                                               */
   /*    size :: A handle to the target size object.                        */
   /*                                                                       */
-  /* <Return>                                                              */
-  /*    FreeType error code.  0 means success.                             */
-  /*                                                                       */
   /* <Note>                                                                */
   /*    Only the glyph loader and debugger should call this function.      */
   /*                                                                       */
-  FT_LOCAL_DEF( FT_Error )
+  FT_LOCAL_DEF( void )
   TT_Save_Context( TT_ExecContext  exec,
                    TT_Size         size )
   {
@@ -688,8 +659,6 @@
 
     for ( i = 0; i < TT_MAX_CODE_RANGES; i++ )
       size->codeRangeTable[i] = exec->codeRangeTable[i];
-
-    return FT_Err_Ok;
   }
 
 
@@ -721,12 +690,7 @@
   TT_Run_Context( TT_ExecContext  exec,
                   FT_Bool         debug )
   {
-    FT_Error  error;
-
-
-    if ( ( error = TT_Goto_CodeRange( exec, tt_coderange_glyph, 0 ) )
-           != FT_Err_Ok )
-      return error;
+    TT_Goto_CodeRange( exec, tt_coderange_glyph, 0 );
 
     exec->zp0 = exec->pts;
     exec->zp1 = exec->pts;
@@ -796,16 +760,18 @@
   FT_EXPORT_DEF( TT_ExecContext )
   TT_New_Context( TT_Driver  driver )
   {
-    TT_ExecContext  exec;
-    FT_Memory       memory;
+    FT_Memory  memory;
 
+
+    if ( !driver )
+      goto Fail;
 
     memory = driver->root.root.memory;
-    exec   = driver->context;
 
     if ( !driver->context )
     {
-      FT_Error  error;
+      FT_Error        error;
+      TT_ExecContext  exec;
 
 
       /* allocate object */
@@ -1437,8 +1403,107 @@
 
 #undef PACK
 
-#if 1
 
+#ifndef FT_CONFIG_OPTION_NO_ASSEMBLER
+
+#if defined( __arm__ )                                 && \
+    ( defined( __thumb2__ ) || !defined( __thumb__ ) )
+
+#define TT_MulFix14  TT_MulFix14_arm
+
+  static FT_Int32
+  TT_MulFix14_arm( FT_Int32  a,
+                   FT_Int    b )
+  {
+    FT_Int32  t, t2;
+
+
+#if defined( __CC_ARM ) || defined( __ARMCC__ )
+
+    __asm
+    {
+      smull t2, t,  b,  a           /* (lo=t2,hi=t) = a*b */
+      mov   a,  t,  asr #31         /* a   = (hi >> 31) */
+      add   a,  a,  #0x2000         /* a  += 0x2000 */
+      adds  t2, t2, a               /* t2 += a */
+      adc   t,  t,  #0              /* t  += carry */
+      mov   a,  t2, lsr #14         /* a   = t2 >> 14 */
+      orr   a,  a,  t,  lsl #18     /* a  |= t << 18 */
+    }
+
+#elif defined( __GNUC__ )
+
+    __asm__ __volatile__ (
+      "smull  %1, %2, %4, %3\n\t"       /* (lo=%1,hi=%2) = a*b */
+      "mov    %0, %2, asr #31\n\t"      /* %0  = (hi >> 31) */
+#if defined( __clang__ ) && defined( __thumb2__ )
+      "add.w  %0, %0, #0x2000\n\t"      /* %0 += 0x2000 */
+#else
+      "add    %0, %0, #0x2000\n\t"      /* %0 += 0x2000 */
+#endif
+      "adds   %1, %1, %0\n\t"           /* %1 += %0 */
+      "adc    %2, %2, #0\n\t"           /* %2 += carry */
+      "mov    %0, %1, lsr #14\n\t"      /* %0  = %1 >> 16 */
+      "orr    %0, %0, %2, lsl #18\n\t"  /* %0 |= %2 << 16 */
+      : "=r"(a), "=&r"(t2), "=&r"(t)
+      : "r"(a), "r"(b)
+      : "cc" );
+
+#endif
+
+    return a;
+  }
+
+#endif /* __arm__ && ( __thumb2__ || !__thumb__ ) */
+
+#endif /* !FT_CONFIG_OPTION_NO_ASSEMBLER */
+
+
+#if defined( __GNUC__ )                              && \
+    ( defined( __i386__ ) || defined( __x86_64__ ) )
+
+#define TT_MulFix14  TT_MulFix14_long_long
+
+  /* Temporarily disable the warning that C90 doesn't support `long long'. */
+#if ( __GNUC__ * 100 + __GNUC_MINOR__ ) >= 406
+#pragma GCC diagnostic push
+#endif
+#pragma GCC diagnostic ignored "-Wlong-long"
+
+  /* This is declared `noinline' because inlining the function results */
+  /* in slower code.  The `pure' attribute indicates that the result   */
+  /* only depends on the parameters.                                   */
+  static __attribute__(( noinline ))
+         __attribute__(( pure )) FT_Int32
+  TT_MulFix14_long_long( FT_Int32  a,
+                         FT_Int    b )
+  {
+
+    long long  ret = (long long)a * b;
+
+    /* The following line assumes that right shifting of signed values */
+    /* will actually preserve the sign bit.  The exact behaviour is    */
+    /* undefined, but this is true on x86 and x86_64.                  */
+    long long  tmp = ret >> 63;
+
+
+    ret += 0x2000 + tmp;
+
+    return (FT_Int32)( ret >> 14 );
+  }
+
+#if ( __GNUC__ * 100 + __GNUC_MINOR__ ) >= 406
+#pragma GCC diagnostic pop
+#endif
+
+#endif /* __GNUC__ && ( __i386__ || __x86_64__ ) */
+
+
+#ifndef TT_MulFix14
+
+  /* Compute (a*b)/2^14 with maximum accuracy and rounding.  */
+  /* This is optimized to be faster than calling FT_MulFix() */
+  /* for platforms where sizeof(int) == 2.                   */
   static FT_Int32
   TT_MulFix14( FT_Int32  a,
                FT_Int    b )
@@ -1470,37 +1535,50 @@
     return sign >= 0 ? (FT_Int32)mid : -(FT_Int32)mid;
   }
 
-#else
+#endif  /* !TT_MulFix14 */
 
-  /* compute (a*b)/2^14 with maximum accuracy and rounding */
-  static FT_Int32
-  TT_MulFix14( FT_Int32  a,
-               FT_Int    b )
+
+#if defined( __GNUC__ )        && \
+    ( defined( __i386__ )   ||    \
+      defined( __x86_64__ ) ||    \
+      defined( __arm__ )    )
+
+#define TT_DotFix14  TT_DotFix14_long_long
+
+#if ( __GNUC__ * 100 + __GNUC_MINOR__ ) >= 406
+#pragma GCC diagnostic push
+#endif
+#pragma GCC diagnostic ignored "-Wlong-long"
+
+  static __attribute__(( pure )) FT_Int32
+  TT_DotFix14_long_long( FT_Int32  ax,
+                         FT_Int32  ay,
+                         FT_Int    bx,
+                         FT_Int    by )
   {
-    FT_Int32   m, s, hi;
-    FT_UInt32  l, lo;
+    /* Temporarily disable the warning that C90 doesn't support */
+    /* `long long'.                                             */
+
+    long long  temp1 = (long long)ax * bx;
+    long long  temp2 = (long long)ay * by;
 
 
-    /* compute ax*bx as 64-bit value */
-    l  = (FT_UInt32)( ( a & 0xFFFFU ) * b );
-    m  = ( a >> 16 ) * b;
+    temp1 += temp2;
+    temp2  = temp1 >> 63;
+    temp1 += 0x2000 + temp2;
 
-    lo = l + ( (FT_UInt32)m << 16 );
-    hi = ( m >> 16 ) + ( (FT_Int32)l >> 31 ) + ( lo < l );
+    return (FT_Int32)( temp1 >> 14 );
 
-    /* divide the result by 2^14 with rounding */
-    s   = hi >> 31;
-    l   = lo + (FT_UInt32)s;
-    hi += s + ( l < lo );
-    lo  = l;
-
-    l   = lo + 0x2000U;
-    hi += l < lo;
-
-    return (FT_Int32)( ( (FT_UInt32)hi << 18 ) | ( l >> 14 ) );
   }
+
+#if ( __GNUC__ * 100 + __GNUC_MINOR__ ) >= 406
+#pragma GCC diagnostic pop
 #endif
 
+#endif /* __GNUC__ && (__arm__ || __i386__ || __x86_64__) */
+
+
+#ifndef TT_DotFix14
 
   /* compute (ax*bx+ay*by)/2^14 with maximum accuracy and rounding */
   static FT_Int32
@@ -1542,6 +1620,8 @@
 
     return (FT_Int32)( ( (FT_UInt32)hi << 18 ) | ( l >> 14 ) );
   }
+
+#endif /* TT_DotFix14 */
 
 
   /*************************************************************************/
@@ -1595,8 +1675,15 @@
   }
 
 
-  static FT_Long
+  FT_CALLBACK_DEF( FT_Long )
   Current_Ppem( EXEC_OP )
+  {
+    return CUR.tt_metrics.ppem;
+  }
+
+
+  FT_CALLBACK_DEF( FT_Long )
+  Current_Ppem_Stretched( EXEC_OP )
   {
     return FT_MulFix( CUR.tt_metrics.ppem, CURRENT_Ratio() );
   }
@@ -1936,7 +2023,7 @@
     if ( distance >= 0 )
     {
       val = distance + compensation;
-      if ( distance && val < 0 )
+      if ( val < 0 )
         val = 0;
     }
     else
@@ -1976,10 +2063,8 @@
 
     if ( distance >= 0 )
     {
-      val = distance + compensation + 32;
-      if ( distance && val > 0 )
-        val &= ~63;
-      else
+      val = FT_PIX_ROUND( distance + compensation );
+      if ( val < 0 )
         val = 0;
     }
     else
@@ -2021,14 +2106,14 @@
     if ( distance >= 0 )
     {
       val = FT_PIX_FLOOR( distance + compensation ) + 32;
-      if ( distance && val < 0 )
-        val = 0;
+      if ( val < 0 )
+        val = 32;
     }
     else
     {
       val = -( FT_PIX_FLOOR( compensation - distance ) + 32 );
       if ( val > 0 )
-        val = 0;
+        val = -32;
     }
 
     return val;
@@ -2062,15 +2147,13 @@
 
     if ( distance >= 0 )
     {
-      val = distance + compensation;
-      if ( distance && val > 0 )
-        val &= ~63;
-      else
+      val = FT_PIX_FLOOR( distance + compensation );
+      if ( val < 0 )
         val = 0;
     }
     else
     {
-      val = -( ( compensation - distance ) & -64 );
+      val = -FT_PIX_FLOOR( compensation - distance );
       if ( val > 0 )
         val = 0;
     }
@@ -2106,10 +2189,8 @@
 
     if ( distance >= 0 )
     {
-      val = distance + compensation + 63;
-      if ( distance && val > 0 )
-        val &= ~63;
-      else
+      val = FT_PIX_CEIL( distance + compensation );
+      if ( val < 0 )
         val = 0;
     }
     else
@@ -2150,10 +2231,8 @@
 
     if ( distance >= 0 )
     {
-      val = distance + compensation + 16;
-      if ( distance && val > 0 )
-        val &= ~31;
-      else
+      val = FT_PAD_ROUND( distance + compensation, 32 );
+      if ( val < 0 )
         val = 0;
     }
     else
@@ -2200,17 +2279,17 @@
     {
       val = ( distance - CUR.phase + CUR.threshold + compensation ) &
               -CUR.period;
-      if ( distance && val < 0 )
-        val = 0;
       val += CUR.phase;
+      if ( val < 0 )
+        val = CUR.phase;
     }
     else
     {
       val = -( ( CUR.threshold - CUR.phase - distance + compensation ) &
                -CUR.period );
-      if ( val > 0 )
-        val = 0;
       val -= CUR.phase;
+      if ( val > 0 )
+        val = -CUR.phase;
     }
 
     return val;
@@ -2248,17 +2327,17 @@
     {
       val = ( ( distance - CUR.phase + CUR.threshold + compensation ) /
                 CUR.period ) * CUR.period;
-      if ( distance && val < 0 )
-        val = 0;
       val += CUR.phase;
+      if ( val < 0 )
+        val = CUR.phase;
     }
     else
     {
       val = -( ( ( CUR.threshold - CUR.phase - distance + compensation ) /
                    CUR.period ) * CUR.period );
-      if ( val > 0 )
-        val = 0;
       val -= CUR.phase;
+      if ( val > 0 )
+        val = -CUR.phase;
     }
 
     return val;
@@ -2966,19 +3045,22 @@
     CUR.GS.auto_flip = FALSE;
 
 
-#define DO_SDB                             \
-    CUR.GS.delta_base = (FT_Short)args[0];
+#define DO_SDB                              \
+    CUR.GS.delta_base = (FT_UShort)args[0];
 
 
-#define DO_SDS                              \
-    CUR.GS.delta_shift = (FT_Short)args[0];
+#define DO_SDS                                 \
+    if ( (FT_ULong)args[0] > 6UL )             \
+      CUR.error = FT_THROW( Bad_Argument );    \
+    else                                       \
+      CUR.GS.delta_shift = (FT_UShort)args[0];
 
 
 #define DO_MD  /* nothing */
 
 
-#define DO_MPPEM              \
-    args[0] = CURRENT_Ppem();
+#define DO_MPPEM                   \
+    args[0] = CUR_Func_cur_ppem();
 
 
   /* Note: The pointSize should be irrelevant in a given font program; */
@@ -2990,8 +3072,8 @@
 
 #else
 
-#define DO_MPS                \
-    args[0] = CURRENT_Ppem();
+#define DO_MPS                     \
+    args[0] = CUR_Func_cur_ppem();
 
 #endif /* 0 */
 
@@ -3037,42 +3119,42 @@
   }
 
 
-#define DO_JROT                                                   \
-    if ( args[1] != 0 )                                           \
-    {                                                             \
-      if ( args[0] == 0 && CUR.args == 0 )                        \
-        CUR.error = FT_THROW( Bad_Argument );                     \
-      CUR.IP += args[0];                                          \
-      if ( CUR.IP < 0                                          || \
-           ( CUR.callTop > 0                                 &&   \
-             CUR.IP > CUR.callStack[CUR.callTop - 1].Cur_End ) )  \
-        CUR.error = FT_THROW( Bad_Argument );                     \
-      CUR.step_ins = FALSE;                                       \
+#define DO_JROT                                                    \
+    if ( args[1] != 0 )                                            \
+    {                                                              \
+      if ( args[0] == 0 && CUR.args == 0 )                         \
+        CUR.error = FT_THROW( Bad_Argument );                      \
+      CUR.IP += args[0];                                           \
+      if ( CUR.IP < 0                                           || \
+           ( CUR.callTop > 0                                  &&   \
+             CUR.IP > CUR.callStack[CUR.callTop - 1].Def->end ) )  \
+        CUR.error = FT_THROW( Bad_Argument );                      \
+      CUR.step_ins = FALSE;                                        \
     }
 
 
-#define DO_JMPR                                                 \
-    if ( args[0] == 0 && CUR.args == 0 )                        \
-      CUR.error = FT_THROW( Bad_Argument );                     \
-    CUR.IP += args[0];                                          \
-    if ( CUR.IP < 0                                          || \
-         ( CUR.callTop > 0                                 &&   \
-           CUR.IP > CUR.callStack[CUR.callTop - 1].Cur_End ) )  \
-      CUR.error = FT_THROW( Bad_Argument );                     \
+#define DO_JMPR                                                  \
+    if ( args[0] == 0 && CUR.args == 0 )                         \
+      CUR.error = FT_THROW( Bad_Argument );                      \
+    CUR.IP += args[0];                                           \
+    if ( CUR.IP < 0                                           || \
+         ( CUR.callTop > 0                                  &&   \
+           CUR.IP > CUR.callStack[CUR.callTop - 1].Def->end ) )  \
+      CUR.error = FT_THROW( Bad_Argument );                      \
     CUR.step_ins = FALSE;
 
 
-#define DO_JROF                                                   \
-    if ( args[1] == 0 )                                           \
-    {                                                             \
-      if ( args[0] == 0 && CUR.args == 0 )                        \
-        CUR.error = FT_THROW( Bad_Argument );                     \
-      CUR.IP += args[0];                                          \
-      if ( CUR.IP < 0                                          || \
-           ( CUR.callTop > 0                                 &&   \
-             CUR.IP > CUR.callStack[CUR.callTop - 1].Cur_End ) )  \
-        CUR.error = FT_THROW( Bad_Argument );                     \
-      CUR.step_ins = FALSE;                                       \
+#define DO_JROF                                                    \
+    if ( args[1] == 0 )                                            \
+    {                                                              \
+      if ( args[0] == 0 && CUR.args == 0 )                         \
+        CUR.error = FT_THROW( Bad_Argument );                      \
+      CUR.IP += args[0];                                           \
+      if ( CUR.IP < 0                                           || \
+           ( CUR.callTop > 0                                  &&   \
+             CUR.IP > CUR.callStack[CUR.callTop - 1].Def->end ) )  \
+        CUR.error = FT_THROW( Bad_Argument );                      \
+      CUR.step_ins = FALSE;                                        \
     }
 
 
@@ -4788,7 +4870,7 @@
     if ( pRec->Cur_Count > 0 )
     {
       CUR.callTop++;
-      CUR.IP = pRec->Cur_Restart;
+      CUR.IP = pRec->Def->start;
     }
     else
       /* Loop through the current function */
@@ -4878,8 +4960,7 @@
     pCrec->Caller_Range = CUR.curRange;
     pCrec->Caller_IP    = CUR.IP + 1;
     pCrec->Cur_Count    = 1;
-    pCrec->Cur_Restart  = def->start;
-    pCrec->Cur_End      = def->end;
+    pCrec->Def          = def;
 
     CUR.callTop++;
 
@@ -4967,8 +5048,7 @@
       pCrec->Caller_Range = CUR.curRange;
       pCrec->Caller_IP    = CUR.IP + 1;
       pCrec->Cur_Count    = (FT_Int)args[0];
-      pCrec->Cur_Restart  = def->start;
-      pCrec->Cur_End      = def->end;
+      pCrec->Def          = def;
 
       CUR.callTop++;
 
@@ -5545,7 +5625,7 @@
   /*************************************************************************/
   /*                                                                       */
   /* INSTCTRL[]:   INSTruction ConTRoL                                     */
-  /* Opcode range: 0x8e                                                    */
+  /* Opcode range: 0x8E                                                    */
   /* Stack:        int32 int32 -->                                         */
   /*                                                                       */
   static void
@@ -7057,7 +7137,7 @@
         org_dist = CUR_fast_dualproj( &vec );
       }
 
-      cur_dist = CUR_Func_project ( &CUR.zp2.cur[point], cur_base );
+      cur_dist = CUR_Func_project( &CUR.zp2.cur[point], cur_base );
 
       if ( org_dist )
       {
@@ -7068,14 +7148,20 @@
           /* This is the same as what MS does for the invalid case:  */
           /*                                                         */
           /*   delta = (Original_Pt - Original_RP1) -                */
-          /*           (Current_Pt - Current_RP1)                    */
+          /*           (Current_Pt - Current_RP1)         ;          */
           /*                                                         */
           /* In FreeType speak:                                      */
           /*                                                         */
-          /*   new_dist = cur_dist -                                 */
-          /*              org_dist - cur_dist;                       */
+          /*   delta = org_dist - cur_dist          .                */
+          /*                                                         */
+          /* We move `point' by `new_dist - cur_dist' after leaving  */
+          /* this block, thus we have                                */
+          /*                                                         */
+          /*   new_dist - cur_dist = delta                   ,       */
+          /*   new_dist - cur_dist = org_dist - cur_dist     ,       */
+          /*              new_dist = org_dist                .       */
 
-          new_dist = -org_dist;
+          new_dist = org_dist;
         }
       }
       else
@@ -7372,9 +7458,9 @@
   static void
   Ins_DELTAP( INS_ARG )
   {
-    FT_ULong   k, nump;
+    FT_ULong   nump, k;
     FT_UShort  A;
-    FT_ULong   C;
+    FT_ULong   C, P;
     FT_Long    B;
 #ifdef TT_CONFIG_OPTION_SUBPIXEL_HINTING
     FT_UShort  B1, B2;
@@ -7408,6 +7494,7 @@
     }
 #endif
 
+    P = (FT_ULong)CUR_Func_cur_ppem();
     nump = (FT_ULong)args[0];   /* some points theoretically may occur more
                                    than once, thus UShort isn't enough */
 
@@ -7452,12 +7539,12 @@
 
         C += CUR.GS.delta_base;
 
-        if ( CURRENT_Ppem() == (FT_Long)C )
+        if ( P == C )
         {
           B = ( (FT_ULong)B & 0xF ) - 8;
           if ( B >= 0 )
             B++;
-          B = B * 64 / ( 1L << CUR.GS.delta_shift );
+          B *= 1L << ( 6 - CUR.GS.delta_shift );
 
 #ifdef TT_CONFIG_OPTION_SUBPIXEL_HINTING
 
@@ -7466,42 +7553,33 @@
             /*
              *  Allow delta move if
              *
-             *  - not using ignore_x_mode rendering
-             *  - glyph is specifically set to allow it
-             *  - glyph is composite and freedom vector is not subpixel
-             *    vector
+             *  - not using ignore_x_mode rendering,
+             *  - glyph is specifically set to allow it, or
+             *  - glyph is composite and freedom vector is not in subpixel
+             *    direction.
              */
             if ( !CUR.ignore_x_mode                                   ||
                  ( CUR.sph_tweak_flags & SPH_TWEAK_ALWAYS_DO_DELTAP ) ||
                  ( CUR.is_composite && CUR.GS.freeVector.y != 0 )     )
               CUR_Func_move( &CUR.zp0, A, B );
 
-            /* Otherwise apply subpixel hinting and */
-            /* compatibility mode rules             */
-            else if ( CUR.ignore_x_mode )
+            /* Otherwise, apply subpixel hinting and compatibility mode */
+            /* rules, always skipping deltas in subpixel direction.     */
+            else if ( CUR.ignore_x_mode && CUR.GS.freeVector.y != 0 )
             {
-              if ( CUR.GS.freeVector.y != 0 )
-                B1 = CUR.zp0.cur[A].y;
-              else
-                B1 = CUR.zp0.cur[A].x;
+              /* save the y value of the point now; compare after move */
+              B1 = (FT_UShort)CUR.zp0.cur[A].y;
 
-#if 0
-              /* Standard Subpixel Hinting: Allow y move.       */
-              /* This messes up dejavu and may not be needed... */
-              if ( !CUR.face->sph_compatibility_mode &&
-                   CUR.GS.freeVector.y != 0          )
+              /* Standard subpixel hinting: Allow y move for y-touched */
+              /* points.  This messes up DejaVu ...                    */
+              if ( !CUR.face->sph_compatibility_mode          &&
+                   ( CUR.zp0.tags[A] & FT_CURVE_TAG_TOUCH_Y ) )
                 CUR_Func_move( &CUR.zp0, A, B );
-              else
-#endif /* 0 */
 
-              /* Compatibility Mode: Allow x or y move if point touched in */
-              /* Y direction.                                              */
-              if ( CUR.face->sph_compatibility_mode                      &&
-                   !( CUR.sph_tweak_flags & SPH_TWEAK_ALWAYS_SKIP_DELTAP ) )
+              /* compatibility mode */
+              else if ( CUR.face->sph_compatibility_mode                      &&
+                        !( CUR.sph_tweak_flags & SPH_TWEAK_ALWAYS_SKIP_DELTAP ) )
               {
-                /* save the y value of the point now; compare after move */
-                B1 = CUR.zp0.cur[A].y;
-
                 if ( CUR.sph_tweak_flags & SPH_TWEAK_ROUND_NONPIXEL_Y_MOVES )
                   B = FT_PIX_ROUND( B1 + B ) - B1;
 
@@ -7512,7 +7590,7 @@
                   CUR_Func_move( &CUR.zp0, A, B );
               }
 
-              B2 = CUR.zp0.cur[A].y;
+              B2 = (FT_UShort)CUR.zp0.cur[A].y;
 
               /* Reverse this move if it results in a disallowed move */
               if ( CUR.GS.freeVector.y != 0                           &&
@@ -7552,7 +7630,7 @@
   Ins_DELTAC( INS_ARG )
   {
     FT_ULong  nump, k;
-    FT_ULong  A, C;
+    FT_ULong  A, C, P;
     FT_Long   B;
 
 
@@ -7576,6 +7654,7 @@
     }
 #endif
 
+    P    = (FT_ULong)CUR_Func_cur_ppem();
     nump = (FT_ULong)args[0];
 
     for ( k = 1; k <= nump; k++ )
@@ -7621,12 +7700,12 @@
 
         C += CUR.GS.delta_base;
 
-        if ( CURRENT_Ppem() == (FT_Long)C )
+        if ( P == C )
         {
           B = ( (FT_ULong)B & 0xF ) - 8;
           if ( B >= 0 )
             B++;
-          B = B * 64 / ( 1L << CUR.GS.delta_shift );
+          B *= 1L << ( 6 - CUR.GS.delta_shift );
 
           CUR_Func_move_cvt( A, B );
         }
@@ -7708,26 +7787,16 @@
          CUR.ignore_x_mode                                   &&
          CUR.rasterizer_version >= TT_INTERPRETER_VERSION_35 )
     {
-      /********************************/
-      /* HINTING FOR GRAYSCALE        */
-      /* Selector Bit:  5             */
-      /* Return Bit(s): 12            */
-      /*                              */
-      if ( ( args[0] & 32 ) != 0 && CUR.grayscale_hinting )
-        K |= 1 << 12;
 
-      /********************************/
-      /* HINTING FOR SUBPIXEL         */
-      /* Selector Bit:  6             */
-      /* Return Bit(s): 13            */
-      /*                              */
-      if ( ( args[0] & 64 ) != 0        &&
-           CUR.subpixel_hinting         &&
-           CUR.rasterizer_version >= 37 )
+      if ( CUR.rasterizer_version >= 37 )
       {
-        K |= 1 << 13;
-
-        /* the stuff below is irrelevant if subpixel_hinting is not set */
+        /********************************/
+        /* HINTING FOR SUBPIXEL         */
+        /* Selector Bit:  6             */
+        /* Return Bit(s): 13            */
+        /*                              */
+        if ( ( args[0] & 64 ) != 0 && CUR.subpixel )
+          K |= 1 << 13;
 
         /********************************/
         /* COMPATIBLE WIDTHS ENABLED    */
@@ -7803,8 +7872,7 @@
         call->Caller_Range = CUR.curRange;
         call->Caller_IP    = CUR.IP + 1;
         call->Cur_Count    = 1;
-        call->Cur_Restart  = def->start;
-        call->Cur_End      = def->end;
+        call->Def          = def;
 
         INS_Goto_CodeRange( def->range, def->start );
 
@@ -8158,6 +8226,9 @@
 
 
 #ifdef TT_CONFIG_OPTION_STATIC_RASTER
+    if ( !exc )
+      return FT_THROW( Invalid_Argument );
+
     cur = *exc;
 #endif
 
@@ -8165,11 +8236,12 @@
     CUR.iup_called = FALSE;
 #endif /* TT_CONFIG_OPTION_SUBPIXEL_HINTING */
 
-    /* set CVT functions */
+    /* set PPEM and CVT functions */
     CUR.tt_metrics.ratio = 0;
     if ( CUR.metrics.x_ppem != CUR.metrics.y_ppem )
     {
       /* non-square pixels, use the stretched routines */
+      CUR.func_cur_ppem  = Current_Ppem_Stretched;
       CUR.func_read_cvt  = Read_CVT_Stretched;
       CUR.func_write_cvt = Write_CVT_Stretched;
       CUR.func_move_cvt  = Move_CVT_Stretched;
@@ -8177,6 +8249,7 @@
     else
     {
       /* square pixels, use normal routines */
+      CUR.func_cur_ppem  = Current_Ppem;
       CUR.func_read_cvt  = Read_CVT;
       CUR.func_write_cvt = Write_CVT;
       CUR.func_move_cvt  = Move_CVT;
@@ -8860,8 +8933,7 @@
                 callrec->Caller_Range = CUR.curRange;
                 callrec->Caller_IP    = CUR.IP + 1;
                 callrec->Cur_Count    = 1;
-                callrec->Cur_Restart  = def->start;
-                callrec->Cur_End      = def->end;
+                callrec->Def          = def;
 
                 if ( INS_Goto_CodeRange( def->range, def->start ) == FAILURE )
                   goto LErrorLabel_;
@@ -8932,10 +9004,13 @@
     /* If any errors have occurred, function tables may be broken. */
     /* Force a re-execution of `prep' and `fpgm' tables if no      */
     /* bytecode debugger is run.                                   */
-    if ( CUR.error && !CUR.instruction_trap )
+    if ( CUR.error                          &&
+         !CUR.instruction_trap              &&
+         CUR.curRange == tt_coderange_glyph )
     {
       FT_TRACE1(( "  The interpreter returned error 0x%x\n", CUR.error ));
-      exc->size->cvt_ready      = FALSE;
+      exc->size->bytecode_ready = -1;
+      exc->size->cvt_ready      = -1;
     }
 
     return CUR.error;
