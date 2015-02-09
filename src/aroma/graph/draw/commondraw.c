@@ -372,22 +372,33 @@ byte libaroma_draw_mask_circle(
     int psy = sy + y;
     int pos_d = pdy * dst->l;
     int pos_s = psy * src->l;
+    int y2=y*y;
     if ((pdy<dst->h)&&(pdy>=0)&&(psy<src->h)&&(psy>=0)){
+      int start_x=radius;
+      int end_x=-radius;
       for(x=-radius; x<=radius; x++){
         int pdx = dx + x;
         int psx = sx + x;
         if ((pdx<dst->w)&&(pdx>=0)&&(psx<src->w)&&(psx>=0)){
-          if (x*x+y*y<=rad2){
-            if (alpha==0xff){
-              dst->data[pos_d+pdx]=src->data[pos_s+psx];
+          if (x*x+y2<=rad2){
+            if (start_x>x){
+              start_x=x;
             }
-            else if (alpha>0){
-              dst->data[pos_d+pdx]=libaroma_alpha(
-                dst->data[pos_d+pdx],
-                src->data[pos_s+psx],
-                alpha);
+            if (end_x<x){
+              end_x=x;
             }
           }
+        }
+      }
+      int cpw = end_x - start_x;
+      if (cpw>0){
+        wordp dd = dst->data + pos_d + start_x + dx;
+        wordp sd = src->data + pos_s + start_x + sx;
+        if (alpha==0xff){
+          memcpy(dd,sd,cpw*2);
+        }
+        else{
+          libaroma_alpha_const_line(pdy, cpw, dd,dd, sd, alpha);
         }
       }
     }

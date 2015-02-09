@@ -70,7 +70,7 @@ int main(int argc, char **argv){
   
   LIBAROMA_CONTROLP button = libaroma_ctl_button(
     win, 2,
-    0, 40, LIBAROMA_SIZE_FULL, 40,
+    0, 40, LIBAROMA_SIZE_FULL, 80,
     "Test Button"
   );
   
