@@ -47,10 +47,11 @@
 #define LIBAROMA_MSG_WIN_INVALIDATE   LIBAROMA_MSG_SYS(0x3)
 #define LIBAROMA_MSG_WIN_RESIZE       LIBAROMA_MSG_SYS(0x4)
 #define LIBAROMA_MSG_WIN_MEASURED     LIBAROMA_MSG_SYS(0x5)
+#define LIBAROMA_MSG_WIN_DIRECTMSG    LIBAROMA_MSG_SYS(0x6)
 
-#define LIBAROMA_MSG_WIN_FOCUS        LIBAROMA_MSG_SYS(0x6)
-#define LIBAROMA_MSG_WIN_BLUR         LIBAROMA_MSG_SYS(0x7)
-#define LIBAROMA_MSG_WIN_TITLE        LIBAROMA_MSG_SYS(0x8)
+#define LIBAROMA_MSG_WIN_FOCUS        LIBAROMA_MSG_SYS(0x7)
+#define LIBAROMA_MSG_WIN_BLUR         LIBAROMA_MSG_SYS(0x8)
+#define LIBAROMA_MSG_WIN_TITLE        LIBAROMA_MSG_SYS(0x9)
 
 /*
  * Window Show Animation
@@ -97,11 +98,6 @@ struct _LIBAROMA_WINDOW{
   int top;
   int width;
   int height;
-  /* inside size */
-  int client_w;
-  int client_h;
-  int scroll_x;
-  int scroll_y;
   
   /* states */
   byte active;
@@ -213,6 +209,13 @@ byte libaroma_window_anishow(
 /* no animation */
 #define libaroma_window_show(win) \
   libaroma_window_anishow(win,0,0)
+
+/*
+ * Function    : libaroma_window_post_command
+ * Return Value: byte
+ * Descriptions: post command into message queue
+ */
+byte libaroma_window_post_command(dword cmd);
 
 /*
  * Function    : libaroma_window_pool

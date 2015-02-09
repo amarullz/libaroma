@@ -94,8 +94,8 @@ byte libaroma_control_draw_flush(
     ALOGW("window_control_draw window dc uninitialized");
     return 0;
   }
-  int sx = ctl->x-win->scroll_x;
-  int sy = ctl->y-win->scroll_y;
+  int sx = ctl->x;
+  int sy = ctl->y;
   libaroma_draw(
     win->dc,
     canvas,
@@ -156,8 +156,8 @@ byte libaroma_control_isvisible(LIBAROMA_CONTROLP ctl){
     return 0;
   }
   LIBAROMA_WINDOWP win = ctl->window;
-  int sx = ctl->x-win->scroll_x;
-  int sy = ctl->y-win->scroll_y;
+  int sx = ctl->x;
+  int sy = ctl->y;
   if (sx+ctl->w<0){
     return 0;
   }

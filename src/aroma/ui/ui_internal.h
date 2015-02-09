@@ -33,11 +33,11 @@
     TYPE me = (TYPE) ctl->internal
 
 /*
- * Function    : libaroma_window_mesure
+ * Function    : libaroma_window_measure
  * Return Value: byte
  * Descriptions: measure control size
  */
-byte libaroma_window_mesure(LIBAROMA_WINDOWP win, LIBAROMA_CONTROLP ctl);
+byte libaroma_window_measure(LIBAROMA_WINDOWP win, LIBAROMA_CONTROLP ctl);
 
 /*
  * Function    : libaroma_window_attach

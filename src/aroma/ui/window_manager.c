@@ -575,8 +575,6 @@ void libaroma_wm_message_clear() {
   }
 } /* End of libaroma_wm_message_clear */
 
-
-
 /*
  * Function    : libaroma_wm_set_theme
  * Return Value: byte

@@ -6,7 +6,7 @@ echo Compiling TEST
   -O2 -static ^
   -fdata-sections -ffunction-sections -Wl,--gc-sections ^
   -D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG ^
-  -fPIC -DPIC -Wl,-s -Werror -fopenmp ^
+  -fPIC -DPIC -Wl,-s -Werror ^
   ^
   %LIBAROMA_CFLAGS% ^
   ^
@@ -15,7 +15,6 @@ echo Compiling TEST
     -DLIBAROMA_CONFIG_DEBUG_MEMORY=%LIBAROMA_CONFIG_DEBUG_MEMORY% ^
     -DLIBAROMA_CONFIG_COMPILER_MESSAGE=%LIBAROMA_CONFIG_COMPILER_MESSAGE% ^
     -DLIBAROMA_CONFIG_SHMEMFB=%LIBAROMA_CONFIG_SHMEMFB% ^
-    -DLIBAROMA_CONFIG_OPENMP=1 ^
     -DANDROID=1 -D__ANDROID__ ^
   ^
     ./*.o ^

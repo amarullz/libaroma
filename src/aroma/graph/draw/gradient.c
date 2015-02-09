@@ -138,9 +138,6 @@ byte libaroma_gradient_ex(
     useAlpha = 0;
     useCanvasAlpha = 0;
   }
-  if (useAlpha) {
-    alphaTmpLine = (wordp) malloc(w * 2);
-  }
   
   /* prepare */
   w = x2 - x;
@@ -167,7 +164,13 @@ byte libaroma_gradient_ex(
   /* draw */
   int _Y;
   bytep line_alpha = NULL;
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
   for (_Y = 0; _Y < h; _Y++) {
+    if (useAlpha) {
+      alphaTmpLine = (wordp) malloc(w * 2);
+    }
     int ypos = y + _Y;
 #ifdef LIBAROMA_CONFIG_GRADIENT_FLOAT
     float intensity   = ((float) _Y) / ((float) h);
@@ -273,13 +276,13 @@ byte libaroma_gradient_ex(
         }
       }
     }
+    if (useAlpha) {
+      free(alphaTmpLine);
+    }
   }
   if (roundData != NULL) {
     free(roundData);
     free(roundTmp);
-  }
-  if (useAlpha) {
-    free(alphaTmpLine);
   }
   return 1;
 } /* End of libaroma_gradient_ex */

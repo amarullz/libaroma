@@ -34,35 +34,35 @@
   }
 
 /*
- * Variable    : _libaroma_window_mesurement_dp
+ * Variable    : _libaroma_window_measurement_dp
  * Type        : byte
- * Descriptions: default mesurement
+ * Descriptions: default measurement
  */
-static byte _libaroma_window_mesurement_dp=1;
+static byte _libaroma_window_measurement_dp=1;
 
 /*
  * Function    : libaroma_window_usedp
  * Return Value: byte
- * Descriptions: use dp for mesurement
+ * Descriptions: use dp for measurement
  */
 byte libaroma_window_usedp(byte isdp){
   if (isdp==1){
-    _libaroma_window_mesurement_dp=1;
+    _libaroma_window_measurement_dp=1;
   }
   else if (!isdp){
-    _libaroma_window_mesurement_dp=0;
+    _libaroma_window_measurement_dp=0;
   }
-  return _libaroma_window_mesurement_dp;
+  return _libaroma_window_measurement_dp;
 } /* End of libaroma_window_usedp */
 
 /*
  * Function    : _libaroma_window_measure_save
  * Return Value: void
- * Descriptions: save mesurement value
+ * Descriptions: save measurement value
  */
 void _libaroma_window_measure_save(LIBAROMA_WINDOWP win, LIBAROMA_CONTROLP ctl){
   if (win!=NULL){
-    if (_libaroma_window_mesurement_dp){
+    if (_libaroma_window_measurement_dp){
       win->left = libaroma_px(win->x);
       win->top  = libaroma_px(win->y);
       win->width= libaroma_px(win->w);
@@ -76,7 +76,7 @@ void _libaroma_window_measure_save(LIBAROMA_WINDOWP win, LIBAROMA_CONTROLP ctl){
     }
   }
   if (ctl!=NULL){
-    if (_libaroma_window_mesurement_dp){
+    if (_libaroma_window_measurement_dp){
       ctl->left = libaroma_px(ctl->x);
       ctl->top  = libaroma_px(ctl->y);
       ctl->width= libaroma_px(ctl->w);
@@ -92,13 +92,13 @@ void _libaroma_window_measure_save(LIBAROMA_WINDOWP win, LIBAROMA_CONTROLP ctl){
 } /* End of _libaroma_window_measure_save */
 
 /*
- * Function    : libaroma_window_mesure_size
+ * Function    : libaroma_window_measure_size
  * Return Value: byte
  * Descriptions: measure window size
  */
-byte libaroma_window_mesure_size(LIBAROMA_WINDOWP win){
+byte libaroma_window_measure_size(LIBAROMA_WINDOWP win){
   if (win){
-    if (_libaroma_window_mesurement_dp){
+    if (_libaroma_window_measurement_dp){
       win->x = libaroma_dp(win->rx);
       win->y = libaroma_dp(win->ry);
       win->w = libaroma_dp(win->rw);
@@ -162,7 +162,7 @@ byte libaroma_window_mesure_size(LIBAROMA_WINDOWP win){
     return 1;
   }
   return 0;
-} /* End of libaroma_window_mesure */
+} /* End of libaroma_window_measure */
 
 /*
  * Function    : libaroma_window
@@ -176,9 +176,7 @@ LIBAROMA_WINDOWP libaroma_window(
   __CHECK_WM(NULL);
   LIBAROMA_WINDOWP win = (LIBAROMA_WINDOWP) malloc(sizeof(LIBAROMA_WINDOW));
   /* zero values */
-  win->childn = 
-  win->client_w = win->client_h =
-  win->scroll_x = win->scroll_y = 0;
+  win->childn = 0;
   if (bg_theme_name){
     snprintf(win->theme_bg,256,"%s",bg_theme_name);
   }
@@ -199,7 +197,7 @@ LIBAROMA_WINDOWP libaroma_window(
   win->ry = y;
   win->rw = w;
   win->rh = h;
-  libaroma_window_mesure_size(win);
+  libaroma_window_measure_size(win);
   return win;
 } /* End of libaroma_window */
 
@@ -254,14 +252,10 @@ byte _libaroma_window_updatebg(LIBAROMA_WINDOWP win){
   }
   /* draw background */
   if (win->bg!=NULL){
-    if ((win->bg->w==win->client_w)&&(win->bg->h==win->client_h)){
-      /* not need update */
-      return 1;
-    }
     libaroma_canvas_free(win->bg);
   }
-  int w = win->client_w;
-  int h = win->client_h;
+  int w = win->w;
+  int h = win->h;
   win->bg = libaroma_canvas(w,h);
   libaroma_grad(win->bg,0,0,w,h,
     libaroma_wm_get_color("window"),
@@ -282,36 +276,6 @@ byte _libaroma_window_recalculate(LIBAROMA_WINDOWP win){
   if (win==NULL){
     ALOGW("window_recalculate win is NULL");
     return 0;
-  }
-  int i;
-  win->client_w = win->client_h = 0;
-  for (i=0;i<win->childn;i++){
-    int right = win->childs[i]->x + win->childs[i]->w;
-    int bottom = win->childs[i]->y + win->childs[i]->h;
-    if (right>win->client_w){
-      win->client_w = right;
-    }
-    if (bottom>win->client_h){
-      win->client_h = bottom;
-    }
-  }
-  if (win->client_w<win->w){
-    win->client_w=win->w;
-  }
-  if (win->client_h<win->h){
-    win->client_h=win->h;
-  }
-  if (win->scroll_x>(win->client_w-win->w)){
-    win->scroll_x=(win->client_w-win->w);
-  }
-  if (win->scroll_y>(win->client_h-win->h)){
-    win->scroll_y=(win->client_h-win->h);
-  }
-  if (win->scroll_x<0){
-    win->scroll_x=0;
-  }
-  if (win->scroll_y<0){
-    win->scroll_y=0;
   }
   if (libaroma_window_isactive(win)){
     _libaroma_window_updatebg(win);
@@ -386,7 +350,7 @@ byte libaroma_window_resize(
   win->ry = y;
   win->rw = w;
   win->rh = h;
-  if (libaroma_window_mesure_size(win)){
+  if (libaroma_window_measure_size(win)){
     return _libaroma_window_ready(win);
   }
   return 0;
@@ -426,7 +390,7 @@ byte libaroma_window_add(
     ALOGW("window_add ctl already have window");
     return 0;
   }
-  libaroma_window_mesure(win, ctl);
+  libaroma_window_measure(win, ctl);
   if (win->childn==0){
     win->childs = (LIBAROMA_CONTROLP *) malloc(sizeof(LIBAROMA_CONTROLP));
     if (!win->childs){
@@ -518,13 +482,13 @@ byte libaroma_window_del(
 } /* End of libaroma_window_del */
 
 /*
- * Function    : libaroma_window_mesure
+ * Function    : libaroma_window_measure
  * Return Value: byte
  * Descriptions: measure control size
  */
-byte libaroma_window_mesure(LIBAROMA_WINDOWP win, LIBAROMA_CONTROLP ctl){
+byte libaroma_window_measure(LIBAROMA_WINDOWP win, LIBAROMA_CONTROLP ctl){
   if (win&&ctl){
-    if (_libaroma_window_mesurement_dp){
+    if (_libaroma_window_measurement_dp){
       ctl->x = libaroma_dp(ctl->rx);
       ctl->y = libaroma_dp(ctl->ry);
       ctl->w = libaroma_dp(ctl->rw);
@@ -596,7 +560,7 @@ byte libaroma_window_mesure(LIBAROMA_WINDOWP win, LIBAROMA_CONTROLP ctl){
     }
   }
   return 0;
-} /* End of libaroma_window_mesure */
+} /* End of libaroma_window_measure */
 
 /*
  * Function    : libaroma_window_attach
@@ -696,13 +660,22 @@ static void * _libaroma_window_thread_manager(void * cookie) {
   int i;
   while(win->active){
     /* run child thread process */
-    for (i=0;i<win->childn;i++){
-      if (win->childs[i]->thread!=NULL){
-        win->childs[i]->thread(win->childs[i]);
+    long waitf=libaroma_tick();
+    if (win->active==1){
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
+      for (i=0;i<win->childn;i++){
+        if (win->childs[i]->thread!=NULL){
+          win->childs[i]->thread(win->childs[i]);
+        }
       }
     }
     /* 60hz sleep */
-    libaroma_sleep(16);
+    if ((waitf=(libaroma_tick()-waitf))<16){
+      if (waitf<0) waitf=0;
+      libaroma_sleep(16-waitf);
+    }
   }
   ALOGV("end window thread manager...");
   return NULL;
@@ -771,6 +744,9 @@ byte libaroma_window_invalidate(LIBAROMA_WINDOWP win, byte sync){
   
   /* draw childs */
   int i;
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
   for (i=0;i<win->childn;i++){
     /* draw no sync */
     libaroma_control_draw(win->childs[i], 0);
@@ -802,6 +778,7 @@ byte libaroma_window_anishow(
   }
   win->lock_sync = 1;
   if (libaroma_wm_set_active_window(win)){
+    win->active=2;
     long start = libaroma_tick();
     int delta = 0;
     LIBAROMA_CANVASP back = libaroma_canvas(win->w, win->h);
@@ -811,6 +788,7 @@ byte libaroma_window_anishow(
       if (state>=1.0){
         break;
       }
+      long waitf = libaroma_tick();
       switch (animation){
         case LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_LEFT:
         case LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_LEFT:
@@ -881,11 +859,17 @@ byte libaroma_window_anishow(
           start=0;
           break;
       }
+      /* 60hz sleep */
+      if ((waitf=(libaroma_tick()-waitf))<16){
+        if (waitf<0) waitf=0;
+        libaroma_sleep(16-(waitf));
+      }
     }
     libaroma_canvas_free(back);
     
     /* sync view now */
     win->lock_sync = 0;
+    win->active=1;
     libaroma_window_sync(win, 0, 0, win->w, win->h);
     return 1;
   }
@@ -932,7 +916,22 @@ byte _libaroma_window_is_inside(LIBAROMA_CONTROLP ctl, int x, int y) {
   return 0;
 } /* End of _libaroma_window_is_inside */
 
-
+/*
+ * Function    : libaroma_window_post_command
+ * Return Value: byte
+ * Descriptions: post direct command
+ */
+byte libaroma_window_post_command(dword cmd){
+  return 
+    libaroma_msg_post(
+      LIBAROMA_MSG_WIN_DIRECTMSG,
+      0,
+      0,
+      (int) cmd,
+      0,
+      NULL
+    );
+} /* End of libaroma_window_post_command */
 
 /*
  * Function    : libaroma_window_process_event
@@ -955,6 +954,9 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
         
         /* send active/resize message to child */
         int i;
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
         for (i=0;i<win->childn;i++){
           win->childs[i]->message(win->childs[i], msg);
         }
@@ -979,6 +981,9 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
         
         /* send inactive message to child */
         int i;
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
         for (i=0;i<win->childn;i++){
           win->childs[i]->message(win->childs[i], msg);
         }
@@ -988,9 +993,17 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
       {
         /* remeasured all childs */
         int i;
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
         for (i=0;i<win->childn;i++){
-          libaroma_window_mesure(win,win->childs[i]);
+          libaroma_window_measure(win,win->childs[i]);
         }
+      }
+      break;
+    case LIBAROMA_MSG_WIN_DIRECTMSG:
+      {
+        return (dword) msg->x;
       }
       break;
     case LIBAROMA_MSG_WIN_INVALIDATE:

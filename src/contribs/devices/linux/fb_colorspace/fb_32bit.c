@@ -130,6 +130,7 @@ byte LINUXFBDR_sync_32bit(
         mi->stride, 0, mi->rgb_pos);
     }
   }
+  
   /* refresh framebuffer */
   LINUXFBDR_refresh(me);
   return 1;

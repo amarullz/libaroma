@@ -239,13 +239,10 @@ void LINUXFBDR_refresh(LIBAROMA_FBP me) {
   if (me == NULL) {
     return;
   }
-  
+
   /* Get Internal Data */
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
-  /* Sync Data */
-  fsync(mi->fb);
-  
-  /* Refresh Display - Ignore area for now */
+  /* Refresh Display */
   mi->var.yoffset   = 0;
   mi->var.activate |= FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
   ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var);

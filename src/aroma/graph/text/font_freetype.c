@@ -453,7 +453,8 @@ byte libaroma_font_glyph_draw(
   FT_BitmapGlyph bit = (FT_BitmapGlyph) fglyph;
   
   /* prepare locations */
-  unsigned int yy;
+  /*int yy;*/
+  typeof(bit->bitmap.rows) yy;
   int xpos = x + bit->left;
   int xstart = 0;
   
