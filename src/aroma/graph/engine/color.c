@@ -62,6 +62,18 @@ byte libaroma_color_b(word rgb) {
   return ((byte) (((((word)(rgb)) & 0x001F)) << 3));
 }
 
+/* is dark color */
+byte libaroma_color_isdark(word rgb){
+  int cl =
+    libaroma_color_r(rgb)*0.5+
+    libaroma_color_g(rgb)*0.2+
+    libaroma_color_b(rgb)*0.3;
+  if (cl>128){
+    return 0;
+  }
+  return 1;
+}
+
 /* 32bit color channel */
 byte libaroma_color_r32(dword rgb) {
   return (byte) ((rgb >> 16) & 0xff);

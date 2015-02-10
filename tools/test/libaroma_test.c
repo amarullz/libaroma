@@ -48,6 +48,9 @@ int main(int argc, char **argv){
   libaroma_canvas_blank(libaroma_fb()->canvas);
   libaroma_sync();
   
+  /*libaroma_png_save(libaroma_fb()->canvas,"/sdcard/out.png");*/
+  
+  
   /* load font - id=0 */
   libaroma_font(0,
     libaroma_stream(
@@ -70,8 +73,50 @@ int main(int argc, char **argv){
   
   LIBAROMA_CONTROLP button = libaroma_ctl_button(
     win, 2,
-    0, 40, LIBAROMA_SIZE_FULL, 80,
-    "Test Button"
+    0, 40, LIBAROMA_SIZE_HALF, 50,
+    "Test Button",
+    LIBAROMA_CTL_BUTTON_FLAT,
+    0
+  );
+  
+  LIBAROMA_CONTROLP button2 = libaroma_ctl_button(
+    win, 3,
+    LIBAROMA_POS_HALF, 40, LIBAROMA_SIZE_HALF, 50,
+    "Test Raised",
+    LIBAROMA_CTL_BUTTON_RAISED,
+    0
+  );
+  
+  LIBAROMA_CONTROLP button3 = libaroma_ctl_button(
+    win, 4,
+    0, 100, LIBAROMA_SIZE_HALF, 50,
+    "Colored",
+    LIBAROMA_CTL_BUTTON_COLORED,
+    RGB(ffffff)
+  );
+  
+  LIBAROMA_CONTROLP button4 = libaroma_ctl_button(
+    win, 5,
+    LIBAROMA_POS_HALF, 100, LIBAROMA_SIZE_HALF, 50,
+    "Colored Raised",
+    LIBAROMA_CTL_BUTTON_RAISED|LIBAROMA_CTL_BUTTON_COLORED,
+    RGB(335599)
+  );
+  
+  LIBAROMA_CONTROLP button5 = libaroma_ctl_button(
+    win, 6,
+    0, 150, LIBAROMA_SIZE_HALF, 50,
+    "Colored",
+    LIBAROMA_CTL_BUTTON_COLORED,
+    RGB(118822)
+  );
+  
+  LIBAROMA_CONTROLP button6 = libaroma_ctl_button(
+    win, 7,
+    LIBAROMA_POS_HALF, 150, LIBAROMA_SIZE_HALF, 50,
+    "Colored Raised",
+    LIBAROMA_CTL_BUTTON_RAISED|LIBAROMA_CTL_BUTTON_COLORED,
+    RGB(ffcccc)
   );
   
   /* show window */

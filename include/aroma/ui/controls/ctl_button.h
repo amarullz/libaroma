@@ -27,6 +27,11 @@
 #ifndef __libaroma_ctl_button_h__
 #define __libaroma_ctl_button_h__
 
+#define LIBAROMA_CTL_BUTTON_FLAT      0x0
+#define LIBAROMA_CTL_BUTTON_RAISED    0x1
+#define LIBAROMA_CTL_BUTTON_COLORED   0x2
+#define LIBAROMA_CTL_BUTTON_DISABLED  0x4
+
 /*
  * Function    : libaroma_ctl_button
  * Return Value: LIBAROMA_CONTROLP
@@ -36,7 +41,9 @@ LIBAROMA_CONTROLP libaroma_ctl_button(
     LIBAROMA_WINDOWP win,
     word id,
     int x, int y, int w, int h,
-    char * text
+    char * text,
+    byte button_style,
+    word button_color
 );
 
 #endif /* __libaroma_ctl_button_h__ */

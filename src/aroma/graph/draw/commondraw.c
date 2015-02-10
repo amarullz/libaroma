@@ -338,8 +338,6 @@ byte libaroma_draw_subpixel(
   return 1;
 } /* End of libaroma_draw_subpixel */
 
-
-
 /*
  * Function    : libaroma_draw_mask_circle
  * Return Value: byte
@@ -362,43 +360,43 @@ byte libaroma_draw_mask_circle(
     return 1;
   }
   int radius = sz/2;
-  int rad2 = radius * radius;
-  int x,y;
+  int rad2   = radius * radius;
+  int y;
 #ifdef LIBAROMA_CONFIG_OPENMP
   #pragma omp parallel for
 #endif
   for(y=-radius; y<=radius; y++){
     int pdy = dy + y;
     int psy = sy + y;
-    int pos_d = pdy * dst->l;
-    int pos_s = psy * src->l;
-    int y2=y*y;
     if ((pdy<dst->h)&&(pdy>=0)&&(psy<src->h)&&(psy>=0)){
-      int start_x=radius;
-      int end_x=-radius;
-      for(x=-radius; x<=radius; x++){
-        int pdx = dx + x;
-        int psx = sx + x;
-        if ((pdx<dst->w)&&(pdx>=0)&&(psx<src->w)&&(psx>=0)){
-          if (x*x+y2<=rad2){
-            if (start_x>x){
-              start_x=x;
-            }
-            if (end_x<x){
-              end_x=x;
-            }
-          }
-        }
+      int pos_d = pdy * dst->l;
+      int pos_s = psy * src->l;
+      int x   = sqrt(rad2-y*y);
+      int w   = x*2;
+      if (sx-x<0){
+        w-=abs(sx-x);
+        x=sx;
       }
-      int cpw = end_x - start_x;
-      if (cpw>0){
-        wordp dd = dst->data + pos_d + start_x + dx;
-        wordp sd = src->data + pos_s + start_x + sx;
+      if (dx-x<0){
+        w-=abs(dx-x);
+        x=dx;
+      }
+      int pdx = dx-x;
+      int sdx = sx-x;
+      if (sdx+w>src->w){
+        w=src->w-sdx;
+      }
+      if (pdx+w>dst->w){
+        w=dst->w-pdx;
+      }
+      if (w>0){
+        wordp dd = dst->data + pos_d + pdx;
+        wordp sd = src->data + pos_s + sdx;
         if (alpha==0xff){
-          memcpy(dd,sd,cpw*2);
+          memcpy(dd,sd,w*2);
         }
         else{
-          libaroma_alpha_const_line(pdy, cpw, dd,dd, sd, alpha);
+          libaroma_alpha_const_line(pdy,w,dd,dd,sd,alpha);
         }
       }
     }
@@ -406,5 +404,55 @@ byte libaroma_draw_mask_circle(
   return 1;
 } /* End of libaroma_draw_mask_circle */
 
+/*
+ * Function    : libaroma_draw_circle
+ * Return Value: byte
+ * Descriptions: draw filled circle
+ */
+byte libaroma_draw_circle(
+    LIBAROMA_CANVASP dst, 
+    word color,
+    int dx, int dy,
+    int sz,
+    byte alpha){
+  if (dst == NULL) {
+    dst = libaroma_fb()->canvas;
+  }
+  if (sz<2){
+    return 1;
+  }
+  int radius = sz/2;
+  int rad2   = radius * radius;
+  int y;
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
+  for(y=-radius; y<=radius; y++){
+    int pdy = dy + y;
+    if ((pdy<dst->h)&&(pdy>=0)){
+      int pos_d = pdy * dst->l;
+      int x   = sqrt(rad2-y*y);
+      int w   = x*2;
+      if (dx-x<0){
+        w-=abs(dx-x);
+        x=dx;
+      }
+      int pdx = dx-x;
+      if (pdx+w>dst->w){
+        w=dst->w-pdx;
+      }
+      if (w>0){
+        wordp dd = dst->data + pos_d + pdx;
+        if (alpha==0xff){
+          libaroma_color_set(dd,color,w);
+        }
+        else{
+          libaroma_alpha_rgba_fill(w,dd, dd,color,alpha);
+        }
+      }
+    }
+  }
+  return 1;
+} /* End of libaroma_draw_circle */
 
 #endif /* __libaroma_commondraw_c__ */

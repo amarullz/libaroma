@@ -235,5 +235,17 @@ byte libaroma_control_free(
   return 1;
 } /* End of libaroma_control_free */
 
+/*
+ * Function    : libaroma_control_state
+ * Return Value: float
+ * Descriptions: calculate state
+ */
+float libaroma_control_state(long start, int duration){
+  long diff = libaroma_tick() - start;
+  if (diff>duration){
+    return 1.0;
+  }
+  return ((float) diff)/((float) duration);
+} /* End of libaroma_control_state */
 
 #endif /* __libaroma_control_c__ */

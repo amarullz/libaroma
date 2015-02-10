@@ -63,6 +63,18 @@ byte libaroma_draw_mask_circle(
     byte alpha);
 
 /*
+ * Function    : libaroma_draw_circle
+ * Return Value: byte
+ * Descriptions: draw filled circle
+ */
+byte libaroma_draw_circle(
+    LIBAROMA_CANVASP dst, 
+    word color,
+    int dx, int dy,
+    int sz,
+    byte alpha);
+    
+/*
  * Function    : libaroma_draw_ex1
  * Return Value: byte
  * Descriptions: canvas drawing
