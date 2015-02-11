@@ -380,7 +380,8 @@ dword libaroma_text_draw_span(
     _LIBAROMA_TEXTSHAPED_SPANP span_shaped,
     int x,
     int y,
-    dword prev_res_span);
+    dword prev_res_span,
+    byte fixed_color, word color_force);
 
 /*
  * Function    : libaroma_text_draw_bullet
@@ -404,7 +405,8 @@ void libaroma_textline_draw(
     LIBAROMA_CANVASP canvas,
     _LIBAROMA_TEXTLINEP line,
     int draw_x,
-    int draw_y);
+    int draw_y,
+    byte fixed_color, word color_force);
 
 
 #endif /* __libaroma_text_header_h__ */

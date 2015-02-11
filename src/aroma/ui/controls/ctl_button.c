@@ -46,6 +46,7 @@ struct __LIBAROMA_CTL_BUTTON{
   
   byte forcedraw;
   byte touched;
+  byte holded;
   int touch_x;
   int touch_y;
   long touch_start;
@@ -92,6 +93,7 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
   }
   word push_color = me->isdark?RGB(cccccc):RGB(444444);
   word text_color = me->isdark?0xffff:0;
+  word rest_text_color = text_color;
   byte push_opa   = me->isdark?64:102;
   
   /* buttons */
@@ -101,7 +103,7 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
     0,0,
     ctl->w-libaroma_dp(8), ctl->h-libaroma_dp(12),
     0,0,
-    libaroma_dp(3),
+    libaroma_dp(2),
     0x1111
   );
   
@@ -130,14 +132,19 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
       me->push_canvas,raised_canvas,
       ix-raised_sz,
       iy-raised_sz+libaroma_dp(3),
-      1,0x50
+      1,0x40
     );
     libaroma_canvas_free(raised_canvas);
   }
   
   if (me->style&LIBAROMA_CTL_BUTTON_COLORED) {
     libaroma_draw_rect(btnmask,0,0,btnmask->w,btnmask->h,me->color,0xff);
-    libaroma_draw(me->rest_canvas, btnmask, ix, iy, 1);
+    if (me->style&LIBAROMA_CTL_BUTTON_RAISED){
+      libaroma_draw(me->rest_canvas, btnmask, ix, iy, 1);
+    }
+    else{
+      rest_text_color = me->color;
+    }
     libaroma_draw_rect(btnmask,0,0,btnmask->w,btnmask->h,push_color,push_opa);
     libaroma_draw(me->push_canvas, btnmask, ix, iy, 1);
   }
@@ -165,7 +172,10 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
     120
   );
   int y = ctl->h/2 - libaroma_text_height(textp)/2;
-  libaroma_text_draw(me->rest_canvas,textp,libaroma_dp(12)+ix,y);
+  
+  libaroma_text_draw_color(me->rest_canvas,textp,libaroma_dp(12)+ix,y,
+    rest_text_color
+  );
   libaroma_text_draw(me->push_canvas,textp,libaroma_dp(12)+ix,y);
   libaroma_text_free(textp);
   
@@ -239,6 +249,12 @@ void _libaroma_ctl_button_thread(LIBAROMA_CONTROLP ctl) {
       is_draw = 1;
       me->touch_state=nowstate;
     }
+    if ((me->touch_state>=0.5)&&(!me->holded)){
+      me->holded=1;
+      libaroma_window_post_command(
+        LIBAROMA_CMD_SET(LIBAROMA_CMD_HOLD, 0, ctl->id)
+      );
+    }
   }
   if (!me->touched&&me->release_start){
     float nowstate=libaroma_control_state(me->release_start, 500);
@@ -308,10 +324,16 @@ dword _libaroma_ctl_button_msg(
           me->touch_state=0.0;
           me->release_state=0.0;
           me->release_start=0;
+          me->holded=0;
           me->touched=1;
         }
         else if (msg->state==LIBAROMA_HID_EV_STATE_UP){
           if (me->touched){
+            if (!me->holded){
+              libaroma_window_post_command(
+                LIBAROMA_CMD_SET(LIBAROMA_CMD_CLICK, 0, ctl->id)
+              );
+            }
             me->touch_start=0;
             me->release_start=libaroma_tick();
             me->release_state=0.0;
@@ -377,6 +399,7 @@ LIBAROMA_CONTROLP libaroma_ctl_button(
   me->release_state=0.0;
   me->forcedraw=0;
   me->isdark=0;
+  me->holded=0;
   
   me->rest_canvas=NULL;
   me->push_canvas=NULL;

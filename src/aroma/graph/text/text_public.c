@@ -229,7 +229,14 @@ int libaroma_text_draw_line_ex(
           dest,
           line_txt,
           dx,
-          dy - line_txt->y);
+          dy - line_txt->y, 0, 0);
+      }
+      else if (isshadow>=10) {
+        libaroma_textline_draw(
+          dest,
+          line_txt,
+          dx,
+          dy - line_txt->y, 1, shadow_color);
       }
       else if (radius > 0) {
         byte light = (isshadow == 2) ? 1 : 0;
@@ -238,12 +245,13 @@ int libaroma_text_draw_line_ex(
         int xx, yy;
         LIBAROMA_CANVASP cv = libaroma_canvas_ex(w, h, 0);
         word trans_color = (light) ? 0xffff : 0x0000;
+        word fore_color = (light) ? 0x0000 : 0xffff;
         libaroma_canvas_setcolor(cv, trans_color, 0);
         libaroma_textline_draw(
           cv,
           line_txt,
           0 - line_txt->minx,
-          0 - line_txt->y);
+          0 - line_txt->y, 1, fore_color);
         cv->alpha = (bytep) malloc(cv->sz);
         memset(cv->alpha, 0, cv->sz);
         for (yy = 0; yy < cv->h; yy++) {
@@ -347,7 +355,18 @@ byte libaroma_text_draw_ex(
   int shadow_x,
   int shadow_y
 ) {
-  if (isshadow) {
+  if (isshadow>=10) {
+    return libaroma_text_draw_layer(
+      dest,
+      text,
+      dx,
+      dy,
+      sx,
+      sy,
+      maxh,
+      isshadow,0,shadow_color,0);
+  }
+  else if (isshadow) {
     libaroma_text_draw_layer(
       dest,
       text,

@@ -37,7 +37,8 @@ dword libaroma_text_draw_span(
     _LIBAROMA_TEXTSHAPED_SPANP span_shaped,
     int x,
     int y,
-    dword prev_res_span) {
+    dword prev_res_span,
+    byte fixed_color, word color_force) {
   if (!canvas){
     canvas=libaroma_fb()->canvas;
   }
@@ -62,7 +63,7 @@ dword libaroma_text_draw_span(
       glyph,
       draw_x,
       draw_y,
-      span_shaped->color,
+      fixed_color?color_force:span_shaped->color,
       span_shaped->flags,
       0xff
     );
@@ -100,7 +101,7 @@ dword libaroma_text_draw_span(
         (y + (uline_height * 2)) - half_size,
         span_x2 - span_x1_strikeout,
         uline_height,
-        span_shaped->color,
+        fixed_color?color_force:span_shaped->color,
         0xff);
     }
     if ((span_shaped->flags & _LIBAROMA_TEXTCHUNK_UNDERLINE) &&
@@ -112,7 +113,7 @@ dword libaroma_text_draw_span(
         y + uline_height,
         span_x2 - span_x1_underline,
         uline_height,
-        span_shaped->color,
+        fixed_color?color_force:span_shaped->color,
         0xff);
     }
   }
@@ -263,7 +264,8 @@ void libaroma_textline_draw(
     LIBAROMA_CANVASP canvas,
     _LIBAROMA_TEXTLINEP line,
     int draw_x,
-    int draw_y) {
+    int draw_y,
+    byte fixed_color, word color_force) {
   if (!canvas){
     canvas=libaroma_fb()->canvas;
   }
@@ -280,7 +282,8 @@ void libaroma_textline_draw(
               (_LIBAROMA_TEXTSHAPED_SPANP) span->data,
               span->x + draw_x,
               line->y + ypos + draw_y,
-              prev_res_span
+              prev_res_span,
+              fixed_color,color_force
             );
         }
         break;
@@ -294,7 +297,7 @@ void libaroma_textline_draw(
             bullet->x + draw_x,
             line->y + ((line->lineheight >> 1) - (bullet->w >> 2)) + draw_y,
             bullet->w,
-            bullet->color
+            fixed_color?color_force:bullet->color
           );
         }
         break;
@@ -309,7 +312,7 @@ void libaroma_textline_draw(
             (line->y + (line->lineheight >> 1) + draw_y),
             hrwidth,
             linesize,
-            hrcolor,
+            fixed_color?color_force:hrcolor,
             0xff
           );
         }

@@ -38,6 +38,7 @@
 /* command id */
 #define LIBAROMA_CMD_NONE       0x0
 #define LIBAROMA_CMD_CLICK      0x1
+#define LIBAROMA_CMD_HOLD       0x2
 
 /*
  * Window Messages Queue

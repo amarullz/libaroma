@@ -40,6 +40,11 @@ int main(int argc, char **argv){
     
   */
   
+  // libaroma_config()->runtime_monitor = 2;
+  /*pid_t pp = getppid();
+  kill(pp, 19);*/
+  
+  
   /* start libaroma process */
   libaroma_start();
   
@@ -73,7 +78,7 @@ int main(int argc, char **argv){
   
   LIBAROMA_CONTROLP button = libaroma_ctl_button(
     win, 2,
-    0, 40, LIBAROMA_SIZE_HALF, 50,
+    0, 60, LIBAROMA_SIZE_HALF, 60,
     "Test Button",
     LIBAROMA_CTL_BUTTON_FLAT,
     0
@@ -81,7 +86,7 @@ int main(int argc, char **argv){
   
   LIBAROMA_CONTROLP button2 = libaroma_ctl_button(
     win, 3,
-    LIBAROMA_POS_HALF, 40, LIBAROMA_SIZE_HALF, 50,
+    LIBAROMA_POS_HALF, 60, LIBAROMA_SIZE_HALF, 60,
     "Test Raised",
     LIBAROMA_CTL_BUTTON_RAISED,
     0
@@ -89,7 +94,7 @@ int main(int argc, char **argv){
   
   LIBAROMA_CONTROLP button3 = libaroma_ctl_button(
     win, 4,
-    0, 100, LIBAROMA_SIZE_HALF, 50,
+    0, 120, LIBAROMA_SIZE_HALF, 60,
     "Colored",
     LIBAROMA_CTL_BUTTON_COLORED,
     RGB(ffffff)
@@ -97,7 +102,7 @@ int main(int argc, char **argv){
   
   LIBAROMA_CONTROLP button4 = libaroma_ctl_button(
     win, 5,
-    LIBAROMA_POS_HALF, 100, LIBAROMA_SIZE_HALF, 50,
+    LIBAROMA_POS_HALF, 120, LIBAROMA_SIZE_HALF, 60,
     "Colored Raised",
     LIBAROMA_CTL_BUTTON_RAISED|LIBAROMA_CTL_BUTTON_COLORED,
     RGB(335599)
@@ -105,7 +110,7 @@ int main(int argc, char **argv){
   
   LIBAROMA_CONTROLP button5 = libaroma_ctl_button(
     win, 6,
-    0, 150, LIBAROMA_SIZE_HALF, 50,
+    0, 180, LIBAROMA_SIZE_HALF, 60,
     "Colored",
     LIBAROMA_CTL_BUTTON_COLORED,
     RGB(118822)
@@ -113,7 +118,7 @@ int main(int argc, char **argv){
   
   LIBAROMA_CONTROLP button6 = libaroma_ctl_button(
     win, 7,
-    LIBAROMA_POS_HALF, 150, LIBAROMA_SIZE_HALF, 50,
+    LIBAROMA_POS_HALF, 180, LIBAROMA_SIZE_HALF, 60,
     "Colored Raised",
     LIBAROMA_CTL_BUTTON_RAISED|LIBAROMA_CTL_BUTTON_COLORED,
     RGB(ffcccc)
@@ -190,6 +195,8 @@ int main(int argc, char **argv){
   
   /* end libaroma process */
   libaroma_end();
+  
+  /*kill(pp, 18);*/
   return 0;
 } /* End of main */
 
