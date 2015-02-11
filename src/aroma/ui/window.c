@@ -621,6 +621,9 @@ LIBAROMA_CONTROLP libaroma_window_setfocus(
       return NULL;
     }
     if (ctl->focus!=NULL){
+      if (win->focused==ctl){
+        return ctl;
+      }
       if (ctl->focus(ctl,1)){
         if (win->focused){
           win->focused->focus(win->focused,0);
@@ -639,10 +642,7 @@ LIBAROMA_CONTROLP libaroma_window_setfocus(
     int i;
     for (i=0;i<win->childn;i++){
       if (win->childs[i]->focus!=NULL){
-        if (win->childs[i]->focus(win->childs[i],1)){
-          win->focused = win->childs[i];
-          return win->childs[i];
-        }
+        return libaroma_window_setfocus(win,win->childs[i]);
       }
     }
   }
@@ -769,10 +769,15 @@ byte libaroma_window_anishow(
     byte animation,
     int duration){
   __CHECK_WM(0);
-  if (win!=NULL){
-    /* set initial focus */
+  if (!win){
+    return 0;
+  }
+  /*
+  {
+    // set initial focus
     libaroma_window_setfocus(win, NULL);
   }
+  */
   if ((!animation)||(duration<50)){
     return libaroma_wm_set_active_window(win);
   }

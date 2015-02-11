@@ -46,4 +46,42 @@ LIBAROMA_CONTROLP libaroma_ctl_button(
     word button_color
 );
 
+/*
+ * Function    : libaroma_ctl_button_style
+ * Return Value: byte
+ * Descriptions: set button style
+ */
+byte libaroma_ctl_button_style(
+    LIBAROMA_CONTROLP ctl,
+    byte button_style,
+    word button_color
+);
+
+/*
+ * Function    : libaroma_ctl_button_text
+ * Return Value: byte
+ * Descriptions: set button text
+ */
+byte libaroma_ctl_button_text(
+    LIBAROMA_CONTROLP ctl,
+    char * text
+);
+
+/*
+ * Function    : libaroma_ctl_button_disable
+ * Return Value: byte
+ * Descriptions: set button disable state
+ */
+byte libaroma_ctl_button_disable(
+    LIBAROMA_CONTROLP ctl,
+    byte is_disable
+);
+
+/*
+ * Function    : libaroma_ctl_button_is_disabled
+ * Return Value: byte
+ * Descriptions: check if button is disabled
+ */
+byte libaroma_ctl_button_is_disabled(LIBAROMA_CONTROLP ctl);
+
 #endif /* __libaroma_ctl_button_h__ */

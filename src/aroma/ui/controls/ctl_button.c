@@ -73,11 +73,16 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
     libaroma_canvas_free(me->push_canvas);
     me->push_canvas=NULL;
   }
+  byte is_disabled = (me->style&LIBAROMA_CTL_BUTTON_DISABLED)?1:0;
   me->rest_canvas = libaroma_canvas(ctl->w,ctl->h);
-  me->push_canvas = libaroma_canvas(ctl->w,ctl->h);
+  if (!is_disabled){
+    me->push_canvas = libaroma_canvas(ctl->w,ctl->h);
+  }
   LIBAROMA_CANVASP bg = libaroma_canvas(ctl->w,ctl->h);
   libaroma_control_erasebg(ctl,me->rest_canvas);
-  libaroma_control_erasebg(ctl,me->push_canvas);
+  if (!is_disabled){
+    libaroma_control_erasebg(ctl,me->push_canvas);
+  }
   libaroma_control_erasebg(ctl,bg);
   
   int ix = libaroma_dp(4);
@@ -124,38 +129,51 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
     );
     libaroma_canvas_free(raised_canvas);
     
-    raised_sz = libaroma_dp(3);
-    raised_canvas = libaroma_blur_ex(btnmask,
-      raised_sz,1,RGB(000000)
-    );
-    libaroma_draw_opacity(
-      me->push_canvas,raised_canvas,
-      ix-raised_sz,
-      iy-raised_sz+libaroma_dp(3),
-      1,0x40
-    );
-    libaroma_canvas_free(raised_canvas);
+    if (!is_disabled){
+      raised_sz = libaroma_dp(3);
+      raised_canvas = libaroma_blur_ex(btnmask,
+        raised_sz,1,RGB(000000)
+      );
+      libaroma_draw_opacity(
+        me->push_canvas,raised_canvas,
+        ix-raised_sz,
+        iy-raised_sz+libaroma_dp(3),
+        1,0x40
+      );
+      libaroma_canvas_free(raised_canvas);
+    }
   }
   
   if (me->style&LIBAROMA_CTL_BUTTON_COLORED) {
-    libaroma_draw_rect(btnmask,0,0,btnmask->w,btnmask->h,me->color,0xff);
+    if (is_disabled){
+      libaroma_draw_ex(btnmask,bg,0,0,ix,iy,btnmask->w,btnmask->h,0,0xff);
+      libaroma_draw_rect(btnmask,0,0,btnmask->w,btnmask->h,
+        me->isdark?0xffff:0,127);
+    }
+    else{
+      libaroma_draw_rect(btnmask,0,0,btnmask->w,btnmask->h,me->color,0xff);
+    }
     if (me->style&LIBAROMA_CTL_BUTTON_RAISED){
       libaroma_draw(me->rest_canvas, btnmask, ix, iy, 1);
     }
     else{
       rest_text_color = me->color;
     }
-    libaroma_draw_rect(btnmask,0,0,btnmask->w,btnmask->h,push_color,push_opa);
-    libaroma_draw(me->push_canvas, btnmask, ix, iy, 1);
+    if (!is_disabled){
+      libaroma_draw_rect(btnmask,0,0,btnmask->w,btnmask->h,push_color,push_opa);
+      libaroma_draw(me->push_canvas, btnmask, ix, iy, 1);
+    }
   }
   else{
     if (me->style&LIBAROMA_CTL_BUTTON_RAISED){
       libaroma_draw_ex(btnmask,bg,0,0,ix,iy,btnmask->w,btnmask->h,0,0xff);
       libaroma_draw(me->rest_canvas, btnmask, ix, iy, 1);
     }
-    libaroma_draw_ex(btnmask,bg,0,0,ix,iy,btnmask->w,btnmask->h,0,0xff);
-    libaroma_draw_rect(btnmask,0,0,btnmask->w,btnmask->h,push_color,push_opa);
-    libaroma_draw(me->push_canvas, btnmask, ix, iy, 1);
+    if (!is_disabled){
+      libaroma_draw_ex(btnmask,bg,0,0,ix,iy,btnmask->w,btnmask->h,0,0xff);
+      libaroma_draw_rect(btnmask,0,0,btnmask->w,btnmask->h,push_color,push_opa);
+      libaroma_draw(me->push_canvas, btnmask, ix, iy, 1);
+    }
   }
   
   /* draw text */
@@ -173,10 +191,20 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
   );
   int y = ctl->h/2 - libaroma_text_height(textp)/2;
   
+  if (is_disabled){
+    rest_text_color=me->isdark?0xffff:0;
+  }
   libaroma_text_draw_color(me->rest_canvas,textp,libaroma_dp(12)+ix,y,
     rest_text_color
   );
-  libaroma_text_draw(me->push_canvas,textp,libaroma_dp(12)+ix,y);
+  
+  if (!is_disabled){
+    libaroma_text_draw(me->push_canvas,textp,libaroma_dp(12)+ix,y);
+  }
+  else{
+    libaroma_draw_ex(me->rest_canvas,bg,0,0,0,0,ctl->w,ctl->h,0,
+      me->isdark?171:189);
+  }
   libaroma_text_free(textp);
   
   /* cleanup */
@@ -196,17 +224,19 @@ void _libaroma_ctl_button_draw(
   _LIBAROMA_CTL_CHECK(
     _LIBAROMA_CTL_BUTTON_SIGNATURE, _LIBAROMA_CTL_BUTTONP, 
   );
-  if (me->rest_canvas==NULL){
+  if ((me->rest_canvas==NULL)||(me->forcedraw==2)){
     _libaroma_ctl_button_internal_draw(ctl);
     if (me->rest_canvas==NULL){
       return;
     }
   }
-  
   me->forcedraw = 0;
-  libaroma_control_erasebg(ctl,c);
   
-  if ((me->touch_state>0)&&(me->release_state<1)) {
+  libaroma_control_erasebg(ctl,c);
+  if (me->style&LIBAROMA_CTL_BUTTON_DISABLED){
+    libaroma_draw(c, me->rest_canvas, 0, 0, 0);
+  }
+  else if ((me->touch_state>0)&&(me->release_state<1)) {
     float ripplestate = me->touch_state;
     float pst_state = MIN(me->touch_state*15,1);
     float cbz_state;
@@ -243,28 +273,30 @@ void _libaroma_ctl_button_draw(
 void _libaroma_ctl_button_thread(LIBAROMA_CONTROLP ctl) {
   _LIBAROMA_CTL_BUTTONP me = (_LIBAROMA_CTL_BUTTONP) ctl->internal;
   byte is_draw = me->forcedraw;
-  if (me->touched&&me->touch_start){
-    float nowstate=libaroma_control_state(me->touch_start, 1500);
-    if (me->touch_state!=nowstate){
-      is_draw = 1;
-      me->touch_state=nowstate;
+  if (!(me->style&LIBAROMA_CTL_BUTTON_DISABLED)){
+    if (me->touched&&me->touch_start){
+      float nowstate=libaroma_control_state(me->touch_start, 1500);
+      if (me->touch_state!=nowstate){
+        is_draw = 1;
+        me->touch_state=nowstate;
+      }
+      if ((me->touch_state>=0.5)&&(!me->holded)){
+        me->holded=1;
+        libaroma_window_post_command(
+          LIBAROMA_CMD_SET(LIBAROMA_CMD_HOLD, 0, ctl->id)
+        );
+      }
     }
-    if ((me->touch_state>=0.5)&&(!me->holded)){
-      me->holded=1;
-      libaroma_window_post_command(
-        LIBAROMA_CMD_SET(LIBAROMA_CMD_HOLD, 0, ctl->id)
-      );
-    }
-  }
-  if (!me->touched&&me->release_start){
-    float nowstate=libaroma_control_state(me->release_start, 500);
-    if (me->release_state!=nowstate){
-      is_draw = 1;
-      me->release_state=nowstate;
-    }
-    if (me->release_state>=1){
-      me->release_start=0;
-      me->touch_start=0;
+    if (!me->touched&&me->release_start){
+      float nowstate=libaroma_control_state(me->release_start, 500);
+      if (me->release_state!=nowstate){
+        is_draw = 1;
+        me->release_state=nowstate;
+      }
+      if (me->release_state>=1){
+        me->release_start=0;
+        me->touch_start=0;
+      }
     }
   }
   if (is_draw){
@@ -292,7 +324,9 @@ void _libaroma_ctl_button_destroy(
     libaroma_canvas_free(me->push_canvas);
     me->push_canvas=NULL;
   }
-  free(me->text);
+  if (me->text!=NULL){
+    free(me->text);
+  }
   free(me);
 } /* End of _libaroma_ctl_button_destroy */
 
@@ -312,6 +346,10 @@ dword _libaroma_ctl_button_msg(
   switch(msg->msg){
     case LIBAROMA_MSG_TOUCH:
       {
+        if (me->style&LIBAROMA_CTL_BUTTON_DISABLED){
+          /* no thing for disabled button */
+          return 0;
+        }
         int x = msg->x;
         int y = msg->y;
         libaroma_window_calculate_pos(NULL,ctl,&x,&y);
@@ -408,5 +446,86 @@ LIBAROMA_CONTROLP libaroma_ctl_button(
   ctl->internal = (voidp) me;
   return libaroma_window_attach(win,ctl);
 } /* End of libaroma_ctl_button */
+
+/*
+ * Function    : libaroma_ctl_button_style
+ * Return Value: byte
+ * Descriptions: set button style
+ */
+byte libaroma_ctl_button_style(
+    LIBAROMA_CONTROLP ctl,
+    byte button_style,
+    word button_color
+){
+  /* internal check */
+  _LIBAROMA_CTL_CHECK(
+    _LIBAROMA_CTL_BUTTON_SIGNATURE, _LIBAROMA_CTL_BUTTONP, 0
+  );
+  me->style = button_style;
+  me->color = button_color;
+  me->forcedraw=2;
+  return 1;
+} /* End of libaroma_ctl_button_style */
+
+/*
+ * Function    : libaroma_ctl_button_text
+ * Return Value: byte
+ * Descriptions: set button text
+ */
+byte libaroma_ctl_button_text(
+    LIBAROMA_CONTROLP ctl,
+    char * text
+){
+  /* internal check */
+  _LIBAROMA_CTL_CHECK(
+    _LIBAROMA_CTL_BUTTON_SIGNATURE, _LIBAROMA_CTL_BUTTONP, 0
+  );
+  if (me->text!=NULL){
+    free(me->text);
+  }
+  me->text = strdup(text);
+  me->forcedraw=2;
+  return 1;
+} /* End of libaroma_ctl_button_text */
+
+/*
+ * Function    : libaroma_ctl_button_disable
+ * Return Value: byte
+ * Descriptions: set button disable state
+ */
+byte libaroma_ctl_button_disable(
+    LIBAROMA_CONTROLP ctl,
+    byte is_disable
+){
+  /* internal check */
+  _LIBAROMA_CTL_CHECK(
+    _LIBAROMA_CTL_BUTTON_SIGNATURE, _LIBAROMA_CTL_BUTTONP, 0
+  );
+  if (is_disable){
+    me->style |= LIBAROMA_CTL_BUTTON_DISABLED;
+  }
+  else{
+    me->style &= ~LIBAROMA_CTL_BUTTON_DISABLED;
+  }
+  me->forcedraw=2;
+  return 1;
+} /* End of libaroma_ctl_button_disable */
+
+/*
+ * Function    : libaroma_ctl_button_is_disabled
+ * Return Value: byte
+ * Descriptions: check if button is disabled
+ */
+byte libaroma_ctl_button_is_disabled(LIBAROMA_CONTROLP ctl){
+  /* internal check */
+  _LIBAROMA_CTL_CHECK(
+    _LIBAROMA_CTL_BUTTON_SIGNATURE, _LIBAROMA_CTL_BUTTONP, 0
+  );
+  if (me->style&LIBAROMA_CTL_BUTTON_DISABLED){
+    return 1;
+  }
+  return 0;
+} /* End of libaroma_ctl_button_is_disabled */
+
 
 #endif /* __libaroma_ctl_button_c__ */

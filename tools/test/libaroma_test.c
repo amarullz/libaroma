@@ -69,59 +69,67 @@ int main(int argc, char **argv){
   
   /* progress bar */
   LIBAROMA_CONTROLP progress = libaroma_ctl_progress(
-    win, 1,
+    win, 50,
     0, 20, LIBAROMA_SIZE_FULL, 10,
     LIBAROMA_CTL_PROGRESS_QUERY,
     100,
     0
   );
   
-  LIBAROMA_CONTROLP button = libaroma_ctl_button(
-    win, 2,
+  LIBAROMA_CONTROLP btn1 = libaroma_ctl_button(
+    win, 1,
     0, 60, LIBAROMA_SIZE_HALF, 60,
-    "Test Button",
+    "Toggle Disable",
     LIBAROMA_CTL_BUTTON_FLAT,
     0
   );
   
-  LIBAROMA_CONTROLP button2 = libaroma_ctl_button(
-    win, 3,
+  LIBAROMA_CONTROLP btn2 = libaroma_ctl_button(
+    win, 2,
     LIBAROMA_POS_HALF, 60, LIBAROMA_SIZE_HALF, 60,
-    "Test Raised",
+    "Button 2",
     LIBAROMA_CTL_BUTTON_RAISED,
     0
   );
   
-  LIBAROMA_CONTROLP button3 = libaroma_ctl_button(
-    win, 4,
+  LIBAROMA_CONTROLP btn3 = libaroma_ctl_button(
+    win, 3,
     0, 120, LIBAROMA_SIZE_HALF, 60,
-    "Colored",
+    "Change Style",
     LIBAROMA_CTL_BUTTON_COLORED,
     RGB(ffffff)
   );
   
-  LIBAROMA_CONTROLP button4 = libaroma_ctl_button(
-    win, 5,
+  LIBAROMA_CONTROLP btn4 = libaroma_ctl_button(
+    win, 4,
     LIBAROMA_POS_HALF, 120, LIBAROMA_SIZE_HALF, 60,
-    "Colored Raised",
+    "Button 4",
     LIBAROMA_CTL_BUTTON_RAISED|LIBAROMA_CTL_BUTTON_COLORED,
     RGB(335599)
   );
   
-  LIBAROMA_CONTROLP button5 = libaroma_ctl_button(
-    win, 6,
+  LIBAROMA_CONTROLP btn5 = libaroma_ctl_button(
+    win, 5,
     0, 180, LIBAROMA_SIZE_HALF, 60,
-    "Colored",
+    "Tap & Hold",
     LIBAROMA_CTL_BUTTON_COLORED,
     RGB(118822)
   );
   
-  LIBAROMA_CONTROLP button6 = libaroma_ctl_button(
-    win, 7,
+  LIBAROMA_CONTROLP btn6 = libaroma_ctl_button(
+    win, 6,
     LIBAROMA_POS_HALF, 180, LIBAROMA_SIZE_HALF, 60,
-    "Colored Raised",
+    "Change Text",
     LIBAROMA_CTL_BUTTON_RAISED|LIBAROMA_CTL_BUTTON_COLORED,
     RGB(ffcccc)
+  );
+  
+  LIBAROMA_CONTROLP btn_exit = libaroma_ctl_button(
+    win, 7,
+    0, 240, LIBAROMA_SIZE_FULL, 60,
+    "Exit",
+    LIBAROMA_CTL_BUTTON_RAISED|LIBAROMA_CTL_BUTTON_COLORED,
+    RGB(F44336)
   );
   
   /* show window */
@@ -130,7 +138,7 @@ int main(int argc, char **argv){
     libaroma_window_anishow(win, LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_RIGHT, 1000);
   
   */
-  libaroma_window_anishow(win, LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_LEFT, 1000);
+  libaroma_window_anishow(win, LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_LEFT, 500);
   
   
   
@@ -173,14 +181,94 @@ int main(int argc, char **argv){
   libaroma_msg_stop();
   */
   
+  byte btn3state=0;
+  byte progress_type =2;
+  int  progress_value=0;
+  
   byte onpool=1;
   do{
     LIBAROMA_MSG msg;
     dword command=libaroma_window_pool(win,&msg);
+    byte cmd  = LIBAROMA_CMD(command);
+    word id   = LIBAROMA_CMD_ID(command);
+    byte param= LIBAROMA_CMD_PARAM(command);
+    
     if (msg.msg==LIBAROMA_MSG_KEY_SELECT){
+      /* quit */
       onpool = 0;
     }
-    else if (LIBAROMA_CMD(command)){
+    else if (cmd){
+      
+      if (cmd==LIBAROMA_CMD_CLICK){
+        if (id==btn_exit->id){
+          printf("Exit Button Pressed...\n");
+          onpool = 0;
+        }
+        else if (id==6){
+          libaroma_ctl_button_text(btn6,"Click");
+        }
+        else if (id==1){
+          if (libaroma_ctl_button_is_disabled(btn2)){
+            libaroma_ctl_button_disable(btn2,0);
+            libaroma_ctl_button_disable(btn4,0);
+          }
+          else{
+            libaroma_ctl_button_disable(btn2,1);
+            libaroma_ctl_button_disable(btn4,1);
+          }
+        }
+        else if (id==3){
+          btn3state++;
+          if (btn3state>3){
+            btn3state=0;
+          }
+          if (btn3state==0){
+            libaroma_ctl_button_style(
+              btn3,LIBAROMA_CTL_BUTTON_COLORED,RGB(ffffff)
+            );
+          }
+          else if (btn3state==1){
+            libaroma_ctl_button_style(
+              btn3,
+              LIBAROMA_CTL_BUTTON_COLORED|LIBAROMA_CTL_BUTTON_RAISED,
+              RGB(9C27B0)
+            );
+          }
+          else if (btn3state==2){
+            libaroma_ctl_button_style(
+              btn3,
+              LIBAROMA_CTL_BUTTON_COLORED,
+              RGB(FF5722)
+            );
+          }
+          else if (btn3state==3){
+            libaroma_ctl_button_style(
+              btn3,
+              LIBAROMA_CTL_BUTTON_RAISED,
+              RGB(FF5722)
+            );
+          }
+        }
+        else if (id==5){
+          progress_value+=10;
+          if (progress_value>100){
+            progress_value=0;
+          }
+          printf("---> Change Progress value: %i...\n",progress_value);
+          libaroma_ctl_progress_value(progress,progress_value);
+        }
+      }
+      else if (cmd==LIBAROMA_CMD_HOLD){
+        if (id==5){
+          progress_type++;
+          if (progress_type>2){
+            progress_type=0;
+          }
+          printf("---> Change Progress Type: %i\n",progress_type);
+          libaroma_ctl_progress_type(progress,progress_type);
+        }
+      }
+      
       printf("Window Command = (CMD: %x, ID: %x, Param: %x)\n",
         LIBAROMA_CMD(command),
         LIBAROMA_CMD_ID(command),
