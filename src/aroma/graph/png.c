@@ -313,12 +313,12 @@ byte libaroma_png9p(
     for (i = 1, z = p->w - 1; i < z; i++) {
       alphaData++;
       if (*alphaData == 0xff) {
-        if (!v->pad.left) {
-          v->pad.left = i;
+        if (!v->pad.x) {
+          v->pad.x = i;
         }
       }
-      else if (v->pad.left) {
-        v->pad.right = p->w - i;
+      else if (v->pad.x) {
+        v->pad.w = p->w - i;
         break;
       }
     }
@@ -328,21 +328,23 @@ byte libaroma_png9p(
     for (i = 1, z = p->h - 1; i < z; i++) {
       alphaData += p->l;
       if (*alphaData == 0xff) {
-        if (!v->pad.top) {
-          v->pad.top = i;
+        if (!v->pad.y) {
+          v->pad.y = i;
         }
       }
-      else if (v->pad.top) {
-        v->pad.bottom = p->h - i;
+      else if (v->pad.y) {
+        v->pad.h = p->h - i;
         break;
       }
     }
     
     /* Substract 1 */
-    v->pad.left--;
-    v->pad.right--;
-    v->pad.top--;
-    v->pad.bottom--;
+    v->pad.x--;
+    v->pad.y--;
+    v->pad.w--;
+    v->pad.h--;
+    v->pad.w-=v->pad.x;
+    v->pad.h-=v->pad.y;
   }
   
   return 1;
@@ -401,10 +403,10 @@ byte libaroma_png9p_draw(
   int drawBH  = MIN((BH * dp_scale) >> 8, maxH);
   
   if (padding != NULL) {
-    padding->left   = (v.pad.left * dp_scale) >> 8;
-    padding->right  = (v.pad.right * dp_scale) >> 8;
-    padding->bottom = (v.pad.bottom * dp_scale) >> 8;
-    padding->top    = (v.pad.top * dp_scale) >> 8;
+    padding->x  = (v.pad.x * dp_scale) >> 8;
+    padding->y  = (v.pad.y * dp_scale) >> 8;
+    padding->w  = (v.pad.w * dp_scale) >> 8;
+    padding->h  = (v.pad.h * dp_scale) >> 8;
   }
   
   /**

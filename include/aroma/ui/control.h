@@ -75,6 +75,9 @@ struct _LIBAROMA_CONTROL{
   int minw;
   int minh;
   
+  /* high prio thread */
+  byte high_prio_thread;
+  
   /* callbacks */
   LIBAROMA_CTLCB_MESSAGE message;
   LIBAROMA_CTLCB_DRAW draw;

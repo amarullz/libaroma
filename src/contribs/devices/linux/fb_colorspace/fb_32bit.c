@@ -92,7 +92,7 @@ byte LINUXFBDR_sync_32bit(
   }
   /* get internal data */
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
-  mi->syncn++;
+
   /* defined area only */
   if ((w > 0) && (h > 0)) {
     int copy_stride = me->w - w;
@@ -132,9 +132,7 @@ byte LINUXFBDR_sync_32bit(
   }
   
   /* refresh framebuffer */
-  if (--mi->syncn==0){
-    LINUXFBDR_refresh(me);
-  }
+  LINUXFBDR_refresh(me);
   return 1;
 }
 

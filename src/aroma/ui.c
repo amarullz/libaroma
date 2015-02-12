@@ -43,4 +43,7 @@
 #include "ui/controls/ctl_progress.c"
 #include "ui/controls/ctl_button.c"
 
+/* scroll control set */
+#include "ui/controls/ctl_scroll.c"
+
 #endif /* __libaroma_ui_c__ */

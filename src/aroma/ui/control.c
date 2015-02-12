@@ -68,6 +68,7 @@ LIBAROMA_CONTROLP libaroma_control_new(
   ret->thread = thread;
   ret->window = NULL;
   ret->internal = NULL;
+  ret->high_prio_thread = 0;
   return ret;
 } /* End of libaroma_control_new */
 

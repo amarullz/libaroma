@@ -35,10 +35,10 @@
 typedef struct _LIBAROMA_PNG9_PAD LIBAROMA_PNG9_PAD;
 typedef struct _LIBAROMA_PNG9_PAD * LIBAROMA_PNG9_PADP;
 struct _LIBAROMA_PNG9_PAD{
-  int top;
-  int left;
-  int bottom;
-  int right;
+  int x;
+  int y;
+  int w;
+  int h;
 };
 
 /*

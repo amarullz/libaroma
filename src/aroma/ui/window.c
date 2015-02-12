@@ -658,23 +658,51 @@ static void * _libaroma_window_thread_manager(void * cookie) {
   LIBAROMA_WINDOWP win = (LIBAROMA_WINDOWP) cookie;
   ALOGV("begin window thread manager...");
   int i;
+  byte have_high_prio_thread = 0;
+  byte on_high_prio_thread = 0;
+  int looped_n=0;
+  byte use_wait;
   while(win->active){
     /* run child thread process */
+    use_wait=1;
     long waitf=libaroma_tick();
     if (win->active==1){
+      if (looped_n!=win->childn){
+        have_high_prio_thread=0;
+        looped_n=win->childn;
+        for (i=0;i<win->childn;i++){
+          if (win->childs[i]->thread!=NULL){
+            if (win->childs[i]->high_prio_thread){
+              have_high_prio_thread = 1;
+              break;
+            }
+          }
+        }
+      }
 #ifdef LIBAROMA_CONFIG_OPENMP
   #pragma omp parallel for
 #endif
       for (i=0;i<win->childn;i++){
         if (win->childs[i]->thread!=NULL){
-          win->childs[i]->thread(win->childs[i]);
+          if (have_high_prio_thread&&on_high_prio_thread){
+            if (win->childs[i]->high_prio_thread){
+              win->childs[i]->thread(win->childs[i]);
+              use_wait=0;
+            }
+          }
+          else{
+            win->childs[i]->thread(win->childs[i]);
+          }
         }
       }
+      on_high_prio_thread = !on_high_prio_thread;
     }
     /* 60hz sleep */
-    if ((waitf=(libaroma_tick()-waitf))<16){
-      if (waitf<0) waitf=0;
-      libaroma_sleep(16-waitf);
+    if (use_wait){
+      if ((waitf=(libaroma_tick()-waitf))<16){
+        if (waitf<0) waitf=0;
+        libaroma_sleep(16-waitf);
+      }
     }
   }
   ALOGV("end window thread manager...");
@@ -974,6 +1002,11 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
             NULL,
             _libaroma_window_thread_manager,
             (voidp) win);
+          
+          struct sched_param params;
+          params.sched_priority = sched_get_priority_max(SCHED_FIFO);
+          pthread_setschedparam(win->thread_manager, SCHED_FIFO, &params);
+          
         }
       }
       break;

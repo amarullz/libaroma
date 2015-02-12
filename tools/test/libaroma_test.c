@@ -71,7 +71,7 @@ int main(int argc, char **argv){
   LIBAROMA_CONTROLP progress = libaroma_ctl_progress(
     win, 50,
     0, 20, LIBAROMA_SIZE_FULL, 10,
-    LIBAROMA_CTL_PROGRESS_QUERY,
+    LIBAROMA_CTL_PROGRESS_DETERMINATE,
     100,
     0
   );
@@ -132,6 +132,11 @@ int main(int argc, char **argv){
     RGB(F44336)
   );
   
+  LIBAROMA_CONTROLP scroll_test = libaroma_ctl_testscroll(
+    win, 90,
+    0, 300, LIBAROMA_SIZE_FULL, LIBAROMA_SIZE_FULL
+  );
+  
   /* show window */
   //libaroma_window_show(win);
   /*
@@ -182,7 +187,7 @@ int main(int argc, char **argv){
   */
   
   byte btn3state=0;
-  byte progress_type =2;
+  byte progress_type =LIBAROMA_CTL_PROGRESS_DETERMINATE;
   int  progress_value=0;
   
   byte onpool=1;
@@ -205,7 +210,7 @@ int main(int argc, char **argv){
           onpool = 0;
         }
         else if (id==6){
-          libaroma_ctl_button_text(btn6,"Click");
+          libaroma_ctl_button_text(btn6,"<img=file:///sdcard/plus.png;24dp;24dp>Click");
         }
         else if (id==1){
           if (libaroma_ctl_button_is_disabled(btn2)){

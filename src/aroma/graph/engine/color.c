@@ -62,13 +62,20 @@ byte libaroma_color_b(word rgb) {
   return ((byte) (((((word)(rgb)) & 0x001F)) << 3));
 }
 
+/* calculate color luminance */
+byte libaroma_color_luminance(word rgb){
+  return (byte) MIN(0xff,MAX(0,
+    ((
+      libaroma_color_r(rgb)*306+
+      libaroma_color_g(rgb)*602+
+      libaroma_color_b(rgb)*116
+    )>>10)
+  ));
+}
+
 /* is dark color */
 byte libaroma_color_isdark(word rgb){
-  int cl =
-    libaroma_color_r(rgb)*0.5+
-    libaroma_color_g(rgb)*0.2+
-    libaroma_color_b(rgb)*0.3;
-  if (cl>128){
+  if (libaroma_color_luminance(rgb)>128){
     return 0;
   }
   return 1;
