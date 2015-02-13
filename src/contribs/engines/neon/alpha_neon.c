@@ -42,7 +42,9 @@ void libaroma_alpha_px_line(int _Y, int n, wordp dst,
     return;
   }
   
-  uint16x8_t falph = vdupq_n_u16(0xff);   /* Reverse Value */
+  uint16x8_t xalph = vdupq_n_u16(0xFF);   /* Max Value */
+  uint16x8_t zalph = vdupq_n_u16(0);      /* Zero Value */
+  uint16x8_t falph = vdupq_n_u16(0x100);  /* Reverse Value */
   uint16x8_t msk_r = vdupq_n_u16(0xF800); /* Red Mask */
   uint16x8_t msk_g = vdupq_n_u16(0x07E0); /* Green Mask */
   uint16x8_t msk_b = vdupq_n_u16(0x001F); /* Blue Mask */
@@ -59,11 +61,12 @@ void libaroma_alpha_px_line(int _Y, int n, wordp dst,
     /* prepare opacity and reversed opacity value */
     uint8x8_t   od = vld1_u8(alpha + 8 * i);
     uint16x8_t  op = vmovl_u8(od);
-
     uint16x8_t  ro = vsubq_u16(falph, op);
+    
     /* get 8 pixels data from top & bottom layer */
     uint16x8_t pxb = vld1q_u16(bottom + 8 * i); /* bottom layer pixels */
     uint16x8_t pxt = vld1q_u16(top + 8 * i); /* top layer pixels */
+    
     /* get subpixels of bottom layer */
     uint8x8_t rb = vshrn_n_u16(vandq_u16(pxb, msk_r), 8);
     uint8x8_t gb = vshrn_n_u16(vandq_u16(pxb, msk_g), 3);
@@ -94,7 +97,15 @@ void libaroma_alpha_px_line(int _Y, int n, wordp dst,
     r = vqshlq_n_u16(vshrq_n_u16(r, 3), 11);
     g = vqshlq_n_u16(vshrq_n_u16(g, 2), 5);
     b = vshrq_n_u16(b, 3);
+    
     uint16x8_t o = vorrq_u16(vorrq_u16(r, g), b);
+    
+    /* comparison opaque/transparent */
+    uint16x8_t  is_opaque = vceqq_u16 (op, xalph);
+    uint16x8_t  is_transp = vceqq_u16 (op, zalph);
+    o = vbslq_u16(is_opaque, pxt, o);
+    o = vbslq_u16(is_transp, pxb, o);
+    
     vst1q_u16(dst + (8 * i), o);
     
     /* leftover */
@@ -123,7 +134,9 @@ void libaroma_alpha_px(int n, wordp dst, wordp bottom,
     return;
   }
   
-  uint16x8_t falph = vdupq_n_u16(0xff);   /* Reverse Value */
+  uint16x8_t xalph = vdupq_n_u16(0xFF);   /* Max Value */
+  uint16x8_t zalph = vdupq_n_u16(0);      /* Zero Value */
+  uint16x8_t falph = vdupq_n_u16(0x100);  /* Reverse Value */
   uint16x8_t msk_r = vdupq_n_u16(0xF800); /* Red Mask */
   uint16x8_t msk_g = vdupq_n_u16(0x07E0); /* Green Mask */
   uint16x8_t msk_b = vdupq_n_u16(0x001F); /* Blue Mask */
@@ -134,7 +147,6 @@ void libaroma_alpha_px(int n, wordp dst, wordp bottom,
     /* Prepare Opacity and Reversed Opacity Value */
     uint8x8_t   od = vld1_u8(alpha + 8 * i);
     uint16x8_t  op = vmovl_u8(od);
-    // op = vaddq_u16(op, vshrq_n_u16(op, 7));
     uint16x8_t  ro = vsubq_u16(falph, op);
     /* Get 8 pixels data from Top & Bottom layer */
     uint16x8_t pxb = vld1q_u16(bottom + 8 * i); /* Bottom Layer Pixels */
@@ -164,9 +176,15 @@ void libaroma_alpha_px(int n, wordp dst, wordp bottom,
     /* Set Result Position in 16bit */
     r = vshlq_n_u16(r, 11);
     g = vshlq_n_u16(g, 5);
-    b = vshrq_n_u16(b, 3);
     /* Final */
     uint16x8_t o = vorrq_u16(vorrq_u16(r, g), b);
+    
+    /* comparison opaque/transparent */
+    uint16x8_t  is_opaque = vceqq_u16 (op, xalph);
+    uint16x8_t  is_transp = vceqq_u16 (op, zalph);
+    o = vbslq_u16(is_opaque, pxt, o);
+    o = vbslq_u16(is_transp, pxb, o);
+    
     vst1q_u16(dst + (8 * i), o);
     
     /* leftover */
@@ -174,7 +192,6 @@ void libaroma_alpha_px(int n, wordp dst, wordp bottom,
       for (i = n - left; i < n; i++) {
         dst[i] = libaroma_alpha(bottom[i], top[i], alpha[i]);
       }
-      
       return;
     }
   }
@@ -184,6 +201,19 @@ void libaroma_alpha_px(int n, wordp dst, wordp bottom,
 void libaroma_alpha_const_line(int _Y, int n, wordp dst,
     wordp bottom, wordp top, byte alpha) {
   int i;
+  
+  if (alpha==0xff){
+    if (dst!=top){
+      memcpy(dst,top,n*2);
+    }
+    return;
+  }
+  else if (alpha==0){
+    if (dst!=bottom){
+      memcpy(dst,bottom,n*2);
+    }
+    return;
+  }
   
   /* use non simd */
   if (n < 8) {
@@ -195,28 +225,30 @@ void libaroma_alpha_const_line(int _Y, int n, wordp dst,
     return;
   }
   
+  uint16x8_t falph = vdupq_n_u16(0x100);  /* Reverse Value */
   uint16x8_t msk_r = vdupq_n_u16(0xF800); /* Red Mask */
   uint16x8_t msk_g = vdupq_n_u16(0x07E0); /* Green Mask */
   uint16x8_t msk_b = vdupq_n_u16(0x001F); /* Blue Mask */
-  /* Dithering Data */
+  /* dithering data */
   uint8x8_t table_r, table_g, table_b;
   _libaroma_neon_dither_table(_Y, &table_r, &table_g, &table_b);
   uint16x8_t table_r16 = vmovl_u8(table_r);
   uint16x8_t table_g16 = vmovl_u8(table_g);
   uint16x8_t table_b16 = vmovl_u8(table_b);
   uint16x8_t max_255 = vmovq_n_u16(255);
-  /* Prepare Opacity and Reversed Opacity Value */
-  word od        = alpha;
-  uint16x8_t  op = vdupq_n_u16(od);
-  uint16x8_t  ro = vdupq_n_u16(0xff - od);
-  /* Neon Loop */
-  int nn = n / 8, left = n % 8;
   
+  /* prepare opacity and reversed opacity value */
+  uint16x8_t  op = vdupq_n_u16(alpha);
+  uint16x8_t  ro = vsubq_u16(falph, op);
+  
+  /* neon loop */
+  int nn = n / 8, left = n % 8;
   for (i = 0; i < nn; i++) {
-    /* Get 8 pixels data from Top & Bottom layer */
-    uint16x8_t pxb = vld1q_u16(bottom + 8 * i); /* Bottom Layer Pixels */
-    uint16x8_t pxt = vld1q_u16(top + 8 * i); /* Top Layer Pixels */
-    /* Get Subpixels of Bottom Layer */
+    /* get 8 pixels data from top & bottom layer */
+    uint16x8_t pxb = vld1q_u16(bottom + 8 * i); /* bottom layer pixels */
+    uint16x8_t pxt = vld1q_u16(top + 8 * i); /* top layer pixels */
+    
+    /* get subpixels of bottom layer */
     uint8x8_t rb = vshrn_n_u16(vandq_u16(pxb, msk_r), 8);
     uint8x8_t gb = vshrn_n_u16(vandq_u16(pxb, msk_g), 3);
     uint8x8_t bb = vmovn_u16(vshlq_n_u16(vandq_u16(pxb, msk_b), 3));
@@ -246,9 +278,10 @@ void libaroma_alpha_const_line(int _Y, int n, wordp dst,
     r = vqshlq_n_u16(vshrq_n_u16(r, 3), 11);
     g = vqshlq_n_u16(vshrq_n_u16(g, 2), 5);
     b = vshrq_n_u16(b, 3);
-    uint16x8_t o = vorrq_u16(vorrq_u16(r, g), b);
-    vst1q_u16(dst + (8 * i), o);
     
+    uint16x8_t o = vorrq_u16(vorrq_u16(r, g), b);
+    
+    vst1q_u16(dst + (8 * i), o);
     
     /* leftover */
     if ((i + 1 == nn) && (left > 0)) {
@@ -256,7 +289,6 @@ void libaroma_alpha_const_line(int _Y, int n, wordp dst,
         dst[i] = libaroma_dither(
           i, _Y, libaroma_alpha32(bottom[i], top[i], alpha));
       }
-      
       return;
     }
   }
@@ -267,8 +299,21 @@ void libaroma_alpha_const(int n, wordp dst,
     wordp bottom, wordp top, byte alpha) {
   int i;
   
+  if (alpha==0xff){
+    if (dst!=top){
+      memcpy(dst,top,n*2);
+    }
+    return;
+  }
+  else if (alpha==0){
+    if (dst!=bottom){
+      memcpy(dst,bottom,n*2);
+    }
+    return;
+  }
+  
   /* use non simd */
-  if (n < 8) {
+  if (n > 8) {
     for (i = 0; i < n; i++) {
       dst[i] = libaroma_alpha(bottom[i], top[i], alpha);
     }
@@ -276,16 +321,17 @@ void libaroma_alpha_const(int n, wordp dst,
     return;
   }
   
+  uint16x8_t falph = vdupq_n_u16(0x100);  /* Reverse Value */
   uint16x8_t msk_r = vdupq_n_u16(0xF800); /* Red Mask */
   uint16x8_t msk_g = vdupq_n_u16(0x07E0); /* Green Mask */
   uint16x8_t msk_b = vdupq_n_u16(0x001F); /* Blue Mask */
-  /* Prepare Opacity and Reversed Opacity Value */
-  word od        = alpha;
-  uint16x8_t  op = vdupq_n_u16(od);
-  uint16x8_t  ro = vdupq_n_u16(0xff - od);
+  
+  /* prepare opacity and reversed opacity value */
+  uint16x8_t  op = vdupq_n_u16(alpha);
+  uint16x8_t  ro = vsubq_u16(falph, op);
+  
   /* Neon Loop */
   int nn = n / 8, left = n % 8;
-  
   for (i = 0; i < nn; i++) {
     /* Get 8 pixels data from Top & Bottom layer */
     uint16x8_t pxb = vld1q_u16(bottom + 8 * i); /* Bottom Layer Pixels */
@@ -317,6 +363,7 @@ void libaroma_alpha_const(int n, wordp dst,
     g = vshlq_n_u16(g, 5);
     /* Final */
     uint16x8_t o = vorrq_u16(vorrq_u16(r, g), b);
+    
     vst1q_u16(dst + (8 * i), o);
     
     /* leftover */
@@ -324,7 +371,6 @@ void libaroma_alpha_const(int n, wordp dst,
       for (i = n - left; i < n; i++) {
         dst[i] = libaroma_alpha(bottom[i], top[i], alpha);
       }
-      
       return;
     }
   }
@@ -333,6 +379,16 @@ void libaroma_alpha_const(int n, wordp dst,
 /* NEON SIMD Alphablending With Black */
 void libaroma_alpha_black(int n, wordp dst, wordp top, byte alpha) {
   int i;
+  if (alpha==0xff){
+    if (dst!=top){
+      memcpy(dst,top,n*2);
+    }
+    return;
+  }
+  else if (alpha==0){
+    memset(dst,0,n*2);
+    return;
+  }
   
   /* use non simd */
   if (n < 8) {
@@ -346,29 +402,36 @@ void libaroma_alpha_black(int n, wordp dst, wordp top, byte alpha) {
   uint16x8_t msk_r = vdupq_n_u16(0xF800); /* Red Mask */
   uint16x8_t msk_g = vdupq_n_u16(0x07E0); /* Green Mask */
   uint16x8_t msk_b = vdupq_n_u16(0x001F); /* Blue Mask */
-  /* Prepare Opacity and Reversed Opacity Value */
-  word od        = alpha;
-  uint16x8_t  op = vdupq_n_u16(od);
+  
+  /* prepare opacity and reversed opacity value */
+  uint16x8_t  op = vdupq_n_u16(alpha);
+    
   /* Neon Loop */
   int nn = n / 8, left = n % 8;
-  
   for (i = 0; i < nn; i++) {
-    /* Get 8 pixels data from Top layer */
+    /* Get 8 pixels data from Top & Bottom layer */
     uint16x8_t pxt = vld1q_u16(top + 8 * i); /* Top Layer Pixels */
+
     /* Get Subpixels of Top Layer */
     uint8x8_t rt = vshrn_n_u16(vandq_u16(pxt, msk_r), 8);
     uint8x8_t gt = vshrn_n_u16(vandq_u16(pxt, msk_g), 3);
     uint8x8_t bt = vmovn_u16(vshlq_n_u16(vandq_u16(pxt, msk_b), 3));
 
-    /* Top Blend Only */
-    uint16x8_t r = vshrq_n_u16(vmulq_u16(vmovl_u8(rt), op), 11);
-    uint16x8_t g = vshrq_n_u16(vmulq_u16(vmovl_u8(gt), op), 10);
-    uint16x8_t b = vshrq_n_u16(vmulq_u16(vmovl_u8(bt), op), 11);
+    /* Top Blend */
+    uint16x8_t rtl = vmulq_u16(vmovl_u8(rt), op);
+    uint16x8_t gtl = vmulq_u16(vmovl_u8(gt), op);
+    uint16x8_t btl = vmulq_u16(vmovl_u8(bt), op);
+    /* Blend Result */
+    uint16x8_t r  = vshrq_n_u16(rtl, 11);
+    uint16x8_t g  = vshrq_n_u16(gtl, 10);
+    uint16x8_t b  = vshrq_n_u16(btl, 11);
+    
     /* Set Result Position in 16bit */
     r = vshlq_n_u16(r, 11);
     g = vshlq_n_u16(g, 5);
     /* Final */
     uint16x8_t o = vorrq_u16(vorrq_u16(r, g), b);
+    
     vst1q_u16(dst + (8 * i), o);
     
     /* leftover */
@@ -376,7 +439,6 @@ void libaroma_alpha_black(int n, wordp dst, wordp top, byte alpha) {
       for (i = n - left; i < n; i++) {
         dst[i] = libaroma_alphab(top[i], alpha);
       }
-      
       return;
     }
   }
@@ -385,6 +447,17 @@ void libaroma_alpha_black(int n, wordp dst, wordp top, byte alpha) {
 /* NEON SIMD Alphablending With Static Alpha & Color */
 void libaroma_alpha_rgba_fill(int n, wordp dst, wordp bottom,
     word top, byte alpha) {
+  
+  if (alpha==0xff){
+    libaroma_color_set(dst,top,n);
+    return;
+  }
+  else if (alpha==0){
+    if (dst!=bottom){
+      memcpy(dst,bottom,n*2);
+    }
+    return;
+  }
   int i;
   
   /* use non simd */
@@ -395,28 +468,22 @@ void libaroma_alpha_rgba_fill(int n, wordp dst, wordp bottom,
     
     return;
   }
-  
+  uint16x8_t falph = vdupq_n_u16(0x100);  /* Reverse Value */
   uint16x8_t msk_r = vdupq_n_u16(0xF800); /* Red Mask */
   uint16x8_t msk_g = vdupq_n_u16(0x07E0); /* Green Mask */
   uint16x8_t msk_b = vdupq_n_u16(0x001F); /* Blue Mask */
-  /* Prepare Opacity and Reversed Opacity Value */
-  word od        = alpha;
-  uint16x8_t  op = vdupq_n_u16(od);
-  uint16x8_t  ro = vdupq_n_u16(0xff - od);
-  /* Same Value data from Top layer */
-  uint16x8_t pxt = vdupq_n_u16(top);
-  /* Get Subpixels of Top Layer */
-  uint8x8_t rt = vshrn_n_u16(vandq_u16(pxt, msk_r), 8);
-  uint8x8_t gt = vshrn_n_u16(vandq_u16(pxt, msk_g), 3);
-  uint8x8_t bt = vmovn_u16(vshlq_n_u16(vandq_u16(pxt, msk_b), 3));
-
-  /* Top Blend */
-  uint16x8_t rtl = vmulq_u16(vmovl_u8(rt), op);
-  uint16x8_t gtl = vmulq_u16(vmovl_u8(gt), op);
-  uint16x8_t btl = vmulq_u16(vmovl_u8(bt), op);
+  
+  /* prepare opacity and reversed opacity value */
+  uint16x8_t  op = vdupq_n_u16(alpha);
+  uint16x8_t  ro = vsubq_u16(falph, op);
+  
+  /* Top Layer Pixels */
+  uint16x8_t rtl = vdupq_n_u16(libaroma_color_r(top)*alpha);
+  uint16x8_t gtl = vdupq_n_u16(libaroma_color_g(top)*alpha);
+  uint16x8_t btl = vdupq_n_u16(libaroma_color_b(top)*alpha);
+  
   /* Neon Loop */
   int nn = n / 8, left = n % 8;
-  
   for (i = 0; i < nn; i++) {
     /* Get 8 pixels data from Top & Bottom layer */
     uint16x8_t pxb = vld1q_u16(bottom + 8 * i); /* Bottom Layer Pixels */
@@ -429,15 +496,18 @@ void libaroma_alpha_rgba_fill(int n, wordp dst, wordp bottom,
     uint16x8_t rbl = vmulq_u16(vmovl_u8(rb), ro);
     uint16x8_t gbl = vmulq_u16(vmovl_u8(gb), ro);
     uint16x8_t bbl = vmulq_u16(vmovl_u8(bb), ro);
+    
     /* Blend Result */
     uint16x8_t r  = vshrq_n_u16(vaddq_u16(rbl, rtl), 11);
     uint16x8_t g  = vshrq_n_u16(vaddq_u16(gbl, gtl), 10);
     uint16x8_t b  = vshrq_n_u16(vaddq_u16(bbl, btl), 11);
+    
     /* Set Result Position in 16bit */
     r = vshlq_n_u16(r, 11);
     g = vshlq_n_u16(g, 5);
     /* Final */
     uint16x8_t o = vorrq_u16(vorrq_u16(r, g), b);
+    
     vst1q_u16(dst + (8 * i), o);
     
     /* leftover */
@@ -445,7 +515,6 @@ void libaroma_alpha_rgba_fill(int n, wordp dst, wordp bottom,
       for (i = n - left; i < n; i++) {
         dst[i] = libaroma_alpha(bottom[i], top, alpha);
       }
-      
       return;
     }
   }
@@ -465,31 +534,29 @@ void libaroma_alpha_mono(int n, wordp dst, wordp bottom,
     return;
   }
   
-  uint16x8_t falph = vdupq_n_u16(0xff);   /* Reverse Value */
+  uint16x8_t xalph = vdupq_n_u16(0xFF);   /* Max Value */
+  uint16x8_t zalph = vdupq_n_u16(0);      /* Zero Value */
+  uint16x8_t falph = vdupq_n_u16(0x100);  /* Reverse Value */
   uint16x8_t msk_r = vdupq_n_u16(0xF800); /* Red Mask */
   uint16x8_t msk_g = vdupq_n_u16(0x07E0); /* Green Mask */
   uint16x8_t msk_b = vdupq_n_u16(0x001F); /* Blue Mask */
-  /* Same Value data from Top layer */
+  
+  /* Top Layer Pixels */
   uint16x8_t pxt = vdupq_n_u16(top);
-  /* Get Subpixels of Top Layer */
   uint8x8_t rt = vshrn_n_u16(vandq_u16(pxt, msk_r), 8);
   uint8x8_t gt = vshrn_n_u16(vandq_u16(pxt, msk_g), 3);
   uint8x8_t bt = vmovn_u16(vshlq_n_u16(vandq_u16(pxt, msk_b), 3));
-
-  uint16x8_t rt16 = vmovl_u8(rt);
-  uint16x8_t gt16 = vmovl_u8(gt);
-  uint16x8_t bt16 = vmovl_u8(bt);
+  
   /* Neon Loop */
   int nn = n / 8, left = n % 8;
-  
   for (i = 0; i < nn; i++) {
     /* Prepare Opacity and Reversed Opacity Value */
     uint8x8_t   od = vld1_u8(alpha + 8 * i);
     uint16x8_t  op = vmovl_u8(od);
-    // op = vaddq_u16(op, vshrq_n_u16(op, 7));
     uint16x8_t  ro = vsubq_u16(falph, op);
-    /* Get 8 pixels data from Bottom layer */
+    /* Get 8 pixels data from Top & Bottom layer */
     uint16x8_t pxb = vld1q_u16(bottom + 8 * i); /* Bottom Layer Pixels */
+    
     /* Get Subpixels of Bottom Layer */
     uint8x8_t rb = vshrn_n_u16(vandq_u16(pxb, msk_r), 8);
     uint8x8_t gb = vshrn_n_u16(vandq_u16(pxb, msk_g), 3);
@@ -500,9 +567,9 @@ void libaroma_alpha_mono(int n, wordp dst, wordp bottom,
     uint16x8_t gbl = vmulq_u16(vmovl_u8(gb), ro);
     uint16x8_t bbl = vmulq_u16(vmovl_u8(bb), ro);
     /* Top Blend */
-    uint16x8_t rtl = vmulq_u16(rt16, op);
-    uint16x8_t gtl = vmulq_u16(gt16, op);
-    uint16x8_t btl = vmulq_u16(bt16, op);
+    uint16x8_t rtl = vmulq_u16(vmovl_u8(rt), op);
+    uint16x8_t gtl = vmulq_u16(vmovl_u8(gt), op);
+    uint16x8_t btl = vmulq_u16(vmovl_u8(bt), op);
     /* Blend Result */
     uint16x8_t r  = vshrq_n_u16(vaddq_u16(rbl, rtl), 11);
     uint16x8_t g  = vshrq_n_u16(vaddq_u16(gbl, gtl), 10);
@@ -512,14 +579,20 @@ void libaroma_alpha_mono(int n, wordp dst, wordp bottom,
     g = vshlq_n_u16(g, 5);
     /* Final */
     uint16x8_t o = vorrq_u16(vorrq_u16(r, g), b);
+    
+    /* comparison opaque/transparent */
+    uint16x8_t  is_opaque = vceqq_u16 (op, xalph);
+    uint16x8_t  is_transp = vceqq_u16 (op, zalph);
+    o = vbslq_u16(is_opaque, pxt, o);
+    o = vbslq_u16(is_transp, pxb, o);
+    
     vst1q_u16(dst + (8 * i), o);
     
     /* leftover */
     if ((i + 1 == nn) && (left > 0)) {
       for (i = n - left; i < n; i++) {
-        dst[i] = libaroma_alpha(bottom[i], top, alpha[i]);
+         dst[i] = libaroma_alpha(bottom[i], top, alpha[i]);
       }
-      
       return;
     }
   }
@@ -545,7 +618,7 @@ void libaroma_alpha_multi_line(int n, wordp dst, wordp bottom,
     return;
   }
   
-  uint16x8_t falph = vdupq_n_u16(0xff);   /* Reverse Value */
+  uint16x8_t falph = vdupq_n_u16(0x100);  /* Reverse Value */
   uint16x8_t msk_r = vdupq_n_u16(0xF800); /* Red Mask */
   uint16x8_t msk_g = vdupq_n_u16(0x07E0); /* Green Mask */
   uint16x8_t msk_b = vdupq_n_u16(0x001F); /* Blue Mask */

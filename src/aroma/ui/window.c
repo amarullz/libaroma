@@ -185,7 +185,6 @@ LIBAROMA_WINDOWP libaroma_window(
   }
   win->bg       = NULL;
   win->dc       = NULL;
-  win->wmc      = NULL;
   win->childs   = NULL;
   win->focused  = NULL;
   win->touched  = NULL;
@@ -229,12 +228,11 @@ byte libaroma_window_free(
   }
   if (win->bg){
     libaroma_canvas_free(win->bg);
-  }
-  if (win->wmc){
-    libaroma_canvas_free(win->wmc);
+    win->bg=NULL;
   }
   if (win->dc){
     libaroma_canvas_free(win->dc);
+    win->dc=NULL;
   }
   free(win);
   return 1;
@@ -310,19 +308,11 @@ byte _libaroma_window_ready(LIBAROMA_WINDOWP win){
   /* set position */
   if (win->dc!=NULL){
     libaroma_canvas_free(win->dc);
+    win->dc=NULL;
   }
-  if (win->wmc!=NULL){
-    libaroma_canvas_free(win->wmc);
-  }
-  win->wmc= libaroma_wm_canvas(x, y, w, h);
-  if (win->wmc==NULL){
-    ALOGW("window_ready cannot allocate workspace drawing canvas");
-    return 0;
-  }
-  win->dc = libaroma_canvas(w,h);
+  win->dc= libaroma_wm_canvas(x, y, w, h);
   if (win->dc==NULL){
-    libaroma_canvas_free(win->wmc);
-    ALOGW("window_ready cannot allocate drawing canvas");
+    ALOGW("window_ready cannot allocate workspace drawing canvas");
     return 0;
   }
   if (libaroma_window_isactive(win)){
@@ -658,51 +648,23 @@ static void * _libaroma_window_thread_manager(void * cookie) {
   LIBAROMA_WINDOWP win = (LIBAROMA_WINDOWP) cookie;
   ALOGV("begin window thread manager...");
   int i;
-  byte have_high_prio_thread = 0;
-  byte on_high_prio_thread = 0;
-  int looped_n=0;
-  byte use_wait;
   while(win->active){
     /* run child thread process */
-    use_wait=1;
     long waitf=libaroma_tick();
     if (win->active==1){
-      if (looped_n!=win->childn){
-        have_high_prio_thread=0;
-        looped_n=win->childn;
-        for (i=0;i<win->childn;i++){
-          if (win->childs[i]->thread!=NULL){
-            if (win->childs[i]->high_prio_thread){
-              have_high_prio_thread = 1;
-              break;
-            }
-          }
-        }
-      }
 #ifdef LIBAROMA_CONFIG_OPENMP
   #pragma omp parallel for
 #endif
       for (i=0;i<win->childn;i++){
         if (win->childs[i]->thread!=NULL){
-          if (have_high_prio_thread&&on_high_prio_thread){
-            if (win->childs[i]->high_prio_thread){
-              win->childs[i]->thread(win->childs[i]);
-              use_wait=0;
-            }
-          }
-          else{
-            win->childs[i]->thread(win->childs[i]);
-          }
+          win->childs[i]->thread(win->childs[i]);
         }
       }
-      on_high_prio_thread = !on_high_prio_thread;
     }
     /* 60hz sleep */
-    if (use_wait){
-      if ((waitf=(libaroma_tick()-waitf))<16){
-        if (waitf<0) waitf=0;
-        libaroma_sleep(16-waitf);
-      }
+    if ((waitf=(libaroma_tick()-waitf))<16){
+      if (waitf<0) waitf=0;
+      libaroma_sleep(16-waitf);
     }
   }
   ALOGV("end window thread manager...");
@@ -730,14 +692,6 @@ byte libaroma_window_sync(LIBAROMA_WINDOWP win, int x, int y, int w, int h){
       return 0;
     }
     
-    /* draw drawing canvas into workspace canvas */
-    libaroma_draw_ex(
-      win->wmc,
-      win->dc,
-      x, y, x, y, w, h,
-      0, 0xff
-    );
-    
     /* sync workspace */
     libaroma_wm_sync(win->x+x,win->y+y,w,h);
   }
@@ -764,25 +718,27 @@ byte libaroma_window_invalidate(LIBAROMA_WINDOWP win, byte sync){
     return 0;
   }
   
-  /* draw bg */
-  libaroma_draw(
-    win->dc,
-    win->bg,
-    0, 0, 1);
-  
-  /* draw childs */
-  int i;
+  if ((!win->lock_sync)||(sync==10)){
+    /* draw bg */
+    libaroma_draw(
+      win->dc,
+      win->bg,
+      0, 0, 1);
+    
+    /* draw childs */
+    int i;
 #ifdef LIBAROMA_CONFIG_OPENMP
   #pragma omp parallel for
 #endif
-  for (i=0;i<win->childn;i++){
-    /* draw no sync */
-    libaroma_control_draw(win->childs[i], 0);
-  }
-
-  /* sync */
-  if (sync){
-    libaroma_window_sync(win, 0, 0, win->w, win->h);
+    for (i=0;i<win->childn;i++){
+      /* draw no sync */
+      libaroma_control_draw(win->childs[i], 0);
+    }
+  
+    /* sync */
+    if (sync){
+      libaroma_window_sync(win, 0, 0, win->w, win->h);
+    }
   }
   return 1;
 } /* End of libaroma_window_invalidate */
@@ -800,22 +756,35 @@ byte libaroma_window_anishow(
   if (!win){
     return 0;
   }
-  /*
-  {
-    // set initial focus
+  /* set initial focus
     libaroma_window_setfocus(win, NULL);
-  }
   */
+  
   if ((!animation)||(duration<50)){
     return libaroma_wm_set_active_window(win);
   }
+  
+  /* lock and retval */
+  byte retval = 0;
   win->lock_sync = 1;
+  
   if (libaroma_wm_set_active_window(win)){
     win->active=2;
+    
+    /* draw window into temp canvas */
+    LIBAROMA_CANVASP wmc = win->dc;
+    LIBAROMA_CANVASP tdc = libaroma_canvas(wmc->w,wmc->h);
+    libaroma_draw(tdc,wmc,0,0,0);
+    win->dc=tdc; /* switch dc */
+    
+    LIBAROMA_CANVASP back = libaroma_canvas(wmc->w, wmc->h);
+    libaroma_draw(back,wmc,0,0,0);
+    
+    /* invalidate now */
+    libaroma_window_invalidate(win, 10);
+    
     long start = libaroma_tick();
     int delta = 0;
-    LIBAROMA_CANVASP back = libaroma_canvas(win->w, win->h);
-    libaroma_draw(back, win->wmc, 0, 0, 0);
     while ((delta=libaroma_tick()-start)<duration){
       float state = ((float) delta)/((float) duration);
       if (state>=1.0){
@@ -833,7 +802,7 @@ byte libaroma_window_anishow(
               if (animation==LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_LEFT){
                 if (w<win->w){
                   libaroma_draw_ex(
-                    win->wmc,
+                    wmc,
                     back,
                     0, 0, win->w - (win->w - w), 0, win->w - w, win->h,
                     0, 0xff
@@ -841,7 +810,7 @@ byte libaroma_window_anishow(
                 }
               }
               libaroma_draw_ex(
-                win->wmc,
+                wmc,
                 win->dc,
                 x, 0, 0, 0, w, win->h,
                 0, 0xff
@@ -865,7 +834,7 @@ byte libaroma_window_anishow(
               if (animation==LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_RIGHT){
                 if (w<win->w){
                   libaroma_draw_ex(
-                    win->wmc,
+                    wmc,
                     back,
                     w, 0, 0, 0, win->w - w, win->h,
                     0, 0xff
@@ -873,7 +842,7 @@ byte libaroma_window_anishow(
                 }
               }
               libaroma_draw_ex(
-                win->wmc,
+                wmc,
                 win->dc,
                 0, 0, win->w-w, 0, w, win->h,
                 0, 0xff
@@ -898,16 +867,25 @@ byte libaroma_window_anishow(
         libaroma_sleep(16-(waitf));
       }
     }
-    libaroma_canvas_free(back);
     
-    /* sync view now */
-    win->lock_sync = 0;
+    retval = 1;
+    libaroma_draw(wmc,win->dc,0,0,0);
+              
+    win->dc=wmc; /* switch dc back */
+  
+    /* cleanup */
+    libaroma_canvas_free(back);
+    libaroma_canvas_free(tdc);
+  }
+  
+  win->lock_sync = 0;
+  
+  /* sync view now */
+  if (retval){
     win->active=1;
     libaroma_window_sync(win, 0, 0, win->w, win->h);
-    return 1;
   }
-  win->lock_sync = 0;
-  return 0;
+  return retval;
 } /* End of libaroma_window_show */
 
 /*
@@ -1002,11 +980,11 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
             NULL,
             _libaroma_window_thread_manager,
             (voidp) win);
-          
+          /*
           struct sched_param params;
-          params.sched_priority = sched_get_priority_max(SCHED_FIFO);
+          params.sched_priority = sched_get_priority_max(SCHED_FIFO)
           pthread_setschedparam(win->thread_manager, SCHED_FIFO, &params);
-          
+          */
         }
       }
       break;

@@ -33,6 +33,10 @@
  */
 typedef word (*LIBAROMA_DRAW_FILTER)(word color, dword param);
 
+/* drawing flags */
+#define LIBAROMA_DRAW_WITH_ALPHA    0x1
+#define LIBAROMA_DRAW_NODITHER      0x2
+
 /*
  * Function    : libaroma_draw_limit
  * Return Value: int
@@ -85,7 +89,7 @@ byte libaroma_draw_ex1(
   int dx, int dy,
   int sx, int sy,
   int sw, int sh,
-  byte useAlpha,
+  byte draw_flags,
   byte opacity,
   LIBAROMA_DRAW_FILTER filter_callback,
   dword filter_param

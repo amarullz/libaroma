@@ -105,8 +105,9 @@ struct _LIBAROMA_WINDOW{
   byte lock_sync;
   
   /* graphs */
-  char theme_bg[256];
+  char theme_bg[256];/*
   LIBAROMA_CANVASP wmc;
+  */
   LIBAROMA_CANVASP dc;
   LIBAROMA_CANVASP bg;
   

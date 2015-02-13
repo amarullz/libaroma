@@ -64,7 +64,7 @@ byte libaroma_draw_ex1(
   int dx, int dy,
   int sx, int sy,
   int sw, int sh,
-  byte useAlpha,
+  byte draw_flags, 
   byte opacity,
   LIBAROMA_DRAW_FILTER filter_callback,
   dword filter_param
@@ -83,6 +83,10 @@ byte libaroma_draw_ex1(
   if (opacity==0) {
     return 1; /* No Need Any Process */
   }
+  
+  byte useAlpha = (draw_flags&LIBAROMA_DRAW_WITH_ALPHA)?1:0;
+  byte noDither = (draw_flags&LIBAROMA_DRAW_NODITHER)?1:0;
+  
   
   /* fix positions */
   if (sx < 0) {
@@ -183,10 +187,18 @@ byte libaroma_draw_ex1(
       for (y = 0; y < sr_h; y++) {
         wordp dst_mem = (wordp) (dst_data + ((ds_y + y) * pos_dc_w) + pos_ds_x);
         wordp src_mem = (wordp) (src_data + ((sr_y + y) * pos_sc_w) + pos_sr_x);
-        libaroma_alpha_px_line(
-          y, sr_w, dst_mem, dst_mem,
-          src_mem, (bytep) (src->alpha + (y * src->l) + sr_x)
-        );
+        if (noDither){
+          libaroma_alpha_px(
+            sr_w, dst_mem, dst_mem,
+            src_mem, (bytep) (src->alpha + (y * src->l) + sr_x)
+          );
+        }
+        else{
+          libaroma_alpha_px_line(
+            y, sr_w, dst_mem, dst_mem,
+            src_mem, (bytep) (src->alpha + (y * src->l) + sr_x)
+          );
+        }
       }
     }
     else {
@@ -213,13 +225,24 @@ byte libaroma_draw_ex1(
         wordp tmp_dst = (wordp) malloc(sr_w * 2);
         wordp dst_mem = (wordp) (dst_data + ((ds_y + y) * pos_dc_w) + pos_ds_x);
         wordp src_mem = (wordp) (src_data + ((sr_y + y) * pos_sc_w) + pos_sr_x);
-        libaroma_alpha_px_line(
-          y, sr_w, tmp_dst, dst_mem, src_mem,
-          (bytep) (src->alpha + (y * src->l) + sr_x)
-        );
-        libaroma_alpha_const_line(
-          y, sr_w, dst_mem, dst_mem, tmp_dst, opacity
-        );
+        if (noDither){
+          libaroma_alpha_px(
+            sr_w, tmp_dst, dst_mem, src_mem,
+            (bytep) (src->alpha + (y * src->l) + sr_x)
+          );
+          libaroma_alpha_const(
+            sr_w, dst_mem, dst_mem, tmp_dst, opacity
+          );
+        }
+        else{
+          libaroma_alpha_px_line(
+            y, sr_w, tmp_dst, dst_mem, src_mem,
+            (bytep) (src->alpha + (y * src->l) + sr_x)
+          );
+          libaroma_alpha_const_line(
+            y, sr_w, dst_mem, dst_mem, tmp_dst, opacity
+          );
+        }
         free(tmp_dst);
       }
     }
@@ -231,9 +254,16 @@ byte libaroma_draw_ex1(
       for (y = 0; y < sr_h; y++) {
         wordp dst_mem = (wordp) (dst_data + ((ds_y + y) * pos_dc_w) + pos_ds_x);
         wordp src_mem = (wordp) (src_data + ((sr_y + y) * pos_sc_w) + pos_sr_x);
-        libaroma_alpha_const_line(
-          y, sr_w, dst_mem, dst_mem, src_mem, opacity
-        );
+        if (noDither){
+          libaroma_alpha_const(
+            sr_w, dst_mem, dst_mem, src_mem, opacity
+          );
+        }
+        else{
+          libaroma_alpha_const_line(
+            y, sr_w, dst_mem, dst_mem, src_mem, opacity
+          );
+        }
       }
     }
   }

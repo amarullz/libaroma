@@ -29,7 +29,7 @@
 
 #define _LIBAROMA_CTL_BUTTON_SIGNATURE 0x03
 #define _LIBAROMA_CTL_BUTTON_HOLD_TIMING 300
-#define _LIBAROMA_CTL_BUTTON_ANI_TIMING 800
+#define _LIBAROMA_CTL_BUTTON_ANI_TIMING 500
 
 /*
  * Structure   : __LIBAROMA_CTL_BUTTON
@@ -249,7 +249,7 @@ void _libaroma_ctl_button_draw(
     int psize = MAX(ctl->w,ctl->h);
     psize+=(abs(me->touch_x-ctl->w/2)+abs(me->touch_y-ctl->h/2)) * 2;
     libaroma_draw(c, me->rest_canvas, 0, 0, 0);
-    libaroma_draw_opacity(c, me->push_canvas, 0, 0, 0, 
+    libaroma_draw_opacity(c, me->push_canvas, 0, 0, 2, 
       (byte) (me->isdark?(opa/2):(opa*0.75)));
     libaroma_draw_mask_circle(
         c, 
@@ -275,12 +275,12 @@ void _libaroma_ctl_button_thread(LIBAROMA_CONTROLP ctl) {
   byte is_draw = me->forcedraw;
   if (!(me->style&LIBAROMA_CTL_BUTTON_DISABLED)){
     if (me->touched&&me->touch_start){
-      float nowstate=libaroma_control_state(me->touch_start, 1500);
+      float nowstate=libaroma_control_state(me->touch_start, 1000);
       if (me->touch_state!=nowstate){
         is_draw = 1;
         me->touch_state=nowstate;
       }
-      if ((me->touch_state>=0.5)&&(!me->holded)){
+      if ((me->touch_state>=0.8)&&(!me->holded)){
         me->holded=1;
         libaroma_window_post_command(
           LIBAROMA_CMD_SET(LIBAROMA_CMD_HOLD, 0, ctl->id)

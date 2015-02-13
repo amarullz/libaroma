@@ -38,7 +38,7 @@ word libaroma_alpha(word dcl, word scl, byte l) {
     return scl;
   }
   word na = l;
-  word fa = 255 - na;
+  word fa = 256 - na;
   return
     (word) (
       (((libaroma_color_r(dcl) * fa) + 
@@ -60,7 +60,7 @@ dword libaroma_alpha32(word dcl, word scl, byte l) {
     return libaroma_rgb_to32(scl);
   }
   word na = l;
-  word fa = 255 - na;
+  word fa = 256 - na;
   return
     (dword) (
       (((libaroma_color_r(dcl) * fa) + 
@@ -82,9 +82,9 @@ word libaroma_alpha_multi(word dcl, word scl, byte lr, byte lg, byte lb) {
   else if (lr + lg + lb == 765) {
     return scl;
   }
-  byte  rr = 0xff - lr;
-  byte  rg = 0xff - lg;
-  byte  rb = 0xff - lb;
+  byte  rr = 256 - lr;
+  byte  rg = 256 - lg;
+  byte  rb = 256 - lb;
   return
     (word) (
       (((libaroma_color_r(dcl) * rr) + 

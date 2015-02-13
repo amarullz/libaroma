@@ -558,7 +558,6 @@ LIBAROMA_CONTROLP libaroma_ctl_scroll(
   me->prev_time[0] = 0;
   
   /* attach internal data & return*/
-  ctl->high_prio_thread=1;
   ctl->internal = (voidp) me;
   return libaroma_window_attach(win,ctl);
 } /* End of libaroma_ctl_scroll */
