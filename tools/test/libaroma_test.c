@@ -26,6 +26,7 @@
 
 /* libaroma header */
 #include <aroma.h>
+#include <omp.h>
 
 /*
  * Function    : main
@@ -33,6 +34,8 @@
  * Descriptions: main executable function
  */
 int main(int argc, char **argv){
+
+  
   /* set libaroma runtime configuration */
   /*
     snprintf(libaroma_config()->fb_shm_name,64,"recovery-mainfb");
@@ -48,7 +51,19 @@ int main(int argc, char **argv){
   /* start libaroma process */
   libaroma_start();
   
-  
+/*
+#ifdef LIBAROMA_CONFIG_OPENMP
+  printf("Testing OpenMP\n");
+  int resp=0;
+#pragma omp parallel
+  {
+    printf("Hello, world.\n");
+    resp++;
+  }
+  printf("Result Value: %i\n",resp);
+#endif
+*/
+
   /* clean display */
   libaroma_canvas_blank(libaroma_fb()->canvas);
   libaroma_sync();
@@ -191,6 +206,7 @@ int main(int argc, char **argv){
   int  progress_value=0;
   
   byte onpool=1;
+  int click_value=0;
   do{
     LIBAROMA_MSG msg;
     dword command=libaroma_window_pool(win,&msg);
@@ -210,7 +226,11 @@ int main(int argc, char **argv){
           onpool = 0;
         }
         else if (id==6){
-          libaroma_ctl_button_text(btn6,"<img=file:///sdcard/plus.png;24dp;24dp>Click");
+          // libaroma_ctl_button_text(btn6,"<img=file:///sdcard/plus.png;24dp;24dp>Click");
+          click_value++;
+          char clstr[128];
+          snprintf(clstr,128,"Clicked %i",click_value);
+          libaroma_ctl_button_text(btn6,clstr);
         }
         else if (id==1){
           if (libaroma_ctl_button_is_disabled(btn2)){
@@ -271,6 +291,12 @@ int main(int argc, char **argv){
           }
           printf("---> Change Progress Type: %i\n",progress_type);
           libaroma_ctl_progress_type(progress,progress_type);
+        }
+        else if (id==6){
+          click_value++;
+          char clstr[128];
+          snprintf(clstr,128,"<u>Holded</u> (%i)",click_value);
+          libaroma_ctl_button_text(btn6,clstr);
         }
       }
       

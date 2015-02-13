@@ -38,6 +38,8 @@ struct _LIBAROMA_RUNTIME{
   pid_t parent;
   pid_t monitor;
   pid_t me;
+  byte core_online[16];
+  byte core_num;
 };
 
 /*
@@ -45,7 +47,74 @@ struct _LIBAROMA_RUNTIME{
  * Type        : LIBAROMA_RUNTIME
  * Descriptions: runtime pid storage
  */
-static LIBAROMA_RUNTIME _libaroma_runtime = { 0, 0, 0 };
+static LIBAROMA_RUNTIME _libaroma_runtime = { 0 };
+
+/*
+ * Function    : libaroma_runtime_activate_cores
+ * Return Value: void
+ * Descriptions: activate multicore
+ */
+void libaroma_runtime_activate_cores(int num_cores){
+/* only for linux */
+#ifdef __linux__
+  int i;
+  _libaroma_runtime.core_num=0;
+  FILE * fp;
+  struct stat st;
+  char path[256];
+  
+  for (i=1;i<num_cores;i++){
+    snprintf(path,256,"/sys/devices/system/cpu/cpu%i/online",i);
+    if (stat(path,&st)<0) {
+      break;
+    }
+    /* read value */
+    fp = fopen(path, "r");
+    int is_online = 0;
+    if(fp){
+      is_online=(fgetc(fp)=='0')?1:0;
+      fclose(fp);
+    }
+    else{
+      break;
+    }
+    _libaroma_runtime.core_online[_libaroma_runtime.core_num++]=is_online;
+    fp = fopen(path, "w+");
+    if(fp){
+      fputc('1',fp);
+      fclose(fp);
+    }
+  }
+  ALOGI("Processor Activated : %i Core(s)",_libaroma_runtime.core_num);
+
+#endif
+} /* End of libaroma_runtime_activate_cores */
+
+/*
+ * Function    : libaroma_runtime_rollback_cores
+ * Return Value: void
+ * Descriptions: rollback processor state
+ */
+void libaroma_runtime_rollback_cores(){
+  int i;
+  FILE * fp;
+  struct stat st;
+  char path[256];
+  for (i=1;i<=_libaroma_runtime.core_num;i++){
+    snprintf(path,256,"/sys/devices/system/cpu/cpu%i/online",i);
+    if (stat(path,&st)<0) {
+      break;
+    }
+    if(!_libaroma_runtime.core_online[i]){
+      fp = fopen(path, "w+");
+      if (fp){
+        fputc('0',fp);
+        fclose(fp);
+      }
+    }
+  }
+  _libaroma_runtime.core_num=0;
+} /* End of libaroma_runtime_rollback_cores */
 
 /*
  * Function    : libaroma_runtime

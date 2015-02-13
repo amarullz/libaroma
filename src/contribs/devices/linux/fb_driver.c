@@ -55,6 +55,7 @@ typedef struct {
   int       line;                       /* line size */
   byte      depth;                      /* color depth */
   byte      pixsz;                      /* memory size per pixel */
+  int       syncn;
   
   /* needed by 32bit colorspace */
   byte      rgb_pos[6];                 /* framebuffer rgb position */
@@ -150,6 +151,7 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
   mi->depth    = mi->var.bits_per_pixel;    /* color depth */
   mi->pixsz    = mi->depth >> 3;            /* pixel size per byte */
   mi->fb_sz    = (me->sz * mi->pixsz);      /* framebuffer size */
+  mi->syncn    = 0;
   
   /* map framebuffer */
   ALOGV("FBDRIVER mmap Framebuffer Memory");
@@ -245,6 +247,7 @@ void LINUXFBDR_refresh(LIBAROMA_FBP me) {
   /* Refresh Display */
   mi->var.yoffset   = 0;
   mi->var.activate |= FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
+  //fsync(mi->fb);
   ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var);
 }
 

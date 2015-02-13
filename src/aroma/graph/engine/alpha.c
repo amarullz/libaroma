@@ -82,9 +82,9 @@ word libaroma_alpha_multi(word dcl, word scl, byte lr, byte lg, byte lb) {
   else if (lr + lg + lb == 765) {
     return scl;
   }
-  byte  rr = 256 - lr;
-  byte  rg = 256 - lg;
-  byte  rb = 256 - lb;
+  word  rr = 256 - lr;
+  word  rg = 256 - lg;
+  word  rb = 256 - lb;
   return
     (word) (
       (((libaroma_color_r(dcl) * rr) + 

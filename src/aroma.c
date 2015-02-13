@@ -56,7 +56,10 @@ void _libaroma_config_default() {
   else{
     _libaroma_config.fb_shm_name[0]=0;
   }
+  _libaroma_config.multicore_init_num = 8; /* activate core */
+  _libaroma_config.snapshoot_fb = 0; /* snapshoot after graph init */
   _libaroma_config.runtime_monitor = LIBAROMA_START_UNSAFE;
+  
   _libaroma_config_ready = 1;
 } /* End of libaroma_config_default */
 
@@ -104,6 +107,11 @@ byte libaroma_start() {
   }
   
   ALOGI("===================================================");
+  
+  if (libaroma_config()->multicore_init_num>0){
+    /* activate processor/cores */
+    libaroma_runtime_activate_cores(libaroma_config()->multicore_init_num);
+  }
   
   if (!libaroma_graph_init()) {
     ALOGE("libaroma_start cannot start graph engine...");
@@ -156,6 +164,7 @@ byte libaroma_end() {
   libaroma_msg_release();
   libaroma_hid_release();
   libaroma_graph_release();
+  libaroma_runtime_rollback_cores();
   
   ALOGI("===================================================");
 #ifdef LIBAROMA_CONFIG_DEBUG_MEMORY

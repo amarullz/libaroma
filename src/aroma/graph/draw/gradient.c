@@ -129,7 +129,6 @@ byte libaroma_gradient_ex(
   if ((startAlpha == 0xff) && (endAlpha == 0xff)) {
     useAlpha = 0;
   }
-  wordp alphaTmpLine = NULL;
   if (dst->alpha != NULL) {
     useCanvasAlpha = 1;
     useAlpha = 0;
@@ -164,11 +163,12 @@ byte libaroma_gradient_ex(
   
   /* draw */
   int _Y;
-  bytep line_alpha = NULL;
 #ifdef LIBAROMA_CONFIG_OPENMP
   #pragma omp parallel for
 #endif
   for (_Y = 0; _Y < h; _Y++) {
+    bytep line_alpha = NULL;
+    wordp alphaTmpLine = NULL;
     if (useAlpha) {
       alphaTmpLine = (wordp) malloc(w * 2);
     }

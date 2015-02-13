@@ -745,7 +745,7 @@ void _libaroma_ctl_testscroll_draw(
   int cnt = ceil(h/80) + ceil(y/80) - pos;
   int i;
 #ifdef LIBAROMA_CONFIG_OPENMP
-  #pragma omp parallel for
+//  #pragma omp parallel for
 #endif
   for (i=0;i<=cnt;i++){
     int item_y = (i+pos) * 80;

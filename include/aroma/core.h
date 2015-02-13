@@ -44,8 +44,9 @@ typedef struct _LIBAROMA_CONFIG LIBAROMA_CONFIG;
 typedef struct _LIBAROMA_CONFIG * LIBAROMA_CONFIGP;
 struct _LIBAROMA_CONFIG{
   char fb_shm_name[64];
+  byte snapshoot_fb;
+  byte multicore_init_num;
   byte runtime_monitor;
-  
 };
 
 /*

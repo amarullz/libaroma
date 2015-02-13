@@ -39,9 +39,7 @@ void libaroma_blt_align16(wordp dst, wordp src,
   #pragma omp parallel for
 #endif
   for (i = 0; i < h; i++) {
-    memcpy(d, s, w2);
-    d += ds;
-    s += ss;
+    memcpy((d+(ds*i)), (s+(ss*i)), w2);
   }
 }
 void libaroma_blt_align32_to16(wordp dst, dwordp src,
@@ -55,9 +53,8 @@ void libaroma_blt_align32_to16(wordp dst, dwordp src,
   #pragma omp parallel for
 #endif
   for (i = 0; i < h; i++) {
-    libaroma_dither_line(i, w, (wordp) d, (dwordp) s);
-    d += ds;
-    s += ss;
+    libaroma_dither_line(i, w,
+      (wordp) (d+(ds*i)), (dwordp) (s+(ss*i)));
   }
 }
 void libaroma_blt_align16_to32(dwordp dst, wordp src,
@@ -71,9 +68,7 @@ void libaroma_blt_align16_to32(dwordp dst, wordp src,
   #pragma omp parallel for
 #endif
   for (i = 0; i < h; i++) {
-    libaroma_btl32(w, (dwordp) d, (wordp) s);
-    d += ds;
-    s += ss;
+    libaroma_btl32(w, (dwordp) (d+(ds*i)), (wordp) (s+(ss*i)));
   }
 }
 void libaroma_blt_align32(dwordp dst, dwordp src,
@@ -88,9 +83,7 @@ void libaroma_blt_align32(dwordp dst, dwordp src,
   #pragma omp parallel for
 #endif
   for (i = 0; i < h; i++) {
-    memcpy(d, s, w4);
-    d += ds;
-    s += ss;
+    memcpy((d+(ds*i)), (s+(ss*i)), w4);
   }
 }
 void libaroma_blt_align_to32_pos(dwordp dst, wordp src,
@@ -105,9 +98,8 @@ void libaroma_blt_align_to32_pos(dwordp dst, wordp src,
   #pragma omp parallel for
 #endif
   for (i = 0; i < h; i++) {
-    libaroma_color_copy32((dwordp) d, (wordp) s, w, rgb_pos);
-    d += ds;
-    s += ss;
+    libaroma_color_copy32(
+      (dwordp) (d+(ds*i)), (wordp) (s+(ss*i)), w, rgb_pos);
   }
 }
 void libaroma_blt_align_to16_pos(wordp dst, dwordp src,
@@ -122,9 +114,8 @@ void libaroma_blt_align_to16_pos(wordp dst, dwordp src,
   #pragma omp parallel for
 #endif
   for (i = 0; i < h; i++) {
-    libaroma_color_copy16((wordp) d, (dwordp) s, w, rgb_pos);
-    d += ds;
-    s += ss;
+    libaroma_color_copy16(
+      (wordp) (d+(ds*i)), (dwordp) (s+(ss*i)), w, rgb_pos);
   }
 }
 

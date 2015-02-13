@@ -113,9 +113,11 @@ LIBAROMA_FBP libaroma_fb_init() {
   );
   
   /* Copy Current Framebuffer Into Display Canvas */
-  if (_libaroma_fb->snapshoot!=NULL){
-    ALOGV("Copy framebuffer pixels into canvas");
-    libaroma_fb_snapshoot();
+  if (libaroma_config()->snapshoot_fb){
+    if (_libaroma_fb->snapshoot!=NULL){
+      ALOGV("Copy framebuffer pixels into canvas");
+      libaroma_fb_snapshoot();
+    }
   }
   
   /* Return The Instance */
