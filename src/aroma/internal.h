@@ -59,6 +59,9 @@
 #include <jerror.h>
 #include <setjmp.h>
 #endif
+#ifdef LIBAROMA_CONFIG_OPENMP
+#include <omp.h>
+#endif
 
 /* declare driver init functions */
 byte LIBAROMA_FB_INIT_FUNCTION(

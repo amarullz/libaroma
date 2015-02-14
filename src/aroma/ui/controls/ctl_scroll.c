@@ -29,7 +29,7 @@
 
 #define _LIBAROMA_CTL_SCROLL_SIGNATURE 0x40
 #define _LIBAROMA_CTL_SCROLL_HISTORY   10
-#define _LIBAROMA_CTL_SCROLL_MAX_CACHE 20000
+#define _LIBAROMA_CTL_SCROLL_MAX_CACHE 9000
 
 /*
  * Structure   : __LIBAROMA_CTL_SCROLL
@@ -84,7 +84,7 @@ byte _libaroma_ctl_scroll_updatecache(LIBAROMA_CONTROLP ctl, int move_sz){
   }
   
   int move_value=0;
-  int cvhsz = me->client_canvas->h / 3;
+  int cvhsz = (me->client_canvas->h / 3) * 2;
   
   if (move_sz<0){
     /* draw bottom */
@@ -195,6 +195,7 @@ byte _libaroma_ctl_scroll_updatecache(LIBAROMA_CONTROLP ctl, int move_sz){
     LIBAROMA_CANVASP redraw_canvas = libaroma_canvas_area(
       me->client_canvas, 0, redraw_y, me->client_canvas->w, redraw_height
     );
+    
     libaroma_draw_rect( /* erase bg */
       redraw_canvas,
       0, 0, redraw_canvas->w, redraw_canvas->h,
@@ -734,7 +735,7 @@ byte libaroma_ctl_scroll_sync(
   }
   return 0;
 } /* End of libaroma_ctl_scroll_sync */
-
+byte ______draw_n = 0;
 /* TEST SCROLL CONTROL */
 void _libaroma_ctl_testscroll_draw(
     LIBAROMA_CONTROLP ctl,
@@ -742,17 +743,24 @@ void _libaroma_ctl_testscroll_draw(
     LIBAROMA_CANVASP cv,
     int x, int y, int w, int h){
   int pos = floor(y/80);
-  int cnt = ceil(h/80) + ceil(y/80) - pos;
+  int cnt = ceil(h/80.0 + ceil(y/80.0) - pos);
   int i;
+  ______draw_n=______draw_n?0:1;
 #ifdef LIBAROMA_CONFIG_OPENMP
 //  #pragma omp parallel for
 #endif
-  for (i=0;i<=cnt;i++){
+  for (i=0;i<cnt;i++){
     int item_y = (i+pos) * 80;
+    int ddy=item_y-y;
+    if (ddy>=cv->h){
+      continue;
+    }
     char text[128];
-    snprintf(text,128,"Scrolling Test %i",i+pos);
+    snprintf(text,128,"Scrolling Test %i", i+pos);
     LIBAROMA_CANVASP item_cv = libaroma_canvas(w,80);
-    libaroma_canvas_setcolor(item_cv,RGB(ffffff),255);
+    libaroma_canvas_setcolor(item_cv,
+      (______draw_n?RGB(ffcccc):RGB(ccffcc)),255);
+
     libaroma_draw_text(
       item_cv,
       text,
@@ -767,12 +775,24 @@ void _libaroma_ctl_testscroll_draw(
       LIBAROMA_TEXT_FIXED_COLOR|
       LIBAROMA_TEXT_NOHR,
       120);
-    int ddy=item_y-y;
-    if (ddy>=0){
-      libaroma_draw(cv,item_cv,0,ddy,0);
+
+    if (ddy<0){
+      if (ddy+item_cv->h>0){
+        libaroma_draw_ex(cv,
+          item_cv,
+          0,0,
+          0,abs(ddy),
+          item_cv->w,
+          item_cv->h+ddy,0,0xff);
+      }
     }
-    else{
-      libaroma_draw_ex(cv,item_cv,0,0,0,0-ddy,item_cv->w,item_cv->h+ddy,0,0xff);
+    else if (ddy<cv->h){
+      libaroma_draw_ex(cv,item_cv,
+        0,ddy,
+        0,0,
+        item_cv->w,
+        item_cv->h,
+        0,0xff);
     }
     libaroma_canvas_free(item_cv);
   }
@@ -793,7 +813,7 @@ LIBAROMA_CONTROLP libaroma_ctl_testscroll(
     NULL,
     NULL
   );
-  libaroma_ctl_scroll_set_height(ctl, 16000);
+  libaroma_ctl_scroll_set_height(ctl, 200000);
   return ctl;
 }
 

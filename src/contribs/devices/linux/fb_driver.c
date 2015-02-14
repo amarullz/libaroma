@@ -119,6 +119,8 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
     goto error; /* Exit If Error */
   }
   
+  // ioctl(mi->fb, FBIOBLANK, FB_BLANK_UNBLANK);
+  
   /* try to force 32bit libaroma color mode (bgra)
   if (mi->var.bits_per_pixel==32){
     mi->var.red.offset         = 16;
@@ -191,14 +193,22 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
   /* DUMP INFO */
   LINUXFBDR_dump(mi);
   
-  if ((mi->var.width<= 0)||(mi->var.height <= 0)) {
-    me->dpi = 160;
+  me->dpi = 0;
+#ifdef __ANDROID__
+  // ro.sf.lcd_density
+#endif
+
+  if (me->dpi<160){
+    if ((mi->var.width<= 0)||(mi->var.height <= 0)) {
+      /* phone dpi */
+      me->dpi = floor(MIN(mi->var.xres,mi->var.yres)/160) * 80;
+    }
+    else{
+      /* Calculate DPI */
+      me->dpi = round(mi->var.xres / (mi->var.width * 0.039370) / 80) * 80;
+    }
   }
-  else{
-    /* Calculate DPI */
-    me->dpi = round(mi->var.xres / (mi->var.width * 0.039370) / 80) * 80;
-  }
-  
+
   /* OK */
   goto ok;
   /* Return */
@@ -247,7 +257,6 @@ void LINUXFBDR_refresh(LIBAROMA_FBP me) {
   /* Refresh Display */
   mi->var.yoffset   = 0;
   mi->var.activate |= FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
-  //fsync(mi->fb);
   ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var);
 }
 
@@ -265,6 +274,7 @@ void LINUXFBDR_dump(LINUXFBDR_INTERNALP mi) {
   ALOGV(" xoffset        : %i", mi->var.xoffset);
   ALOGV(" yoffset        : %i", mi->var.yoffset);
   ALOGI(" bits_per_pixel : %i", mi->var.bits_per_pixel);
+  ALOGV(" grayscale      : %i", mi->var.grayscale);
   ALOGI(" red            : %i, %i, %i", 
     mi->var.red.offset, mi->var.red.length, mi->var.red.msb_right);
   ALOGI(" green          : %i, %i, %i", 
@@ -277,23 +287,28 @@ void LINUXFBDR_dump(LINUXFBDR_INTERNALP mi) {
   ALOGV(" activate       : %i", mi->var.activate);
   ALOGV(" height         : %i", mi->var.height);
   ALOGV(" width          : %i", mi->var.width);
+  ALOGV(" accel_flags    : %i", mi->var.accel_flags);
+  ALOGV(" pixclock       : %i", mi->var.pixclock);
   ALOGV(" left_margin    : %i", mi->var.left_margin);
   ALOGV(" right_margin   : %i", mi->var.right_margin);
   ALOGV(" upper_margin   : %i", mi->var.upper_margin);
   ALOGV(" lower_margin   : %i", mi->var.lower_margin);
+  ALOGV(" hsync_len      : %i", mi->var.hsync_len);
+  ALOGV(" vsync_len      : %i", mi->var.vsync_len);
+  ALOGV(" sync           : %i", mi->var.sync);
   ALOGV(" rotate         : %i", mi->var.rotate);
-  ALOGV(" reserved[0]    : %i", mi->var.reserved[0]);
-  ALOGV(" reserved[1]    : %i", mi->var.reserved[1]);
-  ALOGV(" reserved[2]    : %i", mi->var.reserved[2]);
-
+  
   ALOGI("FIX");
+  ALOGI(" id             : %s", mi->fix.id);
   ALOGI(" smem_len       : %i", mi->fix.smem_len);
   ALOGV(" type           : %i", mi->fix.type);
+  ALOGV(" type_aux       : %i", mi->fix.type_aux);
+  ALOGV(" visual         : %i", mi->fix.visual);
   ALOGV(" xpanstep       : %i", mi->fix.xpanstep);
   ALOGV(" ypanstep       : %i", mi->fix.ypanstep);
   ALOGV(" ywrapstep      : %i", mi->fix.ywrapstep);
   ALOGI(" line_length    : %i", mi->fix.line_length);
-  ALOGV(" id             : %s", mi->fix.id);
+  ALOGV(" accel          : %i", mi->fix.accel);
 }
 
 /*

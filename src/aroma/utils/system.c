@@ -14,27 +14,19 @@
  * limitations under the License.
  *______________________________________________________________________________
  *
- * Filename    : utils.h
- * Description : libaroma utility modules
+ * Filename    : system.c
+ * Description : system utilities
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 19/01/15 - Author(s): Ahmad Amarullah
+ * + 14/02/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_h__
-  #error "Include <aroma.h> instead."
+#ifndef __libaroma_aroma_c__
+  #error "Should be inside aroma.c."
 #endif
-#ifndef __libaroma_utils_h__
-#define __libaroma_utils_h__
+#ifndef __libaroma_system_c__
+#define __libaroma_system_c__
 
-/* Includes All Util Headers */
-#include "utils/array.h"    /* array */
-#include "utils/time.h"     /* time */
-#include "utils/zip.h"      /* zip */
-#include "utils/strings.h"  /* strings */
-#include "utils/minutf8.h"  /* utf8 */
-#include "utils/stream.h"   /* stream */
-#include "utils/json.h"     /* json */
-#include "utils/system.h"   /* system */
 
-#endif /* __libaroma_utils_h__ */
+
+#endif /* __libaroma_system_c__ */

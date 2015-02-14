@@ -648,9 +648,12 @@ static void * _libaroma_window_thread_manager(void * cookie) {
   LIBAROMA_WINDOWP win = (LIBAROMA_WINDOWP) cookie;
   ALOGV("begin window thread manager...");
   int i;
+  LIBAROMA_SLEEPER sleeper_s;
   while(win->active){
+    /* hi res sleep */
+    libaroma_sleeper_start(&sleeper_s);
+    
     /* run child thread process */
-    long waitf=libaroma_tick();
     if (win->active==1){
 #ifdef LIBAROMA_CONFIG_OPENMP
   #pragma omp parallel for
@@ -662,10 +665,7 @@ static void * _libaroma_window_thread_manager(void * cookie) {
       }
     }
     /* 60hz sleep */
-    if ((waitf=(libaroma_tick()-waitf))<16){
-      if (waitf<0) waitf=0;
-      libaroma_sleep(16-waitf);
-    }
+    libaroma_sleeper(&sleeper_s,16666);
   }
   ALOGV("end window thread manager...");
   return NULL;
@@ -782,12 +782,13 @@ byte libaroma_window_anishow(
     
     long start = libaroma_tick();
     int delta = 0;
+    LIBAROMA_SLEEPER sleeper_s;
     while ((delta=libaroma_tick()-start)<duration){
+      libaroma_sleeper_start(&sleeper_s);
       float state = ((float) delta)/((float) duration);
       if (state>=1.0){
         break;
       }
-      long waitf = libaroma_tick();
       switch (animation){
         case LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_LEFT:
         case LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_LEFT:
@@ -859,10 +860,7 @@ byte libaroma_window_anishow(
           break;
       }
       /* 60hz sleep */
-      if ((waitf=(libaroma_tick()-waitf))<16){
-        if (waitf<0) waitf=0;
-        libaroma_sleep(16-(waitf));
-      }
+      libaroma_sleeper(&sleeper_s,16666);
     }
     
     retval = 1;

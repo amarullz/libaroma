@@ -81,6 +81,10 @@ byte LINUXFBDR_sync_16bit(
       me->w, me->h, mi->stride, 0
     );
   }
+  
+  /* flush with sync it */
+  fsync(mi->fb);
+  
   /* refresh framebuffer */
   if (--mi->syncn==0){
     LINUXFBDR_refresh(me);

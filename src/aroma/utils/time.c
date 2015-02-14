@@ -61,27 +61,44 @@ long libaroma_tick() {
 } /* End of libaroma_tick */
 
 /*
- * Function    : libaroma_nano_tick
- * Return Value: long
- * Descriptions: system tick in nano
+ * Function    : libaroma_sleeper_start
+ * Return Value: byte
+ * Descriptions: High resolution sleep start
  */
-long libaroma_nano_tick() {
+byte libaroma_sleeper_start(LIBAROMA_SLEEPERP sp){
   struct timespec now;
   if (clock_gettime(CLOCK_MONOTONIC, &now)) {
+    sp->start_sec=0;
+    sp->start_usec=0;
     return 0;
   }
-  return ((long) (now.tv_sec * 1000000000 + now.tv_nsec));
-} /* End of libaroma_nano_tick */
+  sp->start_sec = now.tv_sec;
+  sp->start_usec= now.tv_nsec / 1000;
+  return 1;
+} /* End of libaroma_sleeper_start */
 
 /*
- * Function    : libaroma_sleep
- * Return Value: void
- * Descriptions: sleep in ms
+ * Function    : libaroma_sleeper
+ * Return Value: byte
+ * Descriptions: High resolution sleep
  */
-void libaroma_sleep(
-    long ms) {
-  usleep(ms * 1000);
-} /* End of libaroma_sleep */
+byte libaroma_sleeper(LIBAROMA_SLEEPERP sp, long delay){
+  struct timespec now;
+  if ((sp->start_sec==0)&&(sp->start_usec==0)){
+    usleep(delay);
+    return 0;
+  }
+  else if (clock_gettime(CLOCK_MONOTONIC, &now)) {
+    usleep(delay);
+    return 0;
+  }
+  long wait_s = ((now.tv_sec-sp->start_sec) * 1000000);
+  wait_s += (now.tv_nsec/1000) - sp->start_usec;
+  if (wait_s<delay){
+    usleep(delay-wait_s);
+  }
+  return 1;
+} /* End of libaroma_sleeper */
 
 /*
  * Function    : _libaroma_timer_thread

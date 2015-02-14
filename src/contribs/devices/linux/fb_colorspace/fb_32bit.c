@@ -131,6 +131,9 @@ byte LINUXFBDR_sync_32bit(
     }
   }
   
+  /* flush with sync it */
+  fsync(mi->fb);
+  
   /* refresh framebuffer */
   if (--mi->syncn==0){
     LINUXFBDR_refresh(me);

@@ -263,7 +263,7 @@ byte libaroma_msg_post(
   _msg.x      = x;
   _msg.y      = y;
   _msg.d      = d;
-  _msg.sent   = libaroma_nano_tick();
+  _msg.sent   = libaroma_tick();
   /* mutex lock */
   pthread_mutex_lock(&_libaroma_msgqueue_mutex);
   /* push message */
@@ -304,7 +304,7 @@ byte libaroma_msg_post_hid(
   _msg.x      = x;
   _msg.y      = y;
   _msg.d      = NULL;
-  _msg.sent   = libaroma_nano_tick();
+  _msg.sent   = libaroma_tick();
   /* mutex lock */
   pthread_mutex_lock(&_libaroma_msgqueue_mutex);
   /* push message */

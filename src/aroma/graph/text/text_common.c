@@ -55,6 +55,11 @@ static pthread_mutex_t _libaroma_font_mutex = PTHREAD_MUTEX_INITIALIZER;
  */
 static pthread_mutex_t _libaroma_text_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+#ifdef LIBAROMA_CONFIG_OPENMP
+static omp_nest_lock_t _libaroma_text_lock;
+static omp_nest_lock_t _libaroma_font_lock;
+#endif
+
 /*
  * Function    : _libaroma_text_concat_ex
  * Return Value: byte

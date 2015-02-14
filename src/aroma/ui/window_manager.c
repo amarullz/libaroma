@@ -244,7 +244,7 @@ LIBAROMA_MSGP libaroma_wm_compose(
   msg->x      = param1;
   msg->y      = param2;
   msg->d      = data;
-  msg->sent   = libaroma_nano_tick();
+  msg->sent   = libaroma_tick();
   return msg;
 } /* End of libaroma_wm_compose */
 

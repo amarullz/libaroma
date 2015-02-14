@@ -36,5 +36,6 @@
 #include "utils/minutf8.c"  /* utf8 */
 #include "utils/stream.c"   /* stream */
 #include "utils/json.c"     /* json */
+#include "utils/system.c"   /* system */
 
 #endif /* __libaroma_utils_c__ */
