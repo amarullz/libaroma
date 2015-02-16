@@ -63,9 +63,9 @@ void libaroma_color_copy32(dwordp dst, wordp src, int n, bytep rgb_pos) {
     for (i = 0; i < n; i++) {
       word cl = src[i];
       dst[i] = (
-                 (libaroma_color_r(cl) << rgb_pos[0]) |
-                 (libaroma_color_g(cl) << rgb_pos[1]) |
-                 (libaroma_color_b(cl) << rgb_pos[2])
+                 (libaroma_color_hi_r(libaroma_color_r(cl)) << rgb_pos[0]) |
+                 (libaroma_color_hi_g(libaroma_color_g(cl)) << rgb_pos[1]) |
+                 (libaroma_color_hi_b(libaroma_color_b(cl)) << rgb_pos[2])
                );
     }
     return;
@@ -82,6 +82,12 @@ void libaroma_color_copy32(dwordp dst, wordp src, int n, bytep rgb_pos) {
     uint8x8_t r = vshrn_n_u16(vandq_u16(psrc, msk_r), 8);
     uint8x8_t g = vshrn_n_u16(vandq_u16(psrc, msk_g), 3);
     uint8x8_t b = vmovn_u16(vshlq_n_u16(vandq_u16(psrc, msk_b), 3));
+    
+    /* Small Byte Left : 11111xxx 111111xx 11111xxx */
+    r = vorr_u8(r, vshr_n_u8(r, 5));
+    g = vorr_u8(g, vshr_n_u8(g, 6));
+    b = vorr_u8(b, vshr_n_u8(b, 5));
+    
     /* Copy to 32bit */
     uint8x8x4_t n_dst;
     n_dst.val[rgb_pos[3]] = r;
@@ -94,9 +100,9 @@ void libaroma_color_copy32(dwordp dst, wordp src, int n, bytep rgb_pos) {
       for (i = n - left; i < n; i++) {
         word cl = src[i];
         dst[i] = (
-                   (libaroma_color_r(cl) << rgb_pos[0]) |
-                   (libaroma_color_g(cl) << rgb_pos[1]) |
-                   (libaroma_color_b(cl) << rgb_pos[2])
+                   (libaroma_color_hi_r(libaroma_color_r(cl)) << rgb_pos[0]) |
+                   (libaroma_color_hi_g(libaroma_color_g(cl)) << rgb_pos[1]) |
+                   (libaroma_color_hi_b(libaroma_color_b(cl)) << rgb_pos[2])
                  );
       }
       return;

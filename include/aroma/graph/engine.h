@@ -36,6 +36,9 @@ word libaroma_rgb_from_string(const char * c);
 byte libaroma_color_r(word rgb);
 byte libaroma_color_g(word rgb);
 byte libaroma_color_b(word rgb);
+byte libaroma_color_hi_r(byte v);
+byte libaroma_color_hi_g(byte v);
+#define libaroma_color_hi_b(v) libaroma_color_hi_r(v)
 byte libaroma_color_luminance(word rgb);
 byte libaroma_color_isdark(word rgb);
 byte libaroma_color_r32(dword rgb);

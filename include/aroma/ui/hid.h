@@ -95,7 +95,6 @@ struct _LIBAROMA_HID {
   int   screen_height;
   byte  key_pressed[LIBAROMA_HID_KEYCODE_MAX / 8];
   /* touch move informations */
-  long  touch_last_tick;
   int   touch_last_x;
   int   touch_last_y;
 };

@@ -28,7 +28,7 @@
 #define __libaroma_ctl_scroll_c__
 
 #define _LIBAROMA_CTL_SCROLL_SIGNATURE 0x40
-#define _LIBAROMA_CTL_SCROLL_HISTORY   10
+#define _LIBAROMA_CTL_SCROLL_HISTORY   5
 #define _LIBAROMA_CTL_SCROLL_MAX_CACHE 9000
 
 /*
@@ -207,6 +207,7 @@ byte _libaroma_ctl_scroll_updatecache(LIBAROMA_CONTROLP ctl, int move_sz){
     /* update info */
     me->cache_y=cache_y;
     me->draw_y+=move_value;
+    me->synced_scroll_y=-1;
     return 1;
   }
   return 0;
@@ -360,28 +361,6 @@ void _libaroma_ctl_scroll_thread(LIBAROMA_CONTROLP ctl) {
 } /* End of _libaroma_ctl_scroll_thread */
 
 /*
- * Function    : _libaroma_ctl_scroll_destroy
- * Return Value: void
- * Descriptions: destroy callback
- */
-void _libaroma_ctl_scroll_destroy(
-    LIBAROMA_CONTROLP ctl){
-  /* internal check */
-  _LIBAROMA_CTL_CHECK(
-    _LIBAROMA_CTL_SCROLL_SIGNATURE, _LIBAROMA_CTL_SCROLLP, 
-  );
-  /* destroy client */
-  if (me->client.destroy!=NULL){
-    me->client.destroy(ctl,&me->client);
-  }
-  if (me->client_canvas!=NULL){
-    libaroma_canvas_free(me->client_canvas);
-    me->client_canvas=NULL;
-  }
-  free(me);
-} /* End of _libaroma_ctl_scroll_destroy */
-
-/*
  * Function    : _libaroma_ctl_scroll_touch_handler
  * Return Value: dword
  * Descriptions: touch message handler
@@ -398,6 +377,7 @@ dword _libaroma_ctl_scroll_touch_handler(
       me->allow_scroll=2;
       me->touched=1;
       me->velocity=0;
+      
       me->prevn=1;
       me->prev_point[0]=y;
       me->prev_time[0]=libaroma_tick();
@@ -409,10 +389,7 @@ dword _libaroma_ctl_scroll_touch_handler(
     }
     break;
     case LIBAROMA_HID_EV_STATE_UP:{
-      if ((!me->allow_scroll)&&(0)){
-        /* child touch event */
-      }
-      else if (me->touched){
+      if (me->allow_scroll){
         int current_point = (y==0)?me->prev_point[me->prevn-1]:y;
         long current_time = libaroma_tick();
         int first_point   = me->prev_point[0];
@@ -436,59 +413,32 @@ dword _libaroma_ctl_scroll_touch_handler(
     }
     break;
     case LIBAROMA_HID_EV_STATE_MOVE:{
-      /* check minimal move to trigger scroll */
+      int move_sz = me->touch_y - y;
+      /*
       if (me->allow_scroll==2){
-        if (abs(me->touch_y-y)>=libaroma_dp(5)){
-          me->allow_scroll = 1;
+        if (abs(move_sz)>=libaroma_dp(5)){
+          me->allow_scroll=1;
         }
-        else{
-          me->allow_scroll = 0;
-        }
-      }
-      /* start scrolling process */
+      }*/
       if (me->allow_scroll){
-        if (me->touched) {
-          int mv = 0;
-          int scroll_y=me->scroll_y;
-          
-          /* save points & times */
-          long ctick = libaroma_tick();
-          int  prev_point = me->prev_point[me->prevn-1];
-          mv = prev_point - y;
-          me->prevn++;
-          if (me->prevn>_LIBAROMA_CTL_SCROLL_HISTORY){
-            int i;
-            for (i=1;i<_LIBAROMA_CTL_SCROLL_HISTORY;i++){
-              me->prev_point[i-1]=me->prev_point[i];
-              me->prev_time[i-1]=me->prev_time[i];
-            }
-            me->prevn--;
+        /* normal scroll */
+        libaroma_ctl_scroll_set_pos(ctl, me->touch_scroll_y+move_sz);
+        me->touch_y=y;
+        me->touch_scroll_y = me->scroll_y;
+        
+        /* set history */
+        long ctick = libaroma_tick();
+        me->prevn++;
+        if (me->prevn>_LIBAROMA_CTL_SCROLL_HISTORY){
+          int i;
+          for (i=1;i<_LIBAROMA_CTL_SCROLL_HISTORY;i++){
+            me->prev_point[i-1]=me->prev_point[i];
+            me->prev_time[i-1]=me->prev_time[i];
           }
-          me->prev_point[me->prevn-1]=y;
-          me->prev_time[me->prevn-1]=ctick;
-          
-          int max_scroll_y=me->client_h-ctl->h;
-          if (max_scroll_y<0){
-            max_scroll_y=0;
-          }
-          
-          /* standard scrolling */
-          if ((scroll_y<0)&&(mv<0)){
-            /* stop */
-            scroll_y = 0;
-          }
-          else if ((scroll_y>max_scroll_y)&&(mv>0)) {
-            scroll_y = max_scroll_y;
-          }
-          else {
-            scroll_y += mv;
-          }
-          
-          /* scroll is changed */
-          if (scroll_y!=me->scroll_y){
-            libaroma_ctl_scroll_set_pos(ctl, scroll_y);
-          }
+          me->prevn--;
         }
+        me->prev_point[me->prevn-1]=y;
+        me->prev_time[me->prevn-1]=ctick;
       }
     }
     break;
@@ -544,6 +494,28 @@ dword _libaroma_ctl_scroll_msg(
 } /* End of _libaroma_ctl_scroll_msg */
 
 /*
+ * Function    : _libaroma_ctl_scroll_destroy
+ * Return Value: void
+ * Descriptions: destroy callback
+ */
+void _libaroma_ctl_scroll_destroy(
+    LIBAROMA_CONTROLP ctl){
+  /* internal check */
+  _LIBAROMA_CTL_CHECK(
+    _LIBAROMA_CTL_SCROLL_SIGNATURE, _LIBAROMA_CTL_SCROLLP, 
+  );
+  /* destroy client */
+  if (me->client.destroy!=NULL){
+    me->client.destroy(ctl,&me->client);
+  }
+  if (me->client_canvas!=NULL){
+    libaroma_canvas_free(me->client_canvas);
+    me->client_canvas=NULL;
+  }
+  free(me);
+} /* End of _libaroma_ctl_scroll_destroy */
+
+/*
  * Function    : libaroma_ctl_scroll
  * Return Value: LIBAROMA_CONTROLP
  * Descriptions: create scroll control
@@ -593,9 +565,10 @@ LIBAROMA_CONTROLP libaroma_ctl_scroll(
   /* touch state */
   me->touch_x=0;
   me->touch_y=0;
+  me->touched = 0;
+  me->touch_scroll_y = 0;
   
   /* reset fling */
-  me->touched = 0;
   me->velocity = 0;
   me->prevn = 0;
   me->allow_scroll = 0;

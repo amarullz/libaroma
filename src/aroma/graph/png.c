@@ -559,9 +559,9 @@ byte libaroma_png_save(
       }
       else {
         /* raw 565 */
-        row[dpos]    = libaroma_color_r(px);
-        row[dpos + 1]  = libaroma_color_g(px);
-        row[dpos + 2]  = libaroma_color_b(px);
+        row[dpos]    = libaroma_color_hi_r(libaroma_color_r(px));
+        row[dpos + 1]  = libaroma_color_hi_g(libaroma_color_g(px));
+        row[dpos + 2]  = libaroma_color_hi_b(libaroma_color_b(px));
       }
       if (c->alpha) {
         /* alpha */

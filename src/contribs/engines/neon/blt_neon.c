@@ -103,6 +103,11 @@ void libaroma_btl32(int n, dwordp dst, const wordp src) {
     red = vand_u8(red, mask5);
     grn = vand_u8(grn, mask6);
     blu = vshl_n_u8(blu, 3);
+    
+    /* Small Byte Left : 11111xxx 111111xx 11111xxx */
+    red = vorr_u8(red, vshr_n_u8(red, 5));
+    grn = vorr_u8(grn, vshr_n_u8(grn, 6));
+    blu = vorr_u8(blu, vshr_n_u8(blu, 5));
 
     /* dump */
     rgb.val[3] = alp;

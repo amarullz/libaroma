@@ -67,7 +67,6 @@ byte libaroma_hid_init() {
   /* set screen information */
   _libaroma_hid->screen_width = libaroma_fb()->w;
   _libaroma_hid->screen_height = libaroma_fb()->h;
-  _libaroma_hid->touch_last_tick = libaroma_tick();
   _libaroma_hid->touch_last_x = 0;
   _libaroma_hid->touch_last_y = 0;
   
@@ -211,26 +210,20 @@ byte libaroma_hid_get(
           /* filter move event to prevent flooding move messages */
           if (e->state == LIBAROMA_HID_EV_STATE_MOVE) {
             /* ignore the floods */
-            int difx = abs(_libaroma_hid->touch_last_x - e->x);
-            int dify = abs(_libaroma_hid->touch_last_y - e->y);
-            if ((difx + dify) * 2 >= libaroma_dp(1)) {
-              if (_libaroma_hid->touch_last_tick < libaroma_tick() - 4) {
-                libaroma_hid_set_keypress(LIBAROMA_HID_TOUCH_KEYCODE, e->state);
-                /* set last move info */
-                _libaroma_hid->touch_last_x = e->x;
-                _libaroma_hid->touch_last_x = e->y;
-                _libaroma_hid->touch_last_tick = libaroma_tick();
-                return ret;
-              }
+            if ((_libaroma_hid->touch_last_x!=e->x)||
+               (_libaroma_hid->touch_last_y!=e->y)){
+              libaroma_hid_set_keypress(LIBAROMA_HID_TOUCH_KEYCODE, e->state);
+              /* set last move info */
+              _libaroma_hid->touch_last_x = e->x;
+              _libaroma_hid->touch_last_x = e->y;
+              return ret;
             }
-            /* continue */
           }
           else {
             libaroma_hid_set_keypress(LIBAROMA_HID_TOUCH_KEYCODE, e->state);
             /* set last move info */
             _libaroma_hid->touch_last_x = e->x;
             _libaroma_hid->touch_last_x = e->y;
-            _libaroma_hid->touch_last_tick = libaroma_tick();
             return ret;
           }
         }
