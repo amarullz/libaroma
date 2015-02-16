@@ -27,6 +27,7 @@
 #ifndef __libaroma_font_freetype_c__
 #define __libaroma_font_freetype_c__
 
+
 /*
  * Function    : libaroma_font_set_size
  * Return Value: byte
@@ -45,27 +46,18 @@ byte libaroma_font_set_size(
     return 1;
   }
   if (lock) {
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_set_nest_lock(&_libaroma_font_lock);
-#endif
-    pthread_mutex_lock(&_libaroma_font_mutex);
+    _libaroma_font_lock(1);
   }
   if (FT_Set_Pixel_Sizes(_libaroma_font_faces[fontid].face, 0, size) == 0) {
     _libaroma_font_faces[fontid].size = size;
     _libaroma_font_hb_update_scale(fontid);
     if (lock) {
-      pthread_mutex_unlock(&_libaroma_font_mutex);
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_unset_nest_lock(&_libaroma_font_lock);
-#endif
+      _libaroma_font_lock(0);
     }
     return 1;
   }
   if (lock) {
-    pthread_mutex_unlock(&_libaroma_font_mutex);
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_unset_nest_lock(&_libaroma_font_lock);
-#endif
+    _libaroma_font_lock(0);
   }
   return 0;
 } /* End of libaroma_font_set_size */
@@ -165,7 +157,9 @@ int libaroma_font_glyph_get_id(
   int codepage = 0;
   FT_Face face = _libaroma_font_faces[searchid].face;
   if (face != NULL) {
+    _libaroma_font_lock(1);
     codepage = FT_Get_Char_Index(face, c);
+    _libaroma_font_lock(0);
     if (codepage != 0) {
       *fontid_avail = searchid;
       return codepage;
@@ -175,7 +169,9 @@ int libaroma_font_glyph_get_id(
   while ((codepage == 0) && (searchid < _LIBAROMA_FONT_MAX_FACE)) {
     face = _libaroma_font_faces[searchid].face;
     if ((face != NULL) && (searchid != fontid)) {
+      _libaroma_font_lock(1);
       codepage = FT_Get_Char_Index(face, c);
+      _libaroma_font_lock(0);
       if (codepage != 0) {
         *fontid_avail = searchid;
         return codepage;
@@ -233,10 +229,7 @@ LIBAROMA_GLYPH libaroma_font_glyph(
   }
   
   /* thread safe */
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_set_nest_lock(&_libaroma_font_lock);
-#endif
-  pthread_mutex_lock(&_libaroma_font_mutex);
+  _libaroma_font_lock(1);
   
   /* set requested font size */
   libaroma_font_set_size(fontid, libaroma_font_size_px(size), 0);
@@ -250,10 +243,7 @@ LIBAROMA_GLYPH libaroma_font_glyph(
     slot.size = _libaroma_font_faces[fontid].size;
     
     /* ready to return */
-    pthread_mutex_unlock(&_libaroma_font_mutex);
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_unset_nest_lock(&_libaroma_font_lock);
-#endif
+    _libaroma_font_lock(0);
     libaroma_iarray_set(
       _libaroma_font_faces[fontid].cache,
       cache_id,
@@ -271,10 +261,7 @@ LIBAROMA_GLYPH libaroma_font_glyph(
       _libaroma_font_faces[fontid].last_cache;
   }
   
-  pthread_mutex_unlock(&_libaroma_font_mutex);
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_unset_nest_lock(&_libaroma_font_lock);
-#endif
+  _libaroma_font_lock(0);
   return NULL;
 } /* End of libaroma_font_glyph */
 
@@ -311,10 +298,7 @@ byte libaroma_font(
   }
   
   /* thread safe */
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_set_nest_lock(&_libaroma_font_lock);
-#endif
-  pthread_mutex_lock(&_libaroma_font_mutex);
+  _libaroma_font_lock(1);
   
   /* load face */
   FT_Face tmp_face;
@@ -342,11 +326,8 @@ byte libaroma_font(
       /* init harfbuzz */
       _libaroma_font_hb_init(fontid);
       
-      /* unlock thread mutex */
-      pthread_mutex_unlock(&_libaroma_font_mutex);
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_unset_nest_lock(&_libaroma_font_lock);
-#endif
+      /* unlock */
+      _libaroma_font_lock(0);
       ALOGV("font loaded %ibytes (%s)", stream->size, stream->uri);
       return 1;
     }
@@ -359,10 +340,7 @@ byte libaroma_font(
     ALOGW("libaroma_font FT_New_Memory_Face Error");
     libaroma_stream_close(stream);
   }
-  pthread_mutex_unlock(&_libaroma_font_mutex);
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_unset_nest_lock(&_libaroma_font_lock);
-#endif
+  _libaroma_font_lock(0);
   return 0;
 } /* End of libaroma_font */
 
@@ -451,10 +429,8 @@ byte libaroma_font_glyph_draw(
     dest = libaroma_fb()->canvas;
   }
   /* thread safe lock */
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_set_nest_lock(&_libaroma_font_lock);
-#endif
-  pthread_mutex_lock(&_libaroma_font_mutex);
+  _libaroma_font_lock(1);
+  
   /* copy & render */
   FT_Glyph fglyph;
   FT_Glyph_Copy(aglyph->glyph, &fglyph);
@@ -578,10 +554,7 @@ byte libaroma_font_glyph_draw(
 #endif
   /* release glyph */
   FT_Done_Glyph(fglyph);
-  pthread_mutex_unlock(&_libaroma_font_mutex);
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_unset_nest_lock(&_libaroma_font_lock);
-#endif
+  _libaroma_font_lock(0);
   return 1;
 } /* End of libaroma_font_glyph_draw */
 
@@ -591,18 +564,14 @@ byte libaroma_font_glyph_draw(
  * Descriptions: init font instance
  */
 byte libaroma_font_init() {
-  
+  if (_libaroma_font_instance != NULL) {
+    return 0;
+  }
 #ifdef LIBAROMA_CONFIG_OPENMP
   omp_init_nest_lock(&_libaroma_text_lock);
   omp_init_nest_lock(&_libaroma_font_lock);
-  omp_set_nest_lock(&_libaroma_font_lock);
 #endif
-  
-  pthread_mutex_lock(&_libaroma_font_mutex);
-  if (_libaroma_font_instance != NULL) {
-    pthread_mutex_unlock(&_libaroma_font_mutex);
-    return 0;
-  }
+  _libaroma_font_lock(1);
   if (FT_Init_FreeType(&_libaroma_font_instance) == 0) {
 #ifndef LIBAROMA_CONFIG_NOFONT_SUBPIXEL
     FT_Library_SetLcdFilter(_libaroma_font_instance, FT_LCD_FILTER_DEFAULT);
@@ -610,17 +579,11 @@ byte libaroma_font_init() {
     /* cleanup font face */
     memset(_libaroma_font_faces, 0,
       sizeof(_LIBAROMA_FONT_FACE) * _LIBAROMA_FONT_MAX_FACE);
-    pthread_mutex_unlock(&_libaroma_font_mutex);
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_unset_nest_lock(&_libaroma_font_lock);
-#endif
+    _libaroma_font_lock(0);
     return 1;
   }
   ALOGE("libaroma_font_init Error FT_Init_FreeType");
-  pthread_mutex_unlock(&_libaroma_font_mutex);
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_unset_nest_lock(&_libaroma_font_lock);
-#endif
+  _libaroma_font_lock(0);
   return 0;
 } /* End of libaroma_font_init */
 
@@ -630,15 +593,11 @@ byte libaroma_font_init() {
  * Descriptions: release font instance
  */
 byte libaroma_font_release() {
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_set_nest_lock(&_libaroma_font_lock);
-#endif
-  pthread_mutex_lock(&_libaroma_font_mutex);
+  _libaroma_font_lock(1);
   if (_libaroma_font_instance == NULL) {
     ALOGE("libaroma_font_release _libaroma_font_instance=NULL");
-    pthread_mutex_unlock(&_libaroma_font_mutex);
+    _libaroma_font_lock(0);
 #ifdef LIBAROMA_CONFIG_OPENMP
-  omp_unset_nest_lock(&_libaroma_font_lock);
   omp_destroy_nest_lock(&_libaroma_font_lock);
   omp_destroy_nest_lock(&_libaroma_text_lock);
 #endif
@@ -655,9 +614,8 @@ byte libaroma_font_release() {
   }
   if (FT_Done_FreeType(_libaroma_font_instance) == 0) {
     _libaroma_font_instance = NULL;
-    pthread_mutex_unlock(&_libaroma_font_mutex);
+    _libaroma_font_lock(0);
 #ifdef LIBAROMA_CONFIG_OPENMP
-  omp_unset_nest_lock(&_libaroma_font_lock);
   omp_destroy_nest_lock(&_libaroma_font_lock);
   omp_destroy_nest_lock(&_libaroma_text_lock);
 #endif
@@ -665,9 +623,8 @@ byte libaroma_font_release() {
     return 1;
   }
   ALOGE("libaroma_font_release FT_Done_FreeType Error");
-  pthread_mutex_unlock(&_libaroma_font_mutex);
+  _libaroma_font_lock(0);
 #ifdef LIBAROMA_CONFIG_OPENMP
-  omp_unset_nest_lock(&_libaroma_font_lock);
   omp_destroy_nest_lock(&_libaroma_font_lock);
   omp_destroy_nest_lock(&_libaroma_text_lock);
 #endif

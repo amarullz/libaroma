@@ -73,7 +73,9 @@ static hb_bool_t _libaroma_font_hb_glyph_func(
   void * user_data
 ) {
   _LIBAROMA_FONT_HB_FTFACE();
+  _libaroma_font_lock(1);
   *glyph = FT_Get_Char_Index(ft_face, unicode);
+  _libaroma_font_lock(0);
   return *glyph != 0;
 }
 /* glyph_h_advance */
@@ -85,9 +87,12 @@ static hb_position_t _libaroma_font_hb_glyph_h_advance_func(
 ) {
   _LIBAROMA_FONT_HB_FTFACE();
   FT_Fixed v;
+  _libaroma_font_lock(1);
   if (FT_Get_Advance(ft_face,glyph,_LIBAROMA_FONT_LOAD_GLYPH_FLAG,&v)){
+    _libaroma_font_lock(0);
     return 0;
   }
+  _libaroma_font_lock(0);
   return (v + (1 << 9)) >> 10;
 }
 /* glyph_v_advance */
@@ -99,13 +104,15 @@ static hb_position_t _libaroma_font_hb_glyph_v_advance_func(
 ) {
   _LIBAROMA_FONT_HB_FTFACE();
   FT_Fixed v;
+  _libaroma_font_lock(1);
   if (FT_Get_Advance(
       ft_face, glyph,
       _LIBAROMA_FONT_LOAD_GLYPH_FLAG|FT_LOAD_VERTICAL_LAYOUT,
       &v)) {
+    _libaroma_font_lock(0);
     return 0;
   }
-  
+  _libaroma_font_lock(0);
   return (-v + (1 << 9)) >> 10;
 }
 /* glyph_h_origin */
@@ -152,9 +159,12 @@ static hb_position_t _libaroma_font_hb_glyph_h_kerning_func(
   unsigned int y_ppem;
   hb_font_get_ppem (font,&x_ppem,&y_ppem);
   FT_Kerning_Mode mode  = (x_ppem?FT_KERNING_DEFAULT:FT_KERNING_UNFITTED);
+  _libaroma_font_lock(1);
   if (FT_Get_Kerning (ft_face, left_glyph, right_glyph, mode, &kerningv)) {
+    _libaroma_font_lock(0);
     return 0;
   }
+  _libaroma_font_lock(0);
   return kerningv.x;
 }
 /* glyph_v_kerning */
@@ -219,7 +229,9 @@ static hb_bool_t _libaroma_font_hb_glyph_name_func(
   void * user_data
 ) {
   _LIBAROMA_FONT_HB_FTFACE();
+  _libaroma_font_lock(1);
   hb_bool_t ret = !FT_Get_Glyph_Name(ft_face, glyph, name, size);
+  _libaroma_font_lock(0);
   if (ret && (size && !*name)) {
     ret = false;
   }
@@ -236,23 +248,30 @@ static hb_bool_t _libaroma_font_hb_glyph_from_name_func(
 ) {
   _LIBAROMA_FONT_HB_FTFACE();
   if (len < 0) {
+    _libaroma_font_lock(1);
     *glyph = FT_Get_Name_Index(ft_face, (FT_String *) name);
+    _libaroma_font_lock(0);
   }
   else {
     char buf[128];
     len = MIN(len, (int) sizeof (buf) - 1);
     strncpy (buf, name, len);
     buf[len] = '\0';
+    _libaroma_font_lock(1);
     *glyph = FT_Get_Name_Index (ft_face, buf);
+    _libaroma_font_lock(0);
   }
   if (*glyph == 0) {
+    _libaroma_font_lock(1);
     char buf[128];
     if (
       (!FT_Get_Glyph_Name(ft_face, 0, buf, sizeof (buf))) &&
       (len < 0 ? !strcmp (buf, name) : !strncmp (buf, name, len))
     ) {
+      _libaroma_font_lock(0);
       return true;
     }
+    _libaroma_font_lock(0);
   }
   return *glyph != 0;
 }
@@ -317,7 +336,9 @@ static hb_blob_t * _libaroma_font_hb_ref_table(
   FT_ULong  length    = 0;
   FT_Byte  * buffer;
   FT_Error  error;
+  _libaroma_font_lock(1);
   error = FT_Load_Sfnt_Table (ft_face, tag, 0, NULL, &length);
+  _libaroma_font_lock(0);
   if (error) {
     return NULL;
   }
@@ -325,7 +346,9 @@ static hb_blob_t * _libaroma_font_hb_ref_table(
   if (buffer == NULL) {
     return NULL;
   }
+  _libaroma_font_lock(1);
   error = FT_Load_Sfnt_Table(ft_face, tag, 0, buffer, &length);
+  _libaroma_font_lock(0);
   if (error) {
     return NULL;
   }

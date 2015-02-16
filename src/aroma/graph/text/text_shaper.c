@@ -41,11 +41,7 @@ _LIBAROMA_TEXTSHAPEDP libaroma_text_shaper(
   if (font == NULL) {
     return NULL;
   }
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_set_nest_lock(&_libaroma_text_lock);
-#endif
-  /* only 1 process per thread */
-  pthread_mutex_lock(&_libaroma_text_mutex);
+  _libaroma_text_lock(1);
   
   /* set size */
   byte fontsize = _LIBAROMA_TEXTCHUNK_GETFONTSIZE(chunk->curr_state.font);
@@ -77,10 +73,7 @@ _LIBAROMA_TEXTSHAPEDP libaroma_text_shaper(
   dword glyph_count = hb_buffer_get_length(buf);
   if (glyph_count < 1) {
     hb_buffer_destroy(buf);
-    pthread_mutex_unlock(&_libaroma_text_mutex);
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_unset_nest_lock(&_libaroma_text_lock);
-#endif
+    _libaroma_text_lock(0);
     return NULL;
   }
   
@@ -164,10 +157,7 @@ _LIBAROMA_TEXTSHAPEDP libaroma_text_shaper(
   /* get bounding box */
   shaped->w = max_x - min_x;
   shaped->h = max_y - min_y;
-  pthread_mutex_unlock(&_libaroma_text_mutex);
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_unset_nest_lock(&_libaroma_text_lock);
-#endif
+  _libaroma_text_lock(0);
   return shaped;
 } /* End of libaroma_text_shaper */
 

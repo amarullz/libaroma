@@ -531,9 +531,6 @@ byte libaroma_wm_client_start(){
   _libaroma_wm->queue = libaroma_stack(NULL);
   pthread_create(&_libaroma_wm->message_thread,
     NULL, _libaroma_wm_message_thread, NULL);
-  struct sched_param params;
-  params.sched_priority = sched_get_priority_max(SCHED_FIFO)/2;
-  pthread_setschedparam(_libaroma_wm->message_thread, SCHED_FIFO, &params);
   return 1;
 } /* End of libaroma_wm_client_start */
 

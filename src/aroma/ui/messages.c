@@ -146,9 +146,6 @@ byte libaroma_msg_init() {
   pthread_create(&_libaroma_msgqueue->input_thread,
     NULL, _libaroma_msgqueue_hid_thread, NULL);
 
-  struct sched_param params;
-  params.sched_priority = (sched_get_priority_max(SCHED_FIFO)/2) + 1;
-  pthread_setschedparam(_libaroma_msgqueue->input_thread, SCHED_FIFO, &params);
   /* OK */
   return 1;
 } /* End of libaroma_msg_init */

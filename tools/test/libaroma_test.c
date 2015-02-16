@@ -142,7 +142,7 @@ int main(int argc, char **argv){
   LIBAROMA_CONTROLP btn_exit = libaroma_ctl_button(
     win, 7,
     0, 240, LIBAROMA_SIZE_FULL, 60,
-    "Exit",
+    "<b>Tap & Hold</b> to Exit",
     LIBAROMA_CTL_BUTTON_RAISED|LIBAROMA_CTL_BUTTON_COLORED,
     RGB(F44336)
   );
@@ -214,18 +214,10 @@ int main(int argc, char **argv){
     word id   = LIBAROMA_CMD_ID(command);
     byte param= LIBAROMA_CMD_PARAM(command);
     
-    if (msg.msg==LIBAROMA_MSG_KEY_SELECT){
-      /* quit */
-      onpool = 0;
-    }
-    else if (cmd){
+    if (cmd){
       
       if (cmd==LIBAROMA_CMD_CLICK){
-        if (id==btn_exit->id){
-          printf("Exit Button Pressed...\n");
-          onpool = 0;
-        }
-        else if (id==6){
+        if (id==6){
           // libaroma_ctl_button_text(btn6,"<img=file:///sdcard/plus.png;24dp;24dp>Click");
           click_value++;
           char clstr[128];
@@ -297,6 +289,10 @@ int main(int argc, char **argv){
           char clstr[128];
           snprintf(clstr,128,"<u>Holded</u> (%i)",click_value);
           libaroma_ctl_button_text(btn6,clstr);
+        }
+        else if (id==btn_exit->id){
+          printf("Exit Button Pressed...\n");
+          onpool = 0;
         }
       }
       
