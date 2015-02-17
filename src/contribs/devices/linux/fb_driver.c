@@ -34,6 +34,9 @@
  */
 #include <linux/fb.h>
 #include <aroma.h>
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #include <omp.h>
+#endif
 
 /*
  * device path
@@ -60,6 +63,10 @@ typedef struct {
   /* needed by 32bit colorspace */
   byte      rgb_pos[6];                 /* framebuffer rgb position */
   byte      rgb_pos_normal;             /* is rgb position = 16,8,0,24 ? */
+  
+#ifdef LIBAROMA_CONFIG_OPENMP
+  omp_nest_lock_t synclock;
+#endif
 } LINUXFBDR_INTERNAL, *LINUXFBDR_INTERNALP;
 
 /*
@@ -88,13 +95,18 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
     ALOGE("FBDRIVER malloc internal data - Memory Error");
     return 0;
   }
-  
+
   /* Cleanup */
   memset(mi, 0, sizeof(LINUXFBDR_INTERNAL));
   /* Set Internal Address */
   me->internal = (voidp) mi;
   /* Set Release and Refresh Callback */
   me->release = &LINUXFBDR_release;
+  
+#ifdef LIBAROMA_CONFIG_OPENMP
+  omp_init_nest_lock(&mi->synclock);
+#endif
+  
   /* Open Framebuffer Device */
   mi->fb = open(LINUXFBDR_DEVICE, O_RDWR, 0);
   
@@ -119,7 +131,16 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
     goto error; /* Exit If Error */
   }
   
-  // ioctl(mi->fb, FBIOBLANK, FB_BLANK_UNBLANK);
+  /*
+  ALOGI("POWER DOWN");
+  ioctl(mi->fb, FBIOBLANK, FB_BLANK_POWERDOWN);
+  ALOGI("POWER DOWN OK");
+  
+  sleep(3);
+  ALOGI("UNBLANK");
+  ioctl(mi->fb, FBIOBLANK, FB_BLANK_UNBLANK);
+  ALOGI("UNBLANK OK");
+  */
   
   /* try to force 32bit libaroma color mode (bgra)
   if (mi->var.bits_per_pixel==32){
@@ -239,6 +260,11 @@ void LINUXFBDR_release(LIBAROMA_FBP me) {
   close(mi->fb);
   /* Free Internal Data */
   ALOGV("FBDRIVER free internal data");
+  
+#ifdef LIBAROMA_CONFIG_OPENMP
+  /* destroy lock */
+  omp_destroy_nest_lock(&mi->synclock);
+#endif
   free(me->internal);
 }
 
@@ -254,10 +280,15 @@ void LINUXFBDR_refresh(LIBAROMA_FBP me) {
 
   /* Get Internal Data */
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
+  
   /* Refresh Display */
-  mi->var.yoffset   = 0;
-  mi->var.activate |= FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
-  ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var);
+  mi->var.activate = FB_ACTIVATE_VBL;
+	mi->var.yoffset = 0;
+	if(ioctl(mi->fb, FBIOPAN_DISPLAY, &mi->var)){
+	  mi->var.yoffset   = 0;
+    mi->var.activate |= FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
+    ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var);
+	}
 }
 
 /*

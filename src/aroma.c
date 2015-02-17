@@ -56,12 +56,36 @@ void _libaroma_config_default() {
   else{
     _libaroma_config.fb_shm_name[0]=0;
   }
+  _libaroma_config.debug_fp=stdout;
   _libaroma_config.multicore_init_num = 8; /* activate core */
   _libaroma_config.snapshoot_fb = 0; /* snapshoot after graph init */
   _libaroma_config.runtime_monitor = LIBAROMA_START_UNSAFE;
-  
   _libaroma_config_ready = 1;
 } /* End of libaroma_config_default */
+
+/*
+ * Function    : libaroma_debug_output
+ * Return Value: FILE *
+ * Descriptions: get debug output fd
+ */
+FILE * libaroma_debug_output(){
+  if (!_libaroma_config.debug_fp){
+    _libaroma_config.debug_fp=stdout;
+  }
+  return _libaroma_config.debug_fp;
+} /* End of libaroma_debug_output */
+
+/*
+ * Function    : libaroma_debug_set_output
+ * Return Value: void
+ * Descriptions: set debug output fd
+ */
+void libaroma_debug_set_output(FILE * fd){
+  _libaroma_config.debug_fp = fd;
+  if (!_libaroma_config.debug_fp){
+    _libaroma_config.debug_fp=stdout;
+  }
+} /* End of libaroma_debug_set_output */
 
 /*
  * Function    : libaroma_config

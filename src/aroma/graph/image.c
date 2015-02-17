@@ -37,7 +37,7 @@ LIBAROMA_CANVASP libaroma_image_ex(
     byte freeStream, 
     byte hicolor){
   if (!stream) {
-    goto errorgo;
+    return NULL;
   }
   if (stream->size<5){
     goto errorgo;

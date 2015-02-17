@@ -134,7 +134,7 @@ int main(int argc, char **argv){
   LIBAROMA_CONTROLP btn6 = libaroma_ctl_button(
     win, 6,
     LIBAROMA_POS_HALF, 180, LIBAROMA_SIZE_HALF, 60,
-    "Change Text",
+    "<img=file:///sdcard/plus.png>Change Text",
     LIBAROMA_CTL_BUTTON_RAISED|LIBAROMA_CTL_BUTTON_COLORED,
     RGB(ffcccc)
   );

@@ -60,7 +60,13 @@ byte LINUXFBDR_sync_16bit(
   }
   /* get internal data */
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
+#ifdef LIBAROMA_CONFIG_OPENMP
+  omp_set_nest_lock(&mi->synclock);
+#endif
   mi->syncn++;
+#ifdef LIBAROMA_CONFIG_OPENMP
+  omp_unset_nest_lock(&mi->synclock);
+#endif
   /* defined area only */
   if ((w > 0) && (h > 0)) {
     int copy_stride = me->w-w;
@@ -82,13 +88,18 @@ byte LINUXFBDR_sync_16bit(
     );
   }
   
-  /* flush with sync it */
-  fsync(mi->fb);
-  
+#ifdef LIBAROMA_CONFIG_OPENMP
+  omp_set_nest_lock(&mi->synclock);
+#endif
   /* refresh framebuffer */
   if (--mi->syncn==0){
+    /* flush sync */
+    fsync(mi->fb);
     LINUXFBDR_refresh(me);
   }
+#ifdef LIBAROMA_CONFIG_OPENMP
+  omp_unset_nest_lock(&mi->synclock);
+#endif
   return 1;
 }
 

@@ -60,6 +60,20 @@ char * ___mtrack_strdup(char * str, char * filename, long line);
 #define LIBAROMA_DEBUG_TAG "AROMA"
 #endif
 
+/*
+ * Function    : libaroma_debug_output
+ * Return Value: FILE *
+ * Descriptions: get debug output fd
+ */
+FILE * libaroma_debug_output();
+
+/*
+ * Function    : libaroma_debug_set_output
+ * Return Value: void
+ * Descriptions: set debug output fd
+ */
+void libaroma_debug_set_output(FILE * fd);
+
 /* Debugging Tag 2 */
 #if LIBAROMA_CONFIG_DEBUG_FILE >=1
 #if LIBAROMA_CONFIG_DEBUG_FILE >=2
@@ -80,58 +94,76 @@ char * ___mtrack_strdup(char * str, char * filename, long line);
 /* Error Logs */
 #if LIBAROMA_CONFIG_DEBUG >= 1
 #define ALOGE(...) \
-  fprintf(stdout, LIBAROMA_DEBUG_TAG2 "[E] " __VA_ARGS__); \
-  fprintf(stdout, "\n");
+  fprintf(libaroma_debug_output(), LIBAROMA_DEBUG_TAG2 "[E] " __VA_ARGS__); \
+  fprintf(libaroma_debug_output(), "\n");
 #else
 #define ALOGE(...)
 #endif
 
-/* Warning Logs */
-#if LIBAROMA_CONFIG_DEBUG >= 2
-#define ALOGW(...) fprintf(stdout, LIBAROMA_DEBUG_TAG2 "[W] " __VA_ARGS__); \
-  fprintf(stdout, "\n");
-#else
-#define ALOGW(...)
-#endif
-
 /* Process/Info Logs */
-#if LIBAROMA_CONFIG_DEBUG >= 3
-#define ALOGI(...) fprintf(stdout, LIBAROMA_DEBUG_TAG "[I] " __VA_ARGS__); \
-  fprintf(stdout, "\n");
+#if LIBAROMA_CONFIG_DEBUG >= 2
+#define ALOGI(...) \
+  fprintf(libaroma_debug_output(), LIBAROMA_DEBUG_TAG "[I] " __VA_ARGS__); \
+  fprintf(libaroma_debug_output(), "\n");
+#define ALOGI_IF(x, ...) if(x){ ALOGI(__VA_ARGS__) }
 #else
 #define ALOGI(...)
+#define ALOGI_IF(x, ...)
 #endif
 
 /* Important String Information Logs */
-#if LIBAROMA_CONFIG_DEBUG >= 4
-#define ALOGS(...) fprintf(stdout, LIBAROMA_DEBUG_TAG "[S] " __VA_ARGS__); \
-  fprintf(stdout, "\n");
+#if LIBAROMA_CONFIG_DEBUG >= 3
+#define ALOGS(...) \
+  fprintf(libaroma_debug_output(), LIBAROMA_DEBUG_TAG "[S] " __VA_ARGS__); \
+  fprintf(libaroma_debug_output(), "\n");
+#define ALOGS_IF(x, ...) if(x){ ALOGS(__VA_ARGS__) }
 #else
 #define ALOGS(...)
+#define ALOGS_IF(x, ...)
+#endif
+
+/* Warning Logs */
+#if LIBAROMA_CONFIG_DEBUG >= 4
+#define ALOGW(...) \
+  fprintf(libaroma_debug_output(), LIBAROMA_DEBUG_TAG2 "[W] " __VA_ARGS__); \
+  fprintf(libaroma_debug_output(), "\n");
+#define ALOGW_IF(x, ...) if(x){ ALOGW(__VA_ARGS__) }
+#else
+#define ALOGW(...)
+#define ALOGW_IF(x, ...)
 #endif
 
 /* Verbose Logs */
 #if LIBAROMA_CONFIG_DEBUG >= 5
-#define ALOGV(...) fprintf(stdout, LIBAROMA_DEBUG_TAG "[V] " __VA_ARGS__); \
-  fprintf(stdout, "\n");
+#define ALOGV(...) \
+  fprintf(libaroma_debug_output(), LIBAROMA_DEBUG_TAG "[V] " __VA_ARGS__); \
+  fprintf(libaroma_debug_output(), "\n");
+#define ALOGV_IF(x, ...) if(x){ ALOGV(__VA_ARGS__) }
 #else
 #define ALOGV(...)
+#define ALOGW_IF(x, ...)
 #endif
 
 /* Event Logs */
 #if LIBAROMA_CONFIG_DEBUG >= 6
-#define ALOGT(...) fprintf(stdout, LIBAROMA_DEBUG_TAG "[T] " __VA_ARGS__); \
-  fprintf(stdout, "\n");
+#define ALOGT(...) \
+  fprintf(libaroma_debug_output(), LIBAROMA_DEBUG_TAG "[T] " __VA_ARGS__); \
+  fprintf(libaroma_debug_output(), "\n");
+#define ALOGT_IF(x, ...) if(x){ ALOGT(__VA_ARGS__) }
 #else
 #define ALOGT(...)
+#define ALOGT_IF(x, ...)
 #endif
 
 /* Event Logs */
 #if LIBAROMA_CONFIG_DEBUG >= 7
-#define ALOGRT(...) fprintf(stdout, LIBAROMA_DEBUG_TAG "[R] " __VA_ARGS__); \
-  fprintf(stdout, "\n");
+#define ALOGRT(...) \
+  fprintf(libaroma_debug_output(), LIBAROMA_DEBUG_TAG "[R] " __VA_ARGS__); \
+  fprintf(libaroma_debug_output(), "\n");
+#define ALOGRT_IF(x, ...) if(x){ ALOGRT(__VA_ARGS__) }
 #else
 #define ALOGRT(...)
+#define ALOGRT_IF(x, ...)
 #endif
 
 #endif /* __libaroma_debug_h__ */

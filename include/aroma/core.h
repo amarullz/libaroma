@@ -47,6 +47,7 @@ struct _LIBAROMA_CONFIG{
   byte snapshoot_fb;
   byte multicore_init_num;
   byte runtime_monitor;
+  FILE * debug_fp;
 };
 
 /*

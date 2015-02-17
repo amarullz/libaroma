@@ -53,20 +53,20 @@ LIBAROMA_STREAMP libaroma_stream_file(
     char * path) {
   if (!path) {
     ALOGW("libaroma_stream_file path is invalid");
-    return 0;
+    return NULL;
   }
   LIBAROMA_STREAMP ret;
   /* Read File Stat */
   struct stat st;
   if (stat(path, &st) < 0) {
-    ALOGW("libaroma_stream_file stat is invalid (%s)", path);
-    return 0;
+    ALOGI("libaroma_stream_file (%s) not found", path);
+    return NULL;
   }
   /* Open File */
   int fd = open(path, O_RDONLY, 0);
   if (fd < 0) {
     ALOGW("libaroma_stream_file unable to open (%s)", path);
-    return 0;
+    return NULL;
   }
   /* MAP */
   bytep mem = (bytep) mmap(NULL, st.st_size,
@@ -75,7 +75,7 @@ LIBAROMA_STREAMP libaroma_stream_file(
   close(fd);
   if (mem == MAP_FAILED) {
     ALOGW("libaroma_stream_file unable to mmap (%s)", path);
-    return 0;
+    return NULL;
   }
   /* Return */
   ret           = (LIBAROMA_STREAMP) malloc(sizeof(LIBAROMA_STREAM));
