@@ -101,6 +101,16 @@ byte libaroma_sleeper(LIBAROMA_SLEEPERP sp, long delay){
 } /* End of libaroma_sleeper */
 
 /*
+ * Function    : libaroma_sleep
+ * Return Value: void
+ * Descriptions: sleep in ms
+ */
+void libaroma_sleep(
+    long ms){
+  usleep(ms*1000);
+}
+
+/*
  * Function    : _libaroma_timer_thread
  * Return Value: static void *
  * Descriptions: pthread handler for timer

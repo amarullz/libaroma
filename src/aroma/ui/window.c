@@ -668,7 +668,7 @@ static void * _libaroma_window_thread_manager(void * cookie) {
       }
     }
     /* 60hz sleep */
-    libaroma_sleeper(&sleeper_s,16666);
+    libaroma_sleeper(&sleeper_s,16000);
   }
   ALOGV("end window thread manager...");
   return NULL;
@@ -866,7 +866,7 @@ byte libaroma_window_anishow(
           break;
       }
       /* 60hz sleep */
-      libaroma_sleeper(&sleeper_s,16666);
+      libaroma_sleeper(&sleeper_s,16000);
     }
     
     retval = 1;

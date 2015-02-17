@@ -91,20 +91,23 @@ void _libaroma_gradient_draw_rounded(
 }
 
 /*
- * Function    : libaroma_gradient_ex
+ * Function    : libaroma_gradient_ex1
  * Return Value: byte
  * Descriptions: draw gradient rectangle
  */
-byte libaroma_gradient_ex(
+byte libaroma_gradient_ex1(
     LIBAROMA_CANVASP dst,
     int x, int y, int w, int h,
     word startColor, word endColor,
     int roundSize, word roundFlag,
-    byte startAlpha, byte endAlpha) {
+    byte startAlpha, byte endAlpha,
+    byte flags) {
   if (dst == NULL) {
     dst = libaroma_fb()->canvas;
   }
   
+  byte noDither = (flags&LIBAROMA_DRAW_NODITHER)?1:0;
+    
   /* fix position */
   int x2 = x + w;
   int y2 = y + h;
@@ -240,10 +243,17 @@ byte libaroma_gradient_ex(
         ((endAlpha * intensity) >> 8)), 0xff));
 #endif
       if (!samecolor){
-        libaroma_dither_line_const(_Y, w,
-          alphaTmpLine, libaroma_rgb32(cR, cG, cB));
-        libaroma_alpha_const_line(_Y, w,
-          line_mem, line_mem, alphaTmpLine, cA);
+        if (noDither){
+          libaroma_color_set(alphaTmpLine, libaroma_rgb(cR, cG, cB), w);
+          libaroma_alpha_const(w,
+            line_mem, line_mem, alphaTmpLine, cA);
+        }
+        else{
+          libaroma_dither_line_const(_Y, w,
+            alphaTmpLine, libaroma_rgb32(cR, cG, cB));
+          libaroma_alpha_const_line(_Y, w,
+            line_mem, line_mem, alphaTmpLine, cA);
+        }
       }
       else{
         libaroma_alpha_rgba_fill(w,line_mem,line_mem,startColor,cA);
@@ -251,8 +261,13 @@ byte libaroma_gradient_ex(
     }
     else {
       if (!samecolor){
-        libaroma_dither_line_const(_Y, w, 
-          line_mem, libaroma_rgb32(cR, cG, cB));
+        if (noDither){
+          libaroma_color_set(line_mem, libaroma_rgb(cR, cG, cB), w);
+        }
+        else{
+          libaroma_dither_line_const(_Y, w, 
+            line_mem, libaroma_rgb32(cR, cG, cB));
+        }
       }
       else{
         libaroma_color_set(line_mem, startColor, w);
@@ -307,9 +322,7 @@ byte libaroma_gradient_ex(
     free(roundTmp);
   }
   return 1;
-} /* End of libaroma_gradient_ex */
-
-
+} /* End of libaroma_gradient_ex1 */
 
 
 #endif /* __libaroma_gradient_c__ */

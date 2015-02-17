@@ -51,6 +51,8 @@ int main(int argc, char **argv){
   /* start libaroma process */
   libaroma_start();
   
+  // libaroma_fb()->dpi=320;
+  
 /*
 #ifdef LIBAROMA_CONFIG_OPENMP
   printf("Testing OpenMP\n");
@@ -149,7 +151,8 @@ int main(int argc, char **argv){
   
   LIBAROMA_CONTROLP scroll_test = libaroma_ctl_testscroll(
     win, 90,
-    0, 300, LIBAROMA_SIZE_FULL, LIBAROMA_SIZE_FULL
+    0, 300, LIBAROMA_SIZE_FULL, LIBAROMA_SIZE_FULL,
+    RGB(ffffff), LIBAROMA_CTL_SCROLL_WITH_SHADOW
   );
   
   /* show window */

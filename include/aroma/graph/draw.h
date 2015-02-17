@@ -141,16 +141,17 @@ byte libaroma_draw_scale(
 );
 
 /*
- * Function    : libaroma_gradient_ex
+ * Function    : libaroma_gradient_ex1
  * Return Value: byte
  * Descriptions: draw gradient rectangle
  */
-byte libaroma_gradient_ex(
+byte libaroma_gradient_ex1(
     LIBAROMA_CANVASP dst,
     int x, int y, int w, int h,
     word startColor, word endColor,
     int roundSize, word roundFlag,
-    byte startAlpha, byte endAlpha);
+    byte startAlpha, byte endAlpha,
+    byte flags);
 
 /*
  * Function    : libaroma_blur_ex
@@ -204,7 +205,9 @@ byte libaroma_draw_subpixel(
 #define libaroma_draw_opacity(dst,src,dx,dy,useAlpha,opacity) \
   libaroma_draw_ex(dst,src,dx,dy,0,0,src->w,src->h,useAlpha,opacity)
 
-/* libaroma_gradient_ex aliases */
+/* libaroma_gradient_ex1 aliases */
+#define libaroma_gradient_ex(dst,x,y,w,h,sc,ec,rs,rf,sa,ea) \
+  libaroma_gradient_ex1(dst,x,y,w,h,sc,ec,rs,rf,sa,ea,0)    
 #define libaroma_gradient(dst,x,y,w,h,sc,ec,rs,rf) \
   libaroma_gradient_ex(dst,x,y,w,h,sc,ec,rs,rf,0xff,0xff)
 #define libaroma_grad(dst,x,y,w,h,sc,ec) \

@@ -27,6 +27,10 @@
 #ifndef __libaroma_ctl_scroll_h__
 #define __libaroma_ctl_scroll_h__
 
+#define LIBAROMA_CTL_SCROLL_NO_HANDLE   1
+#define LIBAROMA_CTL_SCROLL_WITH_SHADOW 2
+
+
 typedef struct _LIBAROMA_CTL_SCROLL_CLIENT LIBAROMA_CTL_SCROLL_CLIENT;
 typedef struct _LIBAROMA_CTL_SCROLL_CLIENT * LIBAROMA_CTL_SCROLL_CLIENTP;
 
@@ -120,7 +124,8 @@ byte libaroma_ctl_scroll_sync(
  */
 LIBAROMA_CONTROLP libaroma_ctl_scroll(
     LIBAROMA_WINDOWP win, word id,
-    int x, int y, int w, int h
+    int x, int y, int w, int h,
+    word bg_color, byte flags
 );
 
 
@@ -128,7 +133,8 @@ LIBAROMA_CONTROLP libaroma_ctl_scroll(
 /* test */
 LIBAROMA_CONTROLP libaroma_ctl_testscroll(
     LIBAROMA_WINDOWP win, word id,
-    int x, int y, int w, int h
+    int x, int y, int w, int h,
+    word bg_color, byte flags
 );
 
 

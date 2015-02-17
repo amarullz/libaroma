@@ -131,16 +131,7 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
     goto error; /* Exit If Error */
   }
   
-  /*
-  ALOGI("POWER DOWN");
-  ioctl(mi->fb, FBIOBLANK, FB_BLANK_POWERDOWN);
-  ALOGI("POWER DOWN OK");
-  
-  sleep(3);
-  ALOGI("UNBLANK");
-  ioctl(mi->fb, FBIOBLANK, FB_BLANK_UNBLANK);
-  ALOGI("UNBLANK OK");
-  */
+  // ioctl(mi->fb, FBIOBLANK, FB_BLANK_UNBLANK);
   
   /* try to force 32bit libaroma color mode (bgra)
   if (mi->var.bits_per_pixel==32){
@@ -267,6 +258,13 @@ void LINUXFBDR_release(LIBAROMA_FBP me) {
 #endif
   free(me->internal);
 }
+
+#ifndef OMAPFB_WAITFORVSYNC
+  #define OMAPFB_WAITFORVSYNC _IO('O', 57)
+#endif
+#ifndef S3CFB_SET_VSYNC_INT
+  #define S3CFB_SET_VSYNC_INT	_IOW('F', 206, unsigned int)
+#endif
 
 /*
  * Function : Refresh Display Framebuffer (Same For All Colorspace)
