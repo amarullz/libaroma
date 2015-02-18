@@ -30,98 +30,67 @@
 
 /* NEON SIMD 32bit to 16bit BLT */
 void libaroma_btl16(int n, wordp dst, const dwordp src) {
-  int i;
+  int i,left=n%8;
   
-  /* use non simd */
-  if (n < 8) {
-    for (i = 0; i < n; i++) {
-      dst[i] = libaroma_rgb_to16(src[i]);
+  /* neon */
+  if (n>=8){
+    uint8_t *p888 = (uint8_t *) src;
+    uint8x8x4_t rgba;
+    for (i=0;i<n-left;i+=8) {
+      rgba = vld4_u8(p888+i*4);
+      vst1q_u16(dst+i, vorrq_u16(
+        vorrq_u16(
+          vshlq_n_u16(vmovl_u8(vshr_n_u8(rgba.val[2],3)),11),
+          vshlq_n_u16(vmovl_u8(vshr_n_u8(rgba.val[1],2)),5)
+        ),
+        vmovl_u8(vshr_n_u8(rgba.val[0], 3))
+      ));
     }
-    
-    return;
   }
   
-  /* Change Types */
-  uint16_t * p565 = (uint16_t *) dst;
-  uint8_t  * p888 = (uint8_t *)  src;
-  int nn = n / 8, left = n % 8;
-  
-  for (i = 0; i < nn; i++) {
-    uint8x8x4_t rgba = vld4_u8(p888 + (32 * i));
-    uint16x8_t r = vshlq_n_u16(vmovl_u8(
-                                 vshr_n_u8(rgba.val[2], 3)), 11);
-    uint16x8_t g = vshlq_n_u16(vmovl_u8(
-                                 vshr_n_u8(rgba.val[1], 2)), 5);
-    uint16x8_t b = vshlq_n_u16(vmovl_u8(
-                                 vshr_n_u8(rgba.val[0], 3)), 0);
-    uint16x8_t o = vorrq_u16(r, g);
-    o = vorrq_u16(o, b);
-    vst1q_u16(p565 + (8 * i), o);
-    
-    /* leftover */
-    if ((i + 1 == nn) && (left > 0)) {
-      p565  = ((uint16_t *) dst) - (8 - left);
-      p888  = ((uint8_t *)  src) - ((8 - left) * 4);
-      nn++;
-      left = 0;
+  /* leftover */
+  if (left>0){
+    for (i=n-left;i<n;i++) {
+      dst[i] = libaroma_rgb_to16(src[i]);
     }
   }
 }
 
 /* NEON SIMD 16bit to 32bit BLT */
 void libaroma_btl32(int n, dwordp dst, const wordp src) {
-  int i;
-  
-  /* use non simd */
-  if (n < 8) {
-    for (i = 0; i < n; i++) {
-      dst[i] = libaroma_rgb_to32(src[i]);
+  int i,left=n%8;
+  /* neon */
+  if (n>=8){
+    uint8x8_t mask5, mask6, alp, r, g, b;
+    mask5 = vmov_n_u8(0xf8); /* 5 mask - red */
+    mask6 = vmov_n_u8(0xfc); /* 6 mask - green */
+    alp   = vmov_n_u8(0xff); /* Alpha constant */
+    uint8_t * p888  = (uint8_t *) dst;
+    uint8x8x4_t rgb;
+    uint16x8_t pix;
+    for (i=0;i<n-left;i+=8) {
+      pix = vld1q_u16(src+i); /* load 8 pixel */
+      /* right shift */
+      r = vand_u8(vshrn_n_u16(pix, 8),mask5);
+      g = vand_u8(vshrn_n_u16(pix, 3),mask6);
+      b = vshl_n_u8(vmovn_u16(pix), 3);
+      /* Small Byte Left : 11111xxx 111111xx 11111xxx */
+      r = vorr_u8(r, vshr_n_u8(r, 5));
+      g = vorr_u8(g, vshr_n_u8(g, 6));
+      b = vorr_u8(b, vshr_n_u8(b, 5));
+      /* dump */
+      rgb.val[3] = alp;
+      rgb.val[2] = r;
+      rgb.val[1] = g;
+      rgb.val[0] = b;
+      vst4_u8(p888+4*i, rgb);
     }
-    
-    return;
   }
   
-  uint8x8_t mask5, mask6, alp;
-  mask5 = vmov_n_u8(0xf8); /* 5 mask - red */
-  mask6 = vmov_n_u8(0xfc); /* 6 mask - green */
-  alp   = vmov_n_u8(0xff); /* Alpha constant */
-  /* Change Types */
-  uint16_t * p565 = (uint16_t *) src;
-  uint8_t * p888  = (uint8_t *) dst;
-  int nn = n / 8, left = n % 8;
-  
-  for (i = 0; i < nn; i++) { /* Loop per 8 pixels */
-    uint8x8_t red, grn, blu;
-    uint16x8_t pix;
-    uint8x8x4_t rgb;
-    pix = vld1q_u16(p565 + 8 * i); /* load 8 pixel */
-    /* right shift */
-    red = vshrn_n_u16(pix, 8);
-    grn = vshrn_n_u16(pix, 3);
-    blu = vmovn_u16(pix);
-    /* and mask */
-    red = vand_u8(red, mask5);
-    grn = vand_u8(grn, mask6);
-    blu = vshl_n_u8(blu, 3);
-    
-    /* Small Byte Left : 11111xxx 111111xx 11111xxx */
-    red = vorr_u8(red, vshr_n_u8(red, 5));
-    grn = vorr_u8(grn, vshr_n_u8(grn, 6));
-    blu = vorr_u8(blu, vshr_n_u8(blu, 5));
-
-    /* dump */
-    rgb.val[3] = alp;
-    rgb.val[2] = red;
-    rgb.val[1] = grn;
-    rgb.val[0] = blu;
-    vst4_u8(p888 + 32 * i, rgb);
-    
-    /* leftover */
-    if ((i + 1 == nn) && (left > 0)) {
-      p565  = ((uint16_t *) src) - (8 - left);
-      p888  = ((uint8_t *)  dst) - ((8 - left) * 4);
-      nn++;
-      left = 0;
+  /* leftover */
+  if (left>0){
+    for (i=n-left;i<n;i++) {
+      dst[i] = libaroma_rgb_to32(src[i]);
     }
   }
 }
