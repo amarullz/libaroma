@@ -189,8 +189,8 @@ byte libaroma_gradient_ex1(
         (libaroma_color_b(endColor) * intensity)), 0xff) );
     }
 #else
-    byte intensity   = (_Y * 0xff) / h;
-    byte r_intensity = 0xff - intensity;
+    word intensity   = (_Y * 0x100) / h;
+    word r_intensity = 0x100 - intensity;
     if (!samecolor){
       cR = ((byte) MIN((((libaroma_color_r(startColor) * r_intensity)>>8)+
         ((libaroma_color_r(endColor) * intensity) >> 8)), 0xff) );
@@ -309,7 +309,8 @@ byte libaroma_gradient_ex1(
             line_alpha = line_alpha + w - roundSize;
           }
           _libaroma_gradient_draw_rounded(line_mem + w - roundSize,
-            line_alpha, roundTmp + roundSize, roundData, roundSize, 1, h - _Y - 1);
+            line_alpha, roundTmp + roundSize,
+            roundData, roundSize, 1, h - _Y - 1);
         }
       }
     }

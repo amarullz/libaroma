@@ -33,4 +33,5 @@
 #include "ui.c"         /* libaroma ui modules */
 #include "version.c"    /* libaroma version */
 
+
 #endif /* __libaroma_core_c__ */

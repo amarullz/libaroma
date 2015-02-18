@@ -400,24 +400,84 @@ void _libaroma_ctl_scroll_draw(
       if (draw_y<0){
         draw_y=me->client_canvas->h+draw_y;
       }
+      byte same_line = (
+        (c->l==me->client_canvas->l)&&
+        (me->client_canvas->l==me->client_canvas->w)&&
+        (c->l==c->w)
+      );
       if (draw_y+draw_h>me->client_canvas->h){
         int bottom_h = draw_h - (me->client_canvas->h-draw_y);
         int top_h = draw_h - bottom_h;
+        int y;
         if (top_h>0){
-          libaroma_draw_ex(c,me->client_canvas,
-            0,0,0,draw_y,ctl->w,top_h,0,0xff);
+          if (same_line){
+            libaroma_memcpy(
+              c->data,
+              me->client_canvas->data+draw_y*c->l,
+              c->l*2*top_h
+            );
+          }
+          else{
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
+            for (y=0;y<top_h;y++) {
+              memcpy(
+                c->data+y*c->l,
+                me->client_canvas->data+(y+draw_y)*me->client_canvas->l,
+                ctl->w*2
+              );
+            }
+          }
+        }
+        if (top_h<0){
+          bottom_h+=top_h;
+          top_h=0;
         }
         if (bottom_h>0){
-          libaroma_draw_ex(c,me->client_canvas,
-            0,top_h,0,0,ctl->w,bottom_h,0,0xff);
+          if (same_line){
+            libaroma_memcpy(
+              c->data+top_h*c->l,
+              me->client_canvas->data,
+              c->l*2*bottom_h
+            );
+          }
+          else{
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
+            for (y=0;y<bottom_h;y++) {
+              memcpy(
+                c->data+(y+top_h)*c->l,
+                me->client_canvas->data+y*me->client_canvas->l,
+                ctl->w*2
+              );
+            }
+          }
         }
-        if (top_h&&bottom_h){
-          me->synced_scroll_y=me->scroll_y;
-        }
+        me->synced_scroll_y=me->scroll_y;
       }
       else if ((draw_y<me->client_canvas->h)&&(draw_y>=0)){
-        libaroma_draw_ex(c,me->client_canvas,
-          0,0,0,draw_y,ctl->w,draw_h,0,0xff);
+        int y;
+        if (same_line){
+          libaroma_memcpy(
+            c->data,
+            me->client_canvas->data+draw_y*c->l,
+            c->l*2*draw_h
+          );
+        }
+        else{
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
+          for (y=0;y<draw_h;y++) {
+            memcpy(
+              c->data+y*c->l,
+              me->client_canvas->data+(y+draw_y)*me->client_canvas->l,
+              ctl->w*2
+            );
+          }
+        }
         me->synced_scroll_y=me->scroll_y;
       }
       
