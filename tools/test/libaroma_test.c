@@ -152,7 +152,7 @@ int main(int argc, char **argv){
   LIBAROMA_CONTROLP scroll_test = libaroma_ctl_testscroll(
     win, 90,
     0, 300, LIBAROMA_SIZE_FULL, LIBAROMA_SIZE_FULL,
-    RGB(ffffff), LIBAROMA_CTL_SCROLL_WITH_SHADOW
+    RGB(ffffff), LIBAROMA_CTL_SCROLL_WITH_SHADOW|LIBAROMA_CTL_SCROLL_WITH_HANDLE
   );
   
   /* show window */

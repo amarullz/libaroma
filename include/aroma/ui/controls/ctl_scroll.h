@@ -27,8 +27,9 @@
 #ifndef __libaroma_ctl_scroll_h__
 #define __libaroma_ctl_scroll_h__
 
-#define LIBAROMA_CTL_SCROLL_NO_HANDLE   1
-#define LIBAROMA_CTL_SCROLL_WITH_SHADOW 2
+#define LIBAROMA_CTL_SCROLL_NO_INDICATOR    1
+#define LIBAROMA_CTL_SCROLL_WITH_SHADOW     2
+#define LIBAROMA_CTL_SCROLL_WITH_HANDLE     4
 
 
 typedef struct _LIBAROMA_CTL_SCROLL_CLIENT LIBAROMA_CTL_SCROLL_CLIENT;

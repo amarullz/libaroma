@@ -30,6 +30,7 @@
 #define _LIBAROMA_CTL_SCROLL_SIGNATURE 0x40
 #define _LIBAROMA_CTL_SCROLL_HISTORY   3
 #define _LIBAROMA_CTL_SCROLL_MAX_CACHE 9000
+#define _LIBAROMA_CTL_SCROLL_HANDLE_DP 32
 
 /*
  * Structure   : __LIBAROMA_CTL_SCROLL
@@ -59,6 +60,7 @@ struct __LIBAROMA_CTL_SCROLL{
   int touch_scroll_y;
   
   /* fling items */
+  byte handle_touched;
   byte touched;
   double velocity;
   int allow_scroll;
@@ -263,7 +265,7 @@ static void * _libaroma_ctl_scroll_momentum_thread(void * cookie){
       byte need_drawing = 0;
       /* scroll indicator */
       if (me->last_scroll_time!=0){
-        if (!(me->flags&LIBAROMA_CTL_SCROLL_NO_HANDLE)){
+        if (!(me->flags&LIBAROMA_CTL_SCROLL_NO_INDICATOR)){
           long diff= now-me->last_scroll_time;
           if ((diff>500)&&(me->last_scroll_state>0)){
             float nowstate=1-libaroma_control_state(me->last_scroll_time+500,400);
@@ -337,6 +339,34 @@ static void * _libaroma_ctl_scroll_momentum_thread(void * cookie){
 } /* End of _libaroma_ctl_scroll_momentum_thread */
 
 /*
+ * Function    : _libaroma_ctl_scroll_check_update
+ * Return Value: void
+ * Descriptions: check for cache update
+ */
+void _libaroma_ctl_scroll_check_update(LIBAROMA_CONTROLP ctl){
+  _LIBAROMA_CTL_CHECK(
+    _LIBAROMA_CTL_SCROLL_SIGNATURE, _LIBAROMA_CTL_SCROLLP, 
+  );
+  if ((me->client.signature)&&(me->client_canvas!=NULL)){
+    if ((me->draw_state)&&(me->draw_state!=10)){
+      int cvhsz = (me->client_canvas->h / 4);
+      int draw_top = me->draw_y;
+      int draw_bottom = draw_top+me->client_canvas->h;
+      if (me->move_state==1){
+        if ((me->scroll_y<draw_top+cvhsz)&&(draw_top>0)){
+          _libaroma_ctl_scroll_updatecache(ctl,-cvhsz);
+        }
+      }
+      else if (me->move_state==2){
+        if ((me->scroll_y>draw_bottom-cvhsz)&&(draw_bottom<me->client_h)){
+          _libaroma_ctl_scroll_updatecache(ctl,cvhsz);
+        }
+      }
+    }
+  }
+} /* End of _libaroma_ctl_scroll_check_update */
+
+/*
  * Function    : _libaroma_ctl_scroll_update_thread
  * Return Value: static void *
  * Descriptions: update scroll positions
@@ -349,22 +379,8 @@ static void * _libaroma_ctl_scroll_update_thread(void * cookie){
   );
   ALOGV("Start scroll updater thread");
   while (me->active){
-    if ((me->client.signature)&&(me->client_canvas!=NULL)){
-      if ((me->draw_state)&&(me->draw_state!=10)){
-        int cvhsz = (me->client_canvas->h / 4);
-        int draw_top = me->draw_y;
-        int draw_bottom = draw_top+me->client_canvas->h;
-        if (me->move_state==1){
-          if ((me->scroll_y<draw_top+cvhsz)&&(draw_top>0)){
-            _libaroma_ctl_scroll_updatecache(ctl,-cvhsz);
-          }
-        }
-        else if (me->move_state==2){
-          if ((me->scroll_y>draw_bottom-cvhsz)&&(draw_bottom<me->client_h)){
-            _libaroma_ctl_scroll_updatecache(ctl,cvhsz);
-          }
-        }
-      }
+    if (!me->handle_touched){
+      _libaroma_ctl_scroll_check_update(ctl);
     }
     usleep(8000);
   }
@@ -430,15 +446,17 @@ void _libaroma_ctl_scroll_draw(
             }
           }
         }
+        int bottom_y=0;
         if (top_h<0){
           bottom_h+=top_h;
+          bottom_y=abs(top_h);
           top_h=0;
         }
         if (bottom_h>0){
           if (same_line){
             libaroma_memcpy(
               c->data+top_h*c->l,
-              me->client_canvas->data,
+              me->client_canvas->data+bottom_y*c->l,
               c->l*2*bottom_h
             );
           }
@@ -449,7 +467,7 @@ void _libaroma_ctl_scroll_draw(
             for (y=0;y<bottom_h;y++) {
               memcpy(
                 c->data+(y+top_h)*c->l,
-                me->client_canvas->data+y*me->client_canvas->l,
+                me->client_canvas->data+(y+bottom_y)*me->client_canvas->l,
                 ctl->w*2
               );
             }
@@ -481,23 +499,67 @@ void _libaroma_ctl_scroll_draw(
         me->synced_scroll_y=me->scroll_y;
       }
       
-      if (!(me->flags&LIBAROMA_CTL_SCROLL_NO_HANDLE)){
-        if (me->last_scroll_state>0){
+      if (!(me->flags&LIBAROMA_CTL_SCROLL_NO_INDICATOR)){
+        if ((me->last_scroll_state>0)||(me->handle_touched)){
+          int hdl_w,hdl_r,ctl_y,ctl_h;
           byte is_dark = libaroma_color_isdark(me->color_bg);
-          int hdl_w = libaroma_dp(4);
-          int hdl_r = libaroma_dp(3);
-          int ctl_h = ctl->h - hdl_w;
+          word indicator_color = is_dark?RGB(cccccc):RGB(555555);
+          float vss=(me->handle_touched)?1:me->last_scroll_state;
+          if (me->flags&LIBAROMA_CTL_SCROLL_WITH_HANDLE){
+            hdl_w = libaroma_dp(8);
+            hdl_r = libaroma_dp(5);
+            ctl_y = libaroma_dp(8);
+            ctl_h = ctl->h - libaroma_dp(16);
+            libaroma_draw_rect(
+              c, 
+              ctl->w-(hdl_r+libaroma_dp(5)),
+              ctl_y,
+              libaroma_dp(2),
+              ctl_h,
+              indicator_color,
+              60*vss
+            );
+          }
+          else{
+            hdl_w = libaroma_dp(4);
+            hdl_r = libaroma_dp(3);
+            ctl_y = libaroma_dp(2);
+            ctl_h = ctl->h - libaroma_dp(4);
+          }
+          
           float scrdif    = ((float) ctl_h) / ((float) me->client_h);
           int hdl_h = ceil(scrdif * ctl_h);
-          int hdl_y = round(scrdif * scroll_y) + libaroma_dp(2);
+          int hdl_y = round(scrdif * scroll_y) + ctl_y;
+          byte handle_opa=180;
+          
+          if ((me->flags&LIBAROMA_CTL_SCROLL_WITH_HANDLE)&&
+              (me->handle_touched)){
+            int dp2=libaroma_dp(4);
+            int dp4=libaroma_dp(8);
+            
+            libaroma_gradient_ex1(c, 
+              ctl->w-(hdl_r+hdl_w)-dp2,
+              hdl_y-dp2,
+              hdl_w+dp4,
+              hdl_h+dp4,
+              indicator_color,
+              indicator_color,
+              libaroma_dp(4),
+              0x1111,
+              50*vss,
+              50*vss,
+              2);
+            handle_opa=0xff;
+            indicator_color=RGB(446699);
+          }
           libaroma_draw_rect(
             c, 
             ctl->w-(hdl_r+hdl_w),
             hdl_y,
             hdl_w,
             hdl_h,
-            is_dark?RGB(cccccc):RGB(555555),
-            180*me->last_scroll_state
+            indicator_color,
+            handle_opa*vss
           );
         }
       }
@@ -557,6 +619,16 @@ dword _libaroma_ctl_scroll_touch_handler(
       me->touched=1;
       me->velocity=0;
       
+      if (me->flags&LIBAROMA_CTL_SCROLL_WITH_HANDLE){
+        me->handle_touched=(x>ctl->w-_LIBAROMA_CTL_SCROLL_HANDLE_DP)?1:0;
+        if (me->handle_touched){
+          int max_sy = me->client_h-ctl->h;
+          int target_y = (max_sy*y)/ctl->h;
+          libaroma_ctl_scroll_set_pos(ctl,target_y);
+          _libaroma_ctl_scroll_check_update(ctl);
+        }
+      }
+      
       me->prevn=1;
       me->prev_point[0]=y;
       me->prev_time[0]=libaroma_tick();
@@ -568,23 +640,33 @@ dword _libaroma_ctl_scroll_touch_handler(
     }
     break;
     case LIBAROMA_HID_EV_STATE_UP:{
-      if (me->allow_scroll){
-        int current_point = (y==0)?me->prev_point[me->prevn-1]:y;
-        long current_time = libaroma_tick();
-        int first_point   = me->prev_point[0];
-        long first_time   = me->prev_time[0];
-        if (current_time-first_time<1) {
-          first_time--;
+      if (!me->handle_touched){
+        if (me->allow_scroll){
+          int current_point = (y==0)?me->prev_point[me->prevn-1]:y;
+          long current_time = libaroma_tick();
+          int first_point   = me->prev_point[0];
+          long first_time   = me->prev_time[0];
+          if (current_time-first_time<1) {
+            first_time--;
+          }
+          if (current_time-first_time<=300) {
+            int diff = first_point - current_point;
+            int time = current_time - first_time;
+            me->touched=0;
+            me->velocity = ((double) diff/(time>>4));
+          }
         }
-        if (current_time-first_time<=300) {
-          int diff = first_point - current_point;
-          int time = current_time - first_time;
-          me->touched=0;
-          me->velocity = ((double) diff/(time>>4));
+      }
+      else{
+        if (!(me->flags&LIBAROMA_CTL_SCROLL_NO_INDICATOR)){
+          me->last_scroll_time = libaroma_tick();
+          me->last_scroll_state=1;
+          me->synced_scroll_y=-1;
         }
       }
       
       /* reset */
+      me->handle_touched=0;
       me->allow_scroll=0;
       me->touched=0;
       me->touch_x=0;
@@ -593,30 +675,38 @@ dword _libaroma_ctl_scroll_touch_handler(
     break;
     case LIBAROMA_HID_EV_STATE_MOVE:{
       int move_sz = me->touch_y - y;
-      if (me->allow_scroll==2){
-        if (abs(move_sz)>=libaroma_dp(5)){
-          me->allow_scroll=1;
+      if (!me->handle_touched){
+        if (me->allow_scroll==2){
+          if (abs(move_sz)>=libaroma_dp(5)){
+            me->allow_scroll=1;
+          }
+        }
+        if (me->allow_scroll==1){
+          /* normal scroll */
+          libaroma_ctl_scroll_set_pos(ctl, me->touch_scroll_y+move_sz);
+          me->touch_y=y;
+          me->touch_scroll_y = me->scroll_y;
+          
+          /* set history */
+          long ctick = libaroma_tick();
+          me->prevn++;
+          if (me->prevn>_LIBAROMA_CTL_SCROLL_HISTORY){
+            int i;
+            for (i=1;i<_LIBAROMA_CTL_SCROLL_HISTORY;i++){
+              me->prev_point[i-1]=me->prev_point[i];
+              me->prev_time[i-1]=me->prev_time[i];
+            }
+            me->prevn--;
+          }
+          me->prev_point[me->prevn-1]=y;
+          me->prev_time[me->prevn-1]=ctick;
         }
       }
-      if (me->allow_scroll==1){
-        /* normal scroll */
-        libaroma_ctl_scroll_set_pos(ctl, me->touch_scroll_y+move_sz);
-        me->touch_y=y;
-        me->touch_scroll_y = me->scroll_y;
-        
-        /* set history */
-        long ctick = libaroma_tick();
-        me->prevn++;
-        if (me->prevn>_LIBAROMA_CTL_SCROLL_HISTORY){
-          int i;
-          for (i=1;i<_LIBAROMA_CTL_SCROLL_HISTORY;i++){
-            me->prev_point[i-1]=me->prev_point[i];
-            me->prev_time[i-1]=me->prev_time[i];
-          }
-          me->prevn--;
-        }
-        me->prev_point[me->prevn-1]=y;
-        me->prev_time[me->prevn-1]=ctick;
+      else{
+        int max_sy = me->client_h-ctl->h;
+        int target_y = (max_sy*y)/ctl->h;
+        libaroma_ctl_scroll_set_pos(ctl,target_y);
+        _libaroma_ctl_scroll_check_update(ctl);
       }
     }
     break;
@@ -767,6 +857,7 @@ LIBAROMA_CONTROLP libaroma_ctl_scroll(
   me->touch_y=0;
   me->touched = 0;
   me->touch_scroll_y = 0;
+  me->handle_touched=0;
   
   /* reset fling */
   me->velocity = 0;
@@ -840,7 +931,7 @@ byte libaroma_ctl_scroll_set_pos(LIBAROMA_CONTROLP ctl, int scroll_y){
     if (!me->draw_state){
       me->draw_state=1;
     }
-    if (!(me->flags&LIBAROMA_CTL_SCROLL_NO_HANDLE)){
+    if (!(me->flags&LIBAROMA_CTL_SCROLL_NO_INDICATOR)){
       me->last_scroll_time = libaroma_tick();
     }
   }
