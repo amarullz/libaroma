@@ -189,6 +189,10 @@ byte libaroma_hid_get(
   while (_libaroma_hid != NULL) {
     /* call driver getinput callback */
     byte ret = _libaroma_hid->getinput(_libaroma_hid, e);
+    
+    ALOGT("EVENT RECIVED: type=%i, state=%i, key=%i, x=%i, y=%i",
+      ret,e->state,e->key,e->x,e->y);
+    
     /* check return value */
     switch (ret) {
       case LIBAROMA_HID_EV_RET_NONE:
@@ -215,7 +219,7 @@ byte libaroma_hid_get(
               libaroma_hid_set_keypress(LIBAROMA_HID_TOUCH_KEYCODE, e->state);
               /* set last move info */
               _libaroma_hid->touch_last_x = e->x;
-              _libaroma_hid->touch_last_x = e->y;
+              _libaroma_hid->touch_last_y = e->y;
               return ret;
             }
           }
@@ -223,7 +227,7 @@ byte libaroma_hid_get(
             libaroma_hid_set_keypress(LIBAROMA_HID_TOUCH_KEYCODE, e->state);
             /* set last move info */
             _libaroma_hid->touch_last_x = e->x;
-            _libaroma_hid->touch_last_x = e->y;
+            _libaroma_hid->touch_last_y = e->y;
             return ret;
           }
         }

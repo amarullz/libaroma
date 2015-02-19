@@ -63,9 +63,9 @@
 #elif LIBAROMA_CONFIG_DEBUG==1
   #define __LIBAROMA_CMSG_DLEVEL "ENABLED - 1. Error Only"
 #elif LIBAROMA_CONFIG_DEBUG==2
-  #define __LIBAROMA_CMSG_DLEVEL "ENABLED - 2. Error + Warning"
+  #define __LIBAROMA_CMSG_DLEVEL "ENABLED - 4. Error + Info"
 #elif LIBAROMA_CONFIG_DEBUG==3
-  #define __LIBAROMA_CMSG_DLEVEL "ENABLED - 3. Error + Warning + Info"
+  #define __LIBAROMA_CMSG_DLEVEL "ENABLED - 3. Error + Info + String"
 #elif LIBAROMA_CONFIG_DEBUG==4
   #define __LIBAROMA_CMSG_DLEVEL "ENABLED - 4. Error + Warning + Info + String"
 #elif LIBAROMA_CONFIG_DEBUG==5

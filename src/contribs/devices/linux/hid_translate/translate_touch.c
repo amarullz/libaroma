@@ -122,8 +122,8 @@ byte LINUXHIDRV_translate_touch(
         
         if (ev->value == (1 << 31)) {
           dev->p.state |= LINUXHIDRV_POS_ST_LASTSYNC;
-          dev->p.x = 0;
-          dev->p.y = 0;
+          /*dev->p.x = -1;
+          dev->p.y = -1;*/
         }
         else {
           dev->p.state  &= ~LINUXHIDRV_POS_ST_LASTSYNC;
@@ -140,8 +140,8 @@ byte LINUXHIDRV_translate_touch(
         if (ev->value == 0) {
           /* screen untouched */
           dev->p.state |= LINUXHIDRV_POS_ST_RLS_NEXT;
-          dev->p.x = 0;
-          dev->p.y = 0;
+          /*dev->p.x = -1;
+          dev->p.y = -1;*/
         }
         break;
         
@@ -149,8 +149,8 @@ byte LINUXHIDRV_translate_touch(
         if (ev->value < 0) {
           /* screen untouched */
           dev->p.state |= LINUXHIDRV_POS_ST_RLS_NEXT;
-          dev->p.x = 0;
-          dev->p.y = 0;
+          /*dev->p.x = -1;
+          dev->p.y = -1;*/
           TOUCH_RELEASE_NEXTSYN = 1;
           MT_TRACKING_IS_UNTOUCHED = 1;
         }
@@ -166,10 +166,12 @@ byte LINUXHIDRV_translate_touch(
   if (ev->type == EV_SYN) {
     if (ev->code == SYN_MT_REPORT) {
       /* return on SYN_MT_REPORT */
+      ALOGRT("RAW TOUCH STATUS - ev->code == SYN_MT_REPORT");
       goto return_none;
     }
     else if (ev->code != SYN_REPORT) {
       /* return and clear syn on non SYN_REPORT */
+      ALOGRT("RAW TOUCH STATUS - ev->code != SYN_REPORT");
       goto return_clear_sync;
     }
     
@@ -223,12 +225,12 @@ byte LINUXHIDRV_translate_touch(
           /* it still on virtual key. set as up */
           key_ev.value = 0;
           /* log raw */
-          ALOGRT("INDR VIRTUALKEY UP : [%i,%i] on %ix%ipx\n",
+          ALOGRT("INDR VIRTUALKEY UP : [%i,%i] on %ix%ipx",
             dev->p.vk, key_ev.code, xd, yd);
         }
         else {
           /* log raw */
-          ALOGRT("INDR VIRTUALKEY CANCEL : [%i,%i] on %ix%ipx\n",
+          ALOGRT("INDR VIRTUALKEY CANCEL : [%i,%i] on %ix%ipx",
             dev->p.vk, key_ev.code, xd, yd);
         }
         
@@ -243,10 +245,13 @@ byte LINUXHIDRV_translate_touch(
     
     /* set on EV_SYN */
     dev->p.state  |= LINUXHIDRV_POS_ST_LASTSYNC;
+    
     /* calibrated x, y */
     int cx = -1;
     int cy = -1;
-    /* check if x and y has been synced */
+    
+    
+    /* check if x and y has been synced 
     if ((dev->p.state & LINUXHIDRV_POS_ST_SYNC_X) &&
         (dev->p.state & LINUXHIDRV_POS_ST_SYNC_Y)) {
       if (!LINUXHIDRV_calibrate(me, &dev->p, &cx, &cy)) {
@@ -254,9 +259,11 @@ byte LINUXHIDRV_translate_touch(
       }
     }
     else {
-      /* error */
+      ALOGRT("RAW TOUCH STATUS - X,Y not Synced");
       goto return_none;
-    }
+    }*/
+    
+    LINUXHIDRV_calibrate(me, &dev->p, &cx, &cy);
     
     /* swap & flip handler */
     if (mi->touch_swap_xy) {
@@ -274,7 +281,8 @@ byte LINUXHIDRV_translate_touch(
     }
     
     /* if we have nothing useful to report, skip it */
-    if (cx == -1 || cy == -1) {
+    if (cx == -1 || cy == -1 || dev->p.x == -1 || dev->p.y == -1) {
+      ALOGRT("RAW TOUCH STATUS - x/y=-1 (x=%i,y=%i)",dev->p.x,dev->p.y);
       goto return_none;
     }
     
@@ -308,7 +316,7 @@ byte LINUXHIDRV_translate_touch(
           /* key event state = down */
           key_ev.value = 1;
           /* log raw */
-          ALOGRT("INDR VIRTUALKEY DOWN : [%i,%i] on %ix%ipx\n",
+          ALOGRT("INDR VIRTUALKEY DOWN : [%i,%i] on %ix%ipx",
             i, key_ev.code, xd, yd);
           /* if on virtual key - send as keyboard event */
           return LINUXHIDRV_translate_keyboard(me, dev, dest_ev, &key_ev);
@@ -326,6 +334,8 @@ byte LINUXHIDRV_translate_touch(
          */
         dev->p.tx    = cx;
         dev->p.ty    = cy;
+        
+        ALOGRT("RAW TOUCH STATUS - needed for cancel virtual key event");
         /* don't send any event */
         goto return_none;
       }

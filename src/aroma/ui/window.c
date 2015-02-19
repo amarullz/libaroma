@@ -222,7 +222,7 @@ byte libaroma_window_free(
   int i;
   if (win->childn>0){
 #ifdef LIBAROMA_CONFIG_OPENMP
-  #pragma omp parallel for
+//  #pragma omp parallel for
 #endif
     for (i=0;i<win->childn;i++){
       libaroma_control_free(win->childs[i]);
@@ -731,7 +731,7 @@ byte libaroma_window_invalidate(LIBAROMA_WINDOWP win, byte sync){
     /* draw childs */
     int i;
 #ifdef LIBAROMA_CONFIG_OPENMP
-  #pragma omp parallel for
+//  #pragma omp parallel for
 #endif
     for (i=0;i<win->childn;i++){
       /* draw no sync */
@@ -967,7 +967,7 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
         /* send active/resize message to child */
         int i;
 #ifdef LIBAROMA_CONFIG_OPENMP
-  #pragma omp parallel for
+//  #pragma omp parallel for
 #endif
         for (i=0;i<win->childn;i++){
           win->childs[i]->message(win->childs[i], msg);
@@ -994,7 +994,7 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
         /* send inactive message to child */
         int i;
 #ifdef LIBAROMA_CONFIG_OPENMP
-  #pragma omp parallel for
+//  #pragma omp parallel for
 #endif
         for (i=0;i<win->childn;i++){
           win->childs[i]->message(win->childs[i], msg);
@@ -1006,7 +1006,7 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
         /* remeasured all childs */
         int i;
 #ifdef LIBAROMA_CONFIG_OPENMP
-  #pragma omp parallel for
+//  #pragma omp parallel for
 #endif
         for (i=0;i<win->childn;i++){
           libaroma_window_measure(win,win->childs[i]);

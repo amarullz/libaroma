@@ -408,6 +408,8 @@ byte LINUXHIDRV_init_device(
   memset(&dev->p, 0, sizeof(LINUXHIDRV_POS));
   dev->p.tx       = -1;
   dev->p.ty       = -1;
+  dev->p.x        = -1;
+  dev->p.y        = -1;
   dev->p.vk       = -1;
   dev->vkn        = 0;
   dev->down       = 0;

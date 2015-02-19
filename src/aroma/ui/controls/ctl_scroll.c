@@ -620,6 +620,8 @@ dword _libaroma_ctl_scroll_touch_handler(
   );
   switch(state){
     case LIBAROMA_HID_EV_STATE_DOWN:{
+      ALOGT("Touch Pressed Y: %i",y);
+      
       /* set fling value */
       me->allow_scroll=2;
       me->touched=1;
@@ -657,6 +659,7 @@ dword _libaroma_ctl_scroll_touch_handler(
     }
     break;
     case LIBAROMA_HID_EV_STATE_UP:{
+      ALOGT("Touch Released Y: %i",y);
       if (!me->handle_touched){
         if (me->allow_scroll){
           int current_point = (y==0)?me->prev_point[me->prevn-1]:y;
@@ -691,6 +694,7 @@ dword _libaroma_ctl_scroll_touch_handler(
     }
     break;
     case LIBAROMA_HID_EV_STATE_MOVE:{
+      ALOGT("Move Y: %i",y);
       int move_sz = me->touch_y - y;
       if (!me->handle_touched){
         if (me->allow_scroll==2){
