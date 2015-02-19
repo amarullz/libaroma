@@ -43,6 +43,9 @@ int main(int argc, char **argv){
     
   */
   
+  /* disable shared memory main canvas */
+  //snprintf(libaroma_config()->fb_shm_name,64,"");
+  
   // libaroma_config()->runtime_monitor = 2;
   /*pid_t pp = getppid();
   kill(pp, 19);*/

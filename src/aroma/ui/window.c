@@ -189,7 +189,7 @@ LIBAROMA_WINDOWP libaroma_window(
   win->focused  = NULL;
   win->touched  = NULL;
   win->lock_sync= 0;
-  win->active   =0;
+  win->active   = 0;
   win->thread_manager=0;
   
   win->rx = x;
@@ -222,7 +222,7 @@ byte libaroma_window_free(
   int i;
   if (win->childn>0){
 #ifdef LIBAROMA_CONFIG_OPENMP
-//  #pragma omp parallel for
+  #pragma omp parallel for
 #endif
     for (i=0;i<win->childn;i++){
       libaroma_control_free(win->childs[i]);
@@ -731,7 +731,7 @@ byte libaroma_window_invalidate(LIBAROMA_WINDOWP win, byte sync){
     /* draw childs */
     int i;
 #ifdef LIBAROMA_CONFIG_OPENMP
-//  #pragma omp parallel for
+  #pragma omp parallel for
 #endif
     for (i=0;i<win->childn;i++){
       /* draw no sync */
@@ -886,6 +886,13 @@ byte libaroma_window_anishow(
     win->active=1;
     libaroma_window_sync(win, 0, 0, win->w, win->h);
   }
+  
+  /* send activate */
+  LIBAROMA_MSG _msg;
+  libaroma_window_process_event(win,libaroma_wm_compose(
+    &_msg, LIBAROMA_MSG_WIN_ACTIVE, NULL, 10, 0)
+  );
+  
   return retval;
 } /* End of libaroma_window_show */
 
@@ -959,45 +966,59 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
   dword ret = 0;
   switch (msg->msg){
     case LIBAROMA_MSG_WIN_ACTIVE:
+      {
+          /* set current window size */
+        if (msg->x!=10){
+          _libaroma_window_ready(win);
+        }
+        if ((!win->lock_sync)||(msg->x==10)){
+          if ((!win->active)||(msg->x==10)){
+            int i;
+            
+            /* start thread manager */
+            win->active=1;
+            pthread_create(
+              &win->thread_manager,
+              NULL,
+              _libaroma_window_thread_manager,
+              (voidp) win);
+
+/* send active message to child */
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
+            for (i=0;i<win->childn;i++){
+              win->childs[i]->message(win->childs[i], msg);
+            }
+          }
+        }
+      }
+      break;
     case LIBAROMA_MSG_WIN_RESIZE:
       {
-        /* set current window size */
-        _libaroma_window_ready(win);
-        
-        /* send active/resize message to child */
         int i;
-#ifdef LIBAROMA_CONFIG_OPENMP
-//  #pragma omp parallel for
-#endif
+        _libaroma_window_ready(win);
         for (i=0;i<win->childn;i++){
           win->childs[i]->message(win->childs[i], msg);
-        }
-        
-        /* start thread manager */
-        if (msg->msg==LIBAROMA_MSG_WIN_ACTIVE){
-          win->active=1;
-          pthread_create(
-            &win->thread_manager,
-            NULL,
-            _libaroma_window_thread_manager,
-            (voidp) win);
         }
       }
       break;
     case LIBAROMA_MSG_WIN_INACTIVE:
       {
-        /* stop thread manager */
-        win->active=0;
-        pthread_join(win->thread_manager, NULL);
-        win->thread_manager = 0;
-        
-        /* send inactive message to child */
-        int i;
+        if (win->active){
+          /* send inactive message to child */
+          int i;
 #ifdef LIBAROMA_CONFIG_OPENMP
-//  #pragma omp parallel for
+  #pragma omp parallel for
 #endif
-        for (i=0;i<win->childn;i++){
-          win->childs[i]->message(win->childs[i], msg);
+          for (i=0;i<win->childn;i++){
+            win->childs[i]->message(win->childs[i], msg);
+          }
+          
+          /* stop thread manager */
+          win->active=0;
+          pthread_join(win->thread_manager, NULL);
+          win->thread_manager = 0;
         }
       }
       break;
@@ -1006,7 +1027,7 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
         /* remeasured all childs */
         int i;
 #ifdef LIBAROMA_CONFIG_OPENMP
-//  #pragma omp parallel for
+  #pragma omp parallel for
 #endif
         for (i=0;i<win->childn;i++){
           libaroma_window_measure(win,win->childs[i]);
