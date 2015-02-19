@@ -209,17 +209,19 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
 #ifdef __ANDROID__
   // ro.sf.lcd_density
 #endif
-
-  if (me->dpi<160){
-    if ((mi->var.width<= 0)||(mi->var.height <= 0)) {
-      /* phone dpi */
-      me->dpi = floor(MIN(mi->var.xres,mi->var.yres)/160) * 80;
-    }
-    else{
-      /* Calculate DPI */
-      me->dpi = round(mi->var.xres / (mi->var.width * 0.039370) / 80) * 80;
-    }
+  int dpi_fallback = floor(MIN(mi->var.xres,mi->var.yres)/160) * 80;
+  if ((mi->var.width<= 0)||(mi->var.height <= 0)) {
+    /* phone dpi */
+    me->dpi = dpi_fallback;
   }
+  else{
+    /* Calculate DPI */
+    me->dpi = round(mi->var.xres / (mi->var.width * 0.039370) / 80) * 80;
+  }
+  if ((me->dpi<160)||(me->dpi>960)){
+    me->dpi = dpi_fallback;
+  }
+  
 
   /* OK */
   goto ok;
