@@ -66,8 +66,29 @@ typedef struct {
   
 #ifdef LIBAROMA_CONFIG_OPENMP
   omp_nest_lock_t synclock;
+#else
+  pthread_mutex_t synclock;
 #endif
 } LINUXFBDR_INTERNAL, *LINUXFBDR_INTERNALP;
+
+/* lock/mutex */
+void LINUXFBDR_lock(LINUXFBDR_INTERNALP mi,byte lock){
+#ifdef LIBAROMA_CONFIG_OPENMP
+  if (lock){
+    omp_set_nest_lock(&mi->synclock);
+  }
+  else{
+    omp_unset_nest_lock(&mi->synclock);
+  }
+#else
+  if (lock){
+    pthread_mutex_lock(&mi->synclock);
+  }
+  else{
+    pthread_mutex_unlock(&mi->synclock);
+  }
+#endif
+}
 
 /*
  * forward functions
@@ -105,6 +126,8 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
   
 #ifdef LIBAROMA_CONFIG_OPENMP
   omp_init_nest_lock(&mi->synclock);
+#else
+  pthread_mutex_init(&mi->synclock,NULL);
 #endif
   
   /* Open Framebuffer Device */
@@ -130,8 +153,33 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
     ALOGE("FBDRIVER 24bit Framebuffer not supported");
     goto error; /* Exit If Error */
   }
-  
-  // ioctl(mi->fb, FBIOBLANK, FB_BLANK_UNBLANK);
+  /*
+  ioctl(mi->fb, FBIOBLANK, FB_BLANK_POWERDOWN);
+  ioctl(mi->fb, FBIOBLANK, FB_BLANK_UNBLANK); */
+  /*
+  mi->var.bits_per_pixel = 16;
+  mi->var.red.offset = 11;
+  mi->var.red.length = 5;
+  mi->var.green.offset = 5;
+  mi->var.green.length = 6;
+  mi->var.blue.offset = 0;
+  mi->var.blue.length = 5;
+  mi->var.transp.offset = 0;
+  mi->var.transp.length = 0;
+  mi->var.reserved[0] = 0;
+	mi->var.reserved[1] = 0;
+	mi->var.reserved[2] = 0;
+	mi->var.reserved[3] = 0;
+	mi->var.xoffset = 0;
+	mi->var.yoffset = 0;
+  mi->var.activate = FB_ACTIVATE_NOW|FB_ACTIVATE_ALL|FB_ACTIVATE_FORCE;
+  mi->var.yres_virtual = mi->var.yres * 2;
+  if (ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var)==-1){
+		ALOGW("ioctl FBIOPUT_VSCREENINFO Error");
+	}
+  ioctl(mi->fb, FBIOGET_FSCREENINFO, &mi->fix);
+  ioctl(mi->fb, FBIOGET_VSCREENINFO, &mi->var);
+  */
   
   /* try to force 32bit libaroma color mode (bgra)
   if (mi->var.bits_per_pixel==32){
@@ -166,6 +214,8 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
   mi->pixsz    = mi->depth >> 3;            /* pixel size per byte */
   mi->fb_sz    = (me->sz * mi->pixsz);      /* framebuffer size */
   mi->syncn    = 0;
+  mi->var.yoffset = 0;
+  
   
   /* map framebuffer */
   ALOGV("FBDRIVER mmap Framebuffer Memory");
@@ -174,7 +224,7 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
                   PROT_READ | PROT_WRITE, MAP_SHARED,
                   mi->fb, 0
                 );
-                
+
   if (!mi->buffer) {
     ALOGE("FBDRIVER mmap Framebuffer Memory Error");
     goto error; /* Exit If Error */
@@ -206,9 +256,6 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
   LINUXFBDR_dump(mi);
   
   me->dpi = 0;
-#ifdef __ANDROID__
-  // ro.sf.lcd_density
-#endif
   int dpi_fallback = floor(MIN(mi->var.xres,mi->var.yres)/160) * 80;
   if ((mi->var.width<= 0)||(mi->var.height <= 0)) {
     /* phone dpi */
@@ -221,7 +268,31 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
   if ((me->dpi<160)||(me->dpi>960)){
     me->dpi = dpi_fallback;
   }
-  
+
+/* Android DPI from default.prop/build.prop */
+#ifdef __ANDROID__
+  char * sf_lcd=libaroma_getprop("ro.sf.lcd_density",
+    libaroma_stream_file("/default.prop"), 1);
+  if (sf_lcd==NULL){
+    /* try /system/build.prop */
+    sf_lcd=libaroma_getprop("ro.sf.lcd_density",
+      libaroma_stream_file("/system/build.prop"), 1);
+  }
+  if (sf_lcd!=NULL){
+    int new_dpi = atoi(sf_lcd);
+    free(sf_lcd);
+    if ((new_dpi>=160)&&(new_dpi<=980)){
+      ALOGI("android getprop ro.sf.lcd_density: %i - OK",new_dpi);
+      me->dpi=new_dpi;
+    }
+    else{
+      ALOGI("android getprop ro.sf.lcd_density: %i - INVALID",new_dpi);
+    }
+  }
+  else{
+    ALOGI("android getprop ro.sf.lcd_density not found");
+  }
+#endif
 
   /* OK */
   goto ok;
@@ -255,8 +326,9 @@ void LINUXFBDR_release(LIBAROMA_FBP me) {
   ALOGV("FBDRIVER free internal data");
   
 #ifdef LIBAROMA_CONFIG_OPENMP
-  /* destroy lock */
   omp_destroy_nest_lock(&mi->synclock);
+#else
+  pthread_mutex_destroy(&mi->synclock);
 #endif
   free(me->internal);
 }
@@ -281,11 +353,13 @@ void LINUXFBDR_refresh(LIBAROMA_FBP me) {
   /* Get Internal Data */
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
   
+  fsync(mi->fb);
+  
   /* Refresh Display */
   mi->var.activate = FB_ACTIVATE_VBL;
-	mi->var.yoffset = 0;
+  mi->var.yoffset = 0;
 	if(ioctl(mi->fb, FBIOPAN_DISPLAY, &mi->var)){
-	  mi->var.yoffset   = 0;
+	  mi->var.yoffset = 0;
     mi->var.activate |= FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
     ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var);
 	}

@@ -28,5 +28,56 @@
 #define __libaroma_system_c__
 
 
+/*
+ * Function    : libaroma_getprop
+ * Return Value: char *
+ * Descriptions: get prop from stream
+ */
+char * libaroma_getprop(
+    char * key, LIBAROMA_STREAMP stream, byte freeStream){
+  char * buffer=libaroma_stream_to_string(stream,freeStream);
+  if (buffer==NULL) {
+    return NULL;
+  }
+  char * result = NULL;
+  char * line = strtok(buffer, "\n");
+  do {
+    while (*line && isspace(*line)) {
+      ++line;
+    }
+    if (*line == '\0' || *line == '#') {
+      continue;
+    }
+    char * equal = strchr(line, '=');
+    if (equal==NULL) {
+      goto done;
+    }
+    char * key_end = equal - 1;
+    while (key_end > line && isspace(*key_end)){
+      --key_end;
+    }
+    key_end[1] = '\0';
+    if (strcmp(key, line) != 0) {
+      continue;
+    }
+    char * val_start = equal+1;
+    while (*val_start && isspace(*val_start)) {
+      ++val_start;
+    }
+    char * val_end = val_start + strlen(val_start) - 1;
+    while (val_end > val_start && isspace(*val_end)) {
+      --val_end;
+    }
+    val_end[1] = '\0';
+    result = strdup(val_start);
+    break;
+  }
+  while ((line = strtok(NULL, "\n")));
+done:
+  free(buffer);
+  return result;
+} /* End of libaroma_getprop */
+
+
 
 #endif /* __libaroma_system_c__ */

@@ -157,7 +157,4 @@ void libaroma_lang_cleanup() {
   libaroma_lang_init();
 } /* End of libaroma_lang_cleanup */
 
-
-
-
 #endif /* __libaroma_strings_c__ */

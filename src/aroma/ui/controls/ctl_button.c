@@ -138,7 +138,7 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
         me->push_canvas,raised_canvas,
         ix-raised_sz,
         iy-raised_sz+libaroma_dp(4),
-        1,0x60
+        1,0x50
       );
       libaroma_canvas_free(raised_canvas);
     }

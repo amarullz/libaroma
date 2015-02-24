@@ -27,6 +27,12 @@
 #ifndef __libaroma_system_h__
 #define __libaroma_system_h__
 
-
+/*
+ * Function    : libaroma_getprop
+ * Return Value: char *
+ * Descriptions: get prop from stream
+ */
+char * libaroma_getprop(
+    char * key, LIBAROMA_STREAMP stream, byte freeStream);
 
 #endif /* __libaroma_system_h__ */

@@ -982,11 +982,6 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
               NULL,
               _libaroma_window_thread_manager,
               (voidp) win);
-
-/* send active message to child */
-#ifdef LIBAROMA_CONFIG_OPENMP
-  #pragma omp parallel for
-#endif
             for (i=0;i<win->childn;i++){
               win->childs[i]->message(win->childs[i], msg);
             }
@@ -1008,9 +1003,6 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
         if (win->active){
           /* send inactive message to child */
           int i;
-#ifdef LIBAROMA_CONFIG_OPENMP
-  #pragma omp parallel for
-#endif
           for (i=0;i<win->childn;i++){
             win->childs[i]->message(win->childs[i], msg);
           }
@@ -1026,9 +1018,6 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
       {
         /* remeasured all childs */
         int i;
-#ifdef LIBAROMA_CONFIG_OPENMP
-  #pragma omp parallel for
-#endif
         for (i=0;i<win->childn;i++){
           libaroma_window_measure(win,win->childs[i]);
         }
