@@ -29,24 +29,25 @@
 #ifdef __ARM_HAVE_NEON
 
 /* set color buffer */
+/* 512 & 256bit vector */
 void libaroma_color_set(wordp dst, word color, int n) {
-  int i,left=n%16;
-  if (n>=16){
-    /* use 256bit vector */
-    uint16x8x2_t t_clr;
-    t_clr.val[0]=vdupq_n_u16(color);
-    t_clr.val[1]=t_clr.val[0];
-    for (i=0;i<n-left;i+=16) {
-      vst2q_u16 (dst+i, t_clr);
+  int i,left=n%32;
+  if (n>=32){
+    /* use 512bit vector */
+    uint16x8x4_t t_clr;
+    t_clr.val[0]= t_clr.val[1]= t_clr.val[2]= t_clr.val[3]=vdupq_n_u16(color);
+    for (i=0;i<n-left;i+=32) {
+      vst4q_u16(dst+i, t_clr);
     }
   }
   if (left>0){
     for (i=n-left;i<n;i++) {
       dst[i]=color;
     }
-  }
-  
-  /**** 128 bit vector:
+  } 
+}
+/* 128bit vector */
+void libaroma_color_set_128(wordp dst, word color, int n) {
   int i,left=n%8;
   if (n>=8){
     uint16x8_t t_clr = vdupq_n_u16(color);
@@ -59,7 +60,59 @@ void libaroma_color_set(wordp dst, word color, int n) {
       dst[i]=color;
     }
   }
-  */
+}
+
+/* 16bit to 32bit - 256bit to 512bit vector experimental */
+void libaroma_color_copy32_512(dwordp dst, wordp src, int n, bytep rgb_pos) {
+  int i,left=n%16;
+  
+  /* neon */
+  if (n>=16){
+    uint16x8_t msk_r = vdupq_n_u16(0xF800); /* Red Mask */
+    uint16x8_t msk_g = vdupq_n_u16(0x07E0); /* Green Mask */
+    uint16x8_t msk_b = vdupq_n_u16(0x001F); /* Blue Mask */
+    
+    /* vars */
+    uint16x8x2_t psrc;
+    uint16x8x4_t pdst;
+    
+    uint16x8_t r, g, b;
+    
+    for (i=0;i<n-left;i+=16) {
+      psrc=vld2q_u16(src+i);
+      
+      /* get subpixels of source color */
+      r = vrshrq_n_u16(vandq_u16(psrc.val[0],msk_r),8);
+      g = vrshrq_n_u16(vandq_u16(psrc.val[0],msk_g),3);
+      b = vshlq_n_u16(vandq_u16(psrc.val[0],msk_b),3);
+      
+      pdst.val[0]=vorrq_u16(r, vshlq_n_u16(g,8));
+      pdst.val[1]=b;
+      
+      r = vrshrq_n_u16(vandq_u16(psrc.val[1],msk_r),8);
+      g = vrshrq_n_u16(vandq_u16(psrc.val[1],msk_g),3);
+      b = vshlq_n_u16(vandq_u16(psrc.val[1],msk_b),3);
+      
+      pdst.val[2]=vorrq_u16(r, vshlq_n_u16(g,8));
+      pdst.val[3]=b;
+      
+      /* dump it */
+      vst4q_u16 ((uint16_t *) (dst+i), pdst);
+    }
+  }
+  
+  /* leftover */
+  if (left>0){
+    word cl;
+    for (i=n-left;i<n;i++) {
+      cl = src[i];
+      dst[i] = (
+        (libaroma_color_hi_r(libaroma_color_r(cl)) << rgb_pos[0]) |
+        (libaroma_color_hi_g(libaroma_color_g(cl)) << rgb_pos[1]) |
+        (libaroma_color_hi_b(libaroma_color_b(cl)) << rgb_pos[2])
+      );
+    }
+  }
 }
 
 /* 16bit to 32bit */
@@ -109,6 +162,7 @@ void libaroma_color_copy32(dwordp dst, wordp src, int n, bytep rgb_pos) {
     }
   }
 }
+
 
 /* 32bit to 26bit */
 void libaroma_color_copy16(wordp dst, dwordp src, int n, bytep rgb_pos) {

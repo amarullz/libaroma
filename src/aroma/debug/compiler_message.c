@@ -83,7 +83,7 @@
 #endif
 
 /* memory leak tracker */
-#ifdef LIBAROMA_CONFIG_DEBUG_MEMORY
+#if LIBAROMA_CONFIG_DEBUG_MEMORY >=1
   #define __LIBAROMA_CMSG_DMEM "ENABLED\n"\
     "                        "\
     " * WARNING: DONT USE IT ON PRODUCTION"

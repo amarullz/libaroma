@@ -92,10 +92,7 @@ byte LINUXFBDR_sync_32bit(
   }
   /* get internal data */
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
-  
-  LINUXFBDR_lock(mi,1);
   mi->syncn++;
-  LINUXFBDR_lock(mi,0);
   
   /* defined area only */
   if ((w > 0) && (h > 0)) {
@@ -134,13 +131,8 @@ byte LINUXFBDR_sync_32bit(
         mi->stride, 0, mi->rgb_pos);
     }
   }
-
-  LINUXFBDR_lock(mi,1);
-  /* refresh framebuffer */
-  if (--mi->syncn==0){
-    LINUXFBDR_refresh(me);
-  }
-  LINUXFBDR_lock(mi,0);
+  
+  mi->syncn--;
   return 1;
 }
 

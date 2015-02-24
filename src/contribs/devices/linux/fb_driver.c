@@ -59,36 +59,13 @@ typedef struct {
   byte      depth;                      /* color depth */
   byte      pixsz;                      /* memory size per pixel */
   int       syncn;
+  byte      active;
+  pthread_t refresh_thread;
   
   /* needed by 32bit colorspace */
   byte      rgb_pos[6];                 /* framebuffer rgb position */
   byte      rgb_pos_normal;             /* is rgb position = 16,8,0,24 ? */
-  
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_nest_lock_t synclock;
-#else
-  pthread_mutex_t synclock;
-#endif
 } LINUXFBDR_INTERNAL, *LINUXFBDR_INTERNALP;
-
-/* lock/mutex */
-void LINUXFBDR_lock(LINUXFBDR_INTERNALP mi,byte lock){
-#ifdef LIBAROMA_CONFIG_OPENMP
-  if (lock){
-    omp_set_nest_lock(&mi->synclock);
-  }
-  else{
-    omp_unset_nest_lock(&mi->synclock);
-  }
-#else
-  if (lock){
-    pthread_mutex_lock(&mi->synclock);
-  }
-  else{
-    pthread_mutex_unlock(&mi->synclock);
-  }
-#endif
-}
 
 /*
  * forward functions
@@ -102,6 +79,27 @@ void LINUXFBDR_dump(LINUXFBDR_INTERNALP mi);
  */
 #include "fb_colorspace/fb_16bit.c" /* 16 bit */
 #include "fb_colorspace/fb_32bit.c" /* 32 bit */
+
+/*
+ * Function    : LINUXFBDR_refresh_thread
+ * Return Value: static void *
+ * Descriptions: refresh thread
+ */
+static void * LINUXFBDR_refresh_thread(void * cookie){
+  LIBAROMA_FBP me = (LIBAROMA_FBP) cookie;
+  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
+  ALOGS("Framebuffer refresher thread started...");
+  LIBAROMA_SLEEPER sleeper_s;
+  while (mi->active){
+    libaroma_sleeper_start(&sleeper_s);
+    if (mi->syncn==0) {
+      LINUXFBDR_refresh(me);
+    }
+    libaroma_sleeper(&sleeper_s,1600);
+  }
+  ALOGS("Framebuffer refresher thread stopped...");
+  return NULL;
+} /* End of LINUXFBDR_refresh_thread */
 
 /*
  * function : framebuffer driver initializer
@@ -123,12 +121,6 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
   me->internal = (voidp) mi;
   /* Set Release and Refresh Callback */
   me->release = &LINUXFBDR_release;
-  
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_init_nest_lock(&mi->synclock);
-#else
-  pthread_mutex_init(&mi->synclock,NULL);
-#endif
   
   /* Open Framebuffer Device */
   mi->fb = open(LINUXFBDR_DEVICE, O_RDWR, 0);
@@ -294,6 +286,9 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
   }
 #endif
 
+  mi->active=1;
+  pthread_create(&mi->refresh_thread,NULL,LINUXFBDR_refresh_thread,(voidp) me);
+
   /* OK */
   goto ok;
   /* Return */
@@ -316,6 +311,10 @@ void LINUXFBDR_release(LIBAROMA_FBP me) {
   
   /* Get Internal Data */
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
+  mi->active=0;
+  pthread_join(mi->refresh_thread,NULL);
+  mi->refresh_thread=0;
+  
   /* Release framebuffer memory map */
   ALOGV("FBDRIVER munmap buffer");
   munmap(mi->buffer, mi->fix.smem_len);
@@ -324,21 +323,9 @@ void LINUXFBDR_release(LIBAROMA_FBP me) {
   close(mi->fb);
   /* Free Internal Data */
   ALOGV("FBDRIVER free internal data");
-  
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_destroy_nest_lock(&mi->synclock);
-#else
-  pthread_mutex_destroy(&mi->synclock);
-#endif
+
   free(me->internal);
 }
-
-#ifndef OMAPFB_WAITFORVSYNC
-  #define OMAPFB_WAITFORVSYNC _IO('O', 57)
-#endif
-#ifndef S3CFB_SET_VSYNC_INT
-  #define S3CFB_SET_VSYNC_INT	_IOW('F', 206, unsigned int)
-#endif
 
 /*
  * Function : Refresh Display Framebuffer (Same For All Colorspace)
@@ -353,7 +340,7 @@ void LINUXFBDR_refresh(LIBAROMA_FBP me) {
   /* Get Internal Data */
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
   
-  fsync(mi->fb);
+  // fsync(mi->fb);
   
   /* Refresh Display */
   mi->var.activate = FB_ACTIVATE_VBL;
