@@ -77,7 +77,9 @@ void libaroma_alpha_px_line(
     __neon_dither_table(
       _Y, &table_r16, &table_g16, &table_b16
     );
-    
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
     for (i=0;i<n-left;i+=8) {
       /* prepare opacity and reversed opacity value */
       op = vmovl_u8(vld1_u8(alpha+i));
@@ -139,7 +141,9 @@ void libaroma_alpha_px(
   if (n>=8){
     __neon_alpha_const_init();
     uint16x8_t pxb, pxt, rbl, gbl, bbl, rtl, gtl, btl, o, op, ro;
-    
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
     for (i=0;i<n-left;i+=8) {
       /* prepare opacity and reversed opacity value */
       op = vmovl_u8(vld1_u8(alpha+i));
@@ -217,7 +221,9 @@ void libaroma_alpha_const_line(
     /* constant alpha */
     op = vdupq_n_u16(alpha);
     ro = vsubq_u16(__neon_const_falph, op);
-  
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
     for (i=0;i<n-left;i+=8) {
       /* get 8 pixels data from top & bottom layer */
       pxb = vld1q_u16(bottom+i); /* bottom */
@@ -285,7 +291,9 @@ void libaroma_alpha_const(
     /* constant alpha */
     op = vdupq_n_u16(alpha);
     ro = vsubq_u16(__neon_const_falph, op);
-    
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
     for (i=0;i<n-left;i+=8) {  
       /* get 8 pixels data from top & bottom layer */
       pxb = vld1q_u16(bottom+i); /* bottom */
@@ -343,7 +351,9 @@ void libaroma_alpha_black(
     uint16x8_t pxt, rtl, gtl, btl, op;
     /* constant alpha */
     op = vdupq_n_u16(alpha);
-    
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
     for (i=0;i<n-left;i+=8) {  
       /* get 8 pixels data from top & bottom layer */
       pxt = vld1q_u16(top+i); /* top */
@@ -398,6 +408,10 @@ void libaroma_alpha_rgba_fill(
     gtl = vdupq_n_u16(libaroma_color_g(top)*alpha);
     btl = vdupq_n_u16(libaroma_color_b(top)*alpha);
     ro  = vdupq_n_u16(0x100-alpha);
+    
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
     for (i=0;i<n-left;i+=8) {
       /* get 8 pixels data from top & bottom layer */
       pxb = vld1q_u16(bottom+i); /* bottom */
@@ -439,6 +453,9 @@ void libaroma_alpha_mono(int n, wordp dst, wordp bottom,
     rts = vdupq_n_u16(libaroma_color_r(top));
     gts = vdupq_n_u16(libaroma_color_g(top));
     bts = vdupq_n_u16(libaroma_color_b(top));
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
     for (i=0;i<n-left;i+=8) {
       /* prepare opacity and reversed opacity value */
       op = vmovl_u8(vld1_u8(alpha+i));
@@ -496,6 +513,9 @@ void libaroma_alpha_multi_line(int n, wordp dst, wordp bottom,
     rts = vdupq_n_u16(libaroma_color_r(top));
     gts = vdupq_n_u16(libaroma_color_g(top));
     bts = vdupq_n_u16(libaroma_color_b(top));
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
     for (i=0;i<n-left;i+=8) {
       /* 24bit opacity */
       alphabuf = vld3_u8(alphargb+(i*3));

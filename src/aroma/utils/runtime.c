@@ -85,6 +85,14 @@ void libaroma_runtime_activate_cores(int num_cores){
       fclose(fp);
     }
   }
+  
+  /* max power */
+  char cmds[1024];
+  for (i=0;i<=_libaroma_runtime.core_num;i++){
+    snprintf(path,256,"/sys/devices/system/cpu/cpu%i/cpufreq",i);
+    snprintf(cmds,1024,"echo performance > %s/scaling_governor",path);
+    system(cmds);
+  }
   ALOGI("Processor Activated : %i Core(s)",_libaroma_runtime.core_num);
 
 #endif

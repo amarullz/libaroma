@@ -58,7 +58,6 @@ typedef struct {
   int       line;                       /* line size */
   byte      depth;                      /* color depth */
   byte      pixsz;                      /* memory size per pixel */
-  int       syncn;
   byte      active;
   pthread_t refresh_thread;
   
@@ -66,31 +65,7 @@ typedef struct {
   byte      rgb_pos[6];                 /* framebuffer rgb position */
   byte      rgb_pos_normal;             /* is rgb position = 16,8,0,24 ? */
   
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_nest_lock_t synclock;
-#else
-  pthread_mutex_t synclock;
-#endif
 } LINUXFBDR_INTERNAL, *LINUXFBDR_INTERNALP;
-
-/* lock/mutex */
-void LINUXFBDR_lock(LINUXFBDR_INTERNALP mi,byte lock){
-#ifdef LIBAROMA_CONFIG_OPENMP
-  if (lock){
-    omp_set_nest_lock(&mi->synclock);
-  }
-  else{
-    omp_unset_nest_lock(&mi->synclock);
-  }
-#else
-  if (lock){
-    pthread_mutex_lock(&mi->synclock);
-  }
-  else{
-    pthread_mutex_unlock(&mi->synclock);
-  }
-#endif
-}
 
 /*
  * forward functions
@@ -109,16 +84,10 @@ static void * LINUXFBDR_refresh_thread(void * cookie){
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
   ALOGS("Framebuffer refresher thread started...");
   while (mi->active){
-    LINUXFBDR_lock(mi,1);
-    if (mi->syncn==0) {
-      mi->syncn=-1;
-      LINUXFBDR_lock(mi,0);
-      LINUXFBDR_refresh(me);
-    }
-    else{
-      LINUXFBDR_lock(mi,0);
-    }
-    usleep(16);
+    mi->var.activate = FB_ACTIVATE_VBL;
+    mi->var.yoffset = 0;
+  	ioctl(mi->fb, FBIOPAN_DISPLAY, &mi->var);
+  	libaroma_wait_hz(16000);
   }
   ALOGS("Framebuffer refresher thread stopped...");
   return NULL;
@@ -151,12 +120,6 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
   /* Set Release and Refresh Callback */
   me->release = &LINUXFBDR_release;
 
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_init_nest_lock(&mi->synclock);
-#else
-  pthread_mutex_init(&mi->synclock,NULL);
-#endif
-
   /* Open Framebuffer Device */
   mi->fb = open(LINUXFBDR_DEVICE, O_RDWR, 0);
   
@@ -181,17 +144,18 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
     goto error; /* Exit If Error */
   }
   
-  
+  /*
   mi->var.yres_virtual = mi->var.yres * 2;
   if (ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var)==-1){
 		ALOGW("ioctl FBIOPUT_VSCREENINFO Get Double Buffer Error");
 	}
   ioctl(mi->fb, FBIOGET_FSCREENINFO, &mi->fix);
   ioctl(mi->fb, FBIOGET_VSCREENINFO, &mi->var);
-  
+  */
   /*
   ioctl(mi->fb, FBIOBLANK, FB_BLANK_POWERDOWN);
   ioctl(mi->fb, FBIOBLANK, FB_BLANK_UNBLANK); */
+  
   /*
   mi->var.bits_per_pixel = 16;
   mi->var.red.offset = 11;
@@ -215,8 +179,8 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
 	}
   ioctl(mi->fb, FBIOGET_FSCREENINFO, &mi->fix);
   ioctl(mi->fb, FBIOGET_VSCREENINFO, &mi->var);
-  */
   
+  */
   /* try to force 32bit libaroma color mode (bgra)
   if (mi->var.bits_per_pixel==32){
     mi->var.red.offset         = 16;
@@ -249,7 +213,6 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
   mi->depth    = mi->var.bits_per_pixel;    /* color depth */
   mi->pixsz    = mi->depth >> 3;            /* pixel size per byte */
   mi->fb_sz    = (me->sz * mi->pixsz);      /* framebuffer size */
-  mi->syncn    = 0;
   mi->var.yoffset = 0;
   
   /* map framebuffer */
@@ -367,11 +330,6 @@ void LINUXFBDR_release(LIBAROMA_FBP me) {
   /* Free Internal Data */
   ALOGV("FBDRIVER free internal data");
   
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_destroy_nest_lock(&mi->synclock);
-#else
-  pthread_mutex_destroy(&mi->synclock);
-#endif
   free(me->internal);
 }
 
@@ -388,10 +346,10 @@ void LINUXFBDR_refresh(LIBAROMA_FBP me) {
   /* Get Internal Data */
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
   
-  fsync(mi->fb);
+  // fsync(mi->fb);
   
   /* Refresh Display */
-  mi->var.activate = FB_ACTIVATE_VBL;
+  mi->var.activate = FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE; //FB_ACTIVATE_VBL;
   mi->var.yoffset = 0;
 	if(ioctl(mi->fb, FBIOPAN_DISPLAY, &mi->var)){
 	  mi->var.yoffset = 0;

@@ -93,15 +93,6 @@ byte LINUXFBDR_sync_32bit(
   /* get internal data */
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
   
-  LINUXFBDR_lock(mi,1);
-  if (mi->syncn<0){
-    mi->syncn=1;
-  }
-  else{
-    mi->syncn++;
-  }
-  LINUXFBDR_lock(mi,0);
-  
   /* defined area only */
   if ((w > 0) && (h > 0)) {
     int copy_stride = me->w - w;
@@ -139,10 +130,6 @@ byte LINUXFBDR_sync_32bit(
         mi->stride, 0, mi->rgb_pos);
     }
   }
-  
-  LINUXFBDR_lock(mi,1);
-  mi->syncn--;
-  LINUXFBDR_lock(mi,0);
   return 1;
 }
 

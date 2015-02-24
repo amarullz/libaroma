@@ -6,7 +6,7 @@ del /F /Q hid_driver.*
 
 echo Compiling Libaroma
 %LIBAROMA_GCC% -c ^
-  -save-temps -O2 ^
+  -save-temps -O3 ^
   -fdata-sections -ffunction-sections -Wl,--gc-sections ^
   -D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG ^
   -fPIC -DPIC -Wl,-s -Wall -Wextra -Wshadow -Werror -Wno-unused-parameter ^

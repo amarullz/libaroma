@@ -53,6 +53,13 @@ typedef void (*LIBAROMA_TIMER_CB)(void *);
 long libaroma_tick();
 
 /*
+ * Function    : libaroma_wait_hz
+ * Return Value: void
+ * Descriptions: wait hz
+ */
+void libaroma_wait_hz(long sz);
+
+/*
  * Function    : libaroma_sleeper_start
  * Return Value: byte
  * Descriptions: High resolution sleep start

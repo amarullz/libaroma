@@ -84,25 +84,4 @@ byte LIBAROMA_HID_INIT_FUNCTION(
   #endif
 #endif
 
-/* paralel memcpy */
-#ifdef LIBAROMA_CONFIG_OPENMP
-inline void libaroma_memcpy(void * dst, const void * src, int sz){
-  if (sz>800){
-    int i;
-    int rsz=sz>>3;
-#pragma omp parallel for
-    for (i=0;i<8;i++){
-      int j=i*rsz;
-      memcpy(dst+j,src+j,rsz);
-    }
-    sz=rsz%8;
-  }
-  if (sz>0){
-    memcpy(dst,src,sz);
-  }
-}
-#else
-#define libaroma_memcpy memcpy
-#endif
-
 #endif /* __libaroma_internal_h__ */

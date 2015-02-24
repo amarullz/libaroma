@@ -3,7 +3,7 @@ cd obj
 
 echo Compiling TEST
 %LIBAROMA_GCC% ^
-  -O2 -static ^
+  -O3 -static ^
   -fdata-sections -ffunction-sections -Wl,--gc-sections ^
   -D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG ^
   -fPIC -DPIC -Wl,-s -Werror ^

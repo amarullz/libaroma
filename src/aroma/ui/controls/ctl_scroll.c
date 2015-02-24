@@ -28,7 +28,7 @@
 #define __libaroma_ctl_scroll_c__
 
 #define _LIBAROMA_CTL_SCROLL_SIGNATURE 0x40
-#define _LIBAROMA_CTL_SCROLL_HISTORY   5
+#define _LIBAROMA_CTL_SCROLL_HISTORY   10
 #define _LIBAROMA_CTL_SCROLL_MAX_CACHE 9000
 #define _LIBAROMA_CTL_SCROLL_HANDLE_DP 36
 
@@ -75,6 +75,7 @@ struct __LIBAROMA_CTL_SCROLL{
   int touch_scroll_y;
   
   /* fling items */
+  double bounce_velocity;
   double velocity;
   int prevn;
   int prev_point[_LIBAROMA_CTL_SCROLL_HISTORY];
@@ -268,7 +269,7 @@ static void * _libaroma_ctl_scroll_draw_thread(void * cookie){
     if ((me->client.signature)&&(me->client_canvas!=NULL)){
       if (me->request_scroll_y!=-1){
         if (me->request_scroll_y!=me->scroll_y){
-          int move_sz = (me->request_scroll_y-me->scroll_y)*0.2;
+          int move_sz = (me->request_scroll_y-me->scroll_y)*0.3;
           int target_sz = me->scroll_y+move_sz;
           if (abs(move_sz)<2){
             me->scroll_y=me->request_scroll_y;
@@ -277,11 +278,20 @@ static void * _libaroma_ctl_scroll_draw_thread(void * cookie){
           libaroma_ctl_scroll_set_pos(ctl,target_sz);
         }
       }
+      
+      if (me->bounce_velocity!=0){
+        me->bounce_velocity*=0.7;
+        if (abs(me->bounce_velocity)<0.5){
+          me->bounce_velocity=0;
+        }
+        me->synced_y=-1;
+      }
+      
       if (me->synced_y!=me->scroll_y){
         libaroma_control_draw(ctl,1);
       }
     }
-    usleep(16);
+    libaroma_wait_hz(16);
   }
   ALOGV("Stop scroll draw thread");
   return NULL;
@@ -352,11 +362,19 @@ static void * _libaroma_ctl_scroll_momentum_thread(void * cookie){
           int scroll_y = round(me->velocity) + me->scroll_y;
           if (scroll_y>=me->max_scroll_y){
             scroll_y=me->max_scroll_y;
+            if (me->scroll_y!=scroll_y){
+              me->bounce_velocity=MAX(-libaroma_dp(14),
+                MIN(libaroma_dp(8),me->velocity));
+            }
             me->velocity = 0;
             need_drawing=1;
           }
           if (scroll_y<=0){
             scroll_y=0;
+            if (me->scroll_y!=scroll_y){
+              me->bounce_velocity=MAX(-libaroma_dp(14),
+                MIN(libaroma_dp(8),me->velocity));
+            }
             me->velocity = 0;
             need_drawing=1;
           }
@@ -416,10 +434,16 @@ void _libaroma_ctl_scroll_draw(
     }
     if (me->client_canvas!=NULL){
       if (me->client_canvas->h<=ctl->h){
-        libaroma_draw_rect( /* erase bg */
-          c,0,0,c->w,c->h,me->color_bg,0xff
-        );
+        libaroma_canvas_setcolor(c,me->color_bg,0xff);
       }
+      
+      LIBAROMA_CANVASP tc=c;
+      double bvel=me->bounce_velocity;
+      if (bvel!=0){
+        libaroma_canvas_setcolor(tc,me->color_bg,0xff);
+        c=libaroma_canvas(tc->w,tc->h);
+      }
+      
       int scroll_y = me->scroll_y;
       int draw_y = scroll_y-me->draw_y+me->cache_y;
       int draw_h = ctl->h;
@@ -437,7 +461,7 @@ void _libaroma_ctl_scroll_draw(
         int y;
         if (top_h>0){
           if (same_line){
-            libaroma_memcpy(
+            memcpy(
               c->data,
               me->client_canvas->data+draw_y*c->l,
               c->l*2*top_h
@@ -464,7 +488,7 @@ void _libaroma_ctl_scroll_draw(
         }
         if (bottom_h>0){
           if (same_line){
-            libaroma_memcpy(
+            memcpy(
               c->data+top_h*c->l,
               me->client_canvas->data+bottom_y*c->l,
               c->l*2*bottom_h
@@ -488,7 +512,7 @@ void _libaroma_ctl_scroll_draw(
       else if ((draw_y<me->client_canvas->h)&&(draw_y>=0)){
         int y;
         if (same_line){
-          libaroma_memcpy(
+          memcpy(
             c->data,
             me->client_canvas->data+draw_y*c->l,
             c->l*2*draw_h
@@ -509,12 +533,19 @@ void _libaroma_ctl_scroll_draw(
         me->synced_y=me->scroll_y;
       }
       
+      if (bvel!=0){
+        int y_i = (int) round(bvel);
+        libaroma_draw(tc,c,0,-y_i,0);
+        libaroma_canvas_free(c);
+        c=tc;
+      }
+      
       if (!(me->flags&LIBAROMA_CTL_SCROLL_NO_INDICATOR)){
         if ((me->scroll_state>0)||(me->handle_touched)){
           int hdl_w,hdl_r,ctl_y,ctl_h;
           byte handle_opa=180;
           byte is_dark = libaroma_color_isdark(me->color_bg);
-          word indicator_color = is_dark?RGB(cccccc):RGB(444444);
+          word indicator_color = is_dark?RGB(cccccc):RGB(666666);
           float vss=(me->handle_touched)?1:me->scroll_state;
           if (me->flags&LIBAROMA_CTL_SCROLL_WITH_HANDLE){
             hdl_w = libaroma_dp(5);
@@ -538,7 +569,7 @@ void _libaroma_ctl_scroll_draw(
             );
             if (me->handle_touched){
               handle_opa=0xff;
-              indicator_color=RGB(446699);
+              indicator_color=RGB(6699dd);
             }
             else{
               handle_opa=220;
@@ -575,15 +606,11 @@ void _libaroma_ctl_scroll_draw(
       }
     }
     else{
-      libaroma_draw_rect(
-        c,0,0,c->w,c->h,me->color_bg,0xff
-      );
+      libaroma_canvas_setcolor(c,me->color_bg,0xff);
     }
   }
   else{
-    libaroma_draw_rect(
-      c,0,0,c->w,c->h,me->color_bg,0xff
-    );
+    libaroma_canvas_setcolor(c,me->color_bg,0xff);
   }
 } /* End of _libaroma_ctl_scroll_draw */
 
@@ -621,6 +648,7 @@ dword _libaroma_ctl_scroll_touch_handler(
   switch(state){
     case LIBAROMA_HID_EV_STATE_DOWN:{
       ALOGT("Touch Pressed Y: %i",y);
+      me->bounce_velocity=0;
       
       /* set fling value */
       me->allow_scroll=2;
@@ -660,6 +688,7 @@ dword _libaroma_ctl_scroll_touch_handler(
     break;
     case LIBAROMA_HID_EV_STATE_UP:{
       ALOGT("Touch Released Y: %i",y);
+      me->bounce_velocity=0;
       if (!me->handle_touched){
         if (me->allow_scroll){
           int current_point = (y==0)?me->prev_point[me->prevn-1]:y;
@@ -695,6 +724,7 @@ dword _libaroma_ctl_scroll_touch_handler(
     break;
     case LIBAROMA_HID_EV_STATE_MOVE:{
       ALOGT("Move Y: %i",y);
+      me->bounce_velocity=0;
       int move_sz = me->touch_y - y;
       if (!me->handle_touched){
         if (me->allow_scroll==2){
@@ -896,6 +926,7 @@ LIBAROMA_CONTROLP libaroma_ctl_scroll(
   me->handle_touched=0;
   
   /* reset fling */
+  me->bounce_velocity = 0;
   me->velocity = 0;
   me->prevn = 0;
   me->allow_scroll = 0;

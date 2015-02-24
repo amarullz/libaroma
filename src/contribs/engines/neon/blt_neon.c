@@ -36,6 +36,9 @@ void libaroma_btl16(int n, wordp dst, const dwordp src) {
   if (n>=8){
     uint8_t *p888 = (uint8_t *) src;
     uint8x8x4_t rgba;
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
     for (i=0;i<n-left;i+=8) {
       rgba = vld4_u8(p888+i*4);
       vst1q_u16(dst+i, vorrq_u16(
@@ -68,6 +71,9 @@ void libaroma_btl32(int n, dwordp dst, const wordp src) {
     uint8_t * p888  = (uint8_t *) dst;
     uint8x8x4_t rgb;
     uint16x8_t pix;
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
     for (i=0;i<n-left;i+=8) {
       pix = vld1q_u16(src+i); /* load 8 pixel */
       /* right shift */

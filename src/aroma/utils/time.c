@@ -60,6 +60,22 @@ long libaroma_tick() {
   return ((long) (now.tv_sec * 1000 + now.tv_nsec / 1000000));
 } /* End of libaroma_tick */
 
+
+/*
+ * Function    : libaroma_wait_hz
+ * Return Value: void
+ * Descriptions: wait hz
+ */
+void libaroma_wait_hz(long sz){
+  struct timespec now;
+  if (clock_gettime(CLOCK_MONOTONIC,&now)) {
+    usleep(sz);
+  }
+  usleep(sz-((now.tv_nsec/1000)%sz));
+} /* End of libaroma_wait_hz */
+
+
+
 /*
  * Function    : libaroma_sleeper_start
  * Return Value: byte

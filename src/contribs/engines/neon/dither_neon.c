@@ -53,6 +53,9 @@ void libaroma_dither_line(int y, int w, wordp dst, const dwordp src) {
     uint8_t * nsrc = (uint8_t *) src;
     uint8x8x4_t rgba;
     uint16x8_t r,g,b;
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
     for (i=0;i<w-left;i+=8) {
       rgba = vld4_u8(nsrc + i*4);
       r = vminq_u16(vaddl_u8(rgba.val[2], table_r),ff);
@@ -85,6 +88,9 @@ void libaroma_dither_line_const(int y, int w, wordp dst, const dword src) {
     uint8x8_t src_g = vmov_n_u8(libaroma_color_g32(src));
     uint8x8_t src_b = vmov_n_u8(libaroma_color_b32(src));
     uint16x8_t r,g,b;
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
     for (i=0;i<w-left;i+=8) {
       r = vminq_u16(vaddl_u8(src_r, table_r),ff);
       g = vminq_u16(vaddl_u8(src_g, table_g),ff);

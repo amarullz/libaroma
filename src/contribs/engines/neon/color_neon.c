@@ -36,6 +36,9 @@ void libaroma_color_set(wordp dst, word color, int n) {
     /* use 512bit vector */
     uint16x8x4_t t_clr;
     t_clr.val[0]= t_clr.val[1]= t_clr.val[2]= t_clr.val[3]=vdupq_n_u16(color);
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
     for (i=0;i<n-left;i+=32) {
       vst4q_u16(dst+i, t_clr);
     }
@@ -129,7 +132,9 @@ void libaroma_color_copy32(dwordp dst, wordp src, int n, bytep rgb_pos) {
     uint16x8_t psrc;
     uint8x8x4_t n_dst;
     uint8x8_t r, g, b;
-    
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
     for (i=0;i<n-left;i+=8) {
       /* load source color */
       psrc = vld1q_u16(src+i);
