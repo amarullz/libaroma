@@ -73,6 +73,22 @@ int main(int argc, char **argv){
   libaroma_canvas_blank(libaroma_fb()->canvas);
   libaroma_sync();
   
+  /* 674 - 677 == 128bit: 6327ms vs 256bit: 2162ms */
+  /* speed test setcolor:
+  long now=libaroma_tick();
+  int ii,nn;
+  for (nn=0;nn<10;nn++){
+    for (ii=0;ii<255;ii++){
+      libaroma_canvas_setcolor(libaroma_fb()->canvas,
+        libaroma_rgb(ii,ii,ii),
+        0);
+      //libaroma_sync();
+    }
+  }
+  printf("\n\nTIME WORKS: %i\n\n",(int)(libaroma_tick()-now));
+  libaroma_sync();
+  */
+  
   /*libaroma_png_save(libaroma_fb()->canvas,"/sdcard/out.png");*/
   
   

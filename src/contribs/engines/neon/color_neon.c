@@ -30,22 +30,36 @@
 
 /* set color buffer */
 void libaroma_color_set(wordp dst, word color, int n) {
-  int i,left=n%8;
+  int i,left=n%16;
+  if (n>=16){
+    /* use 256bit vector */
+    uint16x8x2_t t_clr;
+    t_clr.val[0]=vdupq_n_u16(color);
+    t_clr.val[1]=t_clr.val[0];
+    for (i=0;i<n-left;i+=16) {
+      vst2q_u16 (dst+i, t_clr);
+    }
+  }
+  if (left>0){
+    for (i=n-left;i<n;i++) {
+      dst[i]=color;
+    }
+  }
   
-  /* neon */
+  /**** 128 bit vector:
+  int i,left=n%8;
   if (n>=8){
     uint16x8_t t_clr = vdupq_n_u16(color);
     for (i=0;i<n-left;i+=8) {
       vst1q_u16(dst+i, t_clr);
     }
   }
-  
-  /* leftover */
   if (left>0){
     for (i=n-left;i<n;i++) {
       dst[i]=color;
     }
   }
+  */
 }
 
 /* 16bit to 32bit */

@@ -770,9 +770,14 @@ byte libaroma_window_anishow(
   /* lock and retval */
   byte retval = 0;
   win->lock_sync = 1;
+  /* safe wait */
+  usleep(25000);
   
   if (libaroma_wm_set_active_window(win)){
     win->active=2;
+    
+    /* safe wait */
+    usleep(25000);
     
     /* draw window into temp canvas */
     LIBAROMA_CANVASP wmc = win->dc;
