@@ -38,6 +38,7 @@
 #define LIBAROMA_CONFIG_DEBUG_MEMORY      1
 #define LIBAROMA_CONFIG_COMPILER_MESSAGE  1
 #define LIBAROMA_CONFIG_OPENMP            1
+#define LIBAROMA_CONFIG_HICOLOR_BIT       0
 */
 
 #endif /* __libaroma_config_features_h__ */

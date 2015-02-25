@@ -36,9 +36,6 @@ void libaroma_btl16(int n, wordp dst, const dwordp src) {
   if (n>=8){
     uint8_t *p888 = (uint8_t *) src;
     uint8x8x4_t rgba;
-#ifdef LIBAROMA_CONFIG_OPENMP
-  #pragma omp parallel for
-#endif
     for (i=0;i<n-left;i+=8) {
       rgba = vld4_u8(p888+i*4);
       vst1q_u16(dst+i, vorrq_u16(
@@ -64,31 +61,35 @@ void libaroma_btl32(int n, dwordp dst, const wordp src) {
   int i,left=n%8;
   /* neon */
   if (n>=8){
-    uint8x8_t mask5, mask6, alp, r, g, b;
+    uint8x8_t mask5, mask6, alp;
+#ifdef LIBAROMA_CONFIG_USE_HICOLOR_BIT
+    uint8x8_t r, g, b;
+#endif
     mask5 = vmov_n_u8(0xf8); /* 5 mask - red */
     mask6 = vmov_n_u8(0xfc); /* 6 mask - green */
     alp   = vmov_n_u8(0xff); /* Alpha constant */
     uint8_t * p888  = (uint8_t *) dst;
     uint8x8x4_t rgb;
     uint16x8_t pix;
-#ifdef LIBAROMA_CONFIG_OPENMP
-  #pragma omp parallel for
-#endif
     for (i=0;i<n-left;i+=8) {
       pix = vld1q_u16(src+i); /* load 8 pixel */
+#ifdef LIBAROMA_CONFIG_USE_HICOLOR_BIT
       /* right shift */
       r = vand_u8(vshrn_n_u16(pix, 8),mask5);
       g = vand_u8(vshrn_n_u16(pix, 3),mask6);
       b = vshl_n_u8(vmovn_u16(pix), 3);
       /* Small Byte Left : 11111xxx 111111xx 11111xxx */
-      r = vorr_u8(r, vshr_n_u8(r, 5));
-      g = vorr_u8(g, vshr_n_u8(g, 6));
-      b = vorr_u8(b, vshr_n_u8(b, 5));
-      /* dump */
       rgb.val[3] = alp;
-      rgb.val[2] = r;
-      rgb.val[1] = g;
-      rgb.val[0] = b;
+      rgb.val[2] = vorr_u8(r, vshr_n_u8(r, 5));
+      rgb.val[1] = vorr_u8(g, vshr_n_u8(g, 6));
+      rgb.val[0] = vorr_u8(b, vshr_n_u8(b, 5));
+#else
+      /* Small Byte Left : 11111xxx 111111xx 11111xxx */
+      rgb.val[3] = alp;
+      rgb.val[2] = vand_u8(vshrn_n_u16(pix, 8),mask5);
+      rgb.val[1] = vand_u8(vshrn_n_u16(pix, 3),mask6);
+      rgb.val[0] = vshl_n_u8(vmovn_u16(pix), 3);
+#endif
       vst4_u8(p888+4*i, rgb);
     }
   }

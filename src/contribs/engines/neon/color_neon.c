@@ -31,14 +31,14 @@
 /* set color buffer */
 /* 512 & 256bit vector */
 void libaroma_color_set(wordp dst, word color, int n) {
+#ifdef libaroma_memcpy16
+  libaroma_memcpy16(dst,color,n);
+#else
   int i,left=n%32;
   if (n>=32){
     /* use 512bit vector */
     uint16x8x4_t t_clr;
     t_clr.val[0]= t_clr.val[1]= t_clr.val[2]= t_clr.val[3]=vdupq_n_u16(color);
-#ifdef LIBAROMA_CONFIG_OPENMP
-  #pragma omp parallel for
-#endif
     for (i=0;i<n-left;i+=32) {
       vst4q_u16(dst+i, t_clr);
     }
@@ -47,75 +47,8 @@ void libaroma_color_set(wordp dst, word color, int n) {
     for (i=n-left;i<n;i++) {
       dst[i]=color;
     }
-  } 
-}
-/* 128bit vector */
-void libaroma_color_set_128(wordp dst, word color, int n) {
-  int i,left=n%8;
-  if (n>=8){
-    uint16x8_t t_clr = vdupq_n_u16(color);
-    for (i=0;i<n-left;i+=8) {
-      vst1q_u16(dst+i, t_clr);
-    }
   }
-  if (left>0){
-    for (i=n-left;i<n;i++) {
-      dst[i]=color;
-    }
-  }
-}
-
-/* 16bit to 32bit - 256bit to 512bit vector experimental */
-void libaroma_color_copy32_512(dwordp dst, wordp src, int n, bytep rgb_pos) {
-  int i,left=n%16;
-  
-  /* neon */
-  if (n>=16){
-    uint16x8_t msk_r = vdupq_n_u16(0xF800); /* Red Mask */
-    uint16x8_t msk_g = vdupq_n_u16(0x07E0); /* Green Mask */
-    uint16x8_t msk_b = vdupq_n_u16(0x001F); /* Blue Mask */
-    
-    /* vars */
-    uint16x8x2_t psrc;
-    uint16x8x4_t pdst;
-    
-    uint16x8_t r, g, b;
-    
-    for (i=0;i<n-left;i+=16) {
-      psrc=vld2q_u16(src+i);
-      
-      /* get subpixels of source color */
-      r = vrshrq_n_u16(vandq_u16(psrc.val[0],msk_r),8);
-      g = vrshrq_n_u16(vandq_u16(psrc.val[0],msk_g),3);
-      b = vshlq_n_u16(vandq_u16(psrc.val[0],msk_b),3);
-      
-      pdst.val[0]=vorrq_u16(r, vshlq_n_u16(g,8));
-      pdst.val[1]=b;
-      
-      r = vrshrq_n_u16(vandq_u16(psrc.val[1],msk_r),8);
-      g = vrshrq_n_u16(vandq_u16(psrc.val[1],msk_g),3);
-      b = vshlq_n_u16(vandq_u16(psrc.val[1],msk_b),3);
-      
-      pdst.val[2]=vorrq_u16(r, vshlq_n_u16(g,8));
-      pdst.val[3]=b;
-      
-      /* dump it */
-      vst4q_u16 ((uint16_t *) (dst+i), pdst);
-    }
-  }
-  
-  /* leftover */
-  if (left>0){
-    word cl;
-    for (i=n-left;i<n;i++) {
-      cl = src[i];
-      dst[i] = (
-        (libaroma_color_hi_r(libaroma_color_r(cl)) << rgb_pos[0]) |
-        (libaroma_color_hi_g(libaroma_color_g(cl)) << rgb_pos[1]) |
-        (libaroma_color_hi_b(libaroma_color_b(cl)) << rgb_pos[2])
-      );
-    }
-  }
+#endif
 }
 
 /* 16bit to 32bit */
@@ -131,14 +64,14 @@ void libaroma_color_copy32(dwordp dst, wordp src, int n, bytep rgb_pos) {
     /* vars */
     uint16x8_t psrc;
     uint8x8x4_t n_dst;
+#ifdef LIBAROMA_CONFIG_USE_HICOLOR_BIT
     uint8x8_t r, g, b;
-#ifdef LIBAROMA_CONFIG_OPENMP
-  #pragma omp parallel for
 #endif
+
     for (i=0;i<n-left;i+=8) {
       /* load source color */
       psrc = vld1q_u16(src+i);
-      
+#ifdef LIBAROMA_CONFIG_USE_HICOLOR_BIT
       /* get subpixels of source color */
       r = vshrn_n_u16(vandq_u16(psrc,msk_r),8);
       g = vshrn_n_u16(vandq_u16(psrc,msk_g),3);
@@ -148,7 +81,11 @@ void libaroma_color_copy32(dwordp dst, wordp src, int n, bytep rgb_pos) {
       n_dst.val[rgb_pos[3]] = vorr_u8(r,vshr_n_u8(r,5));
       n_dst.val[rgb_pos[4]] = vorr_u8(g,vshr_n_u8(g,6));
       n_dst.val[rgb_pos[5]] = vorr_u8(b,vshr_n_u8(b,5));
-      
+#else
+      n_dst.val[rgb_pos[3]] = vshrn_n_u16(vandq_u16(psrc,msk_r),8);
+      n_dst.val[rgb_pos[4]] = vshrn_n_u16(vandq_u16(psrc,msk_g),3);
+      n_dst.val[rgb_pos[5]] = vmovn_u16(vshlq_n_u16(vandq_u16(psrc,msk_b),3));
+#endif
       /* dump it */
       vst4_u8((uint8_t *) (dst+i), n_dst);
     }
@@ -159,11 +96,19 @@ void libaroma_color_copy32(dwordp dst, wordp src, int n, bytep rgb_pos) {
     word cl;
     for (i=n-left;i<n;i++) {
       cl = src[i];
+#ifdef LIBAROMA_CONFIG_USE_HICOLOR_BIT
       dst[i] = (
         (libaroma_color_hi_r(libaroma_color_r(cl)) << rgb_pos[0]) |
         (libaroma_color_hi_g(libaroma_color_g(cl)) << rgb_pos[1]) |
         (libaroma_color_hi_b(libaroma_color_b(cl)) << rgb_pos[2])
       );
+#else
+      dst[i] = (
+        (libaroma_color_r(cl) << rgb_pos[0]) |
+        (libaroma_color_g(cl) << rgb_pos[1]) |
+        (libaroma_color_b(cl) << rgb_pos[2])
+      );
+#endif
     }
   }
 }

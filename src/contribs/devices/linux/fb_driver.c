@@ -60,11 +60,15 @@ typedef struct {
   byte      pixsz;                      /* memory size per pixel */
   byte      active;
   pthread_t refresh_thread;
+  int       syncn;
   
   /* needed by 32bit colorspace */
   byte      rgb_pos[6];                 /* framebuffer rgb position */
   byte      rgb_pos_normal;             /* is rgb position = 16,8,0,24 ? */
-  
+
+#ifdef LIBAROMA_CONFIG_OPENMP
+  omp_nest_lock_t omp_lock;
+#endif
 } LINUXFBDR_INTERNAL, *LINUXFBDR_INTERNALP;
 
 /*
@@ -73,6 +77,24 @@ typedef struct {
 void LINUXFBDR_release(LIBAROMA_FBP me);
 void LINUXFBDR_refresh(LIBAROMA_FBP me);
 void LINUXFBDR_dump(LINUXFBDR_INTERNALP mi);
+
+/* refresh signal */
+static pthread_mutex_t  LINUXFBDR_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t   LINUXFBDR_cond  = PTHREAD_COND_INITIALIZER;
+inline void LINUXFBDR_lock(LINUXFBDR_INTERNALP mi,byte lock){
+  if (lock){
+#ifdef LIBAROMA_CONFIG_OPENMP
+    omp_set_nest_lock(&mi->omp_lock);
+#endif
+    pthread_mutex_lock(&LINUXFBDR_mutex);
+  }
+  else{
+    pthread_mutex_unlock(&LINUXFBDR_mutex);
+#ifdef LIBAROMA_CONFIG_OPENMP
+    omp_unset_nest_lock(&mi->omp_lock);
+#endif
+  }
+} 
 
 /*
  * Function    : LINUXFBDR_refresh_thread
@@ -84,10 +106,12 @@ static void * LINUXFBDR_refresh_thread(void * cookie){
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
   ALOGS("Framebuffer refresher thread started...");
   while (mi->active){
+    pthread_mutex_lock(&LINUXFBDR_mutex);
+    pthread_cond_wait(&LINUXFBDR_cond, &LINUXFBDR_mutex);
+    pthread_mutex_unlock(&LINUXFBDR_mutex);
     mi->var.activate = FB_ACTIVATE_VBL;
     mi->var.yoffset = 0;
   	ioctl(mi->fb, FBIOPAN_DISPLAY, &mi->var);
-  	libaroma_wait_hz(16000);
   }
   ALOGS("Framebuffer refresher thread stopped...");
   return NULL;
@@ -112,6 +136,9 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
     ALOGE("FBDRIVER malloc internal data - Memory Error");
     return 0;
   }
+#ifdef LIBAROMA_CONFIG_OPENMP
+  omp_init_nest_lock(&mi->omp_lock);
+#endif
 
   /* Cleanup */
   memset(mi, 0, sizeof(LINUXFBDR_INTERNAL));
@@ -214,6 +241,7 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
   mi->pixsz    = mi->depth >> 3;            /* pixel size per byte */
   mi->fb_sz    = (me->sz * mi->pixsz);      /* framebuffer size */
   mi->var.yoffset = 0;
+  mi->syncn = 0;
   
   /* map framebuffer */
   ALOGV("FBDRIVER mmap Framebuffer Memory");
@@ -318,6 +346,9 @@ void LINUXFBDR_release(LIBAROMA_FBP me) {
   /* Get Internal Data */
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
   mi->active=0;
+  LINUXFBDR_lock(mi,1);
+  pthread_cond_signal(&LINUXFBDR_cond);
+  LINUXFBDR_lock(mi,0);
   pthread_join(mi->refresh_thread,NULL);
   mi->refresh_thread=0;
   
@@ -329,7 +360,11 @@ void LINUXFBDR_release(LIBAROMA_FBP me) {
   close(mi->fb);
   /* Free Internal Data */
   ALOGV("FBDRIVER free internal data");
-  
+
+#ifdef LIBAROMA_CONFIG_OPENMP
+  omp_destroy_nest_lock(&mi->omp_lock);
+#endif
+
   free(me->internal);
 }
 

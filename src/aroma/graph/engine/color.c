@@ -168,21 +168,38 @@ word libaroma_rgb_to16(dword rgb) {
 
 /* Convert 16bit color to 32bit color */
 dword libaroma_rgb_to32(word rgb) {
+#ifdef LIBAROMA_CONFIG_USE_HICOLOR_BIT
   return libaroma_rgb32(
     libaroma_color_hi_r(libaroma_color_r(rgb)), 
     libaroma_color_hi_g(libaroma_color_g(rgb)), 
     libaroma_color_hi_b(libaroma_color_b(rgb))
   );
+#else
+return libaroma_rgb32(
+    libaroma_color_r(rgb), 
+    libaroma_color_g(rgb), 
+    libaroma_color_b(rgb)
+  );
+#endif
 }
 
 /* Convert 16bit color to RGBA */
 dword libaroma_rgb_to_rgba(word rgb, byte alpha) {
+#ifdef LIBAROMA_CONFIG_USE_HICOLOR_BIT
   return libaroma_rgba(
     libaroma_color_hi_r(libaroma_color_r(rgb)),
     libaroma_color_hi_g(libaroma_color_g(rgb)),
     libaroma_color_hi_b(libaroma_color_b(rgb)),
     alpha
   );
+#else
+return libaroma_rgba(
+    libaroma_color_r(rgb), 
+    libaroma_color_g(rgb), 
+    libaroma_color_b(rgb),
+    alpha
+  );
+#endif
 }
 
 #ifdef LIBAROMA_CONFIG_ENGINE_COLOR
@@ -191,19 +208,27 @@ dword libaroma_rgb_to_rgba(word rgb, byte alpha) {
 
 #ifndef __engine_have_libaroma_color_set
 void libaroma_color_set(wordp dst, word color, int n) {
+#ifdef libaroma_memcpy16
+  libaroma_memcpy16(dst,color,n);
+#else
   int i;
   for (i = 0; i < n; i++) {
     dst[i] = color;
   }
+#endif
 }
 #endif
 
 #ifndef __engine_have_libaroma_color_set32
 void libaroma_color_set32(dwordp dst, dword color, int n) {
+#ifdef libaroma_memcpy32
+  libaroma_memcpy32(dst,color,n);
+#else
   int i;
   for (i = 0; i < n; i++) {
     dst[i] = color;
   }
+#endif
 }
 #endif
 
@@ -212,11 +237,19 @@ void libaroma_color_copy32(dwordp dst, wordp src, int n, bytep rgb_pos) {
   int i;
   for (i = 0; i < n; i++) {
     word cl = src[i];
+#ifdef LIBAROMA_CONFIG_USE_HICOLOR_BIT
     dst[i] = (
        ((libaroma_color_hi_r(libaroma_color_r(cl)) & 0xff) << rgb_pos[0]) |
        ((libaroma_color_hi_g(libaroma_color_g(cl)) & 0xff) << rgb_pos[1]) |
        ((libaroma_color_hi_b(libaroma_color_b(cl)) & 0xff) << rgb_pos[2])
      );
+#else
+    dst[i] = (
+       ((libaroma_color_r(cl) & 0xff) << rgb_pos[0]) |
+       ((libaroma_color_g(cl) & 0xff) << rgb_pos[1]) |
+       ((libaroma_color_b(cl) & 0xff) << rgb_pos[2])
+     );
+#endif
   }
 }
 #endif

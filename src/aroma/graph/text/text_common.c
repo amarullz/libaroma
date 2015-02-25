@@ -43,20 +43,20 @@ static _LIBAROMA_FONT_FACE _libaroma_font_faces[_LIBAROMA_FONT_MAX_FACE];
 
 /* MUTEXES */
 #ifdef LIBAROMA_CONFIG_OPENMP
-  static omp_nest_lock_t _libaroma_text_lock;
-  static omp_nest_lock_t _libaroma_font_lock;
-  inline void __libaroma_text_lock(byte font, byte lock){
+  static omp_nest_lock_t __libaroma_text_lock;
+  static omp_nest_lock_t __libaroma_font_lock;
+  inline void __libaroma_text_locker(byte font, byte lock){
     if (lock){
-      omp_set_nest_lock(font?&_libaroma_font_lock:&_libaroma_text_lock);
+      omp_set_nest_lock(font?&__libaroma_font_lock:&__libaroma_text_lock);
     }
     else{
-      omp_unset_nest_lock(font?&_libaroma_font_lock:&_libaroma_text_lock);
+      omp_unset_nest_lock(font?&__libaroma_font_lock:&__libaroma_text_lock);
     }
   }
 #else
   static pthread_mutex_t _libaroma_font_mutex = PTHREAD_MUTEX_INITIALIZER;
   static pthread_mutex_t _libaroma_text_mutex = PTHREAD_MUTEX_INITIALIZER;
-  inline void __libaroma_text_lock(byte font, byte lock){
+  inline void __libaroma_text_locker(byte font, byte lock){
     if (lock){
       pthread_mutex_lock(font?&_libaroma_font_mutex:&_libaroma_text_mutex);
     }
@@ -65,8 +65,8 @@ static _LIBAROMA_FONT_FACE _libaroma_font_faces[_LIBAROMA_FONT_MAX_FACE];
     }
   }
 #endif
-#define _libaroma_text_lock(l) __libaroma_text_lock(0,l)
-#define _libaroma_font_lock(l) __libaroma_text_lock(1,l)
+#define _libaroma_text_lock(l) __libaroma_text_locker(0,l)
+#define _libaroma_font_lock(l) __libaroma_text_locker(1,l)
 
 
 /*

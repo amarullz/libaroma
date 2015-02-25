@@ -568,8 +568,8 @@ byte libaroma_font_init() {
     return 0;
   }
 #ifdef LIBAROMA_CONFIG_OPENMP
-  omp_init_nest_lock(&_libaroma_text_lock);
-  omp_init_nest_lock(&_libaroma_font_lock);
+  omp_init_nest_lock(&__libaroma_text_lock);
+  omp_init_nest_lock(&__libaroma_font_lock);
 #endif
   _libaroma_font_lock(1);
   if (FT_Init_FreeType(&_libaroma_font_instance) == 0) {
@@ -598,8 +598,8 @@ byte libaroma_font_release() {
     ALOGE("libaroma_font_release _libaroma_font_instance=NULL");
     _libaroma_font_lock(0);
 #ifdef LIBAROMA_CONFIG_OPENMP
-  omp_destroy_nest_lock(&_libaroma_font_lock);
-  omp_destroy_nest_lock(&_libaroma_text_lock);
+  omp_destroy_nest_lock(&__libaroma_font_lock);
+  omp_destroy_nest_lock(&__libaroma_text_lock);
 #endif
     return 0;
   }
@@ -616,8 +616,8 @@ byte libaroma_font_release() {
     _libaroma_font_instance = NULL;
     _libaroma_font_lock(0);
 #ifdef LIBAROMA_CONFIG_OPENMP
-  omp_destroy_nest_lock(&_libaroma_font_lock);
-  omp_destroy_nest_lock(&_libaroma_text_lock);
+  omp_destroy_nest_lock(&__libaroma_font_lock);
+  omp_destroy_nest_lock(&__libaroma_text_lock);
 #endif
     ALOGV("Fonts Resource Released");
     return 1;
@@ -625,8 +625,8 @@ byte libaroma_font_release() {
   ALOGE("libaroma_font_release FT_Done_FreeType Error");
   _libaroma_font_lock(0);
 #ifdef LIBAROMA_CONFIG_OPENMP
-  omp_destroy_nest_lock(&_libaroma_font_lock);
-  omp_destroy_nest_lock(&_libaroma_text_lock);
+  omp_destroy_nest_lock(&__libaroma_font_lock);
+  omp_destroy_nest_lock(&__libaroma_text_lock);
 #endif
   return 0;
 } /* End of libaroma_font_release */

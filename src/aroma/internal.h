@@ -73,15 +73,31 @@ byte LIBAROMA_HID_INIT_FUNCTION(
   #ifdef LIBAROMA_CONFIG_SHMEM_PREFIX
     #undef LIBAROMA_CONFIG_SHMEM_PREFIX
   #endif
+  
   /* android wrapper for shm_* */
   #define LIBAROMA_CONFIG_SHMEM_PREFIX "/tmp/libaromashm-"
   #define shm_open open
   #define shm_unlink unlink
+  
 #else
   /* check shared memory config */
   #ifndef LIBAROMA_CONFIG_SHMEM_PREFIX
     #define LIBAROMA_CONFIG_SHMEM_PREFIX "/libaromashm-"
   #endif
+#endif
+
+/*
+ * ARM memcpy optimizer
+ */
+#if LIBAROMA_CONFIG_HAVE_ANDROID_MEMSET > 0
+  void android_memset16(uint16_t* dst, uint16_t value, size_t size);
+  void android_memset32(uint32_t* dst, uint32_t value, size_t size);
+  #define libaroma_memcpy32(x,y,z) android_memset32(x,y,(z)<<2)
+  #define libaroma_memcpy16(x,y,z) android_memset16(x,y,(z)<<1)
+#endif
+
+#if LIBAROMA_CONFIG_HICOLOR_BIT > 0
+  #define LIBAROMA_CONFIG_USE_HICOLOR_BIT
 #endif
 
 #endif /* __libaroma_internal_h__ */
