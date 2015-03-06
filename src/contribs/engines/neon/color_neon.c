@@ -31,8 +31,8 @@
 /* set color buffer */
 /* 512 & 256bit vector */
 void libaroma_color_set(wordp dst, word color, int n) {
-#ifdef libaroma_memcpy16
-  libaroma_memcpy16(dst,color,n);
+#ifdef libaroma_memset16
+  libaroma_memset16(dst,color,n);
 #else
   int i,left=n%32;
   if (n>=32){

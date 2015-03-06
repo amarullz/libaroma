@@ -87,14 +87,21 @@ byte LIBAROMA_HID_INIT_FUNCTION(
 #endif
 
 /*
- * ARM memcpy optimizer
+ * ARM memset optimizer
  */
 #if LIBAROMA_CONFIG_HAVE_ANDROID_MEMSET > 0
   void android_memset16(uint16_t* dst, uint16_t value, size_t size);
   void android_memset32(uint32_t* dst, uint32_t value, size_t size);
-  #define libaroma_memcpy32(x,y,z) android_memset32(x,y,(z)<<2)
-  #define libaroma_memcpy16(x,y,z) android_memset16(x,y,(z)<<1)
+  #define libaroma_memset32(x,y,z) android_memset32(x,y,(z)<<2)
+  #define libaroma_memset16(x,y,z) android_memset16(x,y,(z)<<1)
 #endif
+/*
+#if LIBAROMA_CONFIG_HAVE_ANDROID_MEMCPY > 0
+  void android_memcpy(void *,const void *, size_t);
+  #define libaroma_memcpy(x,y,z) android_memcpy(x,y,z)
+  #define memcpy(x,y,z) android_memcpy(x,y,z)
+#endif
+*/
 
 #if LIBAROMA_CONFIG_HICOLOR_BIT > 0
   #define LIBAROMA_CONFIG_USE_HICOLOR_BIT

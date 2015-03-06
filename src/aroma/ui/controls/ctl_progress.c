@@ -51,11 +51,12 @@ struct __LIBAROMA_CTL_PROGRESS{
 
 /*
  * Function    : _libaroma_ctl_progress_thread
- * Return Value: static void *
+ * Return Value: byte
  * Descriptions: control thread callback
  */
-void _libaroma_ctl_progress_thread(LIBAROMA_CONTROLP ctl) {
+byte _libaroma_ctl_progress_thread(LIBAROMA_CONTROLP ctl) {
   _LIBAROMA_CTL_PROGRESSP me = (_LIBAROMA_CTL_PROGRESSP) ctl->internal;
+  byte res = 0;
   if (me->type!=LIBAROMA_CTL_PROGRESS_DETERMINATE){
     long diff = libaroma_tick() - me->tick;
     if (diff>_LIBAROMA_CTL_PROGRESS_BEZIER_TIMING*4){
@@ -67,7 +68,8 @@ void _libaroma_ctl_progress_thread(LIBAROMA_CONTROLP ctl) {
     }
     if (me->currstate!=me->state){
       me->currstate=me->state;
-      libaroma_control_draw(ctl,1);
+      // libaroma_control_draw(ctl,0);
+      res=1;
     }
     if (me->state>=1.0){
       me->state=0;
@@ -94,9 +96,11 @@ void _libaroma_ctl_progress_thread(LIBAROMA_CONTROLP ctl) {
       }
       /* redraw */
       me->currstate = me->state;
-      libaroma_control_draw(ctl,1);
+      // libaroma_control_draw(ctl,0);
+      res=1;
     }
   }
+  return res;
 } /* End of _libaroma_ctl_progress_thread */
 
 /*

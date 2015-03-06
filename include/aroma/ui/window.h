@@ -119,6 +119,7 @@ struct _LIBAROMA_WINDOW{
   
   /* thread manager */
   pthread_t thread_manager;
+  pthread_t thread_syncer;
 };
 
 /*

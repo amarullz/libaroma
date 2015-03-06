@@ -60,36 +60,13 @@ long libaroma_tick() {
   return ((long) (now.tv_sec * 1000 + now.tv_nsec / 1000000));
 } /* End of libaroma_tick */
 
-
-/*
- * Function    : libaroma_wait_hz
- * Return Value: void
- * Descriptions: wait hz
- */
-void libaroma_wait_hz(long sz){
-  struct timespec now;
-  if (clock_gettime(CLOCK_MONOTONIC,&now)) {
-    usleep(sz);
-  }
-  usleep(sz-((now.tv_nsec/1000)%sz));
-} /* End of libaroma_wait_hz */
-
-
-
 /*
  * Function    : libaroma_sleeper_start
  * Return Value: byte
  * Descriptions: High resolution sleep start
  */
 byte libaroma_sleeper_start(LIBAROMA_SLEEPERP sp){
-  struct timespec now;
-  if (clock_gettime(CLOCK_MONOTONIC, &now)) {
-    sp->start_sec=0;
-    sp->start_usec=0;
-    return 0;
-  }
-  sp->start_sec = now.tv_sec;
-  sp->start_usec= now.tv_nsec / 1000;
+  gettimeofday(sp,NULL);
   return 1;
 } /* End of libaroma_sleeper_start */
 
@@ -98,21 +75,18 @@ byte libaroma_sleeper_start(LIBAROMA_SLEEPERP sp){
  * Return Value: byte
  * Descriptions: High resolution sleep
  */
-byte libaroma_sleeper(LIBAROMA_SLEEPERP sp, long delay){
-  struct timespec now;
-  if ((sp->start_sec==0)&&(sp->start_usec==0)){
-    usleep(delay);
-    return 0;
-  }
-  else if (clock_gettime(CLOCK_MONOTONIC, &now)) {
-    usleep(delay);
-    return 0;
-  }
-  long wait_s = ((now.tv_sec-sp->start_sec) * 1000000);
-  wait_s += (now.tv_nsec/1000) - sp->start_usec;
-  if (wait_s<delay){
-    usleep(delay-wait_s);
-  }
+byte libaroma_sleeper(LIBAROMA_SLEEPERP start, long delay){
+  LIBAROMA_SLEEPER end;
+  long elapsed;
+  gettimeofday(&end, NULL);
+  elapsed =(end.tv_sec-start->tv_sec)*1000000;
+  elapsed+=(end.tv_usec-start->tv_usec);
+  if (elapsed<delay){
+    usleep(delay-elapsed);
+  }/*
+  else{
+    usleep(elapsed-delay);
+  }*/
   return 1;
 } /* End of libaroma_sleeper */
 

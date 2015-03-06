@@ -31,13 +31,10 @@
  * Return Value: static void
  * Descriptions: load glyph for harfbuzz-ng callbacks
  */
-static void _libaroma_font_hb_load_glyph(
+static _LIBAROMA_FONT_SLOT_CACHEP _libaroma_font_hb_load_glyph(
     _LIBAROMA_FONT_FACEP aface,
     hb_codepoint_t glyph) {
-  int cache_id = ((glyph & 0xfffff) | (aface->size << 20));
-  if (aface->last_slotid != cache_id) {
-    libaroma_font_glyph(glyph,aface->id,0);
-  }
+  return (_LIBAROMA_FONT_SLOT_CACHEP) libaroma_font_glyph(glyph,aface->id,0);
 } /* End of _libaroma_font_hb_load_glyph */
 
 /* simplicity macros */
@@ -48,7 +45,8 @@ static void _libaroma_font_hb_load_glyph(
   FT_Face ft_face = aface->face
 #define _LIBAROMA_FONT_HB_LOADFACE() \
   _LIBAROMA_FONT_HB_AFACE(); \
-  _libaroma_font_hb_load_glyph(aface,glyph)
+  _LIBAROMA_FONT_SLOT_CACHEP loaded_glyph = \
+    _libaroma_font_hb_load_glyph(aface,glyph)
 
 /* Harfbuzz Callbacks:
  * glyph
@@ -136,13 +134,13 @@ static hb_bool_t _libaroma_font_hb_glyph_v_origin_func(
   void * user_data
 ) {
   _LIBAROMA_FONT_HB_LOADFACE();
-  if (!aface->last_cache) {
+  if (!loaded_glyph) {
     return false;
   }
-  *x = aface->last_cache->metrics.horiBearingX-
-    aface->last_cache->metrics.vertBearingX;
-  *y = aface->last_cache->metrics.horiBearingY-
-    (-aface->last_cache->metrics.vertBearingY);
+  *x = loaded_glyph->metrics.horiBearingX-
+    loaded_glyph->metrics.vertBearingX;
+  *y = loaded_glyph->metrics.horiBearingY-
+    (-loaded_glyph->metrics.vertBearingY);
   return true;
 }
 /* glyph_h_kerning */
@@ -186,13 +184,13 @@ static hb_bool_t _libaroma_font_hb_glyph_extents_func(
   void * user_data
 ) {
   _LIBAROMA_FONT_HB_LOADFACE();
-  if (!aface->last_cache) {
+  if (!loaded_glyph) {
     return false;
   }
-  extents->x_bearing = aface->last_cache->metrics.horiBearingX;
-  extents->y_bearing = aface->last_cache->metrics.horiBearingY;
-  extents->width = aface->last_cache->metrics.width;
-  extents->height = -aface->last_cache->metrics.height;
+  extents->x_bearing = loaded_glyph->metrics.horiBearingX;
+  extents->y_bearing = loaded_glyph->metrics.horiBearingY;
+  extents->width = loaded_glyph->metrics.width;
+  extents->height = -loaded_glyph->metrics.height;
   return true;
 }
 /* glyph_contour_point */
@@ -206,13 +204,13 @@ static hb_bool_t _libaroma_font_hb_glyph_contour_point_func(
   void * user_data
 ) {
   _LIBAROMA_FONT_HB_LOADFACE();
-  if (!aface->last_cache) {
+  if (!loaded_glyph) {
     return false;
   }
-  if (aface->last_cache->glyph->format != FT_GLYPH_FORMAT_OUTLINE) {
+  if (loaded_glyph->glyph->format != FT_GLYPH_FORMAT_OUTLINE) {
     return false;
   }
-  FT_OutlineGlyph glp = (FT_OutlineGlyph) aface->last_cache->glyph;
+  FT_OutlineGlyph glp = (FT_OutlineGlyph) loaded_glyph->glyph;
   if (point_index >= (unsigned int) glp->outline.n_points) {
     return false;
   }

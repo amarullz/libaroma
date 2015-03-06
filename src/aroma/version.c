@@ -133,4 +133,25 @@ char * libaroma_info(int type) {
   return LIBAROMA_CONFIG_NAME;
 }
 
+/* backtrace */
+#ifdef __GLIBC__
+#include <execinfo.h>
+void ___libaroma_debug_backtrace_fn(void){
+  void *array[LIBAROMA_CONFIG_DEBUG_TRACE];
+  size_t size;
+  char **strings;
+  size_t i;
+  size = backtrace (array, LIBAROMA_CONFIG_DEBUG_TRACE);
+  if (size){
+    strings = backtrace_symbols (array, size);
+    for (i=1;i<size; i++){
+      fprintf(libaroma_debug_output(),"   [TRACE] %s\n",
+        strings[i]
+      );
+    }
+    free (strings);
+  }
+}
+#endif
+
 #endif /* __libaroma_version_c__ */

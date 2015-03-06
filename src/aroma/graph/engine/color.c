@@ -208,8 +208,8 @@ return libaroma_rgba(
 
 #ifndef __engine_have_libaroma_color_set
 void libaroma_color_set(wordp dst, word color, int n) {
-#ifdef libaroma_memcpy16
-  libaroma_memcpy16(dst,color,n);
+#ifdef libaroma_memset16
+  libaroma_memset16(dst,color,n);
 #else
   int i;
   for (i = 0; i < n; i++) {

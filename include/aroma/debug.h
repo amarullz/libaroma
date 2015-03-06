@@ -57,7 +57,7 @@ char * ___mtrack_strdup(char * str, char * filename, long line);
 
 /* Debugging Tag */
 #ifndef LIBAROMA_DEBUG_TAG
-#define LIBAROMA_DEBUG_TAG "AROMA"
+#define LIBAROMA_DEBUG_TAG "LIBAROMA"
 #endif
 
 /*
@@ -74,28 +74,43 @@ FILE * libaroma_debug_output();
  */
 void libaroma_debug_set_output(FILE * fd);
 
-/* Debugging Tag 2 */
+/* debug source */
 #if LIBAROMA_CONFIG_DEBUG_FILE >=1
 #if LIBAROMA_CONFIG_DEBUG_FILE >=2
 #define LIBAROMA_STRINGZE2(x) #x
 #define LIBAROMA_STRINGZE(x) LIBAROMA_STRINGZE2(x)
 #define __LINE_STRING__ LIBAROMA_STRINGZE(__LINE__)
-#define LIBAROMA_DEBUG_TAG2 \
-  LIBAROMA_DEBUG_TAG " on " __FILE__ " line " __LINE_STRING__ "\n    "
+#define LIBAROMA_DEBUG_SOURCE \
+  "\n   [SOURCE] on " __FILE__ " line " __LINE_STRING__ "\n    "
 #else
-#define LIBAROMA_DEBUG_TAG2 \
-  LIBAROMA_DEBUG_TAG " on " __FILE__ "\n    "
+#define LIBAROMA_DEBUG_SOURCE \
+  "\n   [SOURCE] on " __FILE__ "\n    "
 #endif
 #else
-#define LIBAROMA_DEBUG_TAG2 \
-  LIBAROMA_DEBUG_TAG
+#define LIBAROMA_DEBUG_SOURCE ""
+#endif
+
+/* backtrace */
+#if LIBAROMA_CONFIG_DEBUG_TRACE >=1
+  #ifdef __GLIBC__
+    #ifndef ___LIBAROMA_DEBUG_HAS_BACKTRACE
+      #define ___LIBAROMA_DEBUG_HAS_BACKTRACE
+      void ___libaroma_debug_backtrace_fn(void);
+      #define ___libaroma_debug_backtrace() ___libaroma_debug_backtrace_fn()
+    #endif
+  #else
+    #define ___libaroma_debug_backtrace()
+  #endif
+#else
+#define ___libaroma_debug_backtrace()
 #endif
 
 /* Error Logs */
 #if LIBAROMA_CONFIG_DEBUG >= 1
 #define ALOGE(...) \
-  fprintf(libaroma_debug_output(), LIBAROMA_DEBUG_TAG2 "[E] " __VA_ARGS__); \
-  fprintf(libaroma_debug_output(), "\n");
+  fprintf(libaroma_debug_output(), LIBAROMA_DEBUG_TAG "[E] " __VA_ARGS__); \
+  fprintf(libaroma_debug_output(), "%s\n",LIBAROMA_DEBUG_SOURCE); \
+  ___libaroma_debug_backtrace();
 #else
 #define ALOGE(...)
 #endif
@@ -125,8 +140,9 @@ void libaroma_debug_set_output(FILE * fd);
 /* Warning Logs */
 #if LIBAROMA_CONFIG_DEBUG >= 4
 #define ALOGW(...) \
-  fprintf(libaroma_debug_output(), LIBAROMA_DEBUG_TAG2 "[W] " __VA_ARGS__); \
-  fprintf(libaroma_debug_output(), "\n");
+  fprintf(libaroma_debug_output(), LIBAROMA_DEBUG_TAG "[W] " __VA_ARGS__); \
+  fprintf(libaroma_debug_output(), "%s\n",LIBAROMA_DEBUG_SOURCE); \
+  ___libaroma_debug_backtrace();
 #define ALOGW_IF(x, ...) if(x){ ALOGW(__VA_ARGS__) }
 #else
 #define ALOGW(...)
@@ -141,7 +157,7 @@ void libaroma_debug_set_output(FILE * fd);
 #define ALOGV_IF(x, ...) if(x){ ALOGV(__VA_ARGS__) }
 #else
 #define ALOGV(...)
-#define ALOGW_IF(x, ...)
+#define ALOGV_IF(x, ...)
 #endif
 
 /* Event Logs */

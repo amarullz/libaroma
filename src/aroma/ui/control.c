@@ -48,6 +48,7 @@ LIBAROMA_CONTROLP libaroma_control_new(
     ALOGW("window_control_new cannot allocating memory");
     return NULL;
   }
+  ret->unsync=0;
   ret->minw = minw;
   ret->minh = minh;
   ret->x = 0;

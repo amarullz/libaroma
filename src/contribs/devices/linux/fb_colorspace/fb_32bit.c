@@ -28,17 +28,10 @@
  * function : set framebuffer rgb position
  */
 void LINUXFBDR_setrgbpos(LIBAROMA_FBP me, byte r, byte g, byte b) {
-  /* is framebuffer initialized ? */
   if (me == NULL) {
     return;
   }
-  /* get internal data */
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
-  /* check normal rgb position */
-  if ((r == 16) && (g == 8) && (b == 0)) {
-    mi->rgb_pos_normal = 1;
-  }
-  
   /* save color position */
   mi->rgb_pos[0] = r;
   mi->rgb_pos[1] = g;
@@ -52,28 +45,21 @@ void LINUXFBDR_setrgbpos(LIBAROMA_FBP me, byte r, byte g, byte b) {
  * function : init framebuffer colorspace
  */
 void LINUXFBDR_init_32bit(LIBAROMA_FBP me) {
-  /* is framebuffer initialized ? */
   if (me == NULL) {
     return;
   }
-  /* show info */
-  ALOGS("FBDRIVER Init 32bit Colorspace");
-  /* get internal data */
+  ALOGS("LINUXFBDR Init 32bit Colorspace");
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
-  /* calculate stride size */
-  mi->stride = mi->line - (me->w * mi->pixsz);
-  /* save color position */
+  
+  mi->stride = mi->line - (me->w * mi->pixsz); /* calculate stride size */
 
-  /* gralloc framebuffer style */
+  /* gralloc framebuffer subpixel position style */
   if (mi->var.transp.offset){
     LINUXFBDR_setrgbpos(me,16,8,0);
   }
   else{
     LINUXFBDR_setrgbpos(me,0,8,16);
   }
-  
-  /* refresh framebuffer */
-  LINUXFBDR_refresh(me);
 }
 
 /*
@@ -86,60 +72,32 @@ byte LINUXFBDR_sync_32bit(
     int y,
     int w,
     int h) {
-  /* is framebuffer initialized ? */
   if (me == NULL) {
     return 0;
   }
-  /* get internal data */
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
-  
-  LINUXFBDR_lock(mi,1);
-  mi->syncn++;
-  LINUXFBDR_lock(mi,0);
-
-  /* defined area only */
-  if ((w > 0) && (h > 0)) {
+  pthread_mutex_lock(&mi->mutex);
+  if ((w > 0) && (h > 0) && (!mi->double_buffering)) {
     int copy_stride = me->w - w;
     dwordp copy_dst =
-      (dwordp) (((bytep) mi->buffer) + (mi->line * y) + (x * mi->pixsz));
+      (dwordp) (((bytep) mi->current_buffer) + (mi->line * y) + (x * mi->pixsz));
     wordp copy_src =
       (wordp) (src + (me->w * y) + x);
-    
-    /* is 32bit framebuffer - with alignment */
-    if (mi->rgb_pos_normal) {
-      /* normal rgb position */
-      libaroma_blt_align16_to32(copy_dst, copy_src, w, h,
-        mi->stride + (copy_stride * mi->pixsz),
-        copy_stride * 2
-      );
-    }
-    else {
-      libaroma_blt_align_to32_pos(copy_dst, copy_src, w, h,
-        mi->stride + (copy_stride * mi->pixsz),
-        copy_stride * 2, mi->rgb_pos
-      );
-    }
+    libaroma_blt_align_to32_pos(
+      copy_dst, copy_src,
+      w, h,
+      mi->stride + (copy_stride * mi->pixsz), copy_stride * 2,
+      mi->rgb_pos
+    );
   }
   else {
-    /* is 32bit framebuffer - with alignment */
-    if (mi->rgb_pos_normal) {
-      /* normal rgb position */
-      libaroma_blt_align16_to32((dwordp) mi->buffer,
-        src, me->w, me->h, mi->stride, 0);
-    }
-    else {
-      /* different rgb position */
-      libaroma_blt_align_to32_pos((dwordp) mi->buffer,
-        src, me->w, me->h,
-        mi->stride, 0, mi->rgb_pos);
-    }
+    libaroma_blt_align_to32_pos(
+      (dwordp) mi->current_buffer, src,
+      me->w, me->h, mi->stride, 0,
+      mi->rgb_pos);
   }
-  
-  LINUXFBDR_lock(mi,1);
-  if (--mi->syncn==0){
-    pthread_cond_signal(&LINUXFBDR_cond);
-  }
-  LINUXFBDR_lock(mi,0);
+  pthread_cond_signal(&mi->cond);
+  pthread_mutex_unlock(&mi->mutex);
   return 1;
 }
 
@@ -147,24 +105,13 @@ byte LINUXFBDR_sync_32bit(
  * function : save framebuffer into display canvas
  */
 byte LINUXFBDR_snapshoot_32bit(LIBAROMA_FBP me, wordp dst) {
-  /* is framebuffer initialized ? */
   if (me == NULL) {
     return 0;
   }
-  /* get internal data */
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
-  /* is 32bit framebuffer - with alignment */
-  if (mi->rgb_pos_normal) {
-    /* normal rgb position */
-    libaroma_blt_align32_to16(
-      dst, (dwordp) mi->buffer, me->w, me->h, 0, mi->stride);
-  }
-  else {
-    /* different rgb position */
-    libaroma_blt_align_to16_pos(
-      dst, (dwordp) mi->buffer, me->w, me->h,
-      0, mi->stride, mi->rgb_pos);
-  }
+  libaroma_blt_align_to16_pos(
+    dst, (dwordp) mi->buffer, me->w, me->h,
+    0, mi->stride, mi->rgb_pos);
   return 1;
 }
 

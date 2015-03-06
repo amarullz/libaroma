@@ -211,7 +211,7 @@ byte libaroma_fb_sync_area(
     h = _libaroma_fb->h - x;
   }
   if ((w < 1) || (h < 1)) {
-    ALOGW("libaroma_fb_sync_area calculated width/height < 0 (%i,%i)", w, h);
+    ALOGV("libaroma_fb_sync_area calculated width/height < 0 (%i,%i)", w, h);
     return 0;
   }
   

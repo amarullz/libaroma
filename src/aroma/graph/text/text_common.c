@@ -42,31 +42,29 @@ static FT_Library _libaroma_font_instance;
 static _LIBAROMA_FONT_FACE _libaroma_font_faces[_LIBAROMA_FONT_MAX_FACE];
 
 /* MUTEXES */
-#ifdef LIBAROMA_CONFIG_OPENMP
-  static omp_nest_lock_t __libaroma_text_lock;
-  static omp_nest_lock_t __libaroma_font_lock;
-  inline void __libaroma_text_locker(byte font, byte lock){
-    if (lock){
-      omp_set_nest_lock(font?&__libaroma_font_lock:&__libaroma_text_lock);
+static LIBAROMA_MUTEX __libaroma_text_locks[2];
+inline void __libaroma_text_locker_init(byte destroy){
+  int i;
+  for (i=0;i<2;i++){
+    if (destroy){
+      libaroma_mutex_init(__libaroma_text_locks[i]);
     }
     else{
-      omp_unset_nest_lock(font?&__libaroma_font_lock:&__libaroma_text_lock);
+      libaroma_mutex_free(__libaroma_text_locks[i]);
     }
   }
-#else
-  static pthread_mutex_t _libaroma_font_mutex = PTHREAD_MUTEX_INITIALIZER;
-  static pthread_mutex_t _libaroma_text_mutex = PTHREAD_MUTEX_INITIALIZER;
-  inline void __libaroma_text_locker(byte font, byte lock){
-    if (lock){
-      pthread_mutex_lock(font?&_libaroma_font_mutex:&_libaroma_text_mutex);
-    }
-    else{
-      pthread_mutex_unlock(font?&_libaroma_font_mutex:&_libaroma_text_mutex);
-    }
+}
+inline void __libaroma_text_locker(byte font, byte lock){
+  if (lock){
+    libaroma_mutex_lock(__libaroma_text_locks[font]);
   }
-#endif
+  else{
+    libaroma_mutex_unlock(__libaroma_text_locks[font]);
+  }
+}
 #define _libaroma_text_lock(l) __libaroma_text_locker(0,l)
 #define _libaroma_font_lock(l) __libaroma_text_locker(1,l)
+// #define _libaroma_fontcache_lock(l) __libaroma_text_locker(2,l)
 
 
 /*

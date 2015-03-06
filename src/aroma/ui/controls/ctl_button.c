@@ -267,11 +267,14 @@ void _libaroma_ctl_button_draw(
 
 /*
  * Function    : _libaroma_ctl_button_thread
- * Return Value: static void *
+ * Return Value: byte
  * Descriptions: control thread callback
  */
-void _libaroma_ctl_button_thread(LIBAROMA_CONTROLP ctl) {
-  _LIBAROMA_CTL_BUTTONP me = (_LIBAROMA_CTL_BUTTONP) ctl->internal;
+byte _libaroma_ctl_button_thread(LIBAROMA_CONTROLP ctl) {
+  /* internal check */
+  _LIBAROMA_CTL_CHECK(
+    _LIBAROMA_CTL_BUTTON_SIGNATURE, _LIBAROMA_CTL_BUTTONP, 0
+  );
   byte is_draw = me->forcedraw;
   if (!(me->style&LIBAROMA_CTL_BUTTON_DISABLED)){
     if (me->touched&&me->touch_start){
@@ -300,8 +303,10 @@ void _libaroma_ctl_button_thread(LIBAROMA_CONTROLP ctl) {
     }
   }
   if (is_draw){
-    libaroma_control_draw(ctl,1);
+    return 1;
   }
+  
+  return 0;
 } /* End of _libaroma_ctl_button_thread */
 
 /*

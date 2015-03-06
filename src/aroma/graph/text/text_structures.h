@@ -54,9 +54,10 @@ struct __LIBAROMA_FONT_FACE{
   byte id;
   short size;
   LIBAROMA_IARRAYP cache;
-  _LIBAROMA_FONT_SLOT_CACHEP last_cache;
   LIBAROMA_STREAMP stream;
-  int last_slotid;
+  
+  /* int last_slotid; */
+  /*_LIBAROMA_FONT_SLOT_CACHEP last_cache;*/
 };
 
 /*

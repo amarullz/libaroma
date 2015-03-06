@@ -45,5 +45,6 @@
 
 /* scroll control set */
 #include "ui/controls/ctl_scroll.c"
+#include "ui/controls/ctl_list.c"
 
 #endif /* __libaroma_ui_c__ */

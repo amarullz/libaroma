@@ -83,6 +83,17 @@
 #endif
 
 /* memory leak tracker */
+#if LIBAROMA_CONFIG_DEBUG_TRACE >=1
+  #define __LIBAROMA_CMSG_DTRACE __LIBAROMA_STR(LIBAROMA_CONFIG_DEBUG_TRACE) \
+    " Stacks - ENABLED\n"\
+    "                        "\
+    " * WARNING: DONT USE IT ON PRODUCTION"
+#else
+  #define __LIBAROMA_CMSG_DTRACE "DISABLED"
+#endif
+
+
+/* memory leak tracker */
 #if LIBAROMA_CONFIG_DEBUG_MEMORY >=1
   #define __LIBAROMA_CMSG_DMEM "ENABLED\n"\
     "                        "\
@@ -147,6 +158,7 @@
     "  Platform            : " LIBAROMA_CONFIG_OS "\n"\
     "  Debug Level         : " __LIBAROMA_CMSG_DLEVEL "\n"\
     "  Debug with Filename : " __LIBAROMA_CMSG_DFILENAME "\n"\
+    "  Debug Backtrace     : " __LIBAROMA_CMSG_DTRACE "\n"\
     "  Memory Tracking     : " __LIBAROMA_CMSG_DMEM "\n"\
     "  FB Driver           : " __LIBAROMA_STR(__LIBAROMA_FB_DRIVER) "\n"\
     "  HID Driver          : " __LIBAROMA_STR(__LIBAROMA_HID_DRIVER) "\n"\
@@ -163,6 +175,7 @@
   "\n______________________________________________________________________\n"\
   "\n"
 
+#undef __LIBAROMA_CMSG_DTRACE
 #undef __LIBAROMA_CMSG_HICOLOR
 #undef __LIBAROMA_CMSG_NEON
 #undef __LIBAROMA_CMSG_DFILENAME

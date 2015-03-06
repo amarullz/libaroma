@@ -70,14 +70,14 @@ byte libaroma_draw_ex1(
   dword filter_param
 ) {
   if (src == NULL) {
-    ALOGV("libaroma_draw_ex1 src = NULL");
+    ALOGW("libaroma_draw_ex1 src = NULL");
     return 0;
   }
   if (dst == NULL) {
     dst = libaroma_fb()->canvas;
   }
   if ((dx >= dst->w) || (dy >= dst->h)) {
-    ALOGV("libaroma_draw_ex1 dx/dy bigger that destination size");
+    ALOGW("libaroma_draw_ex1 dx/dy bigger that destination size");
     return 0;
   }
   if (opacity==0) {
@@ -108,7 +108,7 @@ byte libaroma_draw_ex1(
     sh -= (sh + sy) - src->h;
   }
   if ((sw <= 0) || (sh <= 0)) {
-    ALOGV("libaroma_draw_ex1 calculated sw/sh < 1");
+    ALOGW("libaroma_draw_ex1 calculated sw/sh < 1");
     return 0;
   }
   

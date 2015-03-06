@@ -32,12 +32,8 @@
  * Typedef     : LIBAROMA_SLEEPER, * LIBAROMA_SLEEPERP
  * Descriptions: High resolution sleep structure
  */
-typedef struct _LIBAROMA_SLEEPER LIBAROMA_SLEEPER;
-typedef struct _LIBAROMA_SLEEPER * LIBAROMA_SLEEPERP;
-struct _LIBAROMA_SLEEPER{
-  long start_sec;
-  long start_usec;
-};
+typedef struct timeval LIBAROMA_SLEEPER;
+typedef struct timeval * LIBAROMA_SLEEPERP;
 
 /*
  * Typedef     : LIBAROMA_TIMER_CB
@@ -51,13 +47,6 @@ typedef void (*LIBAROMA_TIMER_CB)(void *);
  * Descriptions: system tick in ms
  */
 long libaroma_tick();
-
-/*
- * Function    : libaroma_wait_hz
- * Return Value: void
- * Descriptions: wait hz
- */
-void libaroma_wait_hz(long sz);
 
 /*
  * Function    : libaroma_sleeper_start

@@ -653,26 +653,88 @@ static void * _libaroma_window_thread_manager(void * cookie) {
   int i;
   LIBAROMA_SLEEPER sleeper_s;
   while(win->active){
-    /* hi res sleep */
-    libaroma_sleeper_start(&sleeper_s);
-    
     /* run child thread process */
+    libaroma_sleeper_start(&sleeper_s);
     if (win->active==1){
 #ifdef LIBAROMA_CONFIG_OPENMP
   #pragma omp parallel for
 #endif
       for (i=0;i<win->childn;i++){
-        if (win->childs[i]->thread!=NULL){
-          win->childs[i]->thread(win->childs[i]);
+        LIBAROMA_CONTROLP c=win->childs[i];
+        if (c->thread!=NULL){
+          if (c->thread(c)){
+            c->unsync=1;
+          }
         }
       }
     }
-    /* 60hz sleep */
     libaroma_sleeper(&sleeper_s,16000);
   }
   ALOGV("end window thread manager...");
   return NULL;
 } /* End of _libaroma_window_thread_manager */
+
+/*
+ * Function    : _libaroma_window_thread_syncer
+ * Return Value: static void *
+ * Descriptions: Window thread syncer
+ */
+static void * _libaroma_window_thread_syncer(void * cookie) {
+  LIBAROMA_WINDOWP win = (LIBAROMA_WINDOWP) cookie;
+  ALOGV("begin window thread syncer...");
+  int i;
+  byte need_sync;
+  LIBAROMA_CONTROLP ctl;
+  while(win->active){
+    if (win->active==1){
+      need_sync = 0;
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
+      for (i=0;i<win->childn;i++){
+        ctl=win->childs[i];
+        if (ctl->unsync){
+          need_sync=1;
+          libaroma_control_draw(ctl,0);
+        }
+      }
+      if (need_sync){
+        int sync_p[4]={ 0xffffff, 0xffffff, 0, 0 };
+        for (i=0;i<win->childn;i++){
+          ctl=win->childs[i];
+          if (ctl->unsync){
+            ctl->unsync=0;
+            if (sync_p[0]>ctl->x){
+              sync_p[0]=ctl->x;
+            }
+            if (sync_p[1]>ctl->y){
+              sync_p[1]=ctl->y;
+            }
+            if (sync_p[2]<ctl->x+ctl->w){
+              sync_p[2]=ctl->x+ctl->w;
+            }
+            if (sync_p[3]<ctl->y+ctl->h){
+              sync_p[3]=ctl->y+ctl->h;
+            }
+          }
+        }
+        int sync_w=sync_p[2]-sync_p[0];
+        int sync_h=sync_p[3]-sync_p[1];
+        if ((sync_w>0)&&(sync_h>0)){
+          libaroma_window_sync(win, 
+            sync_p[0], sync_p[1], 
+            sync_w, sync_h
+          );
+          continue;
+        }
+      }
+    }
+    usleep(16);
+  }
+  ALOGV("end window thread syncer...");
+  return NULL;
+} /* End of _libaroma_window_thread_syncer */
+
 
 /*
  * Function    : libaroma_window_sync
@@ -870,6 +932,7 @@ byte libaroma_window_anishow(
           start=0;
           break;
       }
+      
       /* 60hz sleep */
       libaroma_sleeper(&sleeper_s,16000);
     }
@@ -987,6 +1050,12 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
               NULL,
               _libaroma_window_thread_manager,
               (voidp) win);
+            pthread_create(
+              &win->thread_syncer,
+              NULL,
+              _libaroma_window_thread_syncer,
+              (voidp) win);
+            
             for (i=0;i<win->childn;i++){
               win->childs[i]->message(win->childs[i], msg);
             }
@@ -1015,6 +1084,7 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
           /* stop thread manager */
           win->active=0;
           pthread_join(win->thread_manager, NULL);
+          pthread_join(win->thread_syncer, NULL);
           win->thread_manager = 0;
         }
       }

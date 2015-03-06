@@ -69,6 +69,13 @@ struct _LIBAROMA_CTL_SCROLL_CLIENT{
 };
 
 /*
+ * Function    : libaroma_ctl_scroll_request_pos
+ * Return Value: byte
+ * Descriptions: request to change scroll position - nicely
+ */
+word libaroma_ctl_scroll_get_bg_color(LIBAROMA_CONTROLP ctl);
+
+/*
  * Function    : libaroma_ctl_scroll_set_client
  * Return Value: byte
  * Descriptions: set client handler
@@ -84,6 +91,21 @@ byte libaroma_ctl_scroll_set_client(
 );
 
 /*
+ * Function    : libaroma_ctl_scroll_get_client
+ * Return Value: LIBAROMA_CTL_SCROLL_CLIENTP
+ * Descriptions: get scroll client data
+ */
+LIBAROMA_CTL_SCROLL_CLIENTP libaroma_ctl_scroll_get_client(
+    LIBAROMA_CONTROLP ctl);
+
+/*
+ * Function    : libaroma_ctl_scroll_request_height
+ * Return Value: byte
+ * Descriptions: request height
+ */
+byte libaroma_ctl_scroll_request_height(LIBAROMA_CONTROLP ctl, int h);
+
+/*
  * Function    : libaroma_ctl_scroll_set_height
  * Return Value: byte
  * Descriptions: set scroll height
@@ -93,9 +115,16 @@ byte libaroma_ctl_scroll_set_height(LIBAROMA_CONTROLP ctl, int h);
 /*
  * Function    : libaroma_ctl_scroll_set_pos
  * Return Value: byte
- * Descriptions: set scroll position
+ * Descriptions: set scroll position - directly
  */
 byte libaroma_ctl_scroll_set_pos(LIBAROMA_CONTROLP ctl, int scroll_y);
+
+/*
+ * Function    : libaroma_ctl_scroll_request_pos
+ * Return Value: byte
+ * Descriptions: request to change scroll position - nicely
+ */
+byte libaroma_ctl_scroll_request_pos(LIBAROMA_CONTROLP ctl, int req_y);
 
 /*
  * Function    : libaroma_ctl_scroll_is_visible
@@ -128,6 +157,10 @@ LIBAROMA_CONTROLP libaroma_ctl_scroll(
     int x, int y, int w, int h,
     word bg_color, byte flags
 );
+
+
+
+
 
 
 

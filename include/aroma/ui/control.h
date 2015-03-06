@@ -39,7 +39,7 @@ typedef byte (*LIBAROMA_CTLCB_FOCUS) \
   (LIBAROMA_CONTROLP, byte);
 typedef void (*LIBAROMA_CTLCB_DESTROY) \
   (LIBAROMA_CONTROLP);
-typedef void (*LIBAROMA_CTLCB_THREAD) \
+typedef byte (*LIBAROMA_CTLCB_THREAD) \
   (LIBAROMA_CONTROLP);
 
 /*
@@ -50,6 +50,7 @@ typedef void (*LIBAROMA_CTLCB_THREAD) \
 struct _LIBAROMA_CONTROL{
   byte signature;
   word id;
+  byte unsync;
   voidp internal;
   LIBAROMA_WINDOWP window;
   

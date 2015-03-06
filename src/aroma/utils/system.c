@@ -78,6 +78,4 @@ done:
   return result;
 } /* End of libaroma_getprop */
 
-
-
 #endif /* __libaroma_system_c__ */

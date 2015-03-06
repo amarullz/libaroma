@@ -47,8 +47,8 @@ int main(int argc, char **argv){
   //snprintf(libaroma_config()->fb_shm_name,64,"");
   
   // libaroma_config()->runtime_monitor = 2;
-  /*pid_t pp = getppid();
-  kill(pp, 19);*/
+  //pid_t pp = getppid();
+  //kill(pp, 19);
   
   
   /* start libaroma process */
@@ -85,7 +85,7 @@ int main(int argc, char **argv){
     }
   }
   printf("\n\nTIME WORKS: %i\n\n",(int)(libaroma_tick()-now));
-  libaroma_sync(); */
+  libaroma_sync();*/
   
   /*libaroma_png_save(libaroma_fb()->canvas,"/sdcard/out.png");*/
   
@@ -121,7 +121,7 @@ int main(int argc, char **argv){
   LIBAROMA_CONTROLP btn2 = libaroma_ctl_button(
     win, 2,
     LIBAROMA_POS_HALF, 60, LIBAROMA_SIZE_HALF, 60,
-    "Button 2",
+    "Add List Item",
     LIBAROMA_CTL_BUTTON_RAISED,
     0
   );
@@ -137,7 +137,7 @@ int main(int argc, char **argv){
   LIBAROMA_CONTROLP btn4 = libaroma_ctl_button(
     win, 4,
     LIBAROMA_POS_HALF, 120, LIBAROMA_SIZE_HALF, 60,
-    "Button 4",
+    "Delete List Item",
     LIBAROMA_CTL_BUTTON_RAISED|LIBAROMA_CTL_BUTTON_COLORED,
     RGB(335599)
   );
@@ -165,13 +165,44 @@ int main(int argc, char **argv){
     LIBAROMA_CTL_BUTTON_RAISED|LIBAROMA_CTL_BUTTON_COLORED,
     RGB(F44336)
   );
-  
+  /*
   LIBAROMA_CONTROLP scroll_test = libaroma_ctl_testscroll(
     win, 90,
     0, 300, LIBAROMA_SIZE_FULL, LIBAROMA_SIZE_FULL,
     RGB(ffffff), LIBAROMA_CTL_SCROLL_WITH_SHADOW|LIBAROMA_CTL_SCROLL_WITH_HANDLE
   );
   
+ */ 
+  
+  
+  LIBAROMA_CONTROLP list_test = libaroma_ctl_list(
+    win, 90,
+    0, 300, LIBAROMA_SIZE_FULL, LIBAROMA_SIZE_FULL,
+    10,
+    RGB(ffffff), LIBAROMA_CTL_SCROLL_WITH_SHADOW|LIBAROMA_CTL_SCROLL_WITH_HANDLE
+  );
+  
+  int itm=0;
+  for (itm=0;itm<50;itm++){
+    libaroma_ctl_list_add_item_internal(
+      list_test,
+      itm,
+      libaroma_dp(38),
+      1,
+      NULL,
+      NULL,
+      NULL,
+      -1
+    );
+  }
+  
+  
+  
+  
+  
+  
+  
+
   /* show window */
   //libaroma_window_show(win);
   /*
@@ -243,6 +274,23 @@ int main(int argc, char **argv){
           char clstr[128];
           snprintf(clstr,128,"Clicked %i",click_value);
           libaroma_ctl_button_text(btn6,clstr);
+        }
+        else if (id==2){
+          libaroma_ctl_list_add_item_internal(
+            list_test,
+            itm++,
+            libaroma_dp(38),
+            1,
+            NULL,
+            NULL,
+            NULL,
+            -1
+          );
+        }
+        else if (id==4){
+          libaroma_ctl_list_del_item_internal(
+            list_test,0,0 /* delete first index */
+          );
         }
         else if (id==1){
           if (libaroma_ctl_button_is_disabled(btn2)){
@@ -331,7 +379,7 @@ int main(int argc, char **argv){
   /* end libaroma process */
   libaroma_end();
   
-  /*kill(pp, 18);*/
+  // kill(pp, 18);
   return 0;
 } /* End of main */
 

@@ -412,10 +412,10 @@ byte libaroma_canvas_area_update(
   }
   
   if (parent->hicolor != NULL) {
-    c->alpha = parent->alpha + (y * parent->l) + x;
+    c->hicolor = parent->hicolor + (y * parent->l) + x;
   }
   else {
-    c->alpha = NULL;
+    c->hicolor = NULL;
   }
   
   return 1;

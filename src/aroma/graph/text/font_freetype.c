@@ -203,20 +203,23 @@ LIBAROMA_GLYPH libaroma_font_glyph(
     return NULL;
   }
   /* cleanup last variables */
-  _libaroma_font_faces[fontid].last_cache   = NULL;
-  _libaroma_font_faces[fontid].last_slotid  = 0;
+  // _libaroma_font_faces[fontid].last_cache   = NULL;
+  // _libaroma_font_faces[fontid].last_slotid  = 0;
   if (size == 0) {
     size = _libaroma_font_faces[fontid].size;
   }
   /* find in cache */
   int cache_id = ((c & 0xfffff) | (size << 20));
+  
+  _libaroma_font_lock(1);
   _LIBAROMA_FONT_SLOT_CACHEP tmp_glyph = (_LIBAROMA_FONT_SLOT_CACHEP) 
     libaroma_iarray_get(_libaroma_font_faces[fontid].cache, cache_id);
+  _libaroma_font_lock(0);
   
   if (tmp_glyph != NULL) {
     /* cache is available */
-    _libaroma_font_faces[fontid].last_cache = tmp_glyph;
-    _libaroma_font_faces[fontid].last_slotid = cache_id;
+    // _libaroma_font_faces[fontid].last_cache = tmp_glyph;
+    // _libaroma_font_faces[fontid].last_slotid = cache_id;
     return (LIBAROMA_GLYPH) tmp_glyph;
   }
   
@@ -243,7 +246,6 @@ LIBAROMA_GLYPH libaroma_font_glyph(
     slot.size = _libaroma_font_faces[fontid].size;
     
     /* ready to return */
-    _libaroma_font_lock(0);
     libaroma_iarray_set(
       _libaroma_font_faces[fontid].cache,
       cache_id,
@@ -251,14 +253,17 @@ LIBAROMA_GLYPH libaroma_font_glyph(
       sizeof(_LIBAROMA_FONT_SLOT_CACHE),
       1
     );
-    _libaroma_font_faces[fontid].last_cache =
+    // _libaroma_font_faces[fontid].last_cache 
+    tmp_glyph =
       libaroma_iarray_get(
         _libaroma_font_faces[fontid].cache,
         cache_id
       );
-    _libaroma_font_faces[fontid].last_slotid = cache_id;
-    return (LIBAROMA_GLYPH)
-      _libaroma_font_faces[fontid].last_cache;
+    _libaroma_font_lock(0);
+    
+    // _libaroma_font_faces[fontid].last_slotid = cache_id;
+    return (LIBAROMA_GLYPH) tmp_glyph;
+      // _libaroma_font_faces[fontid].last_cache;
   }
   
   _libaroma_font_lock(0);
@@ -567,10 +572,7 @@ byte libaroma_font_init() {
   if (_libaroma_font_instance != NULL) {
     return 0;
   }
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_init_nest_lock(&__libaroma_text_lock);
-  omp_init_nest_lock(&__libaroma_font_lock);
-#endif
+  __libaroma_text_locker_init(0);
   _libaroma_font_lock(1);
   if (FT_Init_FreeType(&_libaroma_font_instance) == 0) {
 #ifndef LIBAROMA_CONFIG_NOFONT_SUBPIXEL
@@ -597,10 +599,7 @@ byte libaroma_font_release() {
   if (_libaroma_font_instance == NULL) {
     ALOGE("libaroma_font_release _libaroma_font_instance=NULL");
     _libaroma_font_lock(0);
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_destroy_nest_lock(&__libaroma_font_lock);
-  omp_destroy_nest_lock(&__libaroma_text_lock);
-#endif
+    __libaroma_text_locker_init(1);
     return 0;
   }
   
@@ -615,19 +614,13 @@ byte libaroma_font_release() {
   if (FT_Done_FreeType(_libaroma_font_instance) == 0) {
     _libaroma_font_instance = NULL;
     _libaroma_font_lock(0);
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_destroy_nest_lock(&__libaroma_font_lock);
-  omp_destroy_nest_lock(&__libaroma_text_lock);
-#endif
+    __libaroma_text_locker_init(1);
     ALOGV("Fonts Resource Released");
     return 1;
   }
   ALOGE("libaroma_font_release FT_Done_FreeType Error");
   _libaroma_font_lock(0);
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_destroy_nest_lock(&__libaroma_font_lock);
-  omp_destroy_nest_lock(&__libaroma_text_lock);
-#endif
+  __libaroma_text_locker_init(1);
   return 0;
 } /* End of libaroma_font_release */
 

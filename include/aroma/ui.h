@@ -50,5 +50,6 @@ typedef struct _LIBAROMA_CONTROL * LIBAROMA_CONTROLP;
 
 /* scroll control set */
 #include "ui/controls/ctl_scroll.h"
+#include "ui/controls/ctl_list.h"
 
 #endif /* __libaroma_ui_h__ */

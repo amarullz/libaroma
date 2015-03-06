@@ -24,263 +24,334 @@
 #ifndef __libaroma_linux_fb_driver_c__
 #define __libaroma_linux_fb_driver_c__
 
-/*
- *   Using Linux Framebuffer for Android & Linux
- *   Prefix : LINUXFBDR_
- */
-
-/*
- * headers
- */
-#include <linux/fb.h>
-#include <aroma.h>
-#ifdef LIBAROMA_CONFIG_OPENMP
-  #include <omp.h>
-#endif
-
-/*
- * device path
- */
-#define LINUXFBDR_DEVICE              "/dev/graphics/fb0"
-#define LINUXFBDR_DEVICE_NON_ANDROID  "/dev/fb0"
-
-/*
- * structure : internal framebuffer data
- */
-typedef struct {
-  int       fb;                         /* framebuffer handler */
-  byte      is32;                       /* is 32bit framebuffer? */
-  struct    fb_fix_screeninfo   fix;    /* linux framebuffer fix info */
-  struct    fb_var_screeninfo   var;    /* linux framebuffer var info */
-  int       fb_sz;                      /* framebuffer memory size */
-  voidp     buffer;                     /* direct buffer */
-  int       stride;                     /* stride size */
-  int       line;                       /* line size */
-  byte      depth;                      /* color depth */
-  byte      pixsz;                      /* memory size per pixel */
-  byte      active;
-  pthread_t refresh_thread;
-  int       syncn;
-  
-  /* needed by 32bit colorspace */
-  byte      rgb_pos[6];                 /* framebuffer rgb position */
-  byte      rgb_pos_normal;             /* is rgb position = 16,8,0,24 ? */
-
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_nest_lock_t omp_lock;
-#endif
-} LINUXFBDR_INTERNAL, *LINUXFBDR_INTERNALP;
-
-/*
- * forward functions
- */
-void LINUXFBDR_release(LIBAROMA_FBP me);
-void LINUXFBDR_refresh(LIBAROMA_FBP me);
-void LINUXFBDR_dump(LINUXFBDR_INTERNALP mi);
-
-/* refresh signal */
-static pthread_mutex_t  LINUXFBDR_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t   LINUXFBDR_cond  = PTHREAD_COND_INITIALIZER;
-inline void LINUXFBDR_lock(LINUXFBDR_INTERNALP mi,byte lock){
-  if (lock){
-#ifdef LIBAROMA_CONFIG_OPENMP
-    omp_set_nest_lock(&mi->omp_lock);
-#endif
-    pthread_mutex_lock(&LINUXFBDR_mutex);
-  }
-  else{
-    pthread_mutex_unlock(&LINUXFBDR_mutex);
-#ifdef LIBAROMA_CONFIG_OPENMP
-    omp_unset_nest_lock(&mi->omp_lock);
-#endif
-  }
-} 
-
-/*
- * Function    : LINUXFBDR_refresh_thread
- * Return Value: static void *
- * Descriptions: refresh thread
- */
-static void * LINUXFBDR_refresh_thread(void * cookie){
-  LIBAROMA_FBP me = (LIBAROMA_FBP) cookie;
-  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
-  ALOGS("Framebuffer refresher thread started...");
-  while (mi->active){
-    pthread_mutex_lock(&LINUXFBDR_mutex);
-    pthread_cond_wait(&LINUXFBDR_cond, &LINUXFBDR_mutex);
-    pthread_mutex_unlock(&LINUXFBDR_mutex);
-    mi->var.activate = FB_ACTIVATE_VBL;
-    mi->var.yoffset = 0;
-  	ioctl(mi->fb, FBIOPAN_DISPLAY, &mi->var);
-  }
-  ALOGS("Framebuffer refresher thread stopped...");
-  return NULL;
-} /* End of LINUXFBDR_refresh_thread */
-
-/*
- * include colorspace drivers
- */
+/* include fb_driver.h */
+#include "fb_driver.h"
 #include "fb_colorspace/fb_16bit.c" /* 16 bit */
 #include "fb_colorspace/fb_32bit.c" /* 32 bit */
+#include "fb_qcom/fb_qcom.c" /* qcom overlay */
 
 /*
- * function : framebuffer driver initializer
+ * Function    : LINUXFBDR_init
+ * Return Value: byte
+ * Descriptions: init framebuffer
  */
 byte LINUXFBDR_init(LIBAROMA_FBP me) {
-  /* Allocating Internal Data */
-  ALOGV("FBDRIVER Initialized Internal Data");
+  ALOGV("LINUXFBDR initialized internal data");
+  
+  /* allocating internal data */
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP)
                       malloc(sizeof(LINUXFBDR_INTERNAL));
-                      
   if (!mi) {
-    ALOGE("FBDRIVER malloc internal data - Memory Error");
+    ALOGE("LINUXFBDR malloc internal data - memory error");
     return 0;
   }
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_init_nest_lock(&mi->omp_lock);
-#endif
 
-  /* Cleanup */
+  /* cleanup */
   memset(mi, 0, sizeof(LINUXFBDR_INTERNAL));
-  /* Set Internal Address */
-  me->internal = (voidp) mi;
-  /* Set Release and Refresh Callback */
-  me->release = &LINUXFBDR_release;
-
-  /* Open Framebuffer Device */
-  mi->fb = open(LINUXFBDR_DEVICE, O_RDWR, 0);
   
-  /* If Not Works, Try Non Android Standard Device Path */
+  /* set internal address */
+  me->internal = (voidp) mi;
+  
+  /* set release callback */
+  me->release = &LINUXFBDR_release;
+  
+  /* init mutex & cond */
+  pthread_mutex_init(&mi->mutex,NULL);
+  pthread_cond_init(&mi->cond,NULL);
+
+  /* open framebuffer device */
+  mi->fb = open(LINUXFBDR_DEVICE, O_RDWR, 0);
   if (mi->fb < 1) {
+    /* if not works, try non android standard device path */
     mi->fb = open(LINUXFBDR_DEVICE_NON_ANDROID, O_RDWR, 0);
   }
-  
-  /* check device access */
   if (mi->fb < 1) {
-    ALOGE("FBDRIVER No Framebuffer Device");
-    goto error; /* Exit If Error */
+    /* cannot find device */
+    ALOGE("LINUXFBDR no framebuffer device");
+    goto error; /* exit if error */
   }
   
-  /* get io data */
+  /* get framebuffer var & fix data */
   ioctl(mi->fb, FBIOGET_FSCREENINFO, &mi->fix); /* fix info */
   ioctl(mi->fb, FBIOGET_VSCREENINFO, &mi->var); /* var info */
   
-  /* 24bit is not supported - sorry */
-  if (mi->var.bits_per_pixel == 24) {
-    ALOGE("FBDRIVER 24bit Framebuffer not supported");
-    goto error; /* Exit If Error */
-  }
-  
-  /*
-  mi->var.yres_virtual = mi->var.yres * 2;
-  if (ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var)==-1){
-		ALOGW("ioctl FBIOPUT_VSCREENINFO Get Double Buffer Error");
-	}
-  ioctl(mi->fb, FBIOGET_FSCREENINFO, &mi->fix);
-  ioctl(mi->fb, FBIOGET_VSCREENINFO, &mi->var);
-  */
-  /*
-  ioctl(mi->fb, FBIOBLANK, FB_BLANK_POWERDOWN);
-  ioctl(mi->fb, FBIOBLANK, FB_BLANK_UNBLANK); */
-  
-  /*
-  mi->var.bits_per_pixel = 16;
-  mi->var.red.offset = 11;
-  mi->var.red.length = 5;
-  mi->var.green.offset = 5;
-  mi->var.green.length = 6;
-  mi->var.blue.offset = 0;
-  mi->var.blue.length = 5;
-  mi->var.transp.offset = 0;
-  mi->var.transp.length = 0;
-  mi->var.reserved[0] = 0;
-	mi->var.reserved[1] = 0;
-	mi->var.reserved[2] = 0;
-	mi->var.reserved[3] = 0;
-	mi->var.xoffset = 0;
-	mi->var.yoffset = 0;
-  mi->var.activate = FB_ACTIVATE_NOW|FB_ACTIVATE_ALL|FB_ACTIVATE_FORCE;
-  mi->var.yres_virtual = mi->var.yres * 2;
-  if (ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var)==-1){
-		ALOGW("ioctl FBIOPUT_VSCREENINFO Error");
-	}
-  ioctl(mi->fb, FBIOGET_FSCREENINFO, &mi->fix);
-  ioctl(mi->fb, FBIOGET_VSCREENINFO, &mi->var);
-  
-  */
-  /* try to force 32bit libaroma color mode (bgra)
-  if (mi->var.bits_per_pixel==32){
-    mi->var.red.offset         = 16;
-    mi->var.red.length         = 8;
-    mi->var.red.msb_right      = 0;
-    mi->var.green.offset       = 8;
-    mi->var.green.length       = 8;
-    mi->var.green.msb_right    = 0;
-    mi->var.blue.offset        = 0;
-    mi->var.blue.length        = 8;
-    mi->var.blue.msb_right     = 0;
-    mi->var.transp.offset      = 24;
-    mi->var.transp.length      = 8;
-    mi->var.transp.msb_right   = 0;
-  
-    // activating
-    mi->var.activate |= FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
-    ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var);
-  
-    // get forced data
-    ioctl(mi->fb, FBIOGET_FSCREENINFO, &mi->fix);
-    ioctl(mi->fb, FBIOGET_VSCREENINFO, &mi->var);
-  } */
-  
-  /* set libaroma framebuffer instance values */
-  me->w        = mi->var.xres;              /* width */
-  me->h        = mi->var.yres;              /* height */
-  me->sz       = me->w * me->h;             /* width x height */
-  mi->line     = mi->fix.line_length;       /* line memory size */
-  mi->depth    = mi->var.bits_per_pixel;    /* color depth */
-  mi->pixsz    = mi->depth >> 3;            /* pixel size per byte */
-  mi->fb_sz    = (me->sz * mi->pixsz);      /* framebuffer size */
-  mi->var.yoffset = 0;
-  mi->syncn = 0;
-  
-  /* map framebuffer */
-  ALOGV("FBDRIVER mmap Framebuffer Memory");
-  mi->buffer  = (voidp) mmap(
-                  0, mi->fix.smem_len,
-                  PROT_READ | PROT_WRITE, MAP_SHARED,
-                  mi->fb, 0
-                );
-
-  if (!mi->buffer) {
-    ALOGE("FBDRIVER mmap Framebuffer Memory Error");
-    goto error; /* Exit If Error */
-  }
-  
-  /* RGB Position non normal as default */
-  mi->rgb_pos_normal  = 0;
-  
-  /* 16bit depth handler */
-  if (mi->pixsz == 2) {
-    /* Not 32bit Depth */
-    mi->is32 = 0;
-    /* Init Colorspace */
-    LINUXFBDR_init_16bit(me);
-    /* Set Sync Callbacks */
-    me->sync     = &LINUXFBDR_sync_16bit;
-    me->snapshoot = &LINUXFBDR_snapshoot_16bit;
-  }
-  else {
-    mi->is32 = 1; /* It is 32bit Depth */
-    /* Init Colorspace */
-    LINUXFBDR_init_32bit(me);
-    /* Set Sync Callbacks */
-    me->sync     = &LINUXFBDR_sync_32bit;
-    me->snapshoot = &LINUXFBDR_snapshoot_32bit;
-  }
-  
-  /* DUMP INFO */
+  /* dump info */
   LINUXFBDR_dump(mi);
   
+  /* set libaroma framebuffer instance values */
+  me->w        = mi->var.xres;  /* width */
+  me->h        = mi->var.yres;  /* height */
+  me->sz       = me->w*me->h;   /* width x height */
+  
+  if (QCOMFB_init(me)){
+    /* qcom fb */
+    me->sync = &QCOMFB_sync;
+    me->snapshoot=NULL;
+    ALOGI("using qcom framebuffer driver");
+  }
+  else{
+    /* it's not qcom */
+    ALOGI("not using qcom framebuffer driver");
+    
+    if ((mi->var.bits_per_pixel != 32) && (mi->var.bits_per_pixel != 16)) {
+      /* non 32/16bit colorspace is not supported */
+      ALOGE("LINUXFBDR bits_per_pixel=%i not supported",
+        mi->var.bits_per_pixel);
+      goto error;
+    }
+    
+    /* init features - double buffer, vsync */
+    LINUXFBDR_init_features(me);
+    
+    /* set internal useful data */
+    mi->line      = mi->fix.line_length;      /* line memory size */
+    mi->depth     = mi->var.bits_per_pixel;   /* color depth */
+    mi->pixsz     = mi->depth >> 3;           /* pixel size per byte */
+    mi->fb_sz     = (mi->var.xres_virtual * mi->var.yres_virtual * mi->pixsz);
+    
+    if (mi->fix.smem_len<(dword) mi->fb_sz){
+      /* smem_len is invalid */
+      ALOGE("LINUXFBDR smem_len(%i) < fb_sz(%i)", mi->fix.smem_len, mi->fb_sz);
+      goto error;
+    }
+    
+    /* map buffer */
+    ALOGV("LINUXFBDR mmap Framebuffer Memory");
+    mi->buffer  = (voidp) mmap(
+                    0, mi->fix.smem_len,
+                    PROT_READ | PROT_WRITE, MAP_SHARED,
+                    mi->fb, 0
+                  );
+  
+    if (!mi->buffer) {
+      ALOGE("LINUXFBDR mmap framebuffer memory error");
+      goto error;
+    }
+    
+    /* swap buffer now */
+    LINUXFBDR_swap_buffer(mi);
+    LINUXFBDR_flush(me);
+    
+    if (mi->pixsz == 2) {
+      /* not 32bit depth */
+      mi->is32 = 0;
+      /* init colorspace */
+      LINUXFBDR_init_16bit(me);
+      /* set sync callbacks */
+      me->sync     = &LINUXFBDR_sync_16bit;
+      me->snapshoot = &LINUXFBDR_snapshoot_16bit;
+    }
+    else {
+      mi->is32 = 1;
+      /* init colorspace */
+      LINUXFBDR_init_32bit(me);
+      /* set sync callbacks */
+      me->sync     = &LINUXFBDR_sync_32bit;
+      me->snapshoot = &LINUXFBDR_snapshoot_32bit;
+    }
+  }
+  
+  /* set dpi */
+  LINUXFBDP_set_dpi(me);
+  
+  /* start flush receiver */
+  mi->active=1;
+  pthread_create(&mi->thread,NULL,LINUXFBDR_flush_receiver,(void *) me);
+  
+  /* ok */
+  goto ok;
+  /* return */
+error:
+  free(mi);
+  return 0;
+ok:
+  return 1;
+} /* End of LINUXFBDR_init */
+
+/*
+ * Function    : LINUXFBDR_release
+ * Return Value: void
+ * Descriptions: release framebuffer driver
+ */
+void LINUXFBDR_release(LIBAROMA_FBP me) {
+  if (me==NULL) {
+    return;
+  }
+  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
+  if (mi==NULL){
+    return;
+  }
+  
+  /* terminate flush thread */
+  mi->active=0;
+  pthread_mutex_lock(&mi->mutex);
+  pthread_cond_signal(&mi->cond);
+  pthread_mutex_unlock(&mi->mutex);
+  pthread_join(mi->thread,NULL);
+  
+  if (mi->qcom!=NULL){
+    /* release qcom overlay driver */
+    QCOMFB_release(me);
+  }
+  
+  /* unmap */
+  if (mi->buffer!=NULL){
+    ALOGV("LINUXFBDR munmap buffer");
+    munmap(mi->buffer, mi->fix.smem_len);
+  }
+  
+  /* close fb */
+  ALOGV("LINUXFBDR close fb-fd");
+  close(mi->fb);
+  
+  /* destroy mutex & cond */
+  pthread_cond_destroy(&mi->cond);
+  pthread_mutex_destroy(&mi->mutex);
+  
+  /* free internal data */
+  ALOGV("LINUXFBDR free internal data");
+  free(me->internal);
+} /* End of LINUXFBDR_release */
+
+/*
+ * Function    : LINUXFBDR_swap_buffer
+ * Return Value: void
+ * Descriptions: swap back buffer
+ */
+void LINUXFBDR_swap_buffer(LINUXFBDR_INTERNALP mi){
+  mi->current_buffer = mi->buffer + (mi->var.yoffset * mi->fix.line_length);
+  if ((mi->double_buffering)&&(mi->var.yoffset==0)){
+    mi->var.yoffset = mi->var.yres;
+  }
+  else{
+    mi->var.yoffset=0;
+  }
+} /* End of LINUXFBDR_swap_buffer */
+
+/*
+ * Function    : LINUXFBDR_flush
+ * Return Value: byte
+ * Descriptions: flush content into display & wait for vsync
+ */
+byte LINUXFBDR_flush(LIBAROMA_FBP me) {
+  if (me == NULL) {
+    return 0;
+  }
+  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
+  
+  if (mi->is_omap){
+    /* omap wait for vsync */
+    int s=0;
+    mi->var.activate = FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
+    ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var);
+    ioctl(mi->fb, OMAPFB_WAITFORVSYNC, &s);
+  }
+  else{
+    /* refresh display */
+    mi->var.activate = FB_ACTIVATE_VBL;
+    if (ioctl(mi->fb, FBIOPAN_DISPLAY, &mi->var)!=0){
+      ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var);
+    }
+  }
+  return 1;
+} /* End of LINUXFBDR_flush */
+
+/*
+ * Function    : LINUXFBDR_flush_receiver
+ * Return Value: static void *
+ * Descriptions: flush signal receiver
+ */
+static void * LINUXFBDR_flush_receiver(void * cookie){
+  LIBAROMA_FBP me=(LIBAROMA_FBP) cookie;
+  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
+  if (mi->qcom!=NULL){
+    /* using qcom fluser */
+    QCOMFB_flush_receiver(me,mi);
+  }
+  else{
+    while (mi->active){
+      pthread_mutex_lock(&mi->mutex);
+      pthread_cond_wait(&mi->cond, &mi->mutex);
+      LINUXFBDR_swap_buffer(mi);
+      pthread_mutex_unlock(&mi->mutex);
+      LINUXFBDR_flush(me);
+    }
+  }
+  return NULL;
+} /* End of LINUXFBDR_flush_receiver */
+
+/*
+ * Function    : LINUXFBDR_init_features
+ * Return Value: void
+ * Descriptions: init framebuffer features
+ */
+void LINUXFBDR_init_features(LIBAROMA_FBP me) {
+  if (me==NULL) {
+    return;
+  }
+  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
+  if (mi==NULL){
+    return;
+  }
+  int res=0;
+  
+  /* set non interlanced */
+  mi->var.vmode = FB_VMODE_NONINTERLACED;
+  
+  /* request double buffer */
+  mi->double_buffering=0;
+  if (mi->var.yres_virtual<mi->var.yres*2){
+    mi->var.yres_virtual=mi->var.yres*2;
+    mi->var.activate = FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
+    ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var);
+    
+    /* update vars */
+    ioctl(mi->fb, FBIOGET_FSCREENINFO, &mi->fix);
+    ioctl(mi->fb, FBIOGET_VSCREENINFO, &mi->var);
+    if (mi->var.yres_virtual>=mi->var.yres*2){
+      /* support double buffering */
+      mi->double_buffering=1;
+    }
+  }
+  else{
+    mi->double_buffering=1;
+  }
+  ALOGV("LINUXFBDR Double Buffering = %s",mi->double_buffering?"yes":"no");
+  
+  /* activate vsync - universal */
+  mi->var.sync=FB_SYNC_VERT_HIGH_ACT;
+  mi->var.activate = FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
+  res = ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var);
+  ALOGV("LINUXFBDR FB_SYNC_VERT_HIGH_ACT = %i",res);
+  
+  /* update vars */
+  ioctl(mi->fb, FBIOGET_FSCREENINFO, &mi->fix);
+  ioctl(mi->fb, FBIOGET_VSCREENINFO, &mi->var);
+  
+  /* enable omapfb vsync */
+  mi->is_omap=0;
+  if (mi->var.sync!=FB_SYNC_VERT_HIGH_ACT){
+    if (!strncmp(mi->fix.id, "omapfb", strlen("omapfb"))){
+      int state=1;
+      res=ioctl(mi->fb, OMAPFB_ENABLEVSYNC, &state);
+      ALOGV("LINUXFBDR OMAPFB_ENABLEVSYNC = %i",res);
+      if (res==0){
+        mi->is_omap=1;
+      }
+    }
+  }
+} /* End of LINUXFBDR_init_features */
+
+/*
+ * Function    : LINUXFBDP_set_dpi
+ * Return Value: void
+ * Descriptions: set dpi
+ */
+void LINUXFBDP_set_dpi(LIBAROMA_FBP me) {
+  if (me==NULL) {
+    return;
+  }
+  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
   me->dpi = 0;
   int dpi_fallback = floor(MIN(mi->var.xres,mi->var.yres)/160) * 80;
   if ((mi->var.width<= 0)||(mi->var.height <= 0)) {
@@ -288,15 +359,14 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
     me->dpi = dpi_fallback;
   }
   else{
-    /* Calculate DPI */
+    /* calculate dpi */
     me->dpi = round(mi->var.xres / (mi->var.width * 0.039370) / 80) * 80;
   }
   if ((me->dpi<160)||(me->dpi>960)){
     me->dpi = dpi_fallback;
   }
-
-/* Android DPI from default.prop/build.prop */
 #ifdef __ANDROID__
+  /* android dpi from default.prop/build.prop */
   char * sf_lcd=libaroma_getprop("ro.sf.lcd_density",
     libaroma_stream_file("/default.prop"), 1);
   if (sf_lcd==NULL){
@@ -319,83 +389,12 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
     ALOGI("android getprop ro.sf.lcd_density not found");
   }
 #endif
-
-  mi->active=1;
-  pthread_create(&mi->refresh_thread,NULL,LINUXFBDR_refresh_thread,(voidp) me);
-
-  /* OK */
-  goto ok;
-  /* Return */
-error:
-  free(mi);
-  return 0;
-ok:
-  return 1;
-}
+} /* End of LINUXFBDP_set_dpi */
 
 /*
- * Function : Release Framebuffer Instance (Same For All Colorspace)
- *
- */
-void LINUXFBDR_release(LIBAROMA_FBP me) {
-  /* Is Framebuffer Initialized ? */
-  if (me == NULL) {
-    return;
-  }
-  
-  /* Get Internal Data */
-  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
-  mi->active=0;
-  LINUXFBDR_lock(mi,1);
-  pthread_cond_signal(&LINUXFBDR_cond);
-  LINUXFBDR_lock(mi,0);
-  pthread_join(mi->refresh_thread,NULL);
-  mi->refresh_thread=0;
-  
-  /* Release framebuffer memory map */
-  ALOGV("FBDRIVER munmap buffer");
-  munmap(mi->buffer, mi->fix.smem_len);
-  /* Close framebuffer device */
-  ALOGV("FBDRIVER close fb-fd");
-  close(mi->fb);
-  /* Free Internal Data */
-  ALOGV("FBDRIVER free internal data");
-
-#ifdef LIBAROMA_CONFIG_OPENMP
-  omp_destroy_nest_lock(&mi->omp_lock);
-#endif
-
-  free(me->internal);
-}
-
-/*
- * Function : Refresh Display Framebuffer (Same For All Colorspace)
- *
- */
-void LINUXFBDR_refresh(LIBAROMA_FBP me) {
-  /* Is Framebuffer Initialized ? */
-  if (me == NULL) {
-    return;
-  }
-
-  /* Get Internal Data */
-  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
-  
-  // fsync(mi->fb);
-  
-  /* Refresh Display */
-  mi->var.activate = FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE; //FB_ACTIVATE_VBL;
-  mi->var.yoffset = 0;
-	if(ioctl(mi->fb, FBIOPAN_DISPLAY, &mi->var)){
-	  mi->var.yoffset = 0;
-    mi->var.activate |= FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
-    ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var);
-	}
-}
-
-/*
- * Function : Dump Framebuffer Informations
- *
+ * Function    : LINUXFBDR_dump
+ * Return Value: void
+ * Descriptions: dump framebuffer informations
  */
 void LINUXFBDR_dump(LINUXFBDR_INTERNALP mi) {
   ALOGI("FRAMEBUFFER INFORMATIONS:");
@@ -442,13 +441,15 @@ void LINUXFBDR_dump(LINUXFBDR_INTERNALP mi) {
   ALOGV(" ywrapstep      : %i", mi->fix.ywrapstep);
   ALOGI(" line_length    : %i", mi->fix.line_length);
   ALOGV(" accel          : %i", mi->fix.accel);
-}
+} /* End of LINUXFBDR_dump */
 
 /*
- * Function : libaroma init fb driver
+ * Function    : __linux_fb_driver_init
+ * Return Value: byte
+ * Descriptions: init function for libaroma fb
  */
 byte __linux_fb_driver_init(LIBAROMA_FBP me) {
   return LINUXFBDR_init(me);
-}
+} /* End of __linux_fb_driver_init */
 
 #endif /* __libaroma_linux_fb_driver_c__ */
