@@ -182,16 +182,34 @@ int main(int argc, char **argv){
     RGB(ffffff), LIBAROMA_CTL_SCROLL_WITH_SHADOW|LIBAROMA_CTL_SCROLL_WITH_HANDLE
   );
   
+  LIBAROMA_CANVASP list_icon = libaroma_image_uri("file:///sdcard/plus.png");
+  char main_text[256];
+  char extra_text[256];
   int itm=0;
   for (itm=0;itm<50;itm++){
+    /*
     libaroma_ctl_list_add_item_internal(
       list_test,
       itm,
       libaroma_dp(38),
       1,
+      LIBAROMA_CTL_LIST_ITEM_RECEIVE_TOUCH,
       NULL,
       NULL,
       NULL,
+      NULL,
+      -1
+    );*/
+    
+    snprintf(main_text,256,"Item id#%i",itm);
+    snprintf(extra_text,256,"This is <b>just extra text</b> for item %i",itm);
+    libaroma_listitem_option(
+      list_test, itm, 0,
+      main_text,
+      extra_text,
+      list_icon,
+      0,
+      LIBAROMA_LISTITEM_OPTION_INDENT_NOICON,
       -1
     );
   }
@@ -276,16 +294,31 @@ int main(int argc, char **argv){
           libaroma_ctl_button_text(btn6,clstr);
         }
         else if (id==2){
+          /*
           libaroma_ctl_list_add_item_internal(
             list_test,
             itm++,
             libaroma_dp(38),
             1,
+            LIBAROMA_CTL_LIST_ITEM_RECEIVE_TOUCH,
+            NULL,
             NULL,
             NULL,
             NULL,
             -1
+          );*/
+          snprintf(main_text,256,"New Item id#%i",itm);
+          snprintf(extra_text,256,"<u>This</u> is <b>just extra text</b> for item %i NEW!",itm);
+          libaroma_listitem_option(
+            list_test, itm, 0,
+            main_text,
+            extra_text,
+            list_icon,
+            0,
+            LIBAROMA_LISTITEM_OPTION_INDENT_NOICON,
+            -1
           );
+          itm++;
         }
         else if (id==4){
           libaroma_ctl_list_del_item_internal(
@@ -372,6 +405,10 @@ int main(int argc, char **argv){
     }
   }
   while(onpool);
+  
+  if (list_icon){
+    libaroma_canvas_free(list_icon);
+  }
   
   /* free window */
   libaroma_window_free(win);

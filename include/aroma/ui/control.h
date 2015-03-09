@@ -50,7 +50,6 @@ typedef byte (*LIBAROMA_CTLCB_THREAD) \
 struct _LIBAROMA_CONTROL{
   byte signature;
   word id;
-  byte unsync;
   voidp internal;
   LIBAROMA_WINDOWP window;
   

@@ -272,7 +272,7 @@ void ___mtrack_free(void ** x, char * filename, long line) {
   pthread_mutex_unlock(&___mtrack_mutex);
 }
 
-char * ___mtrack_strdup(char * str, char * filename, long line){
+char * ___mtrack_strdup(const char * str, char * filename, long line){
   pthread_mutex_lock(&___mtrack_mutex);
   void * ret = (void *) strdup(str);
   if (ret) {

@@ -238,7 +238,7 @@ byte QCOMFB_check_id(LINUXFBDR_INTERNALP mi){
       overlay_supported = 1;
     }
     else if (mdp_version>=40){
-      overlay_supported = 3;
+      overlay_supported = 0;
     }
   }
   else if (!strncmp(mi->fix.id, "mdssfb", strlen("mdssfb"))) {
@@ -472,7 +472,7 @@ byte QCOMFB_sync(
     }
   }
   
-  // printf("."); fflush(stdout);
+  printf("."); fflush(stdout);
   
   /* send flush signal */
   pthread_cond_signal(&mi->cond);
@@ -551,9 +551,9 @@ void QCOMFB_flush(LINUXFBDR_INTERNALP mi){
       ALOGV("QCOMFB commit type old msm_mdp v44");
     }
   }
-  if (res){
-    // printf("%i",res); fflush(stdout);
-  }
+  //if (res){
+    printf("%i",res); fflush(stdout);
+  //}
 } /* End of QCOMFB_flush */
 
 /*

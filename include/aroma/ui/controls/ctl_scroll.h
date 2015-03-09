@@ -32,6 +32,21 @@
 #define LIBAROMA_CTL_SCROLL_WITH_HANDLE     4
 
 
+/* messaging */
+#define LIBAROMA_CTL_SCROLL_MSG                 LIBAROMA_MSG_SYS(0x80)
+#define LIBAROMA_CTL_SCROLL_MSG_ISNEED_TOUCH    0x1
+#define LIBAROMA_CTL_SCROLL_MSG_TOUCH_DOWN      0x2
+#define LIBAROMA_CTL_SCROLL_MSG_TOUCH_UP        0x3
+#define LIBAROMA_CTL_SCROLL_MSG_TOUCH_MOVE      0x4
+#define LIBAROMA_CTL_SCROLL_MSG_TOUCH_CANCEL    0x5
+
+#define LIBAROMA_CTL_SCROLL_MSG_ACTIVATED       0x10
+#define LIBAROMA_CTL_SCROLL_MSG_INACTIVATED     0x11
+
+#define LIBAROMA_CTL_SCROLL_MSG_HANDLED         0x1
+#define LIBAROMA_CTL_SCROLL_MSG_NEED_DRAW       0x2
+
+
 typedef struct _LIBAROMA_CTL_SCROLL_CLIENT LIBAROMA_CTL_SCROLL_CLIENT;
 typedef struct _LIBAROMA_CTL_SCROLL_CLIENT * LIBAROMA_CTL_SCROLL_CLIENTP;
 
@@ -136,11 +151,11 @@ byte libaroma_ctl_scroll_is_visible(
 );
 
 /*
- * Function    : libaroma_ctl_scroll_sync
+ * Function    : libaroma_ctl_scroll_blit
  * Return Value: byte
- * Descriptions: sync client drawing
+ * Descriptions: blit canvas into client canvas
  */
-byte libaroma_ctl_scroll_sync(
+byte libaroma_ctl_scroll_blit(
    LIBAROMA_CONTROLP ctl, 
    LIBAROMA_CANVASP canvas,
    int x, int y, int w, int h,
@@ -158,11 +173,12 @@ LIBAROMA_CONTROLP libaroma_ctl_scroll(
     word bg_color, byte flags
 );
 
-
-
-
-
-
+/*
+ * Function    : libaroma_ctl_scroll_isactive
+ * Return Value: byte
+ * Descriptions: check if control is active
+ */
+byte libaroma_ctl_scroll_isactive(LIBAROMA_CONTROLP ctl);
 
 /* test */
 LIBAROMA_CONTROLP libaroma_ctl_testscroll(

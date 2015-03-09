@@ -103,6 +103,7 @@ struct _LIBAROMA_WINDOW{
   /* states */
   byte active;
   byte lock_sync;
+  /*byte need_sync;*/
   
   /* graphs */
   char theme_bg[256];/*
@@ -119,7 +120,6 @@ struct _LIBAROMA_WINDOW{
   
   /* thread manager */
   pthread_t thread_manager;
-  pthread_t thread_syncer;
 };
 
 /*

@@ -652,6 +652,7 @@ static void * _libaroma_window_thread_manager(void * cookie) {
   ALOGV("begin window thread manager...");
   int i;
   LIBAROMA_SLEEPER sleeper_s;
+  byte need_sync = 0;
   while(win->active){
     /* run child thread process */
     libaroma_sleeper_start(&sleeper_s);
@@ -663,9 +664,18 @@ static void * _libaroma_window_thread_manager(void * cookie) {
         LIBAROMA_CONTROLP c=win->childs[i];
         if (c->thread!=NULL){
           if (c->thread(c)){
-            c->unsync=1;
+            libaroma_control_draw(c,0);
+            need_sync=1;
           }
         }
+      }
+      if (need_sync){
+        libaroma_window_sync(win, 
+          0, 0, 
+          win->w, win->h
+        );
+        need_sync=0;
+        continue;
       }
     }
     libaroma_sleeper(&sleeper_s,16000);
@@ -673,68 +683,6 @@ static void * _libaroma_window_thread_manager(void * cookie) {
   ALOGV("end window thread manager...");
   return NULL;
 } /* End of _libaroma_window_thread_manager */
-
-/*
- * Function    : _libaroma_window_thread_syncer
- * Return Value: static void *
- * Descriptions: Window thread syncer
- */
-static void * _libaroma_window_thread_syncer(void * cookie) {
-  LIBAROMA_WINDOWP win = (LIBAROMA_WINDOWP) cookie;
-  ALOGV("begin window thread syncer...");
-  int i;
-  byte need_sync;
-  LIBAROMA_CONTROLP ctl;
-  while(win->active){
-    if (win->active==1){
-      need_sync = 0;
-#ifdef LIBAROMA_CONFIG_OPENMP
-  #pragma omp parallel for
-#endif
-      for (i=0;i<win->childn;i++){
-        ctl=win->childs[i];
-        if (ctl->unsync){
-          need_sync=1;
-          libaroma_control_draw(ctl,0);
-        }
-      }
-      if (need_sync){
-        int sync_p[4]={ 0xffffff, 0xffffff, 0, 0 };
-        for (i=0;i<win->childn;i++){
-          ctl=win->childs[i];
-          if (ctl->unsync){
-            ctl->unsync=0;
-            if (sync_p[0]>ctl->x){
-              sync_p[0]=ctl->x;
-            }
-            if (sync_p[1]>ctl->y){
-              sync_p[1]=ctl->y;
-            }
-            if (sync_p[2]<ctl->x+ctl->w){
-              sync_p[2]=ctl->x+ctl->w;
-            }
-            if (sync_p[3]<ctl->y+ctl->h){
-              sync_p[3]=ctl->y+ctl->h;
-            }
-          }
-        }
-        int sync_w=sync_p[2]-sync_p[0];
-        int sync_h=sync_p[3]-sync_p[1];
-        if ((sync_w>0)&&(sync_h>0)){
-          libaroma_window_sync(win, 
-            sync_p[0], sync_p[1], 
-            sync_w, sync_h
-          );
-          continue;
-        }
-      }
-    }
-    usleep(16);
-  }
-  ALOGV("end window thread syncer...");
-  return NULL;
-} /* End of _libaroma_window_thread_syncer */
-
 
 /*
  * Function    : libaroma_window_sync
@@ -1042,23 +990,19 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
         if ((!win->lock_sync)||(msg->x==10)){
           if ((!win->active)||(msg->x==10)){
             int i;
+            win->active=1;
+            
+            /* signal child */
+            for (i=0;i<win->childn;i++){
+              win->childs[i]->message(win->childs[i], msg);
+            }
             
             /* start thread manager */
-            win->active=1;
             pthread_create(
               &win->thread_manager,
               NULL,
               _libaroma_window_thread_manager,
               (voidp) win);
-            pthread_create(
-              &win->thread_syncer,
-              NULL,
-              _libaroma_window_thread_syncer,
-              (voidp) win);
-            
-            for (i=0;i<win->childn;i++){
-              win->childs[i]->message(win->childs[i], msg);
-            }
           }
         }
       }
@@ -1075,17 +1019,16 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
     case LIBAROMA_MSG_WIN_INACTIVE:
       {
         if (win->active){
+          /* stop thread manager */
+          win->active=0;
+          pthread_join(win->thread_manager, NULL);
+          win->thread_manager = 0;
+          
           /* send inactive message to child */
           int i;
           for (i=0;i<win->childn;i++){
             win->childs[i]->message(win->childs[i], msg);
           }
-          
-          /* stop thread manager */
-          win->active=0;
-          pthread_join(win->thread_manager, NULL);
-          pthread_join(win->thread_syncer, NULL);
-          win->thread_manager = 0;
         }
       }
       break;
