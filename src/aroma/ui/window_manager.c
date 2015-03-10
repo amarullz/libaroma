@@ -182,19 +182,15 @@ byte libaroma_wm_init(){
   }
   ALOGV("libaroma_wm_init init window manager");
   _libaroma_wm = (LIBAROMA_WMP) malloc(sizeof(LIBAROMA_WM));
+  if (!_libaroma_wm){
+    ALOGW("libaroma_wm_init alloc window manager memory failed");
+    return 0;
+  }
+  memset(_libaroma_wm,0,sizeof(LIBAROMA_WM));
   _libaroma_wm->theme = libaroma_sarray(_libaroma_wm_theme_release);
   _libaroma_wm->color = libaroma_sarray(NULL);
-  _libaroma_wm->x = 0;
-  _libaroma_wm->y = 0;
   _libaroma_wm->w = libaroma_fb()->w;
   _libaroma_wm->h = libaroma_fb()->h;
-  _libaroma_wm->queue=NULL;
-  _libaroma_wm->client_started = 0;
-  _libaroma_wm->message_handler = NULL;
-  _libaroma_wm->reset_handler = NULL;
-  _libaroma_wm->workspace_bg = NULL;
-  _libaroma_wm->active_window = NULL;
-  _libaroma_wm->message_thread = 0;
   _libaroma_wm_default_set(
     LIBAROMA_WM_FLAG_RESET_COLOR|
     LIBAROMA_WM_FLAG_RESET_THEME);

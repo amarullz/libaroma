@@ -193,6 +193,6 @@ byte QCOMFB_sync(LIBAROMA_FBP me, wordp src,int x, int y, int w, int h);
  * Return Value: void
  * Descriptions: flush overlay update
  */
-void QCOMFB_flush(LINUXFBDR_INTERNALP mi);
+void QCOMFB_flush(LIBAROMA_FBP me);
 
 #endif /* __libaroma_linux_fb_qcom_driver_h__ */

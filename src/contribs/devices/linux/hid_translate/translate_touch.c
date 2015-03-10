@@ -130,9 +130,9 @@ byte LINUXHIDRV_translate_touch(
             dev->p.x = (ev->value & 0x7FFF0000) >> 16;
             dev->p.y = (ev->value & 0xFFFF);
           }
+          ev->type = EV_SYN;
+          ev->code = SYN_REPORT;
         }
-        ev->type = EV_SYN;
-        ev->code = SYN_REPORT;
         break;
         
       case ABS_MT_TOUCH_MAJOR:

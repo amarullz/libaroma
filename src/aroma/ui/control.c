@@ -36,11 +36,13 @@ LIBAROMA_CONTROLP libaroma_control_new(
   byte signature, word id,
   int x, int y, int w, int h,
   int minw, int minh,
+  voidp internal,
   LIBAROMA_CTLCB_MESSAGE message,
   LIBAROMA_CTLCB_DRAW draw,
   LIBAROMA_CTLCB_FOCUS focus,
   LIBAROMA_CTLCB_DESTROY destroy,
-  LIBAROMA_CTLCB_THREAD thread
+  LIBAROMA_CTLCB_THREAD thread,
+  LIBAROMA_WINDOWP win
 ){
   LIBAROMA_CONTROLP ret = (LIBAROMA_CONTROLP)
     malloc(sizeof(LIBAROMA_CONTROL));
@@ -48,17 +50,13 @@ LIBAROMA_CONTROLP libaroma_control_new(
     ALOGW("window_control_new cannot allocating memory");
     return NULL;
   }
+  memset(ret,0,sizeof(LIBAROMA_CONTROL));
   ret->minw = minw;
   ret->minh = minh;
-  ret->x = 0;
-  ret->y = 0;
-  ret->w = 0;
-  ret->h = 0;
   ret->rx = x;
   ret->ry = y;
   ret->rw = w;
   ret->rh = h;
-  
   ret->id = id;
   ret->signature = signature;
   ret->message = message;
@@ -66,8 +64,11 @@ LIBAROMA_CONTROLP libaroma_control_new(
   ret->focus = focus;
   ret->destroy = destroy;
   ret->thread = thread;
-  ret->window = NULL;
-  ret->internal = NULL;
+  ret->internal = internal;
+  
+  if (win){
+    return libaroma_window_attach(win,ret);
+  }
   return ret;
 } /* End of libaroma_control_new */
 
@@ -94,15 +95,17 @@ byte libaroma_control_draw_flush(
     ALOGW("window_control_draw window dc uninitialized");
     return 0;
   }
-  int sx = ctl->x;
-  int sy = ctl->y;
+  /*
   libaroma_draw(
     win->dc,
     canvas,
     sx, sy,
     0
   );
+  */
   if (sync){
+    int sx = ctl->x;
+    int sy = ctl->y;
     libaroma_window_sync(
       win, sx, sy, ctl->w, ctl->h
     );
@@ -184,7 +187,15 @@ LIBAROMA_CANVASP libaroma_control_draw_begin(
       !libaroma_control_isvisible(ctl)){
     return NULL;
   }
-  LIBAROMA_CANVASP c = libaroma_canvas(ctl->w, ctl->h);
+  LIBAROMA_WINDOWP win = ctl->window;
+  if (win->dc==NULL){
+    return NULL;
+  }
+  LIBAROMA_CANVASP c = libaroma_canvas_area(
+    win->dc,
+    ctl->x, ctl->y, ctl->w, ctl->h
+  );
+  // libaroma_canvas(ctl->w, ctl->h);
   return c;
 } /* End of libaroma_control_draw_begin */
 
@@ -196,7 +207,9 @@ LIBAROMA_CANVASP libaroma_control_draw_begin(
 void libaroma_control_draw_end(
   LIBAROMA_CONTROLP ctl, LIBAROMA_CANVASP c, byte sync
 ){
-  libaroma_control_draw_flush(ctl, c, sync);
+  if (sync){
+    libaroma_control_draw_flush(ctl, c, sync);
+  }
   libaroma_canvas_free(c);
 } /* End of libaroma_control_draw_end */
 

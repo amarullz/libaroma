@@ -75,21 +75,13 @@ LIBAROMA_CONTROLP libaroma_control_label(
   LIBAROMA_WINDOWP win, word id, char * text,
   int x, int y, int w, int h
 ){
-  LIBAROMA_CONTROLP ctl =
-  libaroma_control_new(
-    _LIBAROMA_CONTROL_LABEL_SIGNATURE,id,
-    x, y, w, h,
-    libaroma_dp(28),libaroma_dp(32), /* min size */
-    _libaroma_control_label_msg,
-    _libaroma_control_label_draw,
-    NULL,
-    _libaroma_control_label_destroy,
-    NULL
-  );
-  
   _LIBAROMA_CONTROL_LABELP me = (_LIBAROMA_CONTROL_LABELP)
     malloc(sizeof(_LIBAROMA_CONTROL_LABEL));
-  
+  if (!me){
+    ALOGW("libaroma_control_label alloc label memory failed");
+    return NULL;
+  }
+  memset(me,0,sizeof(_LIBAROMA_CONTROL_LABEL));
   me->text = strdup(text);
   me->textp = libaroma_text(
     me->text,
@@ -99,8 +91,30 @@ LIBAROMA_CONTROLP libaroma_control_label(
     100
   );
   
-  ctl->internal = (voidp) me;
-  return libaroma_window_attach(win,ctl);
+  LIBAROMA_CONTROLP ctl =
+    libaroma_control_new(
+      _LIBAROMA_CONTROL_LABEL_SIGNATURE,id,
+      x, y, w, h,
+      libaroma_dp(28),libaroma_dp(32), /* min size */
+      me,
+      _libaroma_control_label_msg,
+      _libaroma_control_label_draw,
+      NULL,
+      _libaroma_control_label_destroy,
+      NULL,
+      win
+    );
+  
+  if (!ctl){
+    if (me->text){
+      free(me->text);
+    }
+    if (me->textp){
+      libaroma_text_free(me->textp);
+    }
+    free(me);
+  }
+  return ctl;
 }
 
 #endif /* __libaroma_ctl_label_c__ */

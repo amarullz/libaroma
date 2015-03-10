@@ -55,7 +55,8 @@ byte LINUXFBDR_sync_16bit(
     return 0;
   }
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
-  pthread_mutex_lock(&mi->mutex);
+  libaroma_mutex_lock(mi->mutex);
+  LINUXFBDR_wait_vsync(mi);
   if ((w > 0) && (h > 0) && (!mi->double_buffering)) {
     int copy_stride = me->w-w;
     wordp copy_dst =
@@ -73,8 +74,8 @@ byte LINUXFBDR_sync_16bit(
       me->w, me->h, mi->stride, 0
     );
   }
-  pthread_cond_signal(&mi->cond);
-  pthread_mutex_unlock(&mi->mutex);
+  LINUXFBDR_flush(me);
+  libaroma_mutex_unlock(mi->mutex);
   return 1;
 }
 

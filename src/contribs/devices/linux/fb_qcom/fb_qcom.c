@@ -153,7 +153,7 @@ byte QCOMFB_init(LIBAROMA_FBP me){
   /* set commiter data */
   memset(&mi->qcom->commiter, 0, sizeof(struct mdp_display_commit));
   mi->qcom->commiter.flags = MDP_DISPLAY_COMMIT_OVERLAY;
-  mi->qcom->commiter.wait_for_finish = 1;
+  mi->qcom->commiter.wait_for_finish = 0;
   
   /* pos 
   mi->qcom->commiter.l_roi.x = 0;
@@ -167,8 +167,7 @@ byte QCOMFB_init(LIBAROMA_FBP me){
   */
   
   /* swap buffer & commit now */
-  QCOMFB_swap_buffer(me);
-  QCOMFB_flush(mi);
+  QCOMFB_flush(me);
   
   
   /* successed */
@@ -197,7 +196,7 @@ void QCOMFB_release(LIBAROMA_FBP me){
     }
     
     /* flush close */
-    QCOMFB_flush(mi);
+    QCOMFB_flush(me);
     
     if (mi->buffer){
       munmap(mi->buffer, mi->fb_sz);
@@ -238,7 +237,7 @@ byte QCOMFB_check_id(LINUXFBDR_INTERNALP mi){
       overlay_supported = 1;
     }
     else if (mdp_version>=40){
-      overlay_supported = 0;
+      return 0;
     }
   }
   else if (!strncmp(mi->fix.id, "mdssfb", strlen("mdssfb"))) {
@@ -437,7 +436,8 @@ byte QCOMFB_sync(
     return 0;
   }
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
-  pthread_mutex_lock(&mi->mutex);
+  libaroma_mutex_lock(mi->mutex);
+  LINUXFBDR_wait_vsync(mi);
   
   if (mi->pixsz==2){
     memcpy(mi->current_buffer, src, me->sz*2);
@@ -472,11 +472,8 @@ byte QCOMFB_sync(
     }
   }
   
-  printf("."); fflush(stdout);
-  
-  /* send flush signal */
-  pthread_cond_signal(&mi->cond);
-  pthread_mutex_unlock(&mi->mutex);
+  QCOMFB_flush(me);
+  libaroma_mutex_unlock(mi->mutex);
   return 1;
 } /* End of QCOMFB_sync */
 
@@ -508,7 +505,16 @@ void QCOMFB_swap_buffer(LIBAROMA_FBP me){
  * Return Value: void
  * Descriptions: flush overlay update
  */
-void QCOMFB_flush(LINUXFBDR_INTERNALP mi){
+void QCOMFB_flush(LIBAROMA_FBP me){
+  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
+  QCOMFB_swap_buffer(me);
+  if (mi->last_vsync==0){
+    mi->qcom->commiter.wait_for_finish = 0;
+  }
+  else{
+    mi->qcom->commiter.wait_for_finish = 1;
+  }
+
   int res=0;
   if (mi->qcom->commit_type==1){
     res=ioctl(mi->fb, MSMFB_DISPLAY_COMMIT_44, &mi->qcom->commiter);
@@ -551,30 +557,9 @@ void QCOMFB_flush(LINUXFBDR_INTERNALP mi){
       ALOGV("QCOMFB commit type old msm_mdp v44");
     }
   }
-  //if (res){
-    printf("%i",res); fflush(stdout);
-  //}
-} /* End of QCOMFB_flush */
-
-/*
- * Function    : QCOMFB_flush_receiver
- * Return Value: void
- * Descriptions: flush receiver
- */
-void QCOMFB_flush_receiver(LIBAROMA_FBP me,LINUXFBDR_INTERNALP mi){
-  while (mi->active){
-    pthread_mutex_lock(&mi->mutex);
-    pthread_cond_wait(&mi->cond, &mi->mutex);
-    QCOMFB_swap_buffer(me);
-    if (!mi->qcom->dbuf){
-      QCOMFB_flush(mi);
-      pthread_mutex_unlock(&mi->mutex);
-    }
-    else {
-      pthread_mutex_unlock(&mi->mutex);
-      QCOMFB_flush(mi);
-    }
+  if (res){
+    // printf("%i",res); fflush(stdout);
   }
-} /* End of QCOMFB_flush_receiver */
+} /* End of QCOMFB_flush */
 
 #endif /* __libaroma_linux_fb_qcom_driver_c__ */ 

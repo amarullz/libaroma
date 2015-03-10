@@ -200,7 +200,7 @@ byte libaroma_draw_scale_smooth(
   hCoef         = 0;
   for (y = 0 ; y < (dword)dh ; y++) {
     dline   = (dy + y) * dst->l;
-    if (dline * 2 > (dword)dst->sz) {
+    if (dline > (dword)(dst->l*dst->h)) {
       break;
     }
     offsetY = (hCoef >> 16);
@@ -211,7 +211,7 @@ byte libaroma_draw_scale_smooth(
     line2   = libaroma_draw_limit(offsetY+sy+1, sy+sh) * src->l;
     for (x = 0 ; x < (dword)dw ; x++) {
       int dst_pos  = dline + dx + x;
-      if (dst_pos * 2 > dst->sz) {
+      if (dst_pos > (dst->l*dst->h)) {
         break;
       }
       wordp dstp = dst->data + dst_pos;
@@ -223,7 +223,7 @@ byte libaroma_draw_scale_smooth(
       p2 = line2 + offsetX + sx;
       p3 = line1 + sx1;
       p4 = line2 + sx1;
-      if (p4 * 2 > (dword)src->sz) {
+      if (p4>(dword)(dst->l*dst->h)) {
         break;
       }
       pixel1 = src->data[p1];

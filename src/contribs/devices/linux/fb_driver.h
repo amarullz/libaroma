@@ -70,11 +70,9 @@ struct _LINUXFBDR_INTERNAL{
   byte      double_buffering;           /* is double buffering? */
   voidp     current_buffer;             /* current buffer to write */
   
-  byte      active;                     /* thread active */
-  pthread_t thread;                     /* flush thread handle */
-  pthread_mutex_t mutex;
-  pthread_cond_t cond;
+  LIBAROMA_MUTEX  mutex;
   
+  int       last_vsync;
   byte      is_omap;                    /* is omap fb? - vsync */
   QCOMFB_INTERNALP  qcom;               /* qcom fb internal data */
 };
@@ -84,6 +82,9 @@ void LINUXFBDR_release(LIBAROMA_FBP me);
 
 /* init features */
 void LINUXFBDR_init_features(LIBAROMA_FBP me);
+
+/* wait vsync */
+void LINUXFBDR_wait_vsync(LINUXFBDR_INTERNALP mi);
 
 /* flush function */
 byte LINUXFBDR_flush(LIBAROMA_FBP me);
@@ -97,7 +98,5 @@ void LINUXFBDR_dump(LINUXFBDR_INTERNALP mi);
 /* swap back buffer */
 void LINUXFBDR_swap_buffer(LINUXFBDR_INTERNALP mi);
 
-/* flush receiver thread */
-static void * LINUXFBDR_flush_receiver(void * cookie);
 
 #endif /* __libaroma_linux_fb_driver_h__ */

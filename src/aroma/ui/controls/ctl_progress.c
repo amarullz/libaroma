@@ -264,22 +264,14 @@ LIBAROMA_CONTROLP libaroma_ctl_progress(
     int max,
     int value
 ){
-  /* init control */
-  LIBAROMA_CONTROLP ctl =
-    libaroma_control_new(
-      _LIBAROMA_CTL_PROGRESS_SIGNATURE,id,
-      x, y, w, h,
-      libaroma_dp(48),libaroma_dp(8), /* min size */
-      _libaroma_ctl_progress_msg,
-      _libaroma_ctl_progress_draw,
-      NULL,
-      _libaroma_ctl_progress_destroy,
-      _libaroma_ctl_progress_thread
-    );
-  
   /* init internal data */
   _LIBAROMA_CTL_PROGRESSP me = (_LIBAROMA_CTL_PROGRESSP)
       malloc(sizeof(_LIBAROMA_CTL_PROGRESS));
+  if (!me){
+    ALOGW("libaroma_ctl_progress alloc progress memory failed");
+    return NULL;
+  }
+  memset(me,0,sizeof(_LIBAROMA_CTL_PROGRESS));
   
   /* set internal data */
   me->type = type;
@@ -288,12 +280,26 @@ LIBAROMA_CONTROLP libaroma_ctl_progress(
   me->preval=value;
   me->curval=value;
   me->state= 1;
-  me->tick = 0;
-  me->currx = 0;
   
-  /* attach internal data & return*/
-  ctl->internal = (voidp) me;
-  return libaroma_window_attach(win,ctl);
+  /* init control */
+  LIBAROMA_CONTROLP ctl =
+    libaroma_control_new(
+      _LIBAROMA_CTL_PROGRESS_SIGNATURE,id,
+      x, y, w, h,
+      libaroma_dp(48),libaroma_dp(8), /* min size */
+      me,
+      _libaroma_ctl_progress_msg,
+      _libaroma_ctl_progress_draw,
+      NULL,
+      _libaroma_ctl_progress_destroy,
+      _libaroma_ctl_progress_thread,
+      win
+    );
+  
+  if (!ctl){
+    free(me);
+  }
+  return ctl;
 } /* End of libaroma_ctl_progress */
 
 /*

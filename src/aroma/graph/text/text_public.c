@@ -252,8 +252,8 @@ int libaroma_text_draw_line_ex(
           line_txt,
           0 - line_txt->minx,
           0 - line_txt->y, 1, fore_color);
-        cv->alpha = (bytep) malloc(cv->sz);
-        memset(cv->alpha, 0, cv->sz);
+        cv->alpha = (bytep) malloc(cv->s);
+        memset(cv->alpha, 0, cv->s);
         for (yy = 0; yy < cv->h; yy++) {
           int row = cv->l * yy;
           for (xx = 0; xx < cv->w; xx++) {

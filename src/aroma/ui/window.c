@@ -175,23 +175,18 @@ LIBAROMA_WINDOWP libaroma_window(
 ){
   __CHECK_WM(NULL);
   LIBAROMA_WINDOWP win = (LIBAROMA_WINDOWP) malloc(sizeof(LIBAROMA_WINDOW));
-  /* zero values */
-  win->childn = 0;
+  if (!win){
+    ALOGW("libaroma_window alloc window data failed");
+    return NULL;
+  }
+  memset(win,0,sizeof(LIBAROMA_WINDOW));
+  
   if (bg_theme_name){
     snprintf(win->theme_bg,256,"%s",bg_theme_name);
   }
   else{
     snprintf(win->theme_bg,256,"%s","window");
   }
-  win->bg       = NULL;
-  win->dc       = NULL;
-  win->childs   = NULL;
-  win->focused  = NULL;
-  win->touched  = NULL;
-  win->lock_sync= 0;
-  win->active   = 0;
-  win->thread_manager=0;
-  
   win->rx = x;
   win->ry = y;
   win->rw = w;
@@ -678,7 +673,7 @@ static void * _libaroma_window_thread_manager(void * cookie) {
         continue;
       }
     }
-    libaroma_sleeper(&sleeper_s,16000);
+    libaroma_sleeper(&sleeper_s,16666);
   }
   ALOGV("end window thread manager...");
   return NULL;
@@ -882,7 +877,7 @@ byte libaroma_window_anishow(
       }
       
       /* 60hz sleep */
-      libaroma_sleeper(&sleeper_s,16000);
+      libaroma_sleeper(&sleeper_s,16666);
     }
     
     retval = 1;
@@ -1003,6 +998,9 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
               NULL,
               _libaroma_window_thread_manager,
               (voidp) win);
+            struct sched_param params;
+            params.sched_priority = sched_get_priority_max(SCHED_FIFO);
+            pthread_setschedparam(win->thread_manager, SCHED_FIFO, &params);
           }
         }
       }

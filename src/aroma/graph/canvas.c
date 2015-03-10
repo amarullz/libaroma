@@ -66,12 +66,12 @@ struct _LIBAROMA_CANVAS_SHMEM{
 void libaroma_canvas_blank(
     LIBAROMA_CANVASP c) {
   if (!c) {
-    ALOGW("libaroma_canvas_blank malloc(LIBAROMA_CANVASP) Error");
+    ALOGW("libaroma_canvas_blank canvas is not valid");
     return;
   }
   if (c->l == c->w) {
     /* Aligned Canvas */
-    memset(c->data, 0, c->sz);
+    memset(c->data, 0, c->s*2);
     
     if (c->alpha != NULL) {
       memset(c->alpha, 0xff, c->s);
@@ -108,7 +108,7 @@ void libaroma_canvas_setcolor(
     word color,
     byte alpha) {
   if (!c) {
-    ALOGW("libaroma_canvas_setcolor malloc(LIBAROMA_CANVASP) Error");
+    ALOGW("libaroma_canvas_setcolor canvas is not valid");
     return;
   }
   if (c->l == c->w) {
@@ -250,6 +250,7 @@ LIBAROMA_CANVASP libaroma_canvas_new_ex(
     bytep canvas_mem = (bytep) malloc(
       sizeof(LIBAROMA_CANVAS) + sizeof(LIBAROMA_CANVAS_SHMEM)
     );
+    memset(canvas_mem,0,sizeof(LIBAROMA_CANVAS)+sizeof(LIBAROMA_CANVAS_SHMEM));
     c = (LIBAROMA_CANVASP) canvas_mem;
     LIBAROMA_CANVAS_SHMEMP csh_mem = 
       (LIBAROMA_CANVAS_SHMEMP) (canvas_mem + sizeof(LIBAROMA_CANVAS));
@@ -263,7 +264,6 @@ LIBAROMA_CANVASP libaroma_canvas_new_ex(
     c->w = c->l = csh_head->w;
     c->h      = csh_head->h;
     c->s      = c->w * c->h;
-    c->sz     = c->s * 2;
     c->flags  = LIBAROMA_CANVAS_SHARED;
     c->data   = (wordp)
       (mem + head_sz);
@@ -280,7 +280,7 @@ LIBAROMA_CANVASP libaroma_canvas_new_ex(
       if (csh_head->hicolor){
         memset(c->hicolor, 0, c->s);
       }
-      memset(c->data, 0, c->sz);
+      memset(c->data, 0, c->s*2);
     }
     return c;
   }
@@ -295,26 +295,25 @@ LIBAROMA_CANVASP libaroma_canvas_new_ex(
     ALOGW("CANVAS malloc(LIBAROMA_CANVASP) Error");
     return NULL;
   }
+  memset(c,0,sizeof(LIBAROMA_CANVAS));
   c->l = c->w = w;
   c->h        = h;
   c->s        = w * h;
-  c->sz       = (c->s * 2);
-  c->flags    = 0;
-  c->data     = (wordp) malloc(c->sz);
+  c->data     = (wordp) malloc(c->s*2);
   if (!c->data) {
-    ALOGW("CANVAS malloc(c->data) Error");
+    ALOGW("CANVAS malloc(c->data) failed");
     free(c);
     return NULL;
   }
   if (useAlpha) {
     c->alpha  = malloc(c->s);
     if (!c->alpha) {
-      ALOGW("CANVAS malloc(c->alpha) Error");
+      ALOGW("CANVAS malloc(c->alpha) failed");
       free(c->data);
       free(c);
       return NULL;
     }
-    memset(c->alpha, 0xff, c->s);
+    /* memset(c->alpha, 0xff, c->s); */
   }
   else {
     c->alpha  = NULL;
@@ -322,7 +321,7 @@ LIBAROMA_CANVASP libaroma_canvas_new_ex(
   if (hiColor) {
     c->hicolor  = malloc(c->s);
     if (!c->hicolor) {
-      ALOGW("CANVAS malloc(c->hicolor) Error");
+      ALOGW("CANVAS malloc(c->hicolor) failed");
       free(c->hicolor);
       if (c->alpha) {
         free(c->alpha);
@@ -331,12 +330,12 @@ LIBAROMA_CANVASP libaroma_canvas_new_ex(
       free(c);
       return NULL;
     }
-    memset(c->hicolor, 0x00, c->s);
+    /* memset(c->hicolor, 0x00, c->s); */
   }
   else {
     c->hicolor  = NULL;
   }
-  memset(c->data, 0, c->sz);
+  /* memset(c->data, 0, c->s*2); */
   return c;
 } /* End of libaroma_canvas_new_ex */
 
@@ -394,13 +393,7 @@ byte libaroma_canvas_area_update(
   c->w      = w;
   c->h      = h;
   c->s      = w * h;
-  c->sz     = ((parent->l * h)-(parent->l-w)) * 2;
   c->flags  = LIBAROMA_CANVAS_CHILD;
-  
-  if (((y * parent->l) + x + c->sz) > parent->sz) {
-    c->sz = parent->sz - ((y * parent->l) + x);
-  }
-  
   c->l      = parent->l;
   c->data   = parent->data + (y * parent->l) + x;
   
@@ -442,6 +435,7 @@ LIBAROMA_CANVASP libaroma_canvas_area(
     ALOGW("canvas_area malloc(LIBAROMA_CANVASP) Error");
     return NULL;
   }
+  memset(c,0,sizeof(LIBAROMA_CANVAS));
   if (!libaroma_canvas_area_update(c,parent,x,y,w,h)){
     free(c);
     return NULL;

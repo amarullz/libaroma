@@ -42,7 +42,6 @@ typedef struct {
   
   int threadn;
   LIBAROMA_CTL_LIST_ITEMP * threads;
-  LIBAROMA_MUTEX mutex;
 } LIBAROMA_CTL_SCROLL, * LIBAROMA_CTL_SCROLLP;
 
 /*
@@ -111,7 +110,6 @@ byte _libaroma_ctl_list_thread(
   }
   LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
   
-  libaroma_mutex_lock(mi->mutex);
   byte need_redraw=0;
   int i;
 #ifdef LIBAROMA_CONFIG_OPENMP
@@ -133,7 +131,6 @@ byte _libaroma_ctl_list_thread(
       }
     }
   }
-  libaroma_mutex_unlock(mi->mutex);
   return need_redraw;
 } /* End of _libaroma_ctl_list_thread */
 
@@ -433,7 +430,6 @@ void _libaroma_ctl_list_destroy(
   }
   
   /* free internal data */
-  libaroma_mutex_free(mi->mutex);
   free(mi);
   client->internal=NULL;
   client->signature=0;
@@ -458,14 +454,10 @@ LIBAROMA_CONTROLP libaroma_ctl_list(
     return NULL;
   }
   memset(mi,0,sizeof(LIBAROMA_CTL_SCROLL));
-  libaroma_mutex_init(mi->mutex);
   mi->vpad = libaroma_window_usedp(2)?
       libaroma_dp(vertical_padding):vertical_padding;
   mi->h = mi->vpad*2;
   mi->flags = flags;
-  
-  mi->threadn = 0;
-  mi->threads = NULL;
   
   /* create scroll control */
   LIBAROMA_CONTROLP ctl = libaroma_ctl_scroll(
@@ -524,12 +516,10 @@ byte libaroma_ctl_list_item_reg_thread(
   }
   LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
   if (mi->threadn==0){
-    libaroma_mutex_lock(mi->mutex);
     mi->threads = (LIBAROMA_CTL_LIST_ITEMP *)
       malloc(sizeof(LIBAROMA_CTL_LIST_ITEMP));
     mi->threads[0] = item;
     mi->threadn++;
-    libaroma_mutex_unlock(mi->mutex);
   }
   else{
     int i;
@@ -540,7 +530,6 @@ byte libaroma_ctl_list_item_reg_thread(
       }
     }
     
-    libaroma_mutex_lock(mi->mutex);
     LIBAROMA_CTL_LIST_ITEMP * new_threads = (LIBAROMA_CTL_LIST_ITEMP *)
       realloc(mi->threads, sizeof(LIBAROMA_CTL_LIST_ITEMP)*(mi->threadn+1));
     if (!new_threads){
@@ -549,7 +538,6 @@ byte libaroma_ctl_list_item_reg_thread(
     mi->threads=new_threads;
     mi->threads[mi->threadn]=item;
     mi->threadn++;
-    libaroma_mutex_unlock(mi->mutex);
   }
   return 1;
 } /* End of libaroma_ctl_list_item_reg_thread */
@@ -576,11 +564,9 @@ byte libaroma_ctl_list_item_unreg_thread(
   
   if (mi->threadn==1){
     if (mi->threads[0]==item){
-      libaroma_mutex_lock(mi->mutex);
       mi->threadn--;
       free(mi->threads);
       mi->threads=NULL;
-      libaroma_mutex_unlock(mi->mutex);
     }
     return 0;
   }
@@ -594,7 +580,6 @@ byte libaroma_ctl_list_item_unreg_thread(
   int i;
   int z=0;
   int n=-1;
-  libaroma_mutex_lock(mi->mutex);
   for (i=0;i<mi->threadn;i++){
     if (mi->threads[i]==item){
       n=i;
@@ -607,11 +592,9 @@ byte libaroma_ctl_list_item_unreg_thread(
     free(mi->threads);
     mi->threads=new_threads;
     mi->threadn--;
-    libaroma_mutex_unlock(mi->mutex);
     return 1;
   }
   
-  libaroma_mutex_unlock(mi->mutex);
   free(new_threads);
   ALOGV("item_unreg_thread item is unregistered");
   return 0;
@@ -674,7 +657,6 @@ byte libaroma_ctl_list_del_itemp_internal(
   LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
   
   if (f){
-    libaroma_mutex_lock(mi->mutex);
     if ((f==mi->first)&&(f==mi->last)){
       mi->first=mi->last=NULL;
     }
@@ -705,7 +687,6 @@ byte libaroma_ctl_list_del_itemp_internal(
       f->destroy(f);
     }
     free(f);
-    libaroma_mutex_unlock(mi->mutex);
     libaroma_ctl_scroll_request_height(ctl, mi->h);
     return 1;
   }
@@ -764,12 +745,10 @@ byte libaroma_ctl_list_item_setheight(LIBAROMA_CTL_LIST_ITEMP item, int h){
   }
   LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
   if (item->h!=h){
-    libaroma_mutex_lock(mi->mutex);
     mi->h-=item->h;
     item->h=h;
     mi->h+=item->h;
     __libaroma_ctl_list_repos_next_items(item,item->y);
-    libaroma_mutex_unlock(mi->mutex);
     libaroma_ctl_scroll_request_height(ctl, mi->h);
     return 1;
   }
@@ -806,6 +785,7 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_ctl_list_add_item_internal(
     ALOGW("list_add_item_internal cannot allocating memory for item");
     return NULL;
   }
+  memset(item,0,sizeof(LIBAROMA_CTL_LIST_ITEM));
   item->ctl=ctl;
   item->y=0;
   item->h=height;
@@ -816,9 +796,7 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_ctl_list_add_item_internal(
   item->message=message;
   item->draw=draw;
   item->destroy=destroy;
-  item->next=NULL;
-  item->prev=NULL;
-  libaroma_mutex_lock(mi->mutex);
+  
   if (mi->last==NULL){
     mi->first=mi->last=item;
     item->y=mi->vpad;
@@ -877,7 +855,6 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_ctl_list_add_item_internal(
     }
   }
   mi->itemn++;
-  libaroma_mutex_unlock(mi->mutex);
   
   /* set current height */
   libaroma_ctl_scroll_request_height(ctl, mi->h);

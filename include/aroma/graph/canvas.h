@@ -40,7 +40,7 @@ struct _LIBAROMA_CANVAS{
   int      h;       /* height */
   int      l;       /* line size */
   int      s;       /* width x height */
-  int      sz;      /* data size */
+  /* int      sz;       data size */
   wordp    data;    /* color data */
   bytep    alpha;   /* alpha data */
   bytep    hicolor; /* hicolor data */

@@ -92,11 +92,13 @@ LIBAROMA_CONTROLP libaroma_control_new(
   byte signature, word id,
   int x, int y, int w, int h,
   int minw, int minh,
+  voidp internal,
   LIBAROMA_CTLCB_MESSAGE message,
   LIBAROMA_CTLCB_DRAW draw,
   LIBAROMA_CTLCB_FOCUS focus,
   LIBAROMA_CTLCB_DESTROY destroy,
-  LIBAROMA_CTLCB_THREAD thread
+  LIBAROMA_CTLCB_THREAD thread,
+  LIBAROMA_WINDOWP win
 );
 
 /*

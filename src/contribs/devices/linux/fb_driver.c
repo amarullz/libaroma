@@ -56,8 +56,7 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
   me->release = &LINUXFBDR_release;
   
   /* init mutex & cond */
-  pthread_mutex_init(&mi->mutex,NULL);
-  pthread_cond_init(&mi->cond,NULL);
+  libaroma_mutex_init(mi->mutex);
 
   /* open framebuffer device */
   mi->fb = open(LINUXFBDR_DEVICE, O_RDWR, 0);
@@ -129,7 +128,6 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
     }
     
     /* swap buffer now */
-    LINUXFBDR_swap_buffer(mi);
     LINUXFBDR_flush(me);
     
     if (mi->pixsz == 2) {
@@ -153,10 +151,6 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
   
   /* set dpi */
   LINUXFBDP_set_dpi(me);
-  
-  /* start flush receiver */
-  mi->active=1;
-  pthread_create(&mi->thread,NULL,LINUXFBDR_flush_receiver,(void *) me);
   
   /* ok */
   goto ok;
@@ -182,13 +176,6 @@ void LINUXFBDR_release(LIBAROMA_FBP me) {
     return;
   }
   
-  /* terminate flush thread */
-  mi->active=0;
-  pthread_mutex_lock(&mi->mutex);
-  pthread_cond_signal(&mi->cond);
-  pthread_mutex_unlock(&mi->mutex);
-  pthread_join(mi->thread,NULL);
-  
   if (mi->qcom!=NULL){
     /* release qcom overlay driver */
     QCOMFB_release(me);
@@ -205,8 +192,7 @@ void LINUXFBDR_release(LIBAROMA_FBP me) {
   close(mi->fb);
   
   /* destroy mutex & cond */
-  pthread_cond_destroy(&mi->cond);
-  pthread_mutex_destroy(&mi->mutex);
+  libaroma_mutex_free(mi->mutex);
   
   /* free internal data */
   ALOGV("LINUXFBDR free internal data");
@@ -229,6 +215,22 @@ void LINUXFBDR_swap_buffer(LINUXFBDR_INTERNALP mi){
 } /* End of LINUXFBDR_swap_buffer */
 
 /*
+ * Function    : LINUXFBDR_wait_vsync
+ * Return Value: void
+ * Descriptions: wait for vsync
+ */
+void LINUXFBDR_wait_vsync(LINUXFBDR_INTERNALP mi){
+  if (mi->is_omap){
+    int s=0;
+    mi->last_vsync=ioctl(mi->fb, OMAPFB_WAITFORVSYNC, &s);
+  }
+  else{
+    /* wait for vsync */
+    mi->last_vsync=ioctl(mi->fb, FBIO_WAITFORVSYNC, 0);
+  }
+} /* End of LINUXFBDR_wait_vsync */
+
+/*
  * Function    : LINUXFBDR_flush
  * Return Value: byte
  * Descriptions: flush content into display & wait for vsync
@@ -239,46 +241,20 @@ byte LINUXFBDR_flush(LIBAROMA_FBP me) {
   }
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
   
-  if (mi->is_omap){
-    /* omap wait for vsync */
-    int s=0;
+  fsync(mi->fb);
+  LINUXFBDR_swap_buffer(mi);
+  
+  if (mi->last_vsync==0){
     mi->var.activate = FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
-    ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var);
-    ioctl(mi->fb, OMAPFB_WAITFORVSYNC, &s);
   }
   else{
-    /* refresh display */
-    mi->var.activate = FB_ACTIVATE_VBL;
-    if (ioctl(mi->fb, FBIOPAN_DISPLAY, &mi->var)!=0){
-      ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var);
-    }
+    mi->var.activate = FB_ACTIVATE_VBL; 
+  }
+  if (ioctl(mi->fb, FBIOPAN_DISPLAY, &mi->var)!=0){
+    ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var);
   }
   return 1;
 } /* End of LINUXFBDR_flush */
-
-/*
- * Function    : LINUXFBDR_flush_receiver
- * Return Value: static void *
- * Descriptions: flush signal receiver
- */
-static void * LINUXFBDR_flush_receiver(void * cookie){
-  LIBAROMA_FBP me=(LIBAROMA_FBP) cookie;
-  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
-  if (mi->qcom!=NULL){
-    /* using qcom fluser */
-    QCOMFB_flush_receiver(me,mi);
-  }
-  else{
-    while (mi->active){
-      pthread_mutex_lock(&mi->mutex);
-      pthread_cond_wait(&mi->cond, &mi->mutex);
-      LINUXFBDR_swap_buffer(mi);
-      pthread_mutex_unlock(&mi->mutex);
-      LINUXFBDR_flush(me);
-    }
-  }
-  return NULL;
-} /* End of LINUXFBDR_flush_receiver */
 
 /*
  * Function    : LINUXFBDR_init_features
