@@ -28,7 +28,6 @@
 #define __libaroma_listitem_option_h__
 
 /* option signature */
-#define LIBAROMA_LISTITEM_OPTION_SIG                0x10
 #define LIBAROMA_LISTITEM_OPTION_INDENT_NOICON      0x10
 #define LIBAROMA_LISTITEM_OPTION_SMALL_ICON         0x20
 

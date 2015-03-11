@@ -54,26 +54,29 @@ typedef struct _LIBAROMA_CTL_LIST_ITEM * LIBAROMA_CTL_LIST_ITEMP;
 
 /* item callbacks */
 typedef void (*LIBAROMA_CTL_LISTCB_DRAW) \
-  (LIBAROMA_CTL_LIST_ITEMP,LIBAROMA_CANVASP,word);
+  (LIBAROMA_CONTROLP,LIBAROMA_CTL_LIST_ITEMP,LIBAROMA_CANVASP,word);
   /* item, canvas, item index, number of items */
 typedef void (*LIBAROMA_CTL_LISTCB_DESTROY) \
-  (LIBAROMA_CTL_LIST_ITEMP);
+  (LIBAROMA_CONTROLP,LIBAROMA_CTL_LIST_ITEMP);
 typedef byte (*LIBAROMA_CTL_LISTCB_MESSAGE) \
-  (LIBAROMA_CTL_LIST_ITEMP, byte, dword, int, int);
+  (LIBAROMA_CONTROLP,LIBAROMA_CTL_LIST_ITEMP, byte, dword, int, int);
   /* list, message, param, x, y */
-  
+
+/* item handler */
+typedef struct{
+  LIBAROMA_CTL_LISTCB_MESSAGE message;
+  LIBAROMA_CTL_LISTCB_DRAW draw;
+  LIBAROMA_CTL_LISTCB_DESTROY destroy;
+} LIBAROMA_CTL_LIST_ITEM_HANDLER, * LIBAROMA_CTL_LIST_ITEM_HANDLERP;
+
 /* item structure */
 struct _LIBAROMA_CTL_LIST_ITEM{
   int y;
   int h;
   int id;
-  LIBAROMA_CONTROLP ctl;
-  byte flags;
-  byte signature;
   voidp internal;
-  LIBAROMA_CTL_LISTCB_MESSAGE message;
-  LIBAROMA_CTL_LISTCB_DRAW draw;
-  LIBAROMA_CTL_LISTCB_DESTROY destroy;
+  byte flags;
+  LIBAROMA_CTL_LIST_ITEM_HANDLERP handler;
   LIBAROMA_CTL_LIST_ITEMP next;
   LIBAROMA_CTL_LIST_ITEMP prev;
 };
@@ -145,7 +148,8 @@ byte libaroma_ctl_list_is_valid(LIBAROMA_CONTROLP ctl);
  * Return Value: byte
  * Descriptions: update item height
  */
-byte libaroma_ctl_list_item_setheight(LIBAROMA_CTL_LIST_ITEMP item, int h);
+byte libaroma_ctl_list_item_setheight(
+    LIBAROMA_CONTROLP ctl, LIBAROMA_CTL_LIST_ITEMP item, int h);
 
 /*
  * Function    : libaroma_ctl_list_add_item_internal
@@ -156,12 +160,9 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_ctl_list_add_item_internal(
     LIBAROMA_CONTROLP ctl,
     int id,
     int height,
-    byte signature,
     byte flags,
     voidp internal,
-    LIBAROMA_CTL_LISTCB_MESSAGE message,
-    LIBAROMA_CTL_LISTCB_DRAW draw,
-    LIBAROMA_CTL_LISTCB_DESTROY destroy,
+    LIBAROMA_CTL_LIST_ITEM_HANDLERP handler,
     int at_index);
 
 #define libaroma_ctl_list_isactive(ctl) libaroma_ctl_scroll_isactive(ctl)

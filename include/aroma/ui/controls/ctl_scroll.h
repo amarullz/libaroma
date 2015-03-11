@@ -40,9 +40,6 @@
 #define LIBAROMA_CTL_SCROLL_MSG_TOUCH_MOVE      0x4
 #define LIBAROMA_CTL_SCROLL_MSG_TOUCH_CANCEL    0x5
 
-#define LIBAROMA_CTL_SCROLL_MSG_ACTIVATED       0x10
-#define LIBAROMA_CTL_SCROLL_MSG_INACTIVATED     0x11
-
 #define LIBAROMA_CTL_SCROLL_MSG_HANDLED         0x1
 #define LIBAROMA_CTL_SCROLL_MSG_NEED_DRAW       0x2
 
@@ -69,18 +66,21 @@ typedef dword (*LIBAROMA_CTL_SCROLLCB_MESSAGE) \
     LIBAROMA_MSGP, int, int);
   /* ctl, client, message, client_x, client_y - return command */
 
+typedef struct{
+  LIBAROMA_CTL_SCROLLCB_MESSAGE message;
+  LIBAROMA_CTL_SCROLLCB_DRAW draw;
+  LIBAROMA_CTL_SCROLLCB_DESTROY destroy;
+  LIBAROMA_CTL_SCROLLCB_THREAD thread;
+} LIBAROMA_CTL_SCROLL_CLIENT_HANDLER, * LIBAROMA_CTL_SCROLL_CLIENT_HANDLERP;
+
 /*
  * Structure   : _LIBAROMA_CTL_SCROLL_CLIENT
  * Typedef     : LIBAROMA_CTL_SCROLL_CLIENT, * LIBAROMA_CTL_SCROLL_CLIENTP
  * Descriptions: scroll client
  */
 struct _LIBAROMA_CTL_SCROLL_CLIENT{
-  byte signature;
   voidp internal;
-  LIBAROMA_CTL_SCROLLCB_MESSAGE message;
-  LIBAROMA_CTL_SCROLLCB_DRAW draw;
-  LIBAROMA_CTL_SCROLLCB_DESTROY destroy;
-  LIBAROMA_CTL_SCROLLCB_THREAD thread;
+  LIBAROMA_CTL_SCROLL_CLIENT_HANDLERP handler;
 };
 
 /*
@@ -98,11 +98,7 @@ word libaroma_ctl_scroll_get_bg_color(LIBAROMA_CONTROLP ctl);
 byte libaroma_ctl_scroll_set_client(
     LIBAROMA_CONTROLP ctl,
     voidp internal,
-    byte client_signature,
-    LIBAROMA_CTL_SCROLLCB_MESSAGE message,
-    LIBAROMA_CTL_SCROLLCB_DRAW draw,
-    LIBAROMA_CTL_SCROLLCB_DESTROY destroy,
-    LIBAROMA_CTL_SCROLLCB_THREAD thread
+    LIBAROMA_CTL_SCROLL_CLIENT_HANDLERP handler
 );
 
 /*

@@ -27,7 +27,18 @@
 #ifndef __libaroma_ctl_label_c__
 #define __libaroma_ctl_label_c__
 
-#define _LIBAROMA_CONTROL_LABEL_SIGNATURE 0x01
+/* HANDLER */
+dword _libaroma_control_label_msg(LIBAROMA_CONTROLP, LIBAROMA_MSGP);
+void _libaroma_control_label_draw (LIBAROMA_CONTROLP, LIBAROMA_CANVASP);
+void _libaroma_control_label_destroy(LIBAROMA_CONTROLP);
+static LIBAROMA_CONTROL_HANDLER _libaroma_control_label_handler={
+  message:_libaroma_control_label_msg,
+  draw:_libaroma_control_label_draw,
+  focus:NULL,
+  destroy:_libaroma_control_label_destroy,
+  thread:NULL
+};
+
 /*
  * Structure   : __LIBAROMA_CONTROL_LABEL
  * Typedef     : _LIBAROMA_CONTROL_LABEL, * _LIBAROMA_CONTROL_LABELP
@@ -93,15 +104,11 @@ LIBAROMA_CONTROLP libaroma_control_label(
   
   LIBAROMA_CONTROLP ctl =
     libaroma_control_new(
-      _LIBAROMA_CONTROL_LABEL_SIGNATURE,id,
+      id,
       x, y, w, h,
       libaroma_dp(28),libaroma_dp(32), /* min size */
       me,
-      _libaroma_control_label_msg,
-      _libaroma_control_label_draw,
-      NULL,
-      _libaroma_control_label_destroy,
-      NULL,
+      &_libaroma_control_label_handler,
       win
     );
   

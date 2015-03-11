@@ -33,17 +33,16 @@
  * Descriptions: create primitive control
  */
 LIBAROMA_CONTROLP libaroma_control_new(
-  byte signature, word id,
+  word id,
   int x, int y, int w, int h,
   int minw, int minh,
   voidp internal,
-  LIBAROMA_CTLCB_MESSAGE message,
-  LIBAROMA_CTLCB_DRAW draw,
-  LIBAROMA_CTLCB_FOCUS focus,
-  LIBAROMA_CTLCB_DESTROY destroy,
-  LIBAROMA_CTLCB_THREAD thread,
+  LIBAROMA_CONTROL_HANDLERP handler,
   LIBAROMA_WINDOWP win
 ){
+  if (handler==NULL){
+    return NULL;
+  }
   LIBAROMA_CONTROLP ret = (LIBAROMA_CONTROLP)
     malloc(sizeof(LIBAROMA_CONTROL));
   if (!ret){
@@ -58,12 +57,7 @@ LIBAROMA_CONTROLP libaroma_control_new(
   ret->rw = w;
   ret->rh = h;
   ret->id = id;
-  ret->signature = signature;
-  ret->message = message;
-  ret->draw = draw;
-  ret->focus = focus;
-  ret->destroy = destroy;
-  ret->thread = thread;
+  ret->handler = handler;
   ret->internal = internal;
   
   if (win){
@@ -95,14 +89,6 @@ byte libaroma_control_draw_flush(
     ALOGW("window_control_draw window dc uninitialized");
     return 0;
   }
-  /*
-  libaroma_draw(
-    win->dc,
-    canvas,
-    sx, sy,
-    0
-  );
-  */
   if (sync){
     int sx = ctl->x;
     int sy = ctl->y;
@@ -195,7 +181,6 @@ LIBAROMA_CANVASP libaroma_control_draw_begin(
     win->dc,
     ctl->x, ctl->y, ctl->w, ctl->h
   );
-  // libaroma_canvas(ctl->w, ctl->h);
   return c;
 } /* End of libaroma_control_draw_begin */
 
@@ -223,8 +208,8 @@ byte libaroma_control_draw(
 ){
   LIBAROMA_CANVASP c = libaroma_control_draw_begin(ctl);
   if (c!=NULL){
-    if (ctl->draw!=NULL){
-      ctl->draw(ctl,c);
+    if (ctl->handler->draw!=NULL){
+      ctl->handler->draw(ctl,c);
     }
     libaroma_control_draw_end(ctl, c, sync);
     return 1;
@@ -243,7 +228,9 @@ byte libaroma_control_free(
   if (!ctl){
     return 0;
   }
-  ctl->destroy(ctl);
+  if (ctl->handler->destroy){
+    ctl->handler->destroy(ctl);
+  }
   free(ctl);
   return 1;
 } /* End of libaroma_control_free */

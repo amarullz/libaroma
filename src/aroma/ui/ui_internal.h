@@ -28,8 +28,8 @@
 #define __libaroma_ui_internal_h__
 
 /* control check signature */
-#define _LIBAROMA_CTL_CHECK(SIG, TYPE, RET) \
-    if (ctl->signature!=SIG){ return RET; } \
+#define _LIBAROMA_CTL_CHECK(HANDLER, TYPE, RET) \
+    if (ctl->handler!=&HANDLER){ return RET; } \
     TYPE me = (TYPE) ctl->internal
 
 /*

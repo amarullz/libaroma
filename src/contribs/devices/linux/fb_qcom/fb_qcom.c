@@ -237,7 +237,7 @@ byte QCOMFB_check_id(LINUXFBDR_INTERNALP mi){
       overlay_supported = 1;
     }
     else if (mdp_version>=40){
-      return 0;
+      return 1;
     }
   }
   else if (!strncmp(mi->fix.id, "mdssfb", strlen("mdssfb"))) {
@@ -310,7 +310,7 @@ int QCOMFB_overlay(LIBAROMA_FBP me, LINUXFBDR_INTERNALP mi,
   int sl, int sr, int dl, int dr, byte isright){
   int i;
   ALOGV("QCOMFB_overlay req(%i,%i,%i,%i)",sl,sr,dl,dr);
-  for (i=MDSS_MDP_MAX_STAGE;i>=0;i--){
+  for (i=3;i>=0;i--){
     if (mi->qcom->id==1){
       struct mdp_overlay_44 ovrl;
       memset(&ovrl, 0 , sizeof (struct mdp_overlay_44));
@@ -343,8 +343,10 @@ int QCOMFB_overlay(LIBAROMA_FBP me, LINUXFBDR_INTERNALP mi,
         ovrl.flags = MDSS_MDP_RIGHT_MIXER;
       }
       if (ioctl(mi->fb, MSMFB_OVERLAY_SET_44, &ovrl)==0){
-        ALOGV("QCOMFB_overlay[44](#%i, z_order:%i)",ovrl.id,i);
-        return ovrl.id;
+        if (((int) ovrl.id)!=MSMFB_NEW_REQUEST){
+          ALOGV("QCOMFB_overlay[44](#%i, z_order:%i)",ovrl.id,i);
+          return ovrl.id;
+        }
       }
     }
     else{
@@ -379,8 +381,10 @@ int QCOMFB_overlay(LIBAROMA_FBP me, LINUXFBDR_INTERNALP mi,
         ovrl.flags = MDSS_MDP_RIGHT_MIXER;
       }
       if (ioctl(mi->fb, MSMFB_OVERLAY_SET, &ovrl)==0){
-        ALOGV("QCOMFB_overlay(#%i, z_order:%i)",ovrl.id,i);
-        return ovrl.id;
+        if (((int) ovrl.id)!=MSMFB_NEW_REQUEST){
+          ALOGV("QCOMFB_overlay(#%i, z_order:%i)",ovrl.id,i);
+          return ovrl.id;
+        }
       }
     }
   }

@@ -539,9 +539,9 @@ byte libaroma_window_measure(LIBAROMA_WINDOWP win, LIBAROMA_CONTROLP ctl){
       ctl->h=ctl->minh;
     }
     _libaroma_window_measure_save(NULL,ctl);
-    if (ctl->message){
+    if (ctl->handler->message){
       LIBAROMA_MSG _msg;
-      ctl->message(ctl, libaroma_wm_compose(
+      ctl->handler->message(ctl, libaroma_wm_compose(
         &_msg, LIBAROMA_MSG_WIN_MEASURED, NULL, 0, 0)
       );
       return 1;
@@ -608,13 +608,13 @@ LIBAROMA_CONTROLP libaroma_window_setfocus(
       ALOGW("window_setfocus control is not window child");
       return NULL;
     }
-    if (ctl->focus!=NULL){
+    if (ctl->handler->focus!=NULL){
       if (win->focused==ctl){
         return ctl;
       }
-      if (ctl->focus(ctl,1)){
+      if (ctl->handler->focus(ctl,1)){
         if (win->focused){
-          win->focused->focus(win->focused,0);
+          win->focused->handler->focus(win->focused,0);
         }
         win->focused=ctl;
         return ctl;
@@ -629,7 +629,7 @@ LIBAROMA_CONTROLP libaroma_window_setfocus(
     }
     int i;
     for (i=0;i<win->childn;i++){
-      if (win->childs[i]->focus!=NULL){
+      if (win->childs[i]->handler->focus!=NULL){
         return libaroma_window_setfocus(win,win->childs[i]);
       }
     }
@@ -657,8 +657,8 @@ static void * _libaroma_window_thread_manager(void * cookie) {
 #endif
       for (i=0;i<win->childn;i++){
         LIBAROMA_CONTROLP c=win->childs[i];
-        if (c->thread!=NULL){
-          if (c->thread(c)){
+        if (c->handler->thread!=NULL){
+          if (c->handler->thread(c)){
             libaroma_control_draw(c,0);
             need_sync=1;
           }
@@ -989,7 +989,9 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
             
             /* signal child */
             for (i=0;i<win->childn;i++){
-              win->childs[i]->message(win->childs[i], msg);
+              if (win->childs[i]->handler->message){
+                win->childs[i]->handler->message(win->childs[i], msg);
+              }
             }
             
             /* start thread manager */
@@ -998,9 +1000,12 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
               NULL,
               _libaroma_window_thread_manager,
               (voidp) win);
+            
+            
             struct sched_param params;
             params.sched_priority = sched_get_priority_max(SCHED_FIFO);
             pthread_setschedparam(win->thread_manager, SCHED_FIFO, &params);
+            
           }
         }
       }
@@ -1010,7 +1015,9 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
         int i;
         _libaroma_window_ready(win);
         for (i=0;i<win->childn;i++){
-          win->childs[i]->message(win->childs[i], msg);
+          if (win->childs[i]->handler->message){
+            win->childs[i]->handler->message(win->childs[i], msg);
+          }
         }
       }
       break;
@@ -1025,7 +1032,9 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
           /* send inactive message to child */
           int i;
           for (i=0;i<win->childn;i++){
-            win->childs[i]->message(win->childs[i], msg);
+            if (win->childs[i]->handler->message){
+              win->childs[i]->handler->message(win->childs[i], msg);
+            }
           }
         }
       }
@@ -1065,18 +1074,20 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
             }
           }
           if (win->touched!=NULL){
-            ret=win->touched->message(win->touched, msg);
+            if (win->touched->handler->message){
+              ret=win->touched->handler->message(win->touched, msg);
+            }
           } 
         }
         else if (win->touched!=NULL){
           if (msg->state==LIBAROMA_HID_EV_STATE_MOVE){
-            if (win->touched->message){
-              ret=win->touched->message(win->touched, msg);
+            if (win->touched->handler->message){
+              ret=win->touched->handler->message(win->touched, msg);
             }
           }
           else if (msg->state==LIBAROMA_HID_EV_STATE_UP){
-            if (win->touched->message){
-              ret=win->touched->message(win->touched, msg);
+            if (win->touched->handler->message){
+              ret=win->touched->handler->message(win->touched, msg);
             }
             win->touched=NULL;
           }

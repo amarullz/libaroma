@@ -27,9 +27,21 @@
 #ifndef __libaroma_ctl_button_c__
 #define __libaroma_ctl_button_c__
 
-#define _LIBAROMA_CTL_BUTTON_SIGNATURE 0x03
 #define _LIBAROMA_CTL_BUTTON_HOLD_TIMING 300
 #define _LIBAROMA_CTL_BUTTON_ANI_TIMING 500
+
+/* HANDLER */
+dword _libaroma_ctl_button_msg(LIBAROMA_CONTROLP, LIBAROMA_MSGP);
+void _libaroma_ctl_button_draw (LIBAROMA_CONTROLP, LIBAROMA_CANVASP);
+void _libaroma_ctl_button_destroy(LIBAROMA_CONTROLP);
+byte _libaroma_ctl_button_thread(LIBAROMA_CONTROLP);
+static LIBAROMA_CONTROL_HANDLER _libaroma_ctl_button_handler={
+  message:_libaroma_ctl_button_msg,
+  draw:_libaroma_ctl_button_draw,
+  focus:NULL,
+  destroy:_libaroma_ctl_button_destroy,
+  thread:_libaroma_ctl_button_thread
+};
 
 /*
  * Structure   : __LIBAROMA_CTL_BUTTON
@@ -246,7 +258,7 @@ void _libaroma_ctl_button_draw(
     LIBAROMA_CANVASP c){
   /* internal check */
   _LIBAROMA_CTL_CHECK(
-    _LIBAROMA_CTL_BUTTON_SIGNATURE, _LIBAROMA_CTL_BUTTONP, 
+    _libaroma_ctl_button_handler, _LIBAROMA_CTL_BUTTONP, 
   );
   if ((me->rest_canvas==NULL)||(me->forcedraw==2)){
     _libaroma_ctl_button_internal_draw(ctl);
@@ -297,7 +309,7 @@ void _libaroma_ctl_button_draw(
 byte _libaroma_ctl_button_thread(LIBAROMA_CONTROLP ctl) {
   /* internal check */
   _LIBAROMA_CTL_CHECK(
-    _LIBAROMA_CTL_BUTTON_SIGNATURE, _LIBAROMA_CTL_BUTTONP, 0
+    _libaroma_ctl_button_handler, _LIBAROMA_CTL_BUTTONP, 0
   );
   byte is_draw = me->forcedraw;
   if (!(me->style&LIBAROMA_CTL_BUTTON_DISABLED)){
@@ -342,7 +354,7 @@ void _libaroma_ctl_button_destroy(
     LIBAROMA_CONTROLP ctl){
   /* internal check */
   _LIBAROMA_CTL_CHECK(
-    _LIBAROMA_CTL_BUTTON_SIGNATURE, _LIBAROMA_CTL_BUTTONP, 
+    _libaroma_ctl_button_handler, _LIBAROMA_CTL_BUTTONP, 
   );
   
   if (me->rest_canvas!=NULL){
@@ -369,7 +381,7 @@ dword _libaroma_ctl_button_msg(
     LIBAROMA_MSGP msg){
   /* internal check */
   _LIBAROMA_CTL_CHECK(
-    _LIBAROMA_CTL_BUTTON_SIGNATURE, _LIBAROMA_CTL_BUTTONP, 0
+    _libaroma_ctl_button_handler, _LIBAROMA_CTL_BUTTONP, 0
   );
   
   switch(msg->msg){
@@ -453,15 +465,11 @@ LIBAROMA_CONTROLP libaroma_ctl_button(
   /* init control */
   LIBAROMA_CONTROLP ctl =
     libaroma_control_new(
-      _LIBAROMA_CTL_BUTTON_SIGNATURE, id,
+      id,
       x, y, w, h,
       libaroma_dp(48),libaroma_dp(48), /* min size */
       (voidp) me,
-      _libaroma_ctl_button_msg,
-      _libaroma_ctl_button_draw,
-      NULL,
-      _libaroma_ctl_button_destroy,
-      _libaroma_ctl_button_thread,
+      &_libaroma_ctl_button_handler,
       win
     );
   if (!ctl){
@@ -486,7 +494,7 @@ byte libaroma_ctl_button_style(
 ){
   /* internal check */
   _LIBAROMA_CTL_CHECK(
-    _LIBAROMA_CTL_BUTTON_SIGNATURE, _LIBAROMA_CTL_BUTTONP, 0
+    _libaroma_ctl_button_handler, _LIBAROMA_CTL_BUTTONP, 0
   );
   me->style = button_style;
   me->color = button_color;
@@ -505,7 +513,7 @@ byte libaroma_ctl_button_text(
 ){
   /* internal check */
   _LIBAROMA_CTL_CHECK(
-    _LIBAROMA_CTL_BUTTON_SIGNATURE, _LIBAROMA_CTL_BUTTONP, 0
+    _libaroma_ctl_button_handler, _LIBAROMA_CTL_BUTTONP, 0
   );
   if (me->text!=NULL){
     free(me->text);
@@ -526,7 +534,7 @@ byte libaroma_ctl_button_disable(
 ){
   /* internal check */
   _LIBAROMA_CTL_CHECK(
-    _LIBAROMA_CTL_BUTTON_SIGNATURE, _LIBAROMA_CTL_BUTTONP, 0
+    _libaroma_ctl_button_handler, _LIBAROMA_CTL_BUTTONP, 0
   );
   if (is_disable){
     me->style |= LIBAROMA_CTL_BUTTON_DISABLED;
@@ -546,7 +554,7 @@ byte libaroma_ctl_button_disable(
 byte libaroma_ctl_button_is_disabled(LIBAROMA_CONTROLP ctl){
   /* internal check */
   _LIBAROMA_CTL_CHECK(
-    _LIBAROMA_CTL_BUTTON_SIGNATURE, _LIBAROMA_CTL_BUTTONP, 0
+    _libaroma_ctl_button_handler, _LIBAROMA_CTL_BUTTONP, 0
   );
   if (me->style&LIBAROMA_CTL_BUTTON_DISABLED){
     return 1;

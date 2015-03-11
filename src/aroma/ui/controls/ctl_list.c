@@ -27,7 +27,22 @@
 #ifndef __libaroma_ctl_list_c__
 #define __libaroma_ctl_list_c__
 
-#define _LIBAROMA_CTL_LIST_SIGNATURE 0x10
+/* SCROLL CONTROL HANDLER */
+dword _libaroma_ctl_list_message(
+  LIBAROMA_CONTROLP, LIBAROMA_CTL_SCROLL_CLIENTP,LIBAROMA_MSGP,int,int);
+void _libaroma_ctl_list_destroy(
+  LIBAROMA_CONTROLP, LIBAROMA_CTL_SCROLL_CLIENTP);
+byte _libaroma_ctl_list_thread(
+  LIBAROMA_CONTROLP, LIBAROMA_CTL_SCROLL_CLIENTP);
+void _libaroma_ctl_list_draw(
+  LIBAROMA_CONTROLP, LIBAROMA_CTL_SCROLL_CLIENTP, LIBAROMA_CANVASP,
+  int, int, int, int);
+static LIBAROMA_CTL_SCROLL_CLIENT_HANDLER _libaroma_ctl_list_handler={
+  message:_libaroma_ctl_list_message,
+  draw:_libaroma_ctl_list_draw,
+  destroy:_libaroma_ctl_list_destroy,
+  thread:_libaroma_ctl_list_thread
+};
 
 /* list structure */
 typedef struct {
@@ -39,7 +54,6 @@ typedef struct {
   LIBAROMA_CTL_LIST_ITEMP last;
   LIBAROMA_CTL_LIST_ITEMP touched;
   LIBAROMA_CTL_LIST_ITEMP focused;
-  
   int threadn;
   LIBAROMA_CTL_LIST_ITEMP * threads;
 } LIBAROMA_CTL_SCROLL, * LIBAROMA_CTL_SCROLLP;
@@ -50,6 +64,7 @@ typedef struct {
  * Descriptions: draw item
  */
 void _libaroma_ctl_list_draw_item(
+    LIBAROMA_CONTROLP ctl,
     LIBAROMA_CTL_LIST_ITEMP item,
     LIBAROMA_CANVASP canvas,
     word bgcolor
@@ -62,8 +77,8 @@ void _libaroma_ctl_list_draw_item(
   }
   /* cleanup */
   libaroma_canvas_setcolor(canvas,bgcolor,0xff);
-  if (item->draw!=NULL){
-    item->draw(item,canvas,bgcolor);
+  if (item->handler->draw!=NULL){
+    item->handler->draw(ctl,item,canvas,bgcolor);
   }
 } /* End of _libaroma_ctl_list_draw_item */
 
@@ -73,21 +88,22 @@ void _libaroma_ctl_list_draw_item(
  * Descriptions: do draw item directly
  */
 byte _libaroma_ctl_list_dodraw_item(
+    LIBAROMA_CONTROLP ctl,
     LIBAROMA_CTL_LIST_ITEMP item
 ){
   if (!item){
     return 0;
   }
   byte res=0;
-  if (libaroma_ctl_scroll_is_visible(item->ctl,item->y,item->h)){
-    word bgcolor = libaroma_ctl_scroll_get_bg_color(item->ctl);
-    LIBAROMA_CANVASP canvas=libaroma_canvas(item->ctl->w,item->h);
+  if (libaroma_ctl_scroll_is_visible(ctl,item->y,item->h)){
+    word bgcolor = libaroma_ctl_scroll_get_bg_color(ctl);
+    LIBAROMA_CANVASP canvas=libaroma_canvas(ctl->w,item->h);
     if (canvas!=NULL){
       _libaroma_ctl_list_draw_item(
-        item,canvas,bgcolor
+        ctl,item,canvas,bgcolor
       );
       res=libaroma_ctl_scroll_blit(
-         item->ctl, 
+         ctl, 
          canvas,
          0, item->y, canvas->w, canvas->h,
          0
@@ -105,7 +121,7 @@ byte _libaroma_ctl_list_dodraw_item(
  */
 byte _libaroma_ctl_list_thread(
     LIBAROMA_CONTROLP ctl, LIBAROMA_CTL_SCROLL_CLIENTP client){
-  if (client->signature!=_LIBAROMA_CTL_LIST_SIGNATURE){
+  if (client->handler!=&_libaroma_ctl_list_handler){
     return 0;
   }
   LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
@@ -117,15 +133,16 @@ byte _libaroma_ctl_list_thread(
 #endif
   for (i=0;i<mi->threadn;i++){
     LIBAROMA_CTL_LIST_ITEMP item=mi->threads[i];
-    if (item->message){
-      if (item->message(
+    if (item->handler->message){
+      if (item->handler->message(
+        ctl,
         item,
         LIBAROMA_CTL_LIST_ITEM_MSG_THREAD,
         libaroma_ctl_scroll_is_visible(ctl,item->y,item->h),
         0,
         0
       )){
-        if (_libaroma_ctl_list_dodraw_item(item)){
+        if (_libaroma_ctl_list_dodraw_item(ctl,item)){
           need_redraw=1;
         }
       }
@@ -143,7 +160,7 @@ LIBAROMA_CTL_LIST_ITEMP _libaroma_ctl_list_item_by_y(
     LIBAROMA_CONTROLP ctl,
     LIBAROMA_CTL_SCROLL_CLIENTP client,
     int y){
-  if (client->signature!=_LIBAROMA_CTL_LIST_SIGNATURE){
+  if (client->handler!=&_libaroma_ctl_list_handler){
     return NULL;
   }
   LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
@@ -169,7 +186,7 @@ void _libaroma_ctl_list_draw(
     LIBAROMA_CTL_SCROLL_CLIENTP client,
     LIBAROMA_CANVASP cv,
     int x, int y, int w, int h){
-  if (client->signature!=_LIBAROMA_CTL_LIST_SIGNATURE){
+  if (client->handler!=&_libaroma_ctl_list_handler){
     return;
   }
   LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
@@ -219,7 +236,7 @@ void _libaroma_ctl_list_draw(
     }
     if (canvas!=NULL){
       _libaroma_ctl_list_draw_item(
-        item, canvas, bgcolor
+        ctl, item, canvas, bgcolor
       );
       
       /* blit into working canvas */
@@ -247,33 +264,9 @@ dword _libaroma_ctl_list_scroll_message(
     int x,
     int y){
   switch(msg){
-    case LIBAROMA_CTL_SCROLL_MSG_ACTIVATED:
-      {
-        /* signal activate item */
-        LIBAROMA_CTL_LIST_ITEMP f = mi->first;
-        while(f){
-          if (f->message!=NULL){
-            f->message(f,LIBAROMA_CTL_LIST_ITEM_MSG_ACTIVATED,0,0,0);
-          }
-          f = f->next;
-        }
-      }
-      break;
-    case LIBAROMA_CTL_SCROLL_MSG_INACTIVATED:
-      {
-        /* signal inactivate item */
-        LIBAROMA_CTL_LIST_ITEMP f = mi->first;
-        while(f){
-          if (f->message!=NULL){
-            f->message(f,LIBAROMA_CTL_LIST_ITEM_MSG_INACTIVATED,0,0,0);
-          }
-          f = f->next;
-        }
-      }
-      break;
     case LIBAROMA_CTL_SCROLL_MSG_ISNEED_TOUCH:{
         if ((y<mi->vpad)||(y>mi->h-mi->vpad)){
-          ALOGT("list_scroll_message ISNEED(%i,%i) not needed",x,y);
+          ALOGV("list_scroll_message ISNEED(%i,%i) not needed",x,y);
           /* no need touch handle */
           return 0;
         }
@@ -283,26 +276,27 @@ dword _libaroma_ctl_list_scroll_message(
         if (item){
           if (item->flags&LIBAROMA_CTL_LIST_ITEM_RECEIVE_TOUCH){
             mi->touched = item;
-            ALOGT("list_scroll_message ISNEED(%i,%i) needed",x,y);
+            ALOGV("list_scroll_message ISNEED(%i,%i) needed",x,y);
             return LIBAROMA_CTL_SCROLL_MSG_HANDLED;
           }
         }
-        ALOGT("list_scroll_message ISNEED(%i,%i) item don't use touch",x,y);
+        ALOGV("list_scroll_message ISNEED(%i,%i) item don't use touch",x,y);
         return 0;
       }
       break;
     case LIBAROMA_CTL_SCROLL_MSG_TOUCH_DOWN:{
-        ALOGT("list_scroll_message TOUCH_DOWN(%i,%i)",x,y);
+        ALOGV("list_scroll_message TOUCH_DOWN(%i,%i)",x,y);
         if (mi->touched!=NULL){
-          if (mi->touched->message){
+          if (mi->touched->handler->message){
             int cy = y - mi->touched->y;
-            if (mi->touched->message(
+            if (mi->touched->handler->message(
+              ctl,
               mi->touched,
               LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_DOWN,
               0,
               x, cy
             )){
-              if (_libaroma_ctl_list_dodraw_item(mi->touched)){
+              if (_libaroma_ctl_list_dodraw_item(ctl,mi->touched)){
                 return LIBAROMA_CTL_SCROLL_MSG_NEED_DRAW;
               }
             }
@@ -311,18 +305,19 @@ dword _libaroma_ctl_list_scroll_message(
       }
       break;
     case LIBAROMA_CTL_SCROLL_MSG_TOUCH_UP:{
-        ALOGT("list_scroll_message TOUCH_UP(%i,%i)",x,y);
+        ALOGV("list_scroll_message TOUCH_UP(%i,%i)",x,y);
         if (mi->touched!=NULL){
-          if (mi->touched->message){
+          if (mi->touched->handler->message){
             int cy = y - mi->touched->y;
-            if (mi->touched->message(
+            if (mi->touched->handler->message(
+              ctl,
               mi->touched,
               LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_UP,
               0,
               x, cy
             )){
               mi->touched=NULL;
-              if (_libaroma_ctl_list_dodraw_item(mi->touched)){
+              if (_libaroma_ctl_list_dodraw_item(ctl,mi->touched)){
                 return LIBAROMA_CTL_SCROLL_MSG_NEED_DRAW;
               }
             }
@@ -332,17 +327,18 @@ dword _libaroma_ctl_list_scroll_message(
       }
       break;
     case LIBAROMA_CTL_SCROLL_MSG_TOUCH_MOVE:{
-        ALOGT("list_scroll_message TOUCH_MOVE(%i,%i)",x,y);
+        ALOGV("list_scroll_message TOUCH_MOVE(%i,%i)",x,y);
         if (mi->touched!=NULL){
-          if (mi->touched->message){
+          if (mi->touched->handler->message){
             int cy = y - mi->touched->y;
-            if (mi->touched->message(
+            if (mi->touched->handler->message(
+              ctl,
               mi->touched,
               LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_MOVE,
               0,
               x, cy
             )){
-              if (_libaroma_ctl_list_dodraw_item(mi->touched)){
+              if (_libaroma_ctl_list_dodraw_item(ctl,mi->touched)){
                 return LIBAROMA_CTL_SCROLL_MSG_NEED_DRAW;
               }
             }
@@ -351,17 +347,18 @@ dword _libaroma_ctl_list_scroll_message(
       }
       break;
     case LIBAROMA_CTL_SCROLL_MSG_TOUCH_CANCEL:{
-        ALOGT("list_scroll_message TOUCH_CANCEL(%i,%i)",x,y);
+        ALOGV("list_scroll_message TOUCH_CANCEL(%i,%i)",x,y);
         if (mi->touched!=NULL){
-          if (mi->touched->message){
+          if (mi->touched->handler->message){
             int cy = y - mi->touched->y;
-            if (mi->touched->message(
+            if (mi->touched->handler->message(
+              ctl,
               mi->touched,
               LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_CANCEL,
               0,
               x, cy
             )){
-              if (_libaroma_ctl_list_dodraw_item(mi->touched)){
+              if (_libaroma_ctl_list_dodraw_item(ctl,mi->touched)){
                 mi->touched=NULL;
                 return LIBAROMA_CTL_SCROLL_MSG_NEED_DRAW;
               }
@@ -385,7 +382,7 @@ dword _libaroma_ctl_list_message(
     LIBAROMA_CTL_SCROLL_CLIENTP client,
     LIBAROMA_MSGP msg,
     int x, int y){
-  if (client->signature!=_LIBAROMA_CTL_LIST_SIGNATURE){
+  if (client->handler!=&_libaroma_ctl_list_handler){
     return 0;
   }
   LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
@@ -409,7 +406,7 @@ dword _libaroma_ctl_list_message(
  */
 void _libaroma_ctl_list_destroy(
     LIBAROMA_CONTROLP ctl, LIBAROMA_CTL_SCROLL_CLIENTP client){
-  if (client->signature!=_LIBAROMA_CTL_LIST_SIGNATURE){
+  if (client->handler!=&_libaroma_ctl_list_handler){
     return;
   }
   LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
@@ -417,8 +414,8 @@ void _libaroma_ctl_list_destroy(
   /* cleanup items */
   LIBAROMA_CTL_LIST_ITEMP f = mi->first;
   while(f){
-    if (f->destroy!=NULL){
-      f->destroy(f);
+    if (f->handler->destroy!=NULL){
+      f->handler->destroy(ctl,f);
     }
     LIBAROMA_CTL_LIST_ITEMP p = f;
     f = p->next;
@@ -432,7 +429,7 @@ void _libaroma_ctl_list_destroy(
   /* free internal data */
   free(mi);
   client->internal=NULL;
-  client->signature=0;
+  client->handler=NULL;
 } /* End of _libaroma_ctl_list_destroy */
 
 /*
@@ -468,11 +465,7 @@ LIBAROMA_CONTROLP libaroma_ctl_list(
   libaroma_ctl_scroll_set_client(
     ctl,
     (voidp) mi,
-    _LIBAROMA_CTL_LIST_SIGNATURE,
-    _libaroma_ctl_list_message,
-    _libaroma_ctl_list_draw,
-    _libaroma_ctl_list_destroy,
-    _libaroma_ctl_list_thread
+    &_libaroma_ctl_list_handler
   );
   
   /* set initial height */
@@ -507,10 +500,10 @@ byte libaroma_ctl_list_item_reg_thread(
   if (!client){
     return 0;
   }
-  if (client->signature!=_LIBAROMA_CTL_LIST_SIGNATURE){
+  if (client->handler!=&_libaroma_ctl_list_handler){
     return 0;
   }
-  if (!item->message){
+  if (!item->handler->message){
     ALOGW("item_reg_thread item doesn't have message handler");
     return 0;
   }
@@ -553,7 +546,7 @@ byte libaroma_ctl_list_item_unreg_thread(
   if (!client){
     return 0;
   }
-  if (client->signature!=_LIBAROMA_CTL_LIST_SIGNATURE){
+  if (client->handler!=&_libaroma_ctl_list_handler){
     return 0;
   }
   LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
@@ -612,7 +605,7 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_ctl_list_get_item_internal(
   if (!client){
     return NULL;
   }
-  if (client->signature!=_LIBAROMA_CTL_LIST_SIGNATURE){
+  if (client->handler!=&_libaroma_ctl_list_handler){
     return NULL;
   }
   LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
@@ -651,7 +644,7 @@ byte libaroma_ctl_list_del_itemp_internal(
   if (!client){
     return 0;
   }
-  if (client->signature!=_LIBAROMA_CTL_LIST_SIGNATURE){
+  if (client->handler!=&_libaroma_ctl_list_handler){
     return 0;
   }
   LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
@@ -683,8 +676,8 @@ byte libaroma_ctl_list_del_itemp_internal(
     
     mi->itemn--;
     mi->h-=f->h;
-    if (f->destroy!=NULL){
-      f->destroy(f);
+    if (f->handler->destroy!=NULL){
+      f->handler->destroy(ctl,f);
     }
     free(f);
     libaroma_ctl_scroll_request_height(ctl, mi->h);
@@ -720,7 +713,7 @@ byte libaroma_ctl_list_is_valid(LIBAROMA_CONTROLP ctl){
   if (!client){
     return 0;
   }
-  if (client->signature!=_LIBAROMA_CTL_LIST_SIGNATURE){
+  if (client->handler!=&_libaroma_ctl_list_handler){
     return 0;
   }
   return 1;
@@ -731,16 +724,16 @@ byte libaroma_ctl_list_is_valid(LIBAROMA_CONTROLP ctl){
  * Return Value: byte
  * Descriptions: update item height
  */
-byte libaroma_ctl_list_item_setheight(LIBAROMA_CTL_LIST_ITEMP item, int h){
+byte libaroma_ctl_list_item_setheight(
+    LIBAROMA_CONTROLP ctl,LIBAROMA_CTL_LIST_ITEMP item, int h){
   if (!item){
     return 0;
   }
-  LIBAROMA_CONTROLP ctl=item->ctl;
   LIBAROMA_CTL_SCROLL_CLIENTP client = libaroma_ctl_scroll_get_client(ctl);
   if (!client){
     return 0;
   }
-  if (client->signature!=_LIBAROMA_CTL_LIST_SIGNATURE){
+  if (client->handler!=&_libaroma_ctl_list_handler){
     return 0;
   }
   LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
@@ -764,21 +757,22 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_ctl_list_add_item_internal(
     LIBAROMA_CONTROLP ctl,
     int id,
     int height,
-    byte signature,
     byte flags,
     voidp internal,
-    LIBAROMA_CTL_LISTCB_MESSAGE message,
-    LIBAROMA_CTL_LISTCB_DRAW draw,
-    LIBAROMA_CTL_LISTCB_DESTROY destroy,
+    LIBAROMA_CTL_LIST_ITEM_HANDLERP handler,
     int at_index){
+  if (!handler){
+    return NULL;
+  }
   LIBAROMA_CTL_SCROLL_CLIENTP client = libaroma_ctl_scroll_get_client(ctl);
   if (!client){
     return NULL;
   }
-  if (client->signature!=_LIBAROMA_CTL_LIST_SIGNATURE){
+  if (client->handler!=&_libaroma_ctl_list_handler){
     return NULL;
   }
   LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
+  
   LIBAROMA_CTL_LIST_ITEMP item = (LIBAROMA_CTL_LIST_ITEMP)
       malloc(sizeof(LIBAROMA_CTL_LIST_ITEM));
   if (item==NULL){
@@ -786,16 +780,12 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_ctl_list_add_item_internal(
     return NULL;
   }
   memset(item,0,sizeof(LIBAROMA_CTL_LIST_ITEM));
-  item->ctl=ctl;
   item->y=0;
   item->h=height;
   item->id=id;
   item->flags=flags;
-  item->signature=signature;
+  item->handler=handler;
   item->internal=internal;
-  item->message=message;
-  item->draw=draw;
-  item->destroy=destroy;
   
   if (mi->last==NULL){
     mi->first=mi->last=item;

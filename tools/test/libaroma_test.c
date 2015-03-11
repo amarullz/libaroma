@@ -50,7 +50,7 @@ int main(int argc, char **argv){
   //pid_t pp = getppid();
   //kill(pp, 19);
   
-  
+  snprintf(libaroma_config()->fb_shm_name,64,"");
   /* start libaroma process */
   libaroma_start();
   
@@ -172,7 +172,7 @@ int main(int argc, char **argv){
     RGB(ffffff), LIBAROMA_CTL_SCROLL_WITH_SHADOW|LIBAROMA_CTL_SCROLL_WITH_HANDLE
   );
   
- */ 
+  */
   
   
   LIBAROMA_CONTROLP list_test = libaroma_ctl_list(
@@ -186,7 +186,7 @@ int main(int argc, char **argv){
   char main_text[256];
   char extra_text[256];
   int itm=0;
-  for (itm=0;itm<50;itm++){
+  for (itm=0;itm<250;itm++){
     /*
     libaroma_ctl_list_add_item_internal(
       list_test,

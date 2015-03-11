@@ -63,7 +63,7 @@ void libaroma_runtime_activate_cores(int num_cores){
   struct stat st;
   char path[256];
   
-  for (i=1;i<num_cores;i++){
+  for (i=0;i<num_cores;i++){
     snprintf(path,256,"/sys/devices/system/cpu/cpu%i/online",i);
     if (stat(path,&st)<0) {
       break;
@@ -78,20 +78,30 @@ void libaroma_runtime_activate_cores(int num_cores){
     else{
       break;
     }
-    _libaroma_runtime.core_online[_libaroma_runtime.core_num++]=is_online;
+    
+    _libaroma_runtime.core_online[i]=is_online;
     fp = fopen(path, "w+");
     if(fp){
       fputc('1',fp);
       fclose(fp);
     }
+    _libaroma_runtime.core_num++;
   }
   
   /* max power */
   char cmds[1024];
-  for (i=0;i<=_libaroma_runtime.core_num;i++){
+  for (i=0;i<_libaroma_runtime.core_num;i++){
     snprintf(path,256,"/sys/devices/system/cpu/cpu%i/cpufreq",i);
-    snprintf(cmds,1024,"echo performance > %s/scaling_governor",path);
-    system(cmds);
+    snprintf(cmds,1024,"%s/scaling_governor",path);
+    
+    fp = fopen(cmds, "w+");
+    if(fp){
+      fwrite("performance",1,11,fp);
+      fclose(fp);
+    }
+    
+    // snprintf(cmds,1024,"echo performance > %s/scaling_governor",path);
+    // system(cmds);
   }
   ALOGI("Processor Activated : %i Core(s)",_libaroma_runtime.core_num);
 
@@ -108,7 +118,7 @@ void libaroma_runtime_rollback_cores(){
   FILE * fp;
   struct stat st;
   char path[256];
-  for (i=1;i<=_libaroma_runtime.core_num;i++){
+  for (i=0;i<_libaroma_runtime.core_num;i++){
     snprintf(path,256,"/sys/devices/system/cpu/cpu%i/online",i);
     if (stat(path,&st)<0) {
       break;

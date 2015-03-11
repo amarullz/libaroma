@@ -27,106 +27,28 @@
 #ifndef __libaroma_listitem_option_c__
 #define __libaroma_listitem_option_c__
 
+/* LIST ITEM HANDLER */
+byte _libaroma_listitem_option_message(
+  LIBAROMA_CONTROLP, LIBAROMA_CTL_LIST_ITEMP,byte,dword,int,int);
+void _libaroma_listitem_option_draw(
+  LIBAROMA_CONTROLP,LIBAROMA_CTL_LIST_ITEMP,LIBAROMA_CANVASP,word);
+void _libaroma_listitem_option_destroy(
+  LIBAROMA_CONTROLP,LIBAROMA_CTL_LIST_ITEMP);
+static LIBAROMA_CTL_LIST_ITEM_HANDLER _libaroma_listitem_option_handler =
+{
+  message:_libaroma_listitem_option_message,
+  draw:_libaroma_listitem_option_draw,
+  destroy:_libaroma_listitem_option_destroy
+};
+
+/* LIST ITEM INTERNAL DATA */
 typedef struct{
   byte selected;
-  byte initialized;
   char * main_text;
   char * extra_text;
-  LIBAROMA_TEXT tmain;
-  LIBAROMA_TEXT textra;
   LIBAROMA_CANVASP icon;
   int h;
-  
-  /* metrics */
-  int tx;
-  int tw;
-  int my;
-  int ey;
-  
 } _LIBAROMA_LISTITEM_OPTION, * _LIBAROMA_LISTITEM_OPTIONP;
-
-/*
- * Function    : _libaroma_listitem_option_init
- * Return Value: int
- * Descriptions: init ready to draw item
- */
-int _libaroma_listitem_option_init(
-  _LIBAROMA_LISTITEM_OPTIONP mi, int width, byte flags, word bgcolor){
-  /* init control elements */
-  if (!mi->initialized){
-    byte is_dark = libaroma_color_isdark(bgcolor);
-    int dp16=libaroma_dp(16);
-    byte indent_noicon =
-      (flags&LIBAROMA_LISTITEM_OPTION_INDENT_NOICON)?1:0;
-    /* material design metrics */
-    mi->tx = dp16;
-    mi->tw = width - mi->tx * 2;
-    int ovrl_h = 0;
-    if (mi->icon){
-      ovrl_h = mi->icon->h;
-    }
-    int txt_h = 0;
-    if (indent_noicon){
-      int icon_indent = libaroma_dp(56);
-      mi->tx+=icon_indent;
-      mi->tw-=icon_indent;
-    }
-    /* free if any */
-    if (mi->tmain){
-      libaroma_text_free(mi->tmain);
-    }
-    if (mi->textra){
-      libaroma_text_free(mi->textra);
-    }
-    mi->my = dp16;
-    mi->ey = mi->my;
-    /* init main text */
-    if (mi->main_text){
-      mi->tmain = libaroma_text(
-        mi->main_text,
-        is_dark?RGB(ffffff):RGB(000000),
-        mi->tw,
-        LIBAROMA_FONT(0,4)|
-        LIBAROMA_TEXT_LEFT|
-        LIBAROMA_TEXT_FIXED_INDENT|
-        LIBAROMA_TEXT_FIXED_COLOR|
-        LIBAROMA_TEXT_NOHR,
-        120
-      );
-      if (mi->tmain){
-        int mth=libaroma_text_height(mi->tmain);
-        txt_h+=mth;
-        mi->ey+=mth;
-      }
-      free(mi->main_text);
-      mi->main_text=NULL;
-    }
-    /* init extra text */
-    if (mi->extra_text){
-      mi->textra = libaroma_text(
-        mi->extra_text,
-        is_dark?RGB(cccccc):RGB(555555),
-        mi->tw,
-        LIBAROMA_FONT(0,3)|
-        LIBAROMA_TEXT_LEFT|
-        LIBAROMA_TEXT_FIXED_INDENT|
-        LIBAROMA_TEXT_FIXED_COLOR|
-        LIBAROMA_TEXT_NOHR,
-        120
-      );
-      if (mi->textra){
-        int mth=libaroma_text_height(mi->textra);
-        txt_h+=mth;
-      }
-      free(mi->extra_text);
-      mi->extra_text=NULL;
-    }
-    mi->initialized = 1;
-    mi->h=MAX(ovrl_h,txt_h) + libaroma_dp(32);
-    return mi->h;
-  }
-  return mi->h;
-} /* End of _libaroma_listitem_option_init */
 
 /*
  * Function    : _libaroma_listitem_option_message
@@ -134,24 +56,18 @@ int _libaroma_listitem_option_init(
  * Descriptions: message handler
  */
 byte _libaroma_listitem_option_message(
-    LIBAROMA_CTL_LIST_ITEMP item, byte msg, dword param, int x, int y){
-  if (item->signature!=LIBAROMA_LISTITEM_OPTION_SIG){
+    LIBAROMA_CONTROLP ctl,
+    LIBAROMA_CTL_LIST_ITEMP item,
+    byte msg,
+    dword param,
+    int x,
+    int y){
+  if (item->handler!=&_libaroma_listitem_option_handler){
     return 0;
   }
-  _LIBAROMA_LISTITEM_OPTIONP mi = (_LIBAROMA_LISTITEM_OPTIONP) item->internal;
-  
-  if (msg==LIBAROMA_CTL_LIST_ITEM_MSG_ACTIVATED){
-    /* init items */
-    int h =_libaroma_listitem_option_init(
-      mi,item->ctl->w,item->flags,
-      libaroma_ctl_scroll_get_bg_color(item->ctl)
-    );
-    if ((h!=-1)&&(h!=item->h)){
-      /* request update height */
-      libaroma_ctl_list_item_setheight(item,h);
-    }
-  }
-  
+  /* _LIBAROMA_LISTITEM_OPTIONP mi = 
+    (_LIBAROMA_LISTITEM_OPTIONP) item->internal; */
+
   return 0;
 } /* End of _libaroma_listitem_option_message */
 
@@ -161,32 +77,21 @@ byte _libaroma_listitem_option_message(
  * Descriptions: item draw routine
  */
 void _libaroma_listitem_option_draw(
+    LIBAROMA_CONTROLP ctl,
     LIBAROMA_CTL_LIST_ITEMP item,
     LIBAROMA_CANVASP cv,
     word bgcolor){
-  if (item->signature!=LIBAROMA_LISTITEM_OPTION_SIG){
+  if (item->handler!=&_libaroma_listitem_option_handler){
     return;
   }
+  /*
   _LIBAROMA_LISTITEM_OPTIONP mi = (_LIBAROMA_LISTITEM_OPTIONP) item->internal;
-  if (!mi->initialized){
-    _libaroma_listitem_option_init(
-      mi,item->ctl->w,item->flags,
-      bgcolor
-    );
-  }
+  */
   
-  int dp16 = libaroma_dp(16);
-  if (mi->icon){
-    libaroma_draw(
-      cv, mi->icon, dp16, dp16, 1
-    );
-  }
-  if (mi->tmain){
-    libaroma_text_draw(cv,mi->tmain,mi->tx,mi->my);
-  }
-  if (mi->textra){
-    libaroma_text_draw(cv,mi->textra,mi->tx,mi->ey);
-  }
+  libaroma_draw_rect(
+    cv,
+    5,5,cv->w-10,cv->h-10,RGB(008800),0xff
+  );
 } /* End of _libaroma_listitem_option_draw */
 
 /*
@@ -201,12 +106,6 @@ void _libaroma_listitem_option_release_internal(_LIBAROMA_LISTITEM_OPTIONP mi){
   if (mi->extra_text){
     free(mi->extra_text);
   }
-  if (mi->tmain){
-    libaroma_text_free(mi->tmain);
-  }
-  if (mi->textra){
-    libaroma_text_free(mi->textra);
-  }
   if (mi->icon){
     libaroma_canvas_free(mi->icon);
   }
@@ -218,12 +117,15 @@ void _libaroma_listitem_option_release_internal(_LIBAROMA_LISTITEM_OPTIONP mi){
  * Return Value: void
  * Descriptions: destroy option item
  */
-void _libaroma_listitem_option_destroy(LIBAROMA_CTL_LIST_ITEMP item){
-  if (item->signature!=LIBAROMA_LISTITEM_OPTION_SIG){
+void _libaroma_listitem_option_destroy(
+    LIBAROMA_CONTROLP ctl,
+    LIBAROMA_CTL_LIST_ITEMP item){
+  if (item->handler!=&_libaroma_listitem_option_handler){
     return;
   }
-  _LIBAROMA_LISTITEM_OPTIONP mi = (_LIBAROMA_LISTITEM_OPTIONP) item->internal;
-  _libaroma_listitem_option_release_internal(mi);
+  _libaroma_listitem_option_release_internal(
+    (_LIBAROMA_LISTITEM_OPTIONP) item->internal
+  );
 } /* End of _libaroma_listitem_option_destroy */
 
 /*
@@ -253,8 +155,9 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_listitem_option(
     return NULL;
   }
   memset(mi,0,sizeof(_LIBAROMA_LISTITEM_OPTION));
-  mi->selected=0; // selected;
+  mi->selected=0;
   mi->icon=NULL;
+
   /* init icon */
   if (icon){
     int dpsz=libaroma_dp((flags&LIBAROMA_LISTITEM_OPTION_SMALL_ICON)?24:38);
@@ -277,36 +180,20 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_listitem_option(
   
   /* calculate height */
   int h = 0;
-  
-  if (ctl->window!=NULL){
-    h=_libaroma_listitem_option_init(
-      mi,
-      ctl->w,
-      flags,
-      libaroma_ctl_scroll_get_bg_color(ctl)
-    );
-  }
-  else{
-    /* guessing height */
-    h=(mi->icon)?mi->icon->h:0;
-    int th = (mi->main_text?libaroma_font_size_px(4):0);
-    th += (mi->extra_text?libaroma_font_size_px(3):0);
-    th *= 1.2;
-    th += libaroma_dp(4)-1;
-    h = MAX(h,th)+libaroma_dp(32);
-    mi->h=h;
-  }
+  h=(mi->icon)?mi->icon->h:0;
+  int th = (mi->main_text?libaroma_font_size_px(4):0)*1.2;
+  th += (mi->extra_text?libaroma_font_size_px(3):0)*1.2;
+  th += libaroma_dp(4);
+  h = MAX(h,th)+libaroma_dp(32);
+  mi->h=h;
   
   LIBAROMA_CTL_LIST_ITEMP item = libaroma_ctl_list_add_item_internal(
     ctl,
     id,
     h,
-    LIBAROMA_LISTITEM_OPTION_SIG,
     LIBAROMA_CTL_LIST_ITEM_RECEIVE_TOUCH|flags,
     (voidp) mi,
-    _libaroma_listitem_option_message,
-    _libaroma_listitem_option_draw,
-    _libaroma_listitem_option_destroy,
+    &_libaroma_listitem_option_handler,
     at_index
   );
   if (!item){
@@ -315,7 +202,6 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_listitem_option(
   }
   return item;
 } /* End of libaroma_listitem_option */
-
 
 
 #endif /* __libaroma_listitem_option_c__ */

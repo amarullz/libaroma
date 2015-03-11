@@ -42,13 +42,20 @@ typedef void (*LIBAROMA_CTLCB_DESTROY) \
 typedef byte (*LIBAROMA_CTLCB_THREAD) \
   (LIBAROMA_CONTROLP);
 
+typedef struct {
+  LIBAROMA_CTLCB_MESSAGE message;
+  LIBAROMA_CTLCB_DRAW draw;
+  LIBAROMA_CTLCB_FOCUS focus;
+  LIBAROMA_CTLCB_DESTROY destroy;
+  LIBAROMA_CTLCB_THREAD thread;
+} LIBAROMA_CONTROL_HANDLER, * LIBAROMA_CONTROL_HANDLERP;
+
 /*
  * Structure   : _LIBAROMA_CONTROL
  * Typedef     : LIBAROMA_CONTROL, * LIBAROMA_CONTROLP
  * Descriptions: control structure
  */
 struct _LIBAROMA_CONTROL{
-  byte signature;
   word id;
   voidp internal;
   LIBAROMA_WINDOWP window;
@@ -76,11 +83,7 @@ struct _LIBAROMA_CONTROL{
   int minh;
   
   /* callbacks */
-  LIBAROMA_CTLCB_MESSAGE message;
-  LIBAROMA_CTLCB_DRAW draw;
-  LIBAROMA_CTLCB_FOCUS focus;
-  LIBAROMA_CTLCB_DESTROY destroy;
-  LIBAROMA_CTLCB_THREAD thread;
+  LIBAROMA_CONTROL_HANDLERP handler;
 };
 
 /*
@@ -89,15 +92,11 @@ struct _LIBAROMA_CONTROL{
  * Descriptions: create primitive control
  */
 LIBAROMA_CONTROLP libaroma_control_new(
-  byte signature, word id,
+  word id,
   int x, int y, int w, int h,
   int minw, int minh,
   voidp internal,
-  LIBAROMA_CTLCB_MESSAGE message,
-  LIBAROMA_CTLCB_DRAW draw,
-  LIBAROMA_CTLCB_FOCUS focus,
-  LIBAROMA_CTLCB_DESTROY destroy,
-  LIBAROMA_CTLCB_THREAD thread,
+  LIBAROMA_CONTROL_HANDLERP handler,
   LIBAROMA_WINDOWP win
 );
 

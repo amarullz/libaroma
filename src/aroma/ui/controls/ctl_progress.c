@@ -27,7 +27,19 @@
 #ifndef __libaroma_ctl_progress_c__
 #define __libaroma_ctl_progress_c__
 
-#define _LIBAROMA_CTL_PROGRESS_SIGNATURE 0x02
+/* HANDLER */
+dword _libaroma_ctl_progress_msg(LIBAROMA_CONTROLP, LIBAROMA_MSGP);
+void _libaroma_ctl_progress_draw (LIBAROMA_CONTROLP, LIBAROMA_CANVASP);
+void _libaroma_ctl_progress_destroy(LIBAROMA_CONTROLP);
+byte _libaroma_ctl_progress_thread(LIBAROMA_CONTROLP);
+static LIBAROMA_CONTROL_HANDLER _libaroma_ctl_progress_handler={
+  message:_libaroma_ctl_progress_msg,
+  draw:_libaroma_ctl_progress_draw,
+  focus:NULL,
+  destroy:_libaroma_ctl_progress_destroy,
+  thread:_libaroma_ctl_progress_thread
+};
+
 #define _LIBAROMA_CTL_PROGRESS_BEZIER_TIMING 500
 
 /*
@@ -127,7 +139,7 @@ void _libaroma_ctl_progress_destroy(
     LIBAROMA_CONTROLP ctl){
   /* internal check */
   _LIBAROMA_CTL_CHECK(
-    _LIBAROMA_CTL_PROGRESS_SIGNATURE, _LIBAROMA_CTL_PROGRESSP, 
+    _libaroma_ctl_progress_handler, _LIBAROMA_CTL_PROGRESSP, 
   );
   free(me);
 } /* End of _libaroma_ctl_progress_destroy */
@@ -142,7 +154,7 @@ void _libaroma_ctl_progress_draw(
     LIBAROMA_CANVASP c){
   /* internal check */
   _LIBAROMA_CTL_CHECK(
-    _LIBAROMA_CTL_PROGRESS_SIGNATURE, _LIBAROMA_CTL_PROGRESSP, 
+    _libaroma_ctl_progress_handler, _LIBAROMA_CTL_PROGRESSP, 
   );
   
   libaroma_control_erasebg(ctl,c);
@@ -237,7 +249,7 @@ dword _libaroma_ctl_progress_msg(
     LIBAROMA_MSGP msg){
   /* internal check */
   _LIBAROMA_CTL_CHECK(
-    _LIBAROMA_CTL_PROGRESS_SIGNATURE, _LIBAROMA_CTL_PROGRESSP, 0
+    _libaroma_ctl_progress_handler, _LIBAROMA_CTL_PROGRESSP, 0
   );
   
   switch(msg->msg){
@@ -284,15 +296,11 @@ LIBAROMA_CONTROLP libaroma_ctl_progress(
   /* init control */
   LIBAROMA_CONTROLP ctl =
     libaroma_control_new(
-      _LIBAROMA_CTL_PROGRESS_SIGNATURE,id,
+      id,
       x, y, w, h,
       libaroma_dp(48),libaroma_dp(8), /* min size */
       me,
-      _libaroma_ctl_progress_msg,
-      _libaroma_ctl_progress_draw,
-      NULL,
-      _libaroma_ctl_progress_destroy,
-      _libaroma_ctl_progress_thread,
+      &_libaroma_ctl_progress_handler,
       win
     );
   
@@ -313,7 +321,7 @@ byte libaroma_ctl_progress_type(
 ){
   /* internal check */
   _LIBAROMA_CTL_CHECK(
-    _LIBAROMA_CTL_PROGRESS_SIGNATURE, _LIBAROMA_CTL_PROGRESSP, 0
+    _libaroma_ctl_progress_handler, _LIBAROMA_CTL_PROGRESSP, 0
   );
   me->type = type;
   _libaroma_ctl_progress_update(ctl,me);
@@ -331,7 +339,7 @@ byte libaroma_ctl_progress_value(
 ){
   /* internal check */
   _LIBAROMA_CTL_CHECK(
-    _LIBAROMA_CTL_PROGRESS_SIGNATURE, _LIBAROMA_CTL_PROGRESSP, 0
+    _libaroma_ctl_progress_handler, _LIBAROMA_CTL_PROGRESSP, 0
   );
   if (value>me->max){
     value=me->max;
@@ -352,7 +360,7 @@ byte libaroma_ctl_progress_max(
 ){
   /* internal check */
   _LIBAROMA_CTL_CHECK(
-    _LIBAROMA_CTL_PROGRESS_SIGNATURE, _LIBAROMA_CTL_PROGRESSP, 0
+    _libaroma_ctl_progress_handler, _LIBAROMA_CTL_PROGRESSP, 0
   );
   me->max = max;
   if (me->value>me->max){

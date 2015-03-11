@@ -53,11 +53,9 @@ static byte _libaroma_timer_active=0;
  * Descriptions: system tick in ms
  */
 long libaroma_tick() {
-  struct timespec now;
-  if (clock_gettime(CLOCK_MONOTONIC, &now)) {
-    return 0;
-  }
-  return ((long) (now.tv_sec * 1000 + now.tv_nsec / 1000000));
+  struct timeval now;
+  gettimeofday(&now, NULL);
+  return ((long) (now.tv_sec * 1000 + now.tv_usec / 1000));
 } /* End of libaroma_tick */
 
 /*
