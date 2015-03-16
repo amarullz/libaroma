@@ -122,6 +122,7 @@ byte libaroma_start() {
 #ifdef LIBAROMA_CONFIG_DEBUG_MEMORY
 #if LIBAROMA_CONFIG_DEBUG_MEMORY >=1
   ALOGV("STARTING MEMORY TRACKING");
+  ___mtrack_init_free(0);
 #endif
 #endif
   
@@ -196,6 +197,7 @@ byte libaroma_end() {
 #if LIBAROMA_CONFIG_DEBUG_MEMORY >=1
   ALOGV("DUMPING MEMORY TRACKING");
   ___mtrack_dump_leak();
+  ___mtrack_init_free(1);
 #endif
 #endif
   return 1;

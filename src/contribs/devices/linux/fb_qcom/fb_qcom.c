@@ -153,7 +153,7 @@ byte QCOMFB_init(LIBAROMA_FBP me){
   /* set commiter data */
   memset(&mi->qcom->commiter, 0, sizeof(struct mdp_display_commit));
   mi->qcom->commiter.flags = MDP_DISPLAY_COMMIT_OVERLAY;
-  mi->qcom->commiter.wait_for_finish = 0;
+  mi->qcom->commiter.wait_for_finish = 1;
   
   /* pos 
   mi->qcom->commiter.l_roi.x = 0;
@@ -237,7 +237,7 @@ byte QCOMFB_check_id(LINUXFBDR_INTERNALP mi){
       overlay_supported = 1;
     }
     else if (mdp_version>=40){
-      return 1;
+      return 0;
     }
   }
   else if (!strncmp(mi->fix.id, "mdssfb", strlen("mdssfb"))) {
@@ -441,7 +441,7 @@ byte QCOMFB_sync(
   }
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
   libaroma_mutex_lock(mi->mutex);
-  LINUXFBDR_wait_vsync(mi);
+  // LINUXFBDR_wait_vsync(mi);
   
   if (mi->pixsz==2){
     memcpy(mi->current_buffer, src, me->sz*2);
@@ -512,13 +512,14 @@ void QCOMFB_swap_buffer(LIBAROMA_FBP me){
 void QCOMFB_flush(LIBAROMA_FBP me){
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
   QCOMFB_swap_buffer(me);
+  /*
   if (mi->last_vsync==0){
     mi->qcom->commiter.wait_for_finish = 0;
   }
   else{
     mi->qcom->commiter.wait_for_finish = 1;
   }
-
+  */
   int res=0;
   if (mi->qcom->commit_type==1){
     res=ioctl(mi->fb, MSMFB_DISPLAY_COMMIT_44, &mi->qcom->commiter);

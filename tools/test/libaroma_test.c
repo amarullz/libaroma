@@ -26,7 +26,10 @@
 
 /* libaroma header */
 #include <aroma.h>
-#include <omp.h>
+// #include <omp.h>
+
+
+void LINUXFBDR_setrgbpos(LIBAROMA_FBP me, byte r, byte g, byte b);
 
 /*
  * Function    : main
@@ -34,8 +37,11 @@
  * Descriptions: main executable function
  */
 int main(int argc, char **argv){
-
-  
+  /*
+  char *s = "hello world";
+    *s = 'H';
+   */
+   
   /* set libaroma runtime configuration */
   /*
     snprintf(libaroma_config()->fb_shm_name,64,"recovery-mainfb");
@@ -85,7 +91,11 @@ int main(int argc, char **argv){
     }
   }
   printf("\n\nTIME WORKS: %i\n\n",(int)(libaroma_tick()-now));
-  libaroma_sync();*/
+  libaroma_sync();
+  */
+  // asm neon: 1375, 1352
+  // android memcpy: 1582
+  // c neon: 1376
   
   /*libaroma_png_save(libaroma_fb()->canvas,"/sdcard/out.png");*/
   
@@ -93,7 +103,7 @@ int main(int argc, char **argv){
   /* load font - id=0 */
   libaroma_font(0,
     libaroma_stream(
-      "file:///sdcard/DroidSans.ttf"
+      "file:///sdcard/Roboto-Regular.ttf"
     )
   );
   
@@ -172,14 +182,15 @@ int main(int argc, char **argv){
     RGB(ffffff), LIBAROMA_CTL_SCROLL_WITH_SHADOW|LIBAROMA_CTL_SCROLL_WITH_HANDLE
   );
   
-  */
+ */ 
   
   
   LIBAROMA_CONTROLP list_test = libaroma_ctl_list(
-    win, 90,
-    0, 300, LIBAROMA_SIZE_FULL, LIBAROMA_SIZE_FULL,
-    10,
-    RGB(ffffff), LIBAROMA_CTL_SCROLL_WITH_SHADOW|LIBAROMA_CTL_SCROLL_WITH_HANDLE
+    win, 90, /* win, id */
+    0, 300, LIBAROMA_SIZE_FULL, LIBAROMA_SIZE_FULL, /* x,y,w,h */
+    8, 8, /* horiz, vert padding */
+    RGB(ffffff), /* bgcolor */
+    LIBAROMA_CTL_SCROLL_WITH_SHADOW|LIBAROMA_CTL_SCROLL_WITH_HANDLE /* flags */
   );
   
   LIBAROMA_CANVASP list_icon = libaroma_image_uri("file:///sdcard/plus.png");
@@ -187,48 +198,29 @@ int main(int argc, char **argv){
   char extra_text[256];
   int itm=0;
   for (itm=0;itm<250;itm++){
-    /*
-    libaroma_ctl_list_add_item_internal(
-      list_test,
-      itm,
-      libaroma_dp(38),
-      1,
-      LIBAROMA_CTL_LIST_ITEM_RECEIVE_TOUCH,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      -1
-    );*/
-    
     snprintf(main_text,256,"Item id#%i",itm);
     snprintf(extra_text,256,"This is <b>just extra text</b> for item %i",itm);
     libaroma_listitem_option(
       list_test, itm, 0,
       main_text,
-      extra_text,
+      (itm%2==0)?extra_text:NULL,
       list_icon,
-      0,
-      LIBAROMA_LISTITEM_OPTION_INDENT_NOICON,
+      LIBAROMA_LISTITEM_OPTION_INDENT_NOICON|
+      LIBAROMA_LISTITEM_OPTION_SHARED_ICON|
+      LIBAROMA_LISTITEM_LARGE_PADDING|
+      LIBAROMA_LISTITEM_WITH_SEPARATOR,
       -1
     );
   }
   
   
   
-  
-  
-  
-  
 
   /* show window */
   //libaroma_window_show(win);
-  /*
-    libaroma_window_anishow(win, LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_RIGHT, 1000);
+  libaroma_window_anishow(win, LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_RIGHT, 1000);
   
-  */
-  libaroma_window_anishow(win, LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_LEFT, 500);
-  
+  // libaroma_window_anishow(win, LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_LEFT, 500);
   
   
   
@@ -287,6 +279,8 @@ int main(int argc, char **argv){
       
       if (cmd==LIBAROMA_CMD_CLICK){
         if (id==6){
+          // LINUXFBDR_setrgbpos(libaroma_fb(), 16, 8, 0);
+          
           // libaroma_ctl_button_text(btn6,"<img=file:///sdcard/plus.png;24dp;24dp>Click");
           click_value++;
           char clstr[128];
@@ -294,19 +288,7 @@ int main(int argc, char **argv){
           libaroma_ctl_button_text(btn6,clstr);
         }
         else if (id==2){
-          /*
-          libaroma_ctl_list_add_item_internal(
-            list_test,
-            itm++,
-            libaroma_dp(38),
-            1,
-            LIBAROMA_CTL_LIST_ITEM_RECEIVE_TOUCH,
-            NULL,
-            NULL,
-            NULL,
-            NULL,
-            -1
-          );*/
+          // LINUXFBDR_setrgbpos(libaroma_fb(), 0, 8, 16);
           snprintf(main_text,256,"New Item id#%i",itm);
           snprintf(extra_text,256,"<u>This</u> is <b>just extra text</b> for item %i NEW!",itm);
           libaroma_listitem_option(
@@ -314,18 +296,24 @@ int main(int argc, char **argv){
             main_text,
             extra_text,
             list_icon,
-            0,
-            LIBAROMA_LISTITEM_OPTION_INDENT_NOICON,
+            LIBAROMA_LISTITEM_OPTION_INDENT_NOICON|
+            LIBAROMA_LISTITEM_OPTION_SHARED_ICON|
+            LIBAROMA_LISTITEM_WITH_SEPARATOR|
+            LIBAROMA_LISTITEM_LARGE_PADDING,
             -1
           );
           itm++;
         }
         else if (id==4){
+          // LINUXFBDR_setrgbpos(libaroma_fb(), 24, 16, 8);
+          
           libaroma_ctl_list_del_item_internal(
             list_test,0,0 /* delete first index */
           );
         }
         else if (id==1){
+          // LINUXFBDR_setrgbpos(libaroma_fb(), 8, 16, 24);
+          
           if (libaroma_ctl_button_is_disabled(btn2)){
             libaroma_ctl_button_disable(btn2,0);
             libaroma_ctl_button_disable(btn4,0);

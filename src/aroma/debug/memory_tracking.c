@@ -30,6 +30,23 @@
 #include <string.h>
 #include <pthread.h>
 
+#ifndef LIBAROMA_MUTEX
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #include <omp.h>
+  #define LIBAROMA_MUTEX omp_nest_lock_t
+  #define libaroma_mutex_init(x) omp_init_nest_lock(&x)
+  #define libaroma_mutex_free(x) omp_destroy_nest_lock(&x)
+  #define libaroma_mutex_lock(x) omp_set_nest_lock(&x)
+  #define libaroma_mutex_unlock(x) omp_unset_nest_lock(&x)
+#else
+  #define LIBAROMA_MUTEX pthread_mutex_t
+  #define libaroma_mutex_init(x) pthread_mutex_init(&x,NULL)
+  #define libaroma_mutex_free(x) pthread_mutex_destroy(&x)
+  #define libaroma_mutex_lock(x) pthread_mutex_lock(&x)
+  #define libaroma_mutex_unlock(x) pthread_mutex_unlock(&x)
+#endif
+#endif
+
 /* MEMORY TRACKING STRUCTURE */
 typedef struct ___MTRACK_ITEM ___MTRACKI;
 typedef struct ___MTRACK_ITEM * ___MTRACKIP;
@@ -45,13 +62,21 @@ typedef struct {
   ___MTRACKIP last;
   size_t      curr_sz;
   size_t      tresshold;
+  LIBAROMA_MUTEX mutex;
 } ___MTRACK, *___MTRACKP;
 
 /* TRACKING VARIABLE */
-___MTRACK ___mtrack = { NULL, NULL, 0, 0 };
+___MTRACK ___mtrack = { 0 };
 
-/* Thread Safe Tracking */
-static pthread_mutex_t  ___mtrack_mutex = PTHREAD_MUTEX_INITIALIZER;
+/* mtrack init/free */
+void ___mtrack_init_free(int free){
+  if (free){
+    libaroma_mutex_free(___mtrack.mutex);
+  }
+  else{
+    libaroma_mutex_init(___mtrack.mutex);
+  }
+}
 
 /*
  * Memory Tracking Data Functions
@@ -210,8 +235,7 @@ void ___mtrack_dump_leak() {
 
 /* HOOK FUNCTIONS */
 void * ___mtrack_realloc(void * x, size_t size, char * filename, long line) {
-  pthread_mutex_lock(&___mtrack_mutex);
-  
+  libaroma_mutex_lock(___mtrack.mutex);
   if (size < 1) {
     printf("MEM-TRACK[W]: realloc zero size on %s line %d\n", filename, (int) line);
   }
@@ -231,12 +255,12 @@ void * ___mtrack_realloc(void * x, size_t size, char * filename, long line) {
     printf("MEM-TRACK[W]: realloc: allocated used address on %s line %d\n", filename, (int) line);
   }
   
-  pthread_mutex_unlock(&___mtrack_mutex);
+  libaroma_mutex_unlock(___mtrack.mutex);
   return ret;
 }
 
 void * ___mtrack_malloc(size_t size, char * filename, long line) {
-  pthread_mutex_lock(&___mtrack_mutex);
+  libaroma_mutex_lock(___mtrack.mutex);
   
   if (size < 1) {
     printf("MEM-TRACK[W]: malloc zero size on %s line %d\n", filename, (int) line);
@@ -250,12 +274,12 @@ void * ___mtrack_malloc(size_t size, char * filename, long line) {
     }
   }
   
-  pthread_mutex_unlock(&___mtrack_mutex);
+  libaroma_mutex_unlock(___mtrack.mutex);
   return ret;
 }
 
 void ___mtrack_free(void ** x, char * filename, long line) {
-  pthread_mutex_lock(&___mtrack_mutex);
+  libaroma_mutex_lock(___mtrack.mutex);
   
   if (*x != NULL) {
     if (!___mtrack_del(*x)) {
@@ -269,11 +293,11 @@ void ___mtrack_free(void ** x, char * filename, long line) {
     printf("MEM-TRACK[W]: free null address on %s line %d\n", filename, (int) line);
   }
   
-  pthread_mutex_unlock(&___mtrack_mutex);
+  libaroma_mutex_unlock(___mtrack.mutex);
 }
 
 char * ___mtrack_strdup(const char * str, char * filename, long line){
-  pthread_mutex_lock(&___mtrack_mutex);
+  libaroma_mutex_lock(___mtrack.mutex);
   void * ret = (void *) strdup(str);
   if (ret) {
     if (!___mtrack_set(ret, strlen(ret)+1, filename, line)) {
@@ -281,7 +305,7 @@ char * ___mtrack_strdup(const char * str, char * filename, long line){
         filename, (int) line);
     }
   }
-  pthread_mutex_unlock(&___mtrack_mutex);
+  libaroma_mutex_unlock(___mtrack.mutex);
   return (char *) ret;
 }
 #endif /* LIBAROMA_CONFIG_DEBUG_MEMORY >=1 */

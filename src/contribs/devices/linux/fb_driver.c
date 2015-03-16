@@ -220,14 +220,15 @@ void LINUXFBDR_swap_buffer(LINUXFBDR_INTERNALP mi){
  * Descriptions: wait for vsync
  */
 void LINUXFBDR_wait_vsync(LINUXFBDR_INTERNALP mi){
+  /*
   if (mi->is_omap){
     int s=0;
     mi->last_vsync=ioctl(mi->fb, OMAPFB_WAITFORVSYNC, &s);
   }
   else{
-    /* wait for vsync */
     mi->last_vsync=ioctl(mi->fb, FBIO_WAITFORVSYNC, 0);
   }
+  */
 } /* End of LINUXFBDR_wait_vsync */
 
 /*
@@ -241,15 +242,17 @@ byte LINUXFBDR_flush(LIBAROMA_FBP me) {
   }
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
   
-  fsync(mi->fb);
+  // fsync(mi->fb);
   LINUXFBDR_swap_buffer(mi);
-  
+  /*
   if (mi->last_vsync==0){
     mi->var.activate = FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
   }
   else{
     mi->var.activate = FB_ACTIVATE_VBL; 
   }
+  */
+  mi->var.activate = FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
   if (ioctl(mi->fb, FBIOPAN_DISPLAY, &mi->var)!=0){
     ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var);
   }

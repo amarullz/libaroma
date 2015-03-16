@@ -39,6 +39,17 @@ void LINUXFBDR_setrgbpos(LIBAROMA_FBP me, byte r, byte g, byte b) {
   mi->rgb_pos[3] = r >> 3;
   mi->rgb_pos[4] = g >> 3;
   mi->rgb_pos[5] = b >> 3;
+  /*
+  mi->rgb_pos[6] = 1;
+  dwordp rgbp = (dwordp) mi->rgb_pos;
+  dword cs = rgbp[0] & 0xffffff;
+  switch (cs){
+    case 0x100800: mi->rgb_pos[6] = 1; break;
+    case 0x000810: mi->rgb_pos[6] = 2; break;
+    case 0x181008: mi->rgb_pos[6] = 3; break;
+    case 0x081018: mi->rgb_pos[6] = 4; break;
+  }
+  */
 }
 
 /*

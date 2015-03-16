@@ -3,7 +3,7 @@ cd ..\obj
 
 echo Compiling ZLIB
 %LIBAROMA_GCC% -c ^
-  -save-temps -O3 ^
+  -save-temps ^
   -fdata-sections -ffunction-sections -Wl,--gc-sections ^
   -D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG ^
   -fPIC -DPIC -Wl,-s -Werror -DUSE_MMAP ^

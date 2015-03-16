@@ -61,6 +61,230 @@ inline void __neon_dither_table(
   *b = vmovl_u8(tb);
 }
 
+void libaroma_alpha_const_asm(
+    int n,
+    wordp dst,
+    wordp bottom,
+    wordp top,
+    byte alpha){
+  asm volatile(
+    "lsr	      %0,   %0, #3    \n" /* div 16 */
+    "mov        r5,   #2016     \n"
+  	"vmov.i16	  q11,  #256      \n"
+  	"vdup.16    q12,  r5        \n"
+  	"vmov.i16	  q13,  #31       \n"
+  	"vmov.i16   q14,  #63488    \n"
+  	"vdup.16    q10,  %4        \n" /* vdupq_n_u16(alpha) */
+  	"vsub.i16	  q11, q11, q10   \n" /* q11=ro */
+    
+    ".libaroma_alpha_const_asm_loop: \n"
+    "vld1.16	{d18-d19}, [%2]!  \n" /* vld1q_u16(bottom) */
+  	"vld1.16	{d16-d17}, [%3]!  \n" /* vld1q_u16(top) */
+  	
+    /* bottom */
+    "vand	      q1, q8, q14     \n" /* red */
+    "vrshr.u16	q1, q1, #8      \n"
+    "vmul.i16	  q1, q1, q10     \n"
+    
+    "vand	      q15, q8, q12    \n" /* green */
+    "vrshr.u16	q15, q15, #3    \n"
+    "vmul.i16	  q15, q15, q10   \n"
+    
+    "vand	      q3, q8, q13     \n" /* blue */
+    "vshl.i16 	q3, q3, #3      \n"
+    "vmul.i16	  q3, q3, q10     \n"
+    
+    /* top */
+    "vand	      q0, q9, q14     \n" /* red */
+    "vrshr.u16	q0, q0, #8      \n"
+    "vmul.i16	  q0, q0, q11     \n"
+    
+    "vand	      q2, q9, q12     \n" /* green */
+    "vrshr.u16	q2, q2, #3      \n"
+    "vmul.i16	  q2, q2, q11     \n"
+    
+    "vand	      q9, q9, q13     \n" /* blue */
+    "vshl.i16 	q9, q9, #3      \n"
+    "vmul.i16	  q9, q9, q11     \n"
+    
+    /* calc */
+    "vadd.i16	q8, q0, q1        \n"
+	  "vadd.i16	q15, q2, q15      \n"
+	  "vadd.i16	q9, q9, q3        \n"
+	  
+  	"vshr.u16	q8, q8, #11       \n" /* r */
+  	"vshr.u16	q15, q15, #10     \n" /* g */
+  	"vshr.u16	q9, q9, #11       \n" /* b */
+  	
+  	"vshl.i16	q8, q8, #11       \n"
+  	"vshl.i16	q15, q15, #5      \n"
+	
+  	"vorr	q8, q8, q15           \n" /* r|g|b */
+  	"vorr	q8, q8, q9            \n"
+	  
+  	"vst1.16	{d16-d17}, [%1]!  \n" /* store */
+  	
+  	"subs	    %0, %0, #1        \n" /* n-- */
+  	"bne	.libaroma_alpha_const_asm_loop  \n"
+  	:
+    : "r"(n),       /* r0 - 0 */
+      "r"(dst),     /* r1 - 1 */
+      "r"(bottom),  /* r2 - 2 */
+      "r"(top),     /* r3 - 3 */
+      "r"(alpha)    /* r4 - 4 */
+    : "r5"
+  );
+}
+void libaroma_alpha_px_asm(
+    int n,
+    wordp dst,
+    wordp bottom,
+    wordp top,
+    bytep alpha){
+  asm volatile(
+    "lsr	      %0,   %0, #3    \n" /* div 16 */
+    "mov        r5,   #2016     \n"
+  	"vmov.i16   q0,   #255      \n"
+  	"vmov.i16	  q1,   #256      \n"
+  	"vmov.i16	  q12,  #31       \n"
+  	"vmov.i16   q13,  #63488    \n"
+  	"vdup.16    q14,  r5        \n"
+  	
+    
+    ".libaroma_alpha_px_asm_loop: \n"
+  	"vld1.8 {d16}, [%4]!        \n" /* vld1_u8(alpha) */
+  	"vmovl.u8 q8, d16           \n" /* q8=op */
+  	"vsub.i16	q11, q1, q8       \n" /* q11=ro */
+  	"vld1.16	{d18-d19}, [%2]!  \n" /* vld1q_u16(bottom) */
+  	"vld1.16	{d20-d21}, [%3]!  \n" /* vld1q_u16(top) */
+    
+    /* bottom */
+    "vand	      q6, q9, q13     \n" /* red */
+    "vrshr.u16	q6, q6, #8      \n"
+    "vmul.i16	  q6, q6, q11     \n"
+    
+    "vand	      q5, q9, q14     \n" /* green */
+    "vrshr.u16	q5, q5, #3      \n"
+    "vmul.i16	  q5, q5, q11     \n"
+    
+    "vand	      q4, q9, q12     \n" /* blue */
+    "vshl.i16 	q4, q4, #3      \n"
+    "vmul.i16	  q4, q4, q11     \n"
+    
+    /* top */
+    "vand	      q15, q10, q13   \n" /* red */
+    "vrshr.u16	q15, q15, #8    \n"
+    "vmul.i16	  q15, q15, q8    \n"
+    "vand	      q2, q10, q14    \n" /* green */
+    "vrshr.u16	q2, q2, #3      \n"
+    "vmul.i16	  q2, q2, q8      \n"
+    "vand	      q3, q10, q12    \n" /* blue */
+    "vshl.i16 	q3, q3, #3      \n"
+    "vmul.i16	  q3, q3, q8      \n"
+    
+    /* non-dithering blend result */
+    "vadd.i16	  q15, q6, q15    \n" /* r */
+    "vadd.i16	  q2,  q5, q2     \n" /* g */
+    "vadd.i16	  q3,  q4, q3     \n" /* b */
+    
+    "vshr.u16	  q15, q15, #11   \n" /* r */
+    "vshr.u16	  q2,  q2,  #10   \n" /* g */
+    "vshr.u16	  q3,  q3,  #11   \n" /* b */
+    
+    "vshl.i16	  q15, q15, #11   \n"
+	  "vshl.i16	  q2, q2, #5      \n"
+	  
+	  "vorr	      q15, q15, q2    \n" /* r|g|b */
+	  "vorr	      q15, q15, q3    \n"
+	  
+	  "vceq.i16	  q11, q8, q0     \n" /* o == 255 */
+	  "vceq.i16	  q8, q8, #0      \n" /* o == 0 */
+    
+  	"vbsl	      q11, q10, q15   \n"
+	  "vbsl	      q8, q9, q11     \n"
+  	
+  	"vst1.16	{d16-d17}, [%1]!  \n" /* store */
+  	
+  	"subs	    %0, %0, #1        \n" /* n-- */
+  	"bne	.libaroma_alpha_px_asm_loop  \n"
+  	:
+    : "r"(n),       /* r0 - 0 */
+      "r"(dst),     /* r1 - 1 */
+      "r"(bottom),  /* r2 - 2 */
+      "r"(top),     /* r3 - 3 */
+      "r"(alpha)    /* r4 - 4 */
+    : "r5"
+  );
+}
+
+void libaroma_alpha_multi_line_asm(
+    int n,
+    wordp dst,
+    wordp bottom,
+    byte topr,
+    byte topg,
+    byte topb,
+    bytep alpha){
+  asm volatile(
+    "lsr	      %0,   %0, #3    \n" /* div 16 */
+    "mov        r7,   #2016     \n" 
+    "vdup.16    q1,   r7        \n"
+    "vmov.i16	  q11,  #256      \n"
+  	"vmov.i16	  q5,   #63488    \n"
+  	"vmov.i16	  q4,   #31       \n"
+  	
+  	"vdup.16	  q2,   %3        \n" /* topr */
+  	"vdup.16    q6,   %4        \n" /* topg */
+  	"vdup.16    q0,   %5        \n" /* topb */
+    
+    ".libaroma_alpha_multi_line_asm_loop: \n"
+    
+    "vld3.8	{d16-d18}, [%6]!    \n"
+    "vld1.16	{d20-d21}, [%2]!  \n"
+    "vmovl.u8	q13, d16 \n"
+  	"vmovl.u8	q12, d17 \n"
+  	"vand	q3, q10, q5 \n"
+  	"vand	q14, q10, q1 \n"
+  	"vsub.i16	q7, q11, q13 \n"
+  	"vsub.i16	q15, q11, q12 \n"
+  	"vrshr.u16	q3, q3, #8 \n"
+  	"vrshr.u16	q14, q14, #3 \n"
+  	"vmovl.u8	q8, d18 \n"
+  	"vmul.i16	q13, q2, q13 \n"
+  	"vmul.i16	q3, q3, q7 \n"
+  	"vmul.i16	q12, q6, q12 \n"
+  	"vmul.i16	q14, q14, q15 \n"
+  	"vand	q10, q10, q4 \n"
+  	"vsub.i16	q9, q11, q8 \n"
+  	"vmul.i16	q8, q0, q8 \n"
+  	"vshl.i16	q10, q10, #3 \n"
+  	"vadd.i16	q13, q3, q13 \n"
+  	"vmul.i16	q9, q10, q9 \n"
+  	"vadd.i16	q12, q14, q12 \n"
+  	"vshr.u16	q13, q13, #11 \n"
+  	"vshr.u16	q12, q12, #10 \n"
+  	"vadd.i16	q9, q9, q8 \n"
+  	"vshl.i16	q8, q13, #11 \n"
+  	"vshl.i16	q12, q12, #5 \n"
+  	"vshr.u16	q9, q9, #11 \n"
+  	"vorr	q8, q8, q12 \n"
+  	"vorr	q8, q8, q9 \n"
+  	"vst1.16	{d16-d17}, [%1]! \n"
+  	"subs	    %0, %0, #1        \n" /* n-- */
+  	"bne	.libaroma_alpha_multi_line_asm_loop  \n"
+  	:
+    : "r"(n),       /* r0 - 0 */
+      "r"(dst),     /* r1 - 1 */
+      "r"(bottom),  /* r2 - 2 */
+      "r"(topr),    /* r3 - 3 */
+      "r"(topg),    /* r4 - 4 */
+      "r"(topb),    /* r5 - 5 */
+      "r"(alpha)    /* r6 - 6 */
+    : "r7"
+  );
+}
+
+
 /* dithered alpha blending */
 void libaroma_alpha_px_line(
     int _Y, int n, wordp dst,
@@ -136,6 +360,8 @@ void libaroma_alpha_px(
   
   /* neon */
   if (n>=8){
+    libaroma_alpha_px_asm(n-left,dst,bottom,top,alpha);
+#if 0
     __neon_alpha_const_init();
     uint16x8_t pxb, pxt, rbl, gbl, bbl, rtl, gtl, btl, o, op, ro;
     for (i=0;i<n-left;i+=8) {
@@ -173,6 +399,8 @@ void libaroma_alpha_px(
       
       vst1q_u16(dst+i,o);
     }
+#endif
+
   }
   /* leftover */
   if (left>0) {
@@ -277,6 +505,8 @@ void libaroma_alpha_const(
   
   /* neon */
   if (n>=8){
+    libaroma_alpha_const_asm(n-left,dst,bottom,top,alpha);
+#if 0
     __neon_alpha_const_init();
     uint16x8_t pxb, pxt, rbl, gbl, bbl, rtl, gtl, btl, op, ro;
     /* constant alpha */
@@ -307,6 +537,7 @@ void libaroma_alpha_const(
       /* out value */
       vst1q_u16(dst+i,vorrq_u16(vorrq_u16(rbl,gbl),bbl));
     }
+#endif
   }
   /* leftover */
   if (left>0) {
@@ -484,6 +715,15 @@ void libaroma_alpha_multi_line(int n, wordp dst, wordp bottom,
   
   /* neon */
   if (n>=8){
+    libaroma_alpha_multi_line_asm(
+      n-left,
+      dst,
+      bottom,
+      libaroma_color_r(top),
+      libaroma_color_g(top),
+      libaroma_color_b(top),
+      alphargb);
+#if 0
     __neon_alpha_const_init();
     uint8x8x3_t alphabuf;
     uint16x8_t pxb, rbl, gbl, bbl, rtl, gtl, btl, rts, gts, bts,
@@ -526,6 +766,7 @@ void libaroma_alpha_multi_line(int n, wordp dst, wordp bottom,
       /* out value */
       vst1q_u16(dst+i,vorrq_u16(vorrq_u16(rbl,gbl),bbl));
     }
+#endif
   }
   /* leftover */
   if (left>0) {

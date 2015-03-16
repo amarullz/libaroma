@@ -3,7 +3,7 @@ cd ..\obj
 
 echo Compiling JPEG
 %LIBAROMA_GCC% -c ^
-  -save-temps -O2 ^
+  -save-temps ^
   -fdata-sections -ffunction-sections -Wl,--gc-sections ^
   -D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG ^
   -fPIC -DPIC -Wl,-s -Werror ^
@@ -61,7 +61,6 @@ echo Compiling JPEG
   ../../../libs/jpeg/jmemmgr.c ^
   ^
   ^
-  ../../../libs/jpeg/armv6_idct.S ^
   ../../../libs/jpeg/jsimd_arm_neon.S ^
   ../../../libs/jpeg/jsimd_neon.c ^
   ../../../libs/jpeg/jmem-android.c ^
@@ -69,8 +68,9 @@ echo Compiling JPEG
   ^
   -I../../../libs/jpeg
 
-REM   ../../../libs/jpeg/jmemansi.c ^
-
+REM  ../../../libs/jpeg/jmemansi.c ^
+REM  ../../../libs/jpeg/armv6_idct.S ^
+  
 cd ..\libs
 
 if "%1"=="-f" GOTO DONE

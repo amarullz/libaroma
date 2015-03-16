@@ -2,13 +2,9 @@
 cd obj
 
 echo Compiling TEST
-%LIBAROMA_GCC% ^
-  -static ^
-  -fdata-sections -ffunction-sections -Wl,--gc-sections ^
-  -D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG ^
-  -fPIC -DPIC -Wl,-s -Werror ^
+%LIBAROMA_GCC% -static ^
   ^
-  %LIBAROMA_CFLAGS% ^
+    %LIBAROMA_DEBUG_CFLAGS% ^
   ^
     -DLIBAROMA_CONFIG_DEBUG=%LIBAROMA_CONFIG_DEBUG% ^
     -DLIBAROMA_CONFIG_DEBUG_FILE=%LIBAROMA_CONFIG_DEBUG_FILE% ^

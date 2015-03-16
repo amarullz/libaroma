@@ -3,7 +3,7 @@ cd ..\obj
 
 echo Compiling Harfbuzz-ng
 %LIBAROMA_GPP% -c ^
-  -save-temps -O2 ^
+  -save-temps ^
   -fdata-sections -ffunction-sections -Wl,--gc-sections ^
   -D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG ^
   -fPIC -DPIC -Wl,-s -Werror ^

@@ -34,19 +34,32 @@
 
 /* item flags */
 #define LIBAROMA_CTL_LIST_ITEM_RECEIVE_TOUCH    0x1
-
-/* global item flags */
 #define LIBAROMA_LISTITEM_WITH_SEPARATOR        0x2
+#define LIBAROMA_LISTITEM_LARGE_PADDING         0x4
+#define LIBAROMA_LISTITEM_PADDING_HIGHLIGHT     0x8
 
 /* item message */
 #define LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_DOWN   0x1
 #define LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_UP     0x2
 #define LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_MOVE   0x3
 #define LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_CANCEL 0x4
+#define LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_HOLDED 0x5
 #define LIBAROMA_CTL_LIST_ITEM_MSG_THREAD       0x10
 #define LIBAROMA_CTL_LIST_ITEM_MSG_ACTIVATED    0x11
 #define LIBAROMA_CTL_LIST_ITEM_MSG_INACTIVATED  0x12
 
+/* message param */
+#define LIBAROMA_CTL_LIST_ITEM_MSGPARAM_HOLDED  0x10
+
+/* draw state */
+#define LIBAROMA_CTL_LIST_ITEM_DRAW_NORMAL      0x0
+#define LIBAROMA_CTL_LIST_ITEM_DRAW_PUSHED      0x1
+#define LIBAROMA_CTL_LIST_ITEM_DRAW_FOCUSED     0x2
+
+/* message status */
+#define LIBAROMA_CTL_LIST_ITEM_MSGRET_NEED_DRAW     0x1
+#define LIBAROMA_CTL_LIST_ITEM_MSGRET_HANDLED       0x2
+#define LIBAROMA_CTL_LIST_ITEM_MSGRET_UNREG_THREAD  0x4
 
 /* list item */
 typedef struct _LIBAROMA_CTL_LIST_ITEM LIBAROMA_CTL_LIST_ITEM;
@@ -54,7 +67,7 @@ typedef struct _LIBAROMA_CTL_LIST_ITEM * LIBAROMA_CTL_LIST_ITEMP;
 
 /* item callbacks */
 typedef void (*LIBAROMA_CTL_LISTCB_DRAW) \
-  (LIBAROMA_CONTROLP,LIBAROMA_CTL_LIST_ITEMP,LIBAROMA_CANVASP,word);
+  (LIBAROMA_CONTROLP,LIBAROMA_CTL_LIST_ITEMP,LIBAROMA_CANVASP,word,byte);
   /* item, canvas, item index, number of items */
 typedef void (*LIBAROMA_CTL_LISTCB_DESTROY) \
   (LIBAROMA_CONTROLP,LIBAROMA_CTL_LIST_ITEMP);
@@ -69,6 +82,27 @@ typedef struct{
   LIBAROMA_CTL_LISTCB_DESTROY destroy;
 } LIBAROMA_CTL_LIST_ITEM_HANDLER, * LIBAROMA_CTL_LIST_ITEM_HANDLERP;
 
+/* list touch event */
+typedef struct{
+  int start_x;
+  int start_y;
+  int last_x;
+  int last_y;
+} LIBAROMA_CTL_LIST_TOUCHPOS, * LIBAROMA_CTL_LIST_TOUCHPOSP;
+
+typedef struct{
+  byte normal_handler;
+  byte touched;
+  byte holded;
+  long touch_start;
+  float touch_state;
+  float release_state;
+  long release_start;
+  LIBAROMA_CANVASP cache_rest;
+  LIBAROMA_CANVASP cache_push;
+} LIBAROMA_CTL_LIST_ITEM_STATE,
+  * LIBAROMA_CTL_LIST_ITEM_STATEP;
+
 /* item structure */
 struct _LIBAROMA_CTL_LIST_ITEM{
   int y;
@@ -77,6 +111,7 @@ struct _LIBAROMA_CTL_LIST_ITEM{
   voidp internal;
   byte flags;
   LIBAROMA_CTL_LIST_ITEM_HANDLERP handler;
+  LIBAROMA_CTL_LIST_ITEM_STATEP state;
   LIBAROMA_CTL_LIST_ITEMP next;
   LIBAROMA_CTL_LIST_ITEMP prev;
 };
@@ -89,6 +124,7 @@ struct _LIBAROMA_CTL_LIST_ITEM{
 LIBAROMA_CONTROLP libaroma_ctl_list(
     LIBAROMA_WINDOWP win, word id,
     int x, int y, int w, int h,
+    int horizontal_padding,
     int vertical_padding,
     word bg_color, byte flags
 );
@@ -103,20 +139,11 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_ctl_list_get_item_internal(
 );
 
 /*
- * Function    : libaroma_ctl_list_item_unreg_thread
- * Return Value: byte
- * Descriptions: unregister item thread
+ * Function    : libaroma_ctl_list_getpos
+ * Return Value: LIBAROMA_CTL_LIST_TOUCHPOSP
+ * Descriptions: get touch positions
  */
-byte libaroma_ctl_list_item_unreg_thread(
-    LIBAROMA_CONTROLP ctl, LIBAROMA_CTL_LIST_ITEMP item);
-
-/*
- * Function    : libaroma_ctl_list_item_reg_thread
- * Return Value: byte
- * Descriptions: register item thread
- */
-byte libaroma_ctl_list_item_reg_thread(
-    LIBAROMA_CONTROLP ctl, LIBAROMA_CTL_LIST_ITEMP item);
+LIBAROMA_CTL_LIST_TOUCHPOSP libaroma_ctl_list_getpos(LIBAROMA_CONTROLP ctl);
 
 /*
  * Function    : libaroma_ctl_list_del_itemp_internal

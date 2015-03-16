@@ -143,7 +143,7 @@
   #define __LIBAROMA_CMSG_HICOLOR "DISABLED"
 #endif
 
-#pragma message "\n\n\n"\
+#pragma message "\n"\
   "======================================================================\n"\
   "  " LIBAROMA_CONFIG_NAME " Version "\
     __LIBAROMA_STR(LIBAROMA_CONFIG_VERSION_MAJOR) "."\

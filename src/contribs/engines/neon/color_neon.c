@@ -28,12 +28,40 @@
 #define __libaroma_color_neon_c__
 #ifdef __ARM_HAVE_NEON
 
+
+/* assembler version of libaroma_color_copy32 */
+void libaroma_color_set_asm(wordp dst, word color, int n){
+  asm volatile(
+    "lsr	    %2,   %2, #4 \n"
+  	"vdup.16	q8,   %1 \n"
+  	"vmov   	q9,   q8 \n"
+  	"vmov   	q10,  q8 \n"
+  	"vmov   	q11,  q8 \n"
+    ".libaroma_color_set_asm_loop: \n"
+  	"vst4.16	{d16, d18, d20, d22}, [%0]! \n"
+  	"subs	    %2, %2, #1 \n"
+  	"bne	.libaroma_color_set_asm_loop  \n"
+  	:
+    : "r"(dst), "r"(color), "r"(n)
+    :
+  );
+}
+
 /* set color buffer */
 /* 512 & 256bit vector */
 void libaroma_color_set(wordp dst, word color, int n) {
-#ifdef libaroma_memset16
-  libaroma_memset16(dst,color,n);
-#else
+  int i,left=n%16;
+  if (n>=16){
+    libaroma_color_set_asm(dst,color,n-left);
+  }
+  if (left>0){
+    for (i=n-left;i<n;i++) {
+      dst[i]=color;
+    }
+  }
+  
+#if 0
+  /* c */
   int i,left=n%32;
   if (n>=32){
     /* use 512bit vector */
@@ -49,6 +77,87 @@ void libaroma_color_set(wordp dst, word color, int n) {
     }
   }
 #endif
+
+}
+
+/* assembler version of libaroma_color_copy32 */
+void libaroma_color_copy32_asm(dwordp dst, wordp src, int n, byte rgb){
+  asm volatile(
+    "lsr	      %2,   %2, #3      \n"
+    "mov        r4,   #2016       \n"
+    "vmov.i16	  q15,  #63488      \n" /* red mask */
+    "vdup.16	  q14,  r4          \n" /* green mask */
+    "vmov.i16	  q13,  #31         \n" /* blue mask */
+    
+    /* color space position */
+    "cmp        r3, #8 \n"
+    "beq	      .libaroma_color_copy32_asm_loop_xbgr \n"
+    "cmp        r3, #16 \n"
+    "beq	      .libaroma_color_copy32_asm_loop_bgrx \n"
+    "cmp        r3, #24 \n"
+    "beq	      .libaroma_color_copy32_asm_loop_xrgb \n"
+    
+    ".libaroma_color_copy32_asm_loop: \n" /* rgbx */
+    "vld1.16	  {d20-d21}, [r1]!  \n"
+  	"vand	      q12, q10, q15     \n"
+  	"vand	      q11, q10, q14     \n"
+  	"vand	      q10, q10, q13     \n"
+  	"vshrn.i16	d16, q12, #8      \n"
+  	"vshrn.i16	d17, q11, #3      \n"
+  	"vshl.i16	  q10, q10, #3      \n"
+  	"vmovn.i16	d18, q10          \n"
+  	"vst4.8	{d16-d19}, [r0]!      \n"
+  	"subs	%2, %2, #1              \n"
+  	"bne      .libaroma_color_copy32_asm_loop \n"
+  	"b        .libaroma_color_copy32_asm_end \n"
+  	
+  	".libaroma_color_copy32_asm_loop_bgrx: \n" /* bgrx */
+    "vld1.16	  {d20-d21}, [r1]!  \n"
+  	"vand	      q12, q10, q15     \n"
+  	"vand	      q11, q10, q14     \n"
+  	"vand	      q10, q10, q13     \n"
+  	"vshrn.i16	d18, q12, #8      \n"
+  	"vshrn.i16	d17, q11, #3      \n"
+  	"vshl.i16	  q10, q10, #3      \n"
+  	"vmovn.i16	d16, q10          \n"
+  	"vst4.8	{d16-d19}, [r0]!      \n"
+  	"subs	%2, %2, #1              \n"
+  	"bne      .libaroma_color_copy32_asm_loop_bgrx \n"
+  	"b        .libaroma_color_copy32_asm_end \n"
+  	
+  	".libaroma_color_copy32_asm_loop_xbgr: \n" /* xbgr */
+    "vld1.16	  {d20-d21}, [r1]!  \n"
+  	"vand	      q12, q10, q15     \n"
+  	"vand	      q11, q10, q14     \n"
+  	"vand	      q10, q10, q13     \n"
+  	"vshrn.i16	d19, q12, #8      \n"
+  	"vshrn.i16	d18, q11, #3      \n"
+  	"vshl.i16	  q10, q10, #3      \n"
+  	"vmovn.i16	d17, q10          \n"
+  	"vst4.8	{d16-d19}, [r0]!      \n"
+  	"subs	%2, %2, #1              \n"
+  	"bne      .libaroma_color_copy32_asm_loop_xbgr \n"
+  	"b        .libaroma_color_copy32_asm_end \n"
+  	
+  	".libaroma_color_copy32_asm_loop_xrgb: \n" /* xrgb */
+    "vld1.16	  {d20-d21}, [r1]!  \n"
+  	"vand	      q12, q10, q15     \n"
+  	"vand	      q11, q10, q14     \n"
+  	"vand	      q10, q10, q13     \n"
+  	"vshrn.i16	d17, q12, #8      \n"
+  	"vshrn.i16	d18, q11, #3      \n"
+  	"vshl.i16	  q10, q10, #3      \n"
+  	"vmovn.i16	d19, q10          \n"
+  	"vst4.8	{d16-d19}, [r0]!      \n"
+  	"subs	%2, %2, #1              \n"
+  	"bne      .libaroma_color_copy32_asm_loop_xrgb \n"
+  	"b        .libaroma_color_copy32_asm_end \n"
+  	
+  	".libaroma_color_copy32_asm_end: \n"
+    :
+    : "r"(dst), "r"(src), "r"(n), "r"(rgb)
+    : "r4"
+  );
 }
 
 /* 16bit to 32bit */
@@ -57,38 +166,31 @@ void libaroma_color_copy32(dwordp dst, wordp src, int n, bytep rgb_pos) {
   
   /* neon */
   if (n>=8){
+#ifdef LIBAROMA_CONFIG_USE_HICOLOR_BIT
     uint16x8_t msk_r = vdupq_n_u16(0xF800); /* Red Mask */
     uint16x8_t msk_g = vdupq_n_u16(0x07E0); /* Green Mask */
     uint16x8_t msk_b = vdupq_n_u16(0x001F); /* Blue Mask */
-    
-    /* vars */
     uint16x8_t psrc;
     uint8x8x4_t n_dst;
-#ifdef LIBAROMA_CONFIG_USE_HICOLOR_BIT
     uint8x8_t r, g, b;
-#endif
-
     for (i=0;i<n-left;i+=8) {
       /* load source color */
       psrc = vld1q_u16(src+i);
-#ifdef LIBAROMA_CONFIG_USE_HICOLOR_BIT
       /* get subpixels of source color */
       r = vshrn_n_u16(vandq_u16(psrc,msk_r),8);
       g = vshrn_n_u16(vandq_u16(psrc,msk_g),3);
       b = vmovn_u16(vshlq_n_u16(vandq_u16(psrc,msk_b),3));
-      
       /* small byte left : 11111xxx 111111xx 11111xxx */
       n_dst.val[rgb_pos[3]] = vorr_u8(r,vshr_n_u8(r,5));
       n_dst.val[rgb_pos[4]] = vorr_u8(g,vshr_n_u8(g,6));
       n_dst.val[rgb_pos[5]] = vorr_u8(b,vshr_n_u8(b,5));
-#else
-      n_dst.val[rgb_pos[3]] = vshrn_n_u16(vandq_u16(psrc,msk_r),8);
-      n_dst.val[rgb_pos[4]] = vshrn_n_u16(vandq_u16(psrc,msk_g),3);
-      n_dst.val[rgb_pos[5]] = vmovn_u16(vshlq_n_u16(vandq_u16(psrc,msk_b),3));
-#endif
       /* dump it */
       vst4_u8((uint8_t *) (dst+i), n_dst);
     }
+#else
+    /* use assembler version */
+    libaroma_color_copy32_asm(dst,src,n-left,rgb_pos[0]);
+#endif
   }
   
   /* leftover */

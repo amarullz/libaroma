@@ -133,7 +133,7 @@ short libaroma_font_size_px(byte size) {
   else if (size < 1) {
     size = 1;
   }
-  return libaroma_dp(8 + size * 2);
+  return libaroma_dp(7 + size * 2.5);
 } /* End of libaroma_font_size_px */
 
 /*
@@ -214,12 +214,13 @@ LIBAROMA_GLYPH libaroma_font_glyph(
   _libaroma_font_lock(1);
   _LIBAROMA_FONT_SLOT_CACHEP tmp_glyph = (_LIBAROMA_FONT_SLOT_CACHEP) 
     libaroma_iarray_get(_libaroma_font_faces[fontid].cache, cache_id);
-  _libaroma_font_lock(0);
+  
   
   if (tmp_glyph != NULL) {
     /* cache is available */
     // _libaroma_font_faces[fontid].last_cache = tmp_glyph;
     // _libaroma_font_faces[fontid].last_slotid = cache_id;
+    _libaroma_font_lock(0);
     return (LIBAROMA_GLYPH) tmp_glyph;
   }
   
@@ -228,18 +229,16 @@ LIBAROMA_GLYPH libaroma_font_glyph(
   
   if (face == NULL) {
     ALOGW("libaroma_font_glyph fontid(%i) uninitialized", fontid);
+    _libaroma_font_lock(0);
     return NULL;
   }
-  
-  /* thread safe */
-  _libaroma_font_lock(1);
   
   /* set requested font size */
   libaroma_font_set_size(fontid, libaroma_font_size_px(size), 0);
   
   /* load glyph from freetype face */
   if (FT_Load_Glyph(face, c, _LIBAROMA_FONT_LOAD_GLYPH_FLAG) == 0) {
-    _LIBAROMA_FONT_SLOT_CACHE slot;
+    _LIBAROMA_FONT_SLOT_CACHE slot={0};
     FT_Get_Glyph(face->glyph, &slot.glyph);
     memcpy(&slot.metrics, &face->glyph->metrics, sizeof(FT_Glyph_Metrics));
     slot.codepoint = c;
@@ -361,6 +360,7 @@ byte libaroma_font_free(
       fontid, _LIBAROMA_FONT_MAX_FACE);
     return 0;
   }
+  _libaroma_font_lock(1);
   /* Free Harfbuzz Font */
   if (_libaroma_font_faces[fontid].hb_font != NULL) {
     _libaroma_font_hb_free(fontid);
@@ -381,6 +381,7 @@ byte libaroma_font_free(
     libaroma_stream_close(_libaroma_font_faces[fontid].stream);
     _libaroma_font_faces[fontid].stream = NULL;
   }
+  _libaroma_font_lock(0);
   return 1;
 } /* End of libaroma_font_free */
 

@@ -47,6 +47,7 @@ static LIBAROMA_CTL_SCROLL_CLIENT_HANDLER _libaroma_ctl_list_handler={
 /* list structure */
 typedef struct {
   int h;
+  int hpad;
   int vpad;
   int itemn;
   byte flags;
@@ -56,7 +57,259 @@ typedef struct {
   LIBAROMA_CTL_LIST_ITEMP focused;
   int threadn;
   LIBAROMA_CTL_LIST_ITEMP * threads;
+  LIBAROMA_MUTEX mutex;
+  LIBAROMA_MUTEX imutex;
+  LIBAROMA_CTL_LIST_TOUCHPOS pos;
 } LIBAROMA_CTL_SCROLL, * LIBAROMA_CTL_SCROLLP;
+
+
+/*
+ * Function    : __libaroma_ctl_list_item_reg_thread
+ * Return Value: byte
+ * Descriptions: register item thread
+ */
+byte __libaroma_ctl_list_item_reg_thread(
+    LIBAROMA_CONTROLP ctl, LIBAROMA_CTL_LIST_ITEMP item){
+  LIBAROMA_CTL_SCROLL_CLIENTP client = libaroma_ctl_scroll_get_client(ctl);
+  if (!client){
+    return 0;
+  }
+  if (client->handler!=&_libaroma_ctl_list_handler){
+    return 0;
+  }
+  /*
+  if (!item->handler->message){
+    ALOGW("item_reg_thread item doesn't have message handler");
+    return 0;
+  }
+  */
+  
+  LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
+  if (mi->threadn==0){
+    mi->threads = (LIBAROMA_CTL_LIST_ITEMP *)
+      malloc(sizeof(LIBAROMA_CTL_LIST_ITEMP));
+    mi->threads[0] = item;
+    mi->threadn=1;
+  }
+  else{
+    int i;
+    for (i=0;i<mi->threadn;i++){
+      if (mi->threads[i]==item){
+        /* already registered */
+        return 2;
+      }
+    }
+    
+    LIBAROMA_CTL_LIST_ITEMP * new_threads = (LIBAROMA_CTL_LIST_ITEMP *)
+      realloc(mi->threads, sizeof(LIBAROMA_CTL_LIST_ITEMP)*(mi->threadn+1));
+    if (!new_threads){
+      if (mi->threads){
+        free(mi->threads);
+      }
+      mi->threads=NULL;
+      mi->threadn=0;
+      ALOGW("item_reg_thread cannot realloc threads");
+      return 0;
+    }
+    mi->threads=new_threads;
+    mi->threads[mi->threadn]=item;
+    mi->threadn++;
+  }
+  return 1;
+} /* End of __libaroma_ctl_list_item_reg_thread */
+
+/*
+ * Function    : __libaroma_ctl_list_item_unreg_thread
+ * Return Value: byte
+ * Descriptions: unregister item thread
+ */
+byte __libaroma_ctl_list_item_unreg_thread(
+    LIBAROMA_CONTROLP ctl, LIBAROMA_CTL_LIST_ITEMP item){
+  LIBAROMA_CTL_SCROLL_CLIENTP client = libaroma_ctl_scroll_get_client(ctl);
+  if (!client){
+    return 0;
+  }
+  if (client->handler!=&_libaroma_ctl_list_handler){
+    return 0;
+  }
+  LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
+  if (mi->threadn<1){
+    return 0;
+  }
+  
+  if (mi->threadn==1){
+    if (mi->threads[0]==item){
+      free(mi->threads);
+      mi->threads=NULL;
+      mi->threadn=0;
+      return 1;
+    }
+    return 0;
+  }
+  
+  LIBAROMA_CTL_LIST_ITEMP * new_threads = (LIBAROMA_CTL_LIST_ITEMP *)
+      malloc(sizeof(LIBAROMA_CTL_LIST_ITEMP)*(mi->threadn-1));
+  if (!new_threads){
+    ALOGW("item_unreg_thread cannot allocate new threads");
+    if (mi->threads){
+      free(mi->threads);
+    }
+    mi->threads=NULL;
+    mi->threadn=0;
+    return 0;
+  }
+  
+  int i;
+  int z=0;
+  int n=-1;
+  for (i=0;i<mi->threadn;i++){
+    if (mi->threads[i]==item){
+      n=i;
+    }
+    else{
+      new_threads[z++]=mi->threads[i];
+    }
+  }
+  if (n>-1){
+    free(mi->threads);
+    mi->threads=new_threads;
+    mi->threadn--;
+    return 1;
+  }
+  free(new_threads);
+  ALOGV("item_unreg_thread item is unregistered");
+  return 0;
+} /* End of __libaroma_ctl_list_item_unreg_thread */
+
+    
+/*
+ * Function    : _libaroma_ctl_list_draw_item_fresh
+ * Return Value: void
+ * Descriptions: fresh item drawing
+ */
+void _libaroma_ctl_list_draw_item_fresh(
+  LIBAROMA_CONTROLP ctl,
+  LIBAROMA_CTL_LIST_ITEMP item,
+  LIBAROMA_CANVASP canvas,
+  word bgcolor,
+  int hpad,
+  byte flag
+){
+  if ((!canvas)||(!item)||(!ctl)) {
+    return;
+  }
+  
+  /* cleanup */
+  libaroma_canvas_setcolor(canvas,bgcolor,0xff);
+  LIBAROMA_CANVASP tcanvas=NULL;
+  LIBAROMA_CANVASP ccv = canvas;
+  /* have horizontal padding */
+  if (hpad>0){
+    tcanvas = libaroma_canvas_area(
+      canvas, hpad, 0, canvas->w-hpad*2, canvas->h
+    );
+    if (tcanvas){
+      ccv = tcanvas;
+    }
+  }
+  /* draw directly */
+  if (item->handler->draw!=NULL){
+    item->handler->draw(ctl,item,ccv,bgcolor,
+      flag);
+  }
+  if (tcanvas){
+    libaroma_canvas_free(tcanvas);
+  }
+} /* End of _libaroma_ctl_list_draw_item_fresh */
+
+/*
+ * Function    : _libaroma_ctl_list_free_state
+ * Return Value: void
+ * Descriptions: free state
+ */
+void _libaroma_ctl_list_free_state(LIBAROMA_CTL_LIST_ITEMP item){
+  if (item->state!=NULL){
+    if (item->state->cache_rest){
+      libaroma_canvas_free(item->state->cache_rest);
+    }
+    if (item->state->cache_push){
+      libaroma_canvas_free(item->state->cache_push);
+    }
+    free(item->state);
+    ALOGT("[X] State Freed %x",item->id);
+  }
+  item->state=NULL;
+} /* End of _libaroma_ctl_list_free_state */
+
+/*
+ * Function    : _libaroma_ctl_list_new_state
+ * Return Value: byte
+ * Descriptions: create new state
+ */
+byte _libaroma_ctl_list_init_state(
+    LIBAROMA_CTL_LIST_ITEMP item
+){
+  if (item->state==NULL){
+    item->state = 
+      (LIBAROMA_CTL_LIST_ITEM_STATEP) malloc(sizeof(
+        LIBAROMA_CTL_LIST_ITEM_STATE
+      ));
+    if (!item->state){
+      ALOGW("list_new_state alloc memory failed");
+      return 0;
+    }
+    memset(item->state,0,sizeof(
+        LIBAROMA_CTL_LIST_ITEM_STATE
+      )
+    );
+    ALOGT("[0] State Created %x",item->id);
+    return 1;
+  }
+  return 2;
+} /* End of _libaroma_ctl_list_new_state */
+
+/*
+ * Function    : _libaroma_ctl_list_init_state_cache
+ * Return Value: byte
+ * Descriptions: init cache canvases
+ */
+byte _libaroma_ctl_list_init_state_cache(
+  LIBAROMA_CONTROLP ctl,
+  LIBAROMA_CTL_LIST_ITEMP item
+){
+  LIBAROMA_CTL_SCROLL_CLIENTP client = libaroma_ctl_scroll_get_client(ctl);
+  if (!client){
+    return 0;
+  }
+  if (client->handler!=&_libaroma_ctl_list_handler){
+    return 0;
+  }
+  LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
+  
+  if (item->state){
+    if (!item->state->cache_rest){
+      item->state->cache_rest=libaroma_canvas(ctl->w,item->h);
+    }
+    if (!item->state->cache_push){
+      item->state->cache_push=libaroma_canvas(ctl->w,item->h);
+    }
+    word bgcolor = libaroma_ctl_scroll_get_bg_color(ctl);
+    if (item->state->cache_rest){
+      _libaroma_ctl_list_draw_item_fresh(
+        ctl,item,item->state->cache_rest,bgcolor,mi->hpad,
+        LIBAROMA_CTL_LIST_ITEM_DRAW_NORMAL
+      );
+    }
+    if (item->state->cache_push){
+      _libaroma_ctl_list_draw_item_fresh(
+        ctl,item,item->state->cache_push,bgcolor,mi->hpad,
+        LIBAROMA_CTL_LIST_ITEM_DRAW_PUSHED
+      );
+    }
+    return 1;
+  }
+  return 0;
+} /* End of _libaroma_ctl_list_init_state_cache */
 
 /*
  * Function    : _libaroma_ctl_list_draw_item
@@ -69,17 +322,72 @@ void _libaroma_ctl_list_draw_item(
     LIBAROMA_CANVASP canvas,
     word bgcolor
 ){
-  if (!item){
+  if ((!item)||(!canvas)){
     return;
   }
-  if (!canvas){
+  LIBAROMA_CTL_SCROLL_CLIENTP client = libaroma_ctl_scroll_get_client(ctl);
+  if (!client){
     return;
   }
-  /* cleanup */
-  libaroma_canvas_setcolor(canvas,bgcolor,0xff);
-  if (item->handler->draw!=NULL){
-    item->handler->draw(ctl,item,canvas,bgcolor);
+  if (client->handler!=&_libaroma_ctl_list_handler){
+    return;
   }
+  LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
+  
+  /* normal animation handler */
+  if (item->state){
+    if (item->state->normal_handler){
+      if ((item->state->touch_state>0)&&(item->state->release_state<1)) {
+        float ripplestate = item->state->touch_state;
+        float pst_state = MIN(item->state->touch_state*15,1);
+        float cbz_state;
+        if (item->state->release_state>0){
+          ripplestate +=
+            (1.0-item->state->touch_state)*item->state->release_state;
+        }
+        cbz_state = libaroma_cubic_bezier_easein(ripplestate);
+        float ropa  = (item->state->touched==1)?1:1-item->state->release_state;
+        byte opa    = (0xff * pst_state) * ropa;
+        
+        LIBAROMA_CTL_LIST_TOUCHPOSP pos = libaroma_ctl_list_getpos(ctl);
+        if (pos){
+          int start_x = pos->start_x;
+          int start_y = pos->start_y - (item->y+libaroma_dp(1));
+          int msize = MAX(MIN(canvas->w,canvas->h)>>1,libaroma_dp(5));
+          int psize = MAX(canvas->w,canvas->h);
+          psize+=(abs(start_x-canvas->w/2)+abs(start_y-canvas->h/2)) * 2.5;
+          libaroma_draw(canvas, item->state->cache_rest, 0, 0, 0);
+          libaroma_draw_opacity(canvas, 
+            item->state->cache_push, 0, 0, 2, 
+            (byte) (opa*0.75)
+          );
+          
+          int rsize=psize * cbz_state;
+          if (rsize<msize){
+            opa = (opa * rsize) / msize;
+          }
+          rsize+=msize;
+          libaroma_draw_mask_circle(
+              canvas, 
+              item->state->cache_push, 
+              start_x, start_y, 
+              start_x, start_y, 
+              rsize,
+              opa
+            );
+        }
+      }
+      else{
+        libaroma_draw(canvas, item->state->cache_rest, 0, 0, 0);
+      }
+      return;
+    }
+  }
+  
+  /* draw fresh */
+  _libaroma_ctl_list_draw_item_fresh(
+    ctl, item,canvas,bgcolor,mi->hpad, LIBAROMA_CTL_LIST_ITEM_DRAW_NORMAL
+  );
 } /* End of _libaroma_ctl_list_draw_item */
 
 /*
@@ -128,26 +436,131 @@ byte _libaroma_ctl_list_thread(
   
   byte need_redraw=0;
   int i;
+  libaroma_mutex_lock(mi->imutex);
+  libaroma_mutex_lock(mi->mutex);
+  int num_thread = mi->threadn;
+  if (num_thread>0){
+    LIBAROMA_CTL_LIST_ITEMP * threads = (LIBAROMA_CTL_LIST_ITEMP *) malloc(
+      sizeof(LIBAROMA_CTL_LIST_ITEM)*num_thread);
+    for (i=0;i<num_thread;i++){
+      threads[i]=mi->threads[i];
+    }
 #ifdef LIBAROMA_CONFIG_OPENMP
   #pragma omp parallel for
 #endif
-  for (i=0;i<mi->threadn;i++){
-    LIBAROMA_CTL_LIST_ITEMP item=mi->threads[i];
-    if (item->handler->message){
-      if (item->handler->message(
-        ctl,
-        item,
-        LIBAROMA_CTL_LIST_ITEM_MSG_THREAD,
-        libaroma_ctl_scroll_is_visible(ctl,item->y,item->h),
-        0,
-        0
-      )){
-        if (_libaroma_ctl_list_dodraw_item(ctl,item)){
-          need_redraw=1;
+    for (i=0;i<num_thread;i++){
+      LIBAROMA_CTL_LIST_ITEMP item = threads[i];
+      if (item){
+        byte unreg_me=0;
+        byte is_draw=0;
+        if (item->state){
+          /* normal behaviour */
+          if (item->state->normal_handler==1){
+            if ((item->state->touch_start)&&(item->state->touch_state<1)){
+              float nowstate=libaroma_control_state(
+                item->state->touch_start, 2000
+              );
+              if (item->state->touch_state!=nowstate){
+                is_draw = 1;
+                item->state->touch_state=nowstate;
+              }
+            }
+            if (item->state->touched==1){
+              if ((item->state->touch_state>=0.4)&&(!item->state->holded)){
+                item->state->holded=1;
+                
+                /* send hold message to item */
+                if (item->handler->message){
+                  int cx = 0; int cy=0;
+                  LIBAROMA_CTL_LIST_TOUCHPOSP pos =
+                    libaroma_ctl_list_getpos(ctl);
+                  if (pos){
+                    cy = pos->last_y - item->y;
+                    cx = pos->last_x;
+                  }
+                  byte msgret=item->handler->message(
+                    ctl,
+                    item,
+                    LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_HOLDED,
+                    LIBAROMA_CTL_LIST_ITEM_MSGPARAM_HOLDED,
+                    cx, cy
+                  );
+                  if (msgret&LIBAROMA_CTL_LIST_ITEM_MSGRET_NEED_DRAW){
+                    is_draw=1;
+                  }
+                  if (msgret&LIBAROMA_CTL_LIST_ITEM_MSGRET_UNREG_THREAD){
+                    unreg_me=1;
+                  }
+                }
+              }
+            }
+            else if (item->state->touched==2){
+              if (item->state->touch_state>=0.1){
+                item->state->touched=0;
+                item->state->touch_start=0;
+                item->state->release_start=libaroma_tick();
+                item->state->release_state=0.0;
+              }
+            }
+            
+            if (!item->state->touched&&item->state->release_start){
+              float nowstate=libaroma_control_state(
+                item->state->release_start, 500
+              );
+              if (item->state->release_state!=nowstate){
+                is_draw = 1;
+                item->state->release_state=nowstate;
+              }
+              if (item->state->release_state>=1){
+                item->state->release_start=0;
+                item->state->touch_start=0;
+                item->state->touched=0;
+                _libaroma_ctl_list_free_state(item);
+                unreg_me=1;
+              }
+            }
+          }
+        }
+        if (item->handler->message){
+          byte msgret=item->handler->message(
+            ctl,
+            item,
+            LIBAROMA_CTL_LIST_ITEM_MSG_THREAD,
+            libaroma_ctl_scroll_is_visible(ctl,item->y,item->h),
+            0,
+            0
+          );
+          if (msgret&LIBAROMA_CTL_LIST_ITEM_MSGRET_NEED_DRAW){
+            is_draw=1;
+          }
+          if (msgret&LIBAROMA_CTL_LIST_ITEM_MSGRET_UNREG_THREAD){
+            unreg_me=1;
+          }
+        }
+        if (is_draw){
+          if (_libaroma_ctl_list_dodraw_item(ctl,item)){
+            need_redraw=1;
+          }
+        }
+        
+        /* unreg thread */
+        if (!unreg_me){
+          threads[i] = NULL;
         }
       }
     }
+    
+    /* unreg threads */
+    for (i=0;i<num_thread;i++){
+      LIBAROMA_CTL_LIST_ITEMP item = threads[i];
+      if (item!=NULL){
+        __libaroma_ctl_list_item_unreg_thread(ctl, item);
+      }
+    }
+    free(threads);
   }
+  libaroma_mutex_unlock(mi->mutex);
+  libaroma_mutex_unlock(mi->imutex);
   return need_redraw;
 } /* End of _libaroma_ctl_list_thread */
 
@@ -168,7 +581,7 @@ LIBAROMA_CTL_LIST_ITEMP _libaroma_ctl_list_item_by_y(
   /* find first item */
   LIBAROMA_CTL_LIST_ITEMP f = mi->first;
   while(f){
-    if ((f->y>=y)&&(f->y+f->h<y)){
+    if ((f->y<=y)&&(f->y+f->h>y)){
       return f;
     }
     f = f->next;
@@ -206,6 +619,7 @@ void _libaroma_ctl_list_draw(
     );
   }
   
+  libaroma_mutex_lock(mi->imutex);
   /* find first item */
   int current_index = 0;
   LIBAROMA_CTL_LIST_ITEMP f = mi->first;
@@ -248,6 +662,7 @@ void _libaroma_ctl_list_draw(
     item=item->next;
     current_index++;
   }
+  libaroma_mutex_unlock(mi->imutex);
 } /* End of _libaroma_ctl_list_draw */
 
 /*
@@ -266,106 +681,140 @@ dword _libaroma_ctl_list_scroll_message(
   switch(msg){
     case LIBAROMA_CTL_SCROLL_MSG_ISNEED_TOUCH:{
         if ((y<mi->vpad)||(y>mi->h-mi->vpad)){
-          ALOGV("list_scroll_message ISNEED(%i,%i) not needed",x,y);
+          ALOGT("list_scroll_message ISNEED(%i,%i) not needed",x,y);
           /* no need touch handle */
           return 0;
         }
         LIBAROMA_CTL_LIST_ITEMP item=
-            _libaroma_ctl_list_item_by_y(
-              ctl, client,y);
+            _libaroma_ctl_list_item_by_y(ctl, client, y);
         if (item){
           if (item->flags&LIBAROMA_CTL_LIST_ITEM_RECEIVE_TOUCH){
             mi->touched = item;
-            ALOGV("list_scroll_message ISNEED(%i,%i) needed",x,y);
+            ALOGT("list_scroll_message ISNEED(%i,%i) needed",x,y);
             return LIBAROMA_CTL_SCROLL_MSG_HANDLED;
           }
         }
-        ALOGV("list_scroll_message ISNEED(%i,%i) item don't use touch",x,y);
+        ALOGT("list_scroll_message ISNEED(%i,%i) item don't use touch",x,y);
         return 0;
       }
       break;
     case LIBAROMA_CTL_SCROLL_MSG_TOUCH_DOWN:{
-        ALOGV("list_scroll_message TOUCH_DOWN(%i,%i)",x,y);
+        ALOGT("list_scroll_message TOUCH_DOWN(%i,%i)",x,y);
+        mi->pos.start_x=x;
+        mi->pos.start_y=y;
+        mi->pos.last_x=x;
+        mi->pos.last_y=y;
+        
+        byte retval = 0;
         if (mi->touched!=NULL){
+          byte mres = 0;
           if (mi->touched->handler->message){
             int cy = y - mi->touched->y;
-            if (mi->touched->handler->message(
+            mres=mi->touched->handler->message(
               ctl,
               mi->touched,
               LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_DOWN,
               0,
               x, cy
-            )){
-              if (_libaroma_ctl_list_dodraw_item(ctl,mi->touched)){
-                return LIBAROMA_CTL_SCROLL_MSG_NEED_DRAW;
-              }
+            );
+          }
+          if (!(mres&LIBAROMA_CTL_LIST_ITEM_MSGRET_HANDLED)){
+            /* init state item */
+            if (_libaroma_ctl_list_init_state(mi->touched)){
+              _libaroma_ctl_list_init_state_cache(ctl,mi->touched);
+              mi->touched->state->normal_handler = 1;
+              mi->touched->state->touch_start=libaroma_tick();
+              mi->touched->state->touch_state=0;
+              mi->touched->state->release_state=0.0;
+              mi->touched->state->release_start=0;
+              mi->touched->state->holded=0;
+              mi->touched->state->touched=1;
+              libaroma_mutex_lock(mi->mutex);
+              __libaroma_ctl_list_item_reg_thread(ctl, mi->touched);
+              libaroma_mutex_unlock(mi->mutex);
+            }
+          }
+          else if(mi->touched->state){
+            mi->touched->state->normal_handler = 0;
+          }
+          
+          if (mres&LIBAROMA_CTL_LIST_ITEM_MSGRET_NEED_DRAW){
+            if (_libaroma_ctl_list_dodraw_item(ctl,mi->touched)){
+              retval=LIBAROMA_CTL_SCROLL_MSG_NEED_DRAW;
             }
           }
         }
-      }
-      break;
-    case LIBAROMA_CTL_SCROLL_MSG_TOUCH_UP:{
-        ALOGV("list_scroll_message TOUCH_UP(%i,%i)",x,y);
-        if (mi->touched!=NULL){
-          if (mi->touched->handler->message){
-            int cy = y - mi->touched->y;
-            if (mi->touched->handler->message(
-              ctl,
-              mi->touched,
-              LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_UP,
-              0,
-              x, cy
-            )){
-              mi->touched=NULL;
-              if (_libaroma_ctl_list_dodraw_item(ctl,mi->touched)){
-                return LIBAROMA_CTL_SCROLL_MSG_NEED_DRAW;
-              }
-            }
-          }
-          mi->touched=NULL;
-        }
+        return retval;
       }
       break;
     case LIBAROMA_CTL_SCROLL_MSG_TOUCH_MOVE:{
-        ALOGV("list_scroll_message TOUCH_MOVE(%i,%i)",x,y);
+        ALOGT("list_scroll_message TOUCH_MOVE(%i,%i)",x,y);
+        mi->pos.last_x=x;
+        mi->pos.last_y=y;
+        byte retval = 0;
         if (mi->touched!=NULL){
+          byte mres = 0;
           if (mi->touched->handler->message){
             int cy = y - mi->touched->y;
-            if (mi->touched->handler->message(
+            mres=mi->touched->handler->message(
               ctl,
               mi->touched,
               LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_MOVE,
               0,
               x, cy
-            )){
-              if (_libaroma_ctl_list_dodraw_item(ctl,mi->touched)){
-                return LIBAROMA_CTL_SCROLL_MSG_NEED_DRAW;
-              }
+            );
+          }
+          if (mres&LIBAROMA_CTL_LIST_ITEM_MSGRET_NEED_DRAW){
+            if (_libaroma_ctl_list_dodraw_item(ctl,mi->touched)){
+              retval=LIBAROMA_CTL_SCROLL_MSG_NEED_DRAW;
             }
           }
         }
+        return retval;
       }
       break;
+    case LIBAROMA_CTL_SCROLL_MSG_TOUCH_UP:
     case LIBAROMA_CTL_SCROLL_MSG_TOUCH_CANCEL:{
-        ALOGV("list_scroll_message TOUCH_CANCEL(%i,%i)",x,y);
+        ALOGT_IF(msg==LIBAROMA_CTL_SCROLL_MSG_TOUCH_UP,
+          "list_scroll_message TOUCH_UP(%i,%i)",x,y);
+        ALOGT_IF(msg==LIBAROMA_CTL_SCROLL_MSG_TOUCH_CANCEL,
+          "list_scroll_message TOUCH_CANCEL(%i,%i)",x,y);
+        mi->pos.last_x=x;
+        mi->pos.last_y=y;
+        
+        byte retval = 0;
         if (mi->touched!=NULL){
-          if (mi->touched->handler->message){
-            int cy = y - mi->touched->y;
-            if (mi->touched->handler->message(
-              ctl,
-              mi->touched,
-              LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_CANCEL,
-              0,
-              x, cy
-            )){
-              if (_libaroma_ctl_list_dodraw_item(ctl,mi->touched)){
-                mi->touched=NULL;
-                return LIBAROMA_CTL_SCROLL_MSG_NEED_DRAW;
-              }
+          dword param_msg = 0;
+          if (mi->touched->state){
+            if (mi->touched->state->holded){
+              param_msg = LIBAROMA_CTL_LIST_ITEM_MSGPARAM_HOLDED;
             }
           }
-          mi->touched=NULL;
+          byte mres = 0;
+          if (mi->touched->handler->message){
+            int cy = y - mi->touched->y;
+            mres=mi->touched->handler->message(
+              ctl,
+              mi->touched,
+              (msg==LIBAROMA_CTL_SCROLL_MSG_TOUCH_UP)?
+                LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_UP:
+                LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_CANCEL,
+              param_msg,
+              x, cy
+            );
+          }
+          if (mi->touched->state){
+            if (mi->touched->state->normal_handler){
+              mi->touched->state->touched=2;
+            }
+          }
+          if (mres&LIBAROMA_CTL_LIST_ITEM_MSGRET_NEED_DRAW){
+            if (_libaroma_ctl_list_dodraw_item(ctl,mi->touched)){
+              retval=LIBAROMA_CTL_SCROLL_MSG_NEED_DRAW;
+            }
+          }
         }
+        return retval;
       }
       break;
   }
@@ -387,16 +836,20 @@ dword _libaroma_ctl_list_message(
   }
   LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
   
+  dword res=0;
+  
   /* handle the message */
+  libaroma_mutex_lock(mi->imutex);
   switch(msg->msg){
     case LIBAROMA_CTL_SCROLL_MSG:{
-        return _libaroma_ctl_list_scroll_message(
+        res=_libaroma_ctl_list_scroll_message(
           ctl, client, mi, msg->x, msg->y, x, y
         );
       }
       break;
   }
-  return 0;
+  libaroma_mutex_unlock(mi->imutex);
+  return res;
 } /* End of _libaroma_ctl_list_message */
 
 /*
@@ -414,11 +867,14 @@ void _libaroma_ctl_list_destroy(
   /* cleanup items */
   LIBAROMA_CTL_LIST_ITEMP f = mi->first;
   while(f){
-    if (f->handler->destroy!=NULL){
-      f->handler->destroy(ctl,f);
-    }
     LIBAROMA_CTL_LIST_ITEMP p = f;
     f = p->next;
+    
+    /* destroy */
+    if (p->handler->destroy!=NULL){
+      p->handler->destroy(ctl,p);
+    }
+    _libaroma_ctl_list_free_state(p);
     free(p);
   }
   
@@ -427,6 +883,8 @@ void _libaroma_ctl_list_destroy(
   }
   
   /* free internal data */
+  libaroma_mutex_free(mi->imutex);
+  libaroma_mutex_free(mi->mutex);
   free(mi);
   client->internal=NULL;
   client->handler=NULL;
@@ -440,6 +898,7 @@ void _libaroma_ctl_list_destroy(
 LIBAROMA_CONTROLP libaroma_ctl_list(
     LIBAROMA_WINDOWP win, word id,
     int x, int y, int w, int h,
+    int horizontal_padding,
     int vertical_padding,
     word bg_color, byte flags
 ){
@@ -453,8 +912,13 @@ LIBAROMA_CONTROLP libaroma_ctl_list(
   memset(mi,0,sizeof(LIBAROMA_CTL_SCROLL));
   mi->vpad = libaroma_window_usedp(2)?
       libaroma_dp(vertical_padding):vertical_padding;
+  mi->hpad = libaroma_window_usedp(2)?
+      libaroma_dp(horizontal_padding):horizontal_padding;
+  
   mi->h = mi->vpad*2;
   mi->flags = flags;
+  libaroma_mutex_init(mi->mutex);
+  libaroma_mutex_init(mi->imutex);
   
   /* create scroll control */
   LIBAROMA_CONTROLP ctl = libaroma_ctl_scroll(
@@ -490,108 +954,21 @@ byte __libaroma_ctl_list_repos_next_items(LIBAROMA_CTL_LIST_ITEMP first,
 } /* End of __libaroma_ctl_list_repos_next_items */
 
 /*
- * Function    : libaroma_ctl_list_item_reg_thread
- * Return Value: byte
- * Descriptions: register item thread
+ * Function    : libaroma_ctl_list_getpos
+ * Return Value: LIBAROMA_CTL_LIST_TOUCHPOSP
+ * Descriptions: get touch positions
  */
-byte libaroma_ctl_list_item_reg_thread(
-    LIBAROMA_CONTROLP ctl, LIBAROMA_CTL_LIST_ITEMP item){
+LIBAROMA_CTL_LIST_TOUCHPOSP libaroma_ctl_list_getpos(LIBAROMA_CONTROLP ctl){
   LIBAROMA_CTL_SCROLL_CLIENTP client = libaroma_ctl_scroll_get_client(ctl);
   if (!client){
-    return 0;
+    return NULL;
   }
   if (client->handler!=&_libaroma_ctl_list_handler){
-    return 0;
-  }
-  if (!item->handler->message){
-    ALOGW("item_reg_thread item doesn't have message handler");
-    return 0;
+    return NULL;
   }
   LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
-  if (mi->threadn==0){
-    mi->threads = (LIBAROMA_CTL_LIST_ITEMP *)
-      malloc(sizeof(LIBAROMA_CTL_LIST_ITEMP));
-    mi->threads[0] = item;
-    mi->threadn++;
-  }
-  else{
-    int i;
-    for (i=0;i<mi->threadn;i++){
-      if (mi->threads[i]==item){
-        /* already registered */
-        return 2;
-      }
-    }
-    
-    LIBAROMA_CTL_LIST_ITEMP * new_threads = (LIBAROMA_CTL_LIST_ITEMP *)
-      realloc(mi->threads, sizeof(LIBAROMA_CTL_LIST_ITEMP)*(mi->threadn+1));
-    if (!new_threads){
-      ALOGW("item_reg_thread cannot realloc threads");
-    }
-    mi->threads=new_threads;
-    mi->threads[mi->threadn]=item;
-    mi->threadn++;
-  }
-  return 1;
-} /* End of libaroma_ctl_list_item_reg_thread */
-
-/*
- * Function    : libaroma_ctl_list_item_unreg_thread
- * Return Value: byte
- * Descriptions: unregister item thread
- */
-byte libaroma_ctl_list_item_unreg_thread(
-    LIBAROMA_CONTROLP ctl, LIBAROMA_CTL_LIST_ITEMP item){
-  LIBAROMA_CTL_SCROLL_CLIENTP client = libaroma_ctl_scroll_get_client(ctl);
-  if (!client){
-    return 0;
-  }
-  if (client->handler!=&_libaroma_ctl_list_handler){
-    return 0;
-  }
-  LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
-  if (mi->threadn<1){
-    ALOGV("item_unreg_thread threadn < 1");
-    return 0;
-  }
-  
-  if (mi->threadn==1){
-    if (mi->threads[0]==item){
-      mi->threadn--;
-      free(mi->threads);
-      mi->threads=NULL;
-    }
-    return 0;
-  }
-  
-  LIBAROMA_CTL_LIST_ITEMP * new_threads = (LIBAROMA_CTL_LIST_ITEMP *)
-      malloc(sizeof(LIBAROMA_CTL_LIST_ITEMP)*(mi->threadn-1));
-  if (!new_threads){
-    ALOGW("item_unreg_thread cannot allocate new threads");
-  }
-  
-  int i;
-  int z=0;
-  int n=-1;
-  for (i=0;i<mi->threadn;i++){
-    if (mi->threads[i]==item){
-      n=i;
-    }
-    else{
-      new_threads[z++]=mi->threads[i];
-    }
-  }
-  if (n>-1){
-    free(mi->threads);
-    mi->threads=new_threads;
-    mi->threadn--;
-    return 1;
-  }
-  
-  free(new_threads);
-  ALOGV("item_unreg_thread item is unregistered");
-  return 0;
-} /* End of libaroma_ctl_list_item_unreg_thread */
+  return &mi->pos;
+} /* End of libaroma_ctl_list_getpos */
 
 /*
  * Function    : libaroma_ctl_list_get_item_internal
@@ -618,16 +995,19 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_ctl_list_get_item_internal(
     }
   }
   int curr_index = 0;
+  libaroma_mutex_lock(mi->imutex);
   LIBAROMA_CTL_LIST_ITEMP f = mi->first;
   if (f){
     while(f){
       if (((!find_id)&&(curr_index==index))||((find_id)&&(f->id==index))) {
+        libaroma_mutex_unlock(mi->imutex);
         return f;
       }
       f = f->next;
       curr_index++;
     }
   }
+  libaroma_mutex_unlock(mi->imutex);
   /* not found */
   return NULL;
 } /* End of libaroma_ctl_list_get_item_internal */
@@ -648,7 +1028,8 @@ byte libaroma_ctl_list_del_itemp_internal(
     return 0;
   }
   LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
-  
+  libaroma_mutex_lock(mi->imutex);
+  libaroma_mutex_lock(mi->mutex);
   if (f){
     if ((f==mi->first)&&(f==mi->last)){
       mi->first=mi->last=NULL;
@@ -679,10 +1060,19 @@ byte libaroma_ctl_list_del_itemp_internal(
     if (f->handler->destroy!=NULL){
       f->handler->destroy(ctl,f);
     }
+    _libaroma_ctl_list_free_state(f);
+    __libaroma_ctl_list_item_unreg_thread(ctl, f);
+    if (mi->touched==f){
+      mi->touched=NULL;
+    }
     free(f);
+    libaroma_mutex_unlock(mi->mutex);
+    libaroma_mutex_unlock(mi->imutex);
     libaroma_ctl_scroll_request_height(ctl, mi->h);
     return 1;
   }
+  libaroma_mutex_unlock(mi->mutex);
+  libaroma_mutex_unlock(mi->imutex);
   return 0;
 } /* End of libaroma_ctl_list_del_itemp_internal */
 
@@ -779,6 +1169,9 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_ctl_list_add_item_internal(
     ALOGW("list_add_item_internal cannot allocating memory for item");
     return NULL;
   }
+  
+  libaroma_mutex_lock(mi->imutex);
+  libaroma_mutex_lock(mi->mutex);
   memset(item,0,sizeof(LIBAROMA_CTL_LIST_ITEM));
   item->y=0;
   item->h=height;
@@ -845,6 +1238,8 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_ctl_list_add_item_internal(
     }
   }
   mi->itemn++;
+  libaroma_mutex_unlock(mi->mutex);
+  libaroma_mutex_unlock(mi->imutex);
   
   /* set current height */
   libaroma_ctl_scroll_request_height(ctl, mi->h);

@@ -775,14 +775,9 @@ byte libaroma_window_anishow(
   /* lock and retval */
   byte retval = 0;
   win->lock_sync = 1;
-  /* safe wait */
-  usleep(25000);
   
   if (libaroma_wm_set_active_window(win)){
     win->active=2;
-    
-    /* safe wait */
-    usleep(25000);
     
     /* draw window into temp canvas */
     LIBAROMA_CANVASP wmc = win->dc;
@@ -798,9 +793,9 @@ byte libaroma_window_anishow(
     
     long start = libaroma_tick();
     int delta = 0;
-    LIBAROMA_SLEEPER sleeper_s;
+    //LIBAROMA_SLEEPER sleeper_s;
     while ((delta=libaroma_tick()-start)<duration){
-      libaroma_sleeper_start(&sleeper_s);
+      //libaroma_sleeper_start(&sleeper_s);
       float state = ((float) delta)/((float) duration);
       if (state>=1.0){
         break;
@@ -877,7 +872,7 @@ byte libaroma_window_anishow(
       }
       
       /* 60hz sleep */
-      libaroma_sleeper(&sleeper_s,16666);
+      //libaroma_sleeper(&sleeper_s,16666);
     }
     
     retval = 1;

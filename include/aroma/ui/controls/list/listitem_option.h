@@ -30,6 +30,8 @@
 /* option signature */
 #define LIBAROMA_LISTITEM_OPTION_INDENT_NOICON      0x10
 #define LIBAROMA_LISTITEM_OPTION_SMALL_ICON         0x20
+#define LIBAROMA_LISTITEM_OPTION_SHARED_ICON        0x40
+#define LIBAROMA_LISTITEM_OPTION_FREE_ICON          0x80
 
 /*
  * Function    : libaroma_listitem_option
@@ -43,7 +45,6 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_listitem_option(
     const char * main_text,
     const char * extra_text,
     LIBAROMA_CANVASP icon,
-    byte freeicon,
     byte flags,
     int at_index);
 

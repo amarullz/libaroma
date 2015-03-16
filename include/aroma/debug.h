@@ -33,6 +33,7 @@
 
 #define ___MEMTRACK_FILE() __FILE__
 #define ___MEMTRACK_LINE() __LINE__
+void ___mtrack_init_free(int free);
 void ___mtrack_dump_leak();
 void * ___mtrack_realloc(void * x, size_t size, char * filename, long line);
 void * ___mtrack_malloc(size_t size, char * filename, long line);
