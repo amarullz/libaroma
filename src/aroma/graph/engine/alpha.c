@@ -176,6 +176,18 @@ void libaroma_alpha_rgba_fill(int n, wordp dst, wordp bottom,
 }
 #endif
 
+#ifndef __engine_have_libaroma_alpha_rgba_fill_line
+void libaroma_alpha_rgba_fill_line(int _Y, int n, wordp dst, wordp bottom,
+    word top, byte alpha) {
+  int i;
+  for (i = 0; i < n; i++) {
+    dst[i] = libaroma_dither(i, _Y,
+      libaroma_alpha32(bottom[i], top, alpha)
+    );
+  }
+}
+#endif
+
 #ifndef __engine_have_libaroma_alpha_mono
 void libaroma_alpha_mono(int n, wordp dst, wordp bottom,
     word top, bytep alpha) {

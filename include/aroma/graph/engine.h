@@ -96,6 +96,8 @@ void libaroma_alpha_px_line(int _Y, int n, wordp dst,
     wordp bottom, wordp top, bytep alpha);
 void libaroma_alpha_rgba_fill(int n, wordp dst, wordp bottom,
     word top, byte alpha);
+void libaroma_alpha_rgba_fill_line(int _Y, int n, wordp dst, wordp bottom,
+    word top, byte alpha);
 void libaroma_alpha_mono(int n, wordp dst, wordp bottom,
     word top, bytep alpha);
 void libaroma_alpha_multi_line(int n, wordp dst, wordp bottom,

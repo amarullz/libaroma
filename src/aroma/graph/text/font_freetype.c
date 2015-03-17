@@ -133,7 +133,7 @@ short libaroma_font_size_px(byte size) {
   else if (size < 1) {
     size = 1;
   }
-  return libaroma_dp(7 + size * 2.5);
+  return libaroma_dp(8 + size * 2);
 } /* End of libaroma_font_size_px */
 
 /*

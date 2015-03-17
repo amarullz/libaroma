@@ -255,7 +255,8 @@ byte _libaroma_window_updatebg(LIBAROMA_WINDOWP win){
   win->bg = libaroma_canvas(w,h);
   libaroma_grad(win->bg,0,0,w,h,
     libaroma_wm_get_color("window"),
-    libaroma_wm_get_color("window_gradient"));
+    libaroma_wm_get_color("window_gradient")
+  );
   libaroma_wm_draw_theme(
       win->bg, 
       win->theme_bg,

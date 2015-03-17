@@ -171,10 +171,12 @@ byte libaroma_gradient_ex1(
 #endif
   for (_Y = 0; _Y < h; _Y++) {
     bytep line_alpha = NULL;
+    /*
     wordp alphaTmpLine = NULL;
     if (useAlpha) {
       alphaTmpLine = (wordp) malloc(w * 2);
     }
+    */
     int ypos = y + _Y;
     byte cR=0,cG=0,cB=0;
 #ifdef LIBAROMA_CONFIG_GRADIENT_FLOAT
@@ -244,15 +246,30 @@ byte libaroma_gradient_ex1(
 #endif
       if (!samecolor){
         if (noDither){
+          /*
           libaroma_color_set(alphaTmpLine, libaroma_rgb(cR, cG, cB), w);
           libaroma_alpha_const(w,
             line_mem, line_mem, alphaTmpLine, cA);
+          */
+          libaroma_alpha_rgba_fill(w,
+            line_mem,
+            line_mem,
+            libaroma_rgb(cR, cG, cB),
+            cA
+          );
         }
         else{
+          libaroma_alpha_rgba_fill_line(_Y,w,
+            line_mem,
+            line_mem,
+            libaroma_rgb(cR, cG, cB),
+            cA
+          );
+          /*
           libaroma_dither_line_const(_Y, w,
             alphaTmpLine, libaroma_rgb32(cR, cG, cB));
           libaroma_alpha_const_line(_Y, w,
-            line_mem, line_mem, alphaTmpLine, cA);
+            line_mem, line_mem, alphaTmpLine, cA);*/
         }
       }
       else{
@@ -314,9 +331,10 @@ byte libaroma_gradient_ex1(
         }
       }
     }
+    /*
     if (useAlpha) {
       free(alphaTmpLine);
-    }
+    }*/
   }
   if (roundData != NULL) {
     free(roundData);

@@ -426,7 +426,7 @@ byte libaroma_draw_mask_circle(
           memcpy(dd,sd,w*2);
         }
         else{
-          // libaroma_alpha_const_line(pdy,w,dd,dd,sd,alpha);
+          //libaroma_alpha_const_line(pdy,w,dd,dd,sd,alpha);
           libaroma_alpha_const(w,dd,dd,sd,alpha);
         }
       }

@@ -626,11 +626,9 @@ void _libaroma_ctl_scroll_draw(
           int top_h = (me->client_canvas->h - draw_y);
           int bottom_h = draw_h - top_h;
           int bottom_y = 0;
-          int top_y = top_h;
           if (top_h<1){
             bottom_h+=top_h;
             bottom_y=abs(top_h);
-            top_y=0;
           }
           
           #ifdef LIBAROMA_CONFIG_OPENMP
@@ -663,8 +661,8 @@ void _libaroma_ctl_scroll_draw(
                     c->w,bottom_h,
                     0,0xff
                   )){
-                  ALOGV("Error bottom_h: %i,%i,%i - %i",
-                    top_y,bottom_y,bottom_h,c->h);
+                  ALOGV("Error bottom_h: %i,%i - %i",
+                    bottom_y,bottom_h,c->h);
                 }
                 /*
                 if (bottom_h>2){
@@ -773,7 +771,14 @@ void _libaroma_ctl_scroll_draw(
           /* shadow */
           if (me->flags&LIBAROMA_CTL_SCROLL_WITH_SHADOW){
             libaroma_gradient_ex1(c, 0, 0, ctl->w,
-              libaroma_dp(4),0,0,0,0,120,0,2);
+              libaroma_dp(5),0,0,0,0,120,0,2);
+            /*
+            libaroma_gradient_ex1(c, 0, 0, ctl->w,
+              ctl->h,
+              RGB(000000),
+              RGB(008800),0,0,
+              255,50,0);
+            */
           }
         #ifdef LIBAROMA_CONFIG_OPENMP
         }
