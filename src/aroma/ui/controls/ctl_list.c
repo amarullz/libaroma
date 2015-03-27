@@ -256,17 +256,13 @@ byte _libaroma_ctl_list_init_state(
 ){
   if (item->state==NULL){
     item->state = 
-      (LIBAROMA_CTL_LIST_ITEM_STATEP) malloc(sizeof(
+      (LIBAROMA_CTL_LIST_ITEM_STATEP) calloc(sizeof(
         LIBAROMA_CTL_LIST_ITEM_STATE
-      ));
+      ),1);
     if (!item->state){
       ALOGW("list_new_state alloc memory failed");
       return 0;
     }
-    memset(item->state,0,sizeof(
-        LIBAROMA_CTL_LIST_ITEM_STATE
-      )
-    );
     ALOGT("[0] State Created %x",item->id);
     return 1;
   }
@@ -919,12 +915,11 @@ LIBAROMA_CONTROLP libaroma_ctl_list(
 ){
   /* allocating internal data */
   LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP)
-      malloc(sizeof(LIBAROMA_CTL_SCROLL));
+      calloc(sizeof(LIBAROMA_CTL_SCROLL),1);
   if (!mi){
     ALOGW("libaroma_ctl_list cannot allocating memory for list control");
     return NULL;
   }
-  memset(mi,0,sizeof(LIBAROMA_CTL_SCROLL));
   mi->vpad = libaroma_window_usedp(2)?
       libaroma_dp(vertical_padding):vertical_padding;
   mi->hpad = libaroma_window_usedp(2)?
@@ -1179,7 +1174,7 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_ctl_list_add_item_internal(
   LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
   
   LIBAROMA_CTL_LIST_ITEMP item = (LIBAROMA_CTL_LIST_ITEMP)
-      malloc(sizeof(LIBAROMA_CTL_LIST_ITEM));
+      calloc(sizeof(LIBAROMA_CTL_LIST_ITEM),1);
   if (item==NULL){
     ALOGW("list_add_item_internal cannot allocating memory for item");
     return NULL;
@@ -1187,7 +1182,6 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_ctl_list_add_item_internal(
   
   libaroma_mutex_lock(mi->imutex);
   libaroma_mutex_lock(mi->mutex);
-  memset(item,0,sizeof(LIBAROMA_CTL_LIST_ITEM));
   item->y=0;
   item->h=height;
   item->id=id;

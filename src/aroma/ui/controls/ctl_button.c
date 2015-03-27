@@ -473,12 +473,11 @@ LIBAROMA_CONTROLP libaroma_ctl_button(
 ){
   /* init internal data */
   _LIBAROMA_CTL_BUTTONP me = (_LIBAROMA_CTL_BUTTONP)
-      malloc(sizeof(_LIBAROMA_CTL_BUTTON));
+      calloc(sizeof(_LIBAROMA_CTL_BUTTON),1);
   if (!me){
     ALOGW("libaroma_ctl_button alloc button memory failed");
     return NULL;
   }
-  memset(me,0,sizeof(_LIBAROMA_CTL_BUTTON));
   
   /* set internal data */
   libaroma_mutex_init(me->mutex);

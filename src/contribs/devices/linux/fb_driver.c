@@ -40,14 +40,11 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
   
   /* allocating internal data */
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP)
-                      malloc(sizeof(LINUXFBDR_INTERNAL));
+                      calloc(sizeof(LINUXFBDR_INTERNAL),1);
   if (!mi) {
-    ALOGE("LINUXFBDR malloc internal data - memory error");
+    ALOGE("LINUXFBDR calloc internal data - memory error");
     return 0;
   }
-
-  /* cleanup */
-  memset(mi, 0, sizeof(LINUXFBDR_INTERNAL));
   
   /* set internal address */
   me->internal = (voidp) mi;

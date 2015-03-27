@@ -42,14 +42,12 @@ byte QCOMFB_init(LIBAROMA_FBP me){
   }
   
   /* allocating qcom internal data */
-  mi->qcom = (QCOMFB_INTERNALP) malloc(sizeof(QCOMFB_INTERNAL));
+  mi->qcom = (QCOMFB_INTERNALP) calloc(sizeof(QCOMFB_INTERNAL),1);
   if (!mi->qcom){
     ALOGW("QCOMFB_init cannot allocating qcom internal data");
     return 0;
   }
   
-  /* cleanup */
-  memset(mi->qcom,0,sizeof(QCOMFB_INTERNAL));
   mi->qcom->id = isqcom;
   
   mi->qcom->dbuf=1;

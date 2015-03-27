@@ -89,10 +89,9 @@ LIBAROMA_TEXT libaroma_text(
       linespacing
   );
   _LIBAROMA_TEXTP txt =
-    (_LIBAROMA_TEXTP) malloc(sizeof(_LIBAROMA_TEXT));
+    (_LIBAROMA_TEXTP) calloc(sizeof(_LIBAROMA_TEXT),1);
   _LIBAROMA_TEXTLINESP lines =
     (_LIBAROMA_TEXTLINESP) malloc(sizeof(_LIBAROMA_TEXTLINES));
-  memset(txt, 0, sizeof(_LIBAROMA_TEXT));
   _LIBAROMA_TEXTLINESP last_lines = lines;
   last_lines->line = NULL;
   while (chunk->state & _LIBAROMA_TEXTCHUNK_STATE_OK) {
@@ -252,8 +251,7 @@ int libaroma_text_draw_line_ex(
           line_txt,
           0 - line_txt->minx,
           0 - line_txt->y, 1, fore_color);
-        cv->alpha = (bytep) malloc(cv->s);
-        memset(cv->alpha, 0, cv->s);
+        cv->alpha = (bytep) calloc(cv->s,1);
         for (yy = 0; yy < cv->h; yy++) {
           int row = cv->l * yy;
           for (xx = 0; xx < cv->w; xx++) {

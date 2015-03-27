@@ -87,12 +87,11 @@ LIBAROMA_CONTROLP libaroma_control_label(
   int x, int y, int w, int h
 ){
   _LIBAROMA_CONTROL_LABELP me = (_LIBAROMA_CONTROL_LABELP)
-    malloc(sizeof(_LIBAROMA_CONTROL_LABEL));
+    calloc(sizeof(_LIBAROMA_CONTROL_LABEL),1);
   if (!me){
     ALOGW("libaroma_control_label alloc label memory failed");
     return NULL;
   }
-  memset(me,0,sizeof(_LIBAROMA_CONTROL_LABEL));
   me->text = strdup(text);
   me->textp = libaroma_text(
     me->text,

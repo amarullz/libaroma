@@ -133,9 +133,7 @@ byte libaroma_msg_init() {
     return 0;
   }
   /* Allocating Instance */
-  _libaroma_msgqueue = (LIBAROMA_MSGQUEUEP) malloc(sizeof(LIBAROMA_MSGQUEUE));
-  /* Cleanup */
-  memset(_libaroma_msgqueue, 0, sizeof(LIBAROMA_MSGQUEUE));
+  _libaroma_msgqueue = (LIBAROMA_MSGQUEUEP) calloc(sizeof(LIBAROMA_MSGQUEUE),1);
   /* Init Queue Data */
   _libaroma_msgqueue->queue = libaroma_stack(NULL);
   /* Init Input Queue Data */

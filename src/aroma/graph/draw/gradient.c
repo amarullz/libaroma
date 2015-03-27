@@ -36,8 +36,7 @@ bytep _libaroma_gradient_corner(
   /* Allocating Memory */
   int i, n;
   int sz    = r * r;
-  bytep out = malloc(sz);
-  memset(out, 0, sz);
+  bytep out = calloc(sz,1);
   /* Pythagoras Based */
   for (i = 1; i <= r; i++) {
     float w   = sqrt(sz - i * i);
@@ -167,8 +166,6 @@ byte libaroma_gradient_ex1(
     roundCorners[2]  = ((roundFlag & 0x0010) == 0x0010) ? 1 : 0;
     roundCorners[3]  = ((roundFlag & 0x0001) == 0x0001) ? 1 : 0;
     roundData = _libaroma_gradient_corner(roundSize);
-    // roundTmp  = (wordp) malloc(roundSize * 2 * 2);
-    // memset(roundTmp, 0, roundSize * 2 * 2);
   }
   
   /* draw */
@@ -182,12 +179,6 @@ byte libaroma_gradient_ex1(
     if (roundData!=NULL){
       roundTmp  = (wordp) malloc(roundSize * 2 * 2);
     }
-    /*
-    wordp alphaTmpLine = NULL;
-    if (useAlpha) {
-      alphaTmpLine = (wordp) malloc(w * 2);
-    }
-    */
     int ypos = y + _Y;
     byte cR=0,cG=0,cB=0;
 #ifdef LIBAROMA_CONFIG_GRADIENT_FLOAT

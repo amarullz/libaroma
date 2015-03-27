@@ -181,12 +181,11 @@ byte libaroma_wm_init(){
     return 0;
   }
   ALOGV("libaroma_wm_init init window manager");
-  _libaroma_wm = (LIBAROMA_WMP) malloc(sizeof(LIBAROMA_WM));
+  _libaroma_wm = (LIBAROMA_WMP) calloc(sizeof(LIBAROMA_WM),1);
   if (!_libaroma_wm){
     ALOGW("libaroma_wm_init alloc window manager memory failed");
     return 0;
   }
-  memset(_libaroma_wm,0,sizeof(LIBAROMA_WM));
   _libaroma_wm->theme = libaroma_sarray(_libaroma_wm_theme_release);
   _libaroma_wm->color = libaroma_sarray(NULL);
   _libaroma_wm->w = libaroma_fb()->w;

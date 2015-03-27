@@ -174,12 +174,11 @@ LIBAROMA_WINDOWP libaroma_window(
   int x, int y, int w, int h
 ){
   __CHECK_WM(NULL);
-  LIBAROMA_WINDOWP win = (LIBAROMA_WINDOWP) malloc(sizeof(LIBAROMA_WINDOW));
+  LIBAROMA_WINDOWP win = (LIBAROMA_WINDOWP) calloc(sizeof(LIBAROMA_WINDOW),1);
   if (!win){
     ALOGW("libaroma_window alloc window data failed");
     return NULL;
   }
-  memset(win,0,sizeof(LIBAROMA_WINDOW));
   
   if (bg_theme_name){
     snprintf(win->theme_bg,256,"%s",bg_theme_name);
@@ -209,9 +208,19 @@ byte libaroma_window_free(
   }
   
   /* inactivate it */
-  LIBAROMA_MSG _msg;
-  libaroma_window_process_event(win,
-    libaroma_wm_compose(&_msg, LIBAROMA_MSG_WIN_INACTIVE, NULL, 0, 0));
+  if (win->parent==NULL){
+    LIBAROMA_MSG _msg;
+    libaroma_window_process_event(win,
+      libaroma_wm_compose(&_msg, LIBAROMA_MSG_WIN_INACTIVE, NULL, 0, 0));
+  }
+  
+  if (win->parent!=NULL){
+    if (win->handler!=NULL){
+      if (win->handler->prefree!=NULL){
+        win->handler->prefree(win);
+      }
+    }
+  }
   
   /* delete childs */
   int i;
@@ -232,6 +241,14 @@ byte libaroma_window_free(
     libaroma_canvas_free(win->dc);
     win->dc=NULL;
   }
+  
+  if (win->parent!=NULL){
+    if (win->handler!=NULL){
+      if (win->handler->postfree!=NULL){
+        win->handler->postfree(win);
+      }
+    }
+  }
   free(win);
   return 1;
 } /* End of libaroma_window_free */
@@ -244,6 +261,14 @@ byte libaroma_window_free(
 byte _libaroma_window_updatebg(LIBAROMA_WINDOWP win){
   if (win==NULL){
     ALOGW("window_recalculate win is NULL");
+    return 0;
+  }
+  if (win->parent!=NULL){
+    if (win->handler!=NULL){
+      if (win->handler->updatebg!=NULL){
+        return win->handler->updatebg(win);
+      }
+    }
     return 0;
   }
   /* draw background */
@@ -335,6 +360,13 @@ byte libaroma_window_resize(
   LIBAROMA_WINDOWP win,
   int x, int y, int w, int h
 ){
+  if (!win){
+    return 0;
+  }
+  if (win->parent!=NULL){
+    ALOGW("window_resize cannot be used for child window");
+    return 0;
+  }
   win->rx = x;
   win->ry = y;
   win->rw = w;
@@ -352,7 +384,11 @@ byte libaroma_window_resize(
  */
 byte libaroma_window_isactive(LIBAROMA_WINDOWP win){
   if (win!=NULL){
-    return ((win==libaroma_wm_get_active_window())?1:0);
+    LIBAROMA_WINDOWP w = win;
+    while(w->parent){
+      w=w->parent;
+    }
+    return ((w==libaroma_wm_get_active_window())?1:0);
   }
   return 0;
 } /* End of libaroma_window_isactive */
@@ -691,6 +727,14 @@ byte libaroma_window_sync(LIBAROMA_WINDOWP win, int x, int y, int w, int h){
     ALOGW("libaroma_window_sync win is null");
     return 0;
   }
+  if (win->parent!=NULL){
+    if (win->handler!=NULL){
+      if (win->handler->sync!=NULL){
+        return win->handler->sync(win,x,y,w,h);
+      }
+    }
+    return 0;
+  }
   if (!win->lock_sync){
     if (!libaroma_window_isactive(win)){
       ALOGW("libaroma_window_sync win is not active window");
@@ -718,6 +762,15 @@ byte libaroma_window_invalidate(LIBAROMA_WINDOWP win, byte sync){
     ALOGW("window_invalidate win is null");
     return 0;
   }
+  if (win->parent!=NULL){
+    if (win->handler!=NULL){
+      if (win->handler->invalidate!=NULL){
+        return win->handler->invalidate(win,sync);
+      }
+    }
+    return 0;
+  }
+  
   if (!libaroma_window_isactive(win)){
     ALOGW("window_invalidate win is not active window");
     return 0;
@@ -765,6 +818,11 @@ byte libaroma_window_anishow(
   if (!win){
     return 0;
   }
+  if (win->parent!=NULL){
+    ALOGW("Child window cannot shown directly...");
+    return 0;
+  }
+  
   /* set initial focus
     libaroma_window_setfocus(win, NULL);
   */
@@ -970,6 +1028,10 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
     ALOGW("window_event win is null");
     return 0;
   }
+  if (win->parent!=NULL){
+    ALOGW("window_event cannot used for child window...");
+    return 0;
+  }
   dword ret = 0;
   switch (msg->msg){
     case LIBAROMA_MSG_WIN_ACTIVE:
@@ -1102,6 +1164,13 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
 dword libaroma_window_pool(
     LIBAROMA_WINDOWP win,
     LIBAROMA_MSGP msg){
+  if (!win){
+    return 0;
+  }
+  if (win->parent!=NULL){
+    ALOGW("cannot pool child window...");
+    return 0;
+  }
   LIBAROMA_MSG _msg;
   LIBAROMA_MSGP cmsg=(msg!=NULL)?msg:&_msg;
   byte ret = libaroma_wm_getmessage(cmsg);

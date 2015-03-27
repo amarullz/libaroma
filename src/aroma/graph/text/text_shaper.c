@@ -258,8 +258,7 @@ _LIBAROMA_TEXTSHAPED_GROUPP libaroma_text_group_split(
     shaped = shaped->next;
   }
   /* calculate x position */
-  int * shaped_x = (int *) malloc(sizeof(int) * shaped_n);
-  memset(shaped_x, 0, sizeof(int) * shaped_n);
+  int * shaped_x = (int *) calloc(sizeof(int),shaped_n);
   shaped = group->shaped;
   byte rtl = 0;
   int rtl_id = -1;

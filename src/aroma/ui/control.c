@@ -44,12 +44,11 @@ LIBAROMA_CONTROLP libaroma_control_new(
     return NULL;
   }
   LIBAROMA_CONTROLP ret = (LIBAROMA_CONTROLP)
-    malloc(sizeof(LIBAROMA_CONTROL));
+    calloc(sizeof(LIBAROMA_CONTROL),1);
   if (!ret){
     ALOGW("window_control_new cannot allocating memory");
     return NULL;
   }
-  memset(ret,0,sizeof(LIBAROMA_CONTROL));
   ret->minw = minw;
   ret->minh = minh;
   ret->rx = x;

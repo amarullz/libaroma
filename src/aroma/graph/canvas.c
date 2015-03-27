@@ -247,10 +247,9 @@ LIBAROMA_CANVASP libaroma_canvas_new_ex(
     }
     
     /* allocating canvas */
-    bytep canvas_mem = (bytep) malloc(
-      sizeof(LIBAROMA_CANVAS) + sizeof(LIBAROMA_CANVAS_SHMEM)
+    bytep canvas_mem = (bytep) calloc(
+      sizeof(LIBAROMA_CANVAS) + sizeof(LIBAROMA_CANVAS_SHMEM),1
     );
-    memset(canvas_mem,0,sizeof(LIBAROMA_CANVAS)+sizeof(LIBAROMA_CANVAS_SHMEM));
     c = (LIBAROMA_CANVASP) canvas_mem;
     LIBAROMA_CANVAS_SHMEMP csh_mem = 
       (LIBAROMA_CANVAS_SHMEMP) (canvas_mem + sizeof(LIBAROMA_CANVAS));
@@ -290,18 +289,17 @@ LIBAROMA_CANVASP libaroma_canvas_new_ex(
     ALOGW("CANVAS width/height not valid");
     return NULL;
   }
-  c = (LIBAROMA_CANVASP) malloc(sizeof(LIBAROMA_CANVAS));
+  c = (LIBAROMA_CANVASP) calloc(sizeof(LIBAROMA_CANVAS),1);
   if (!c) {
-    ALOGW("CANVAS malloc(LIBAROMA_CANVASP) Error");
+    ALOGW("CANVAS calloc(LIBAROMA_CANVASP) Error");
     return NULL;
   }
-  memset(c,0,sizeof(LIBAROMA_CANVAS));
   c->l = c->w = w;
   c->h        = h;
   c->s        = w * h;
-  c->data     = (wordp) malloc(c->s*2);
+  c->data     = (wordp) calloc(c->s,2);
   if (!c->data) {
-    ALOGW("CANVAS malloc(c->data) failed");
+    ALOGW("CANVAS calloc(c->data) failed");
     free(c);
     return NULL;
   }
@@ -319,9 +317,9 @@ LIBAROMA_CANVASP libaroma_canvas_new_ex(
     c->alpha  = NULL;
   }
   if (hiColor) {
-    c->hicolor  = malloc(c->s);
+    c->hicolor  = calloc(c->s,1);
     if (!c->hicolor) {
-      ALOGW("CANVAS malloc(c->hicolor) failed");
+      ALOGW("CANVAS calloc(c->hicolor) failed");
       free(c->hicolor);
       if (c->alpha) {
         free(c->alpha);
@@ -430,12 +428,11 @@ LIBAROMA_CANVASP libaroma_canvas_area(
     return NULL;
   }
   /* initializing canvas memory */
-  LIBAROMA_CANVASP c = (LIBAROMA_CANVASP) malloc(sizeof(LIBAROMA_CANVAS));
+  LIBAROMA_CANVASP c = (LIBAROMA_CANVASP) calloc(sizeof(LIBAROMA_CANVAS),1);
   if (!c) {
     ALOGW("canvas_area malloc(LIBAROMA_CANVASP) Error");
     return NULL;
   }
-  memset(c,0,sizeof(LIBAROMA_CANVAS));
   if (!libaroma_canvas_area_update(c,parent,x,y,w,h)){
     free(c);
     return NULL;

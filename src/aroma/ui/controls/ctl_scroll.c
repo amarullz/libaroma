@@ -1273,12 +1273,11 @@ LIBAROMA_CONTROLP libaroma_ctl_scroll(
 ){
   /* init internal data */
   _LIBAROMA_CTL_SCROLLP me = (_LIBAROMA_CTL_SCROLLP)
-      malloc(sizeof(_LIBAROMA_CTL_SCROLL));
+      calloc(sizeof(_LIBAROMA_CTL_SCROLL),1);
   if (!me){
     ALOGW("libaroma_ctl_scroll alloc scroll memory failed");
     return NULL;
   }
-  memset(me,0,sizeof(_LIBAROMA_CTL_SCROLL));
   
   libaroma_mutex_init(me->blitmutex); /* blit drawing mutex */
   libaroma_mutex_init(me->fmutex); /* cache drawing mutex */

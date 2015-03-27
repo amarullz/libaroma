@@ -49,7 +49,6 @@
 #define LIBAROMA_MSG_WIN_RESIZE       LIBAROMA_MSG_SYS(0x4)
 #define LIBAROMA_MSG_WIN_MEASURED     LIBAROMA_MSG_SYS(0x5)
 #define LIBAROMA_MSG_WIN_DIRECTMSG    LIBAROMA_MSG_SYS(0x6)
-
 #define LIBAROMA_MSG_WIN_FOCUS        LIBAROMA_MSG_SYS(0x7)
 #define LIBAROMA_MSG_WIN_BLUR         LIBAROMA_MSG_SYS(0x8)
 #define LIBAROMA_MSG_WIN_TITLE        LIBAROMA_MSG_SYS(0x9)
@@ -78,6 +77,15 @@
 #define LIBAROMA_SIZE_THIRD   -2
 #define LIBAROMA_SIZE_QUARTER -3
 
+/* client window handler */
+typedef struct _LIBAROMA_WINDOW_HANDLER{
+  void (*prefree)(LIBAROMA_WINDOWP);
+  void (*postfree)(LIBAROMA_WINDOWP);
+  byte (*updatebg)(LIBAROMA_WINDOWP);
+  byte (*invalidate)(LIBAROMA_WINDOWP,byte);
+  byte (*sync)(LIBAROMA_WINDOWP,int,int,int,int);
+} LIBAROMA_WINDOW_HANDLER, * LIBAROMA_WINDOW_HANDLERP;
+
 /*
  * Structure   : _LIBAROMA_WINDOW
  * Typedef     : LIBAROMA_WINDOW, * LIBAROMA_WINDOWP
@@ -103,12 +111,9 @@ struct _LIBAROMA_WINDOW{
   /* states */
   byte active;
   byte lock_sync;
-  /*byte need_sync;*/
   
   /* graphs */
-  char theme_bg[256];/*
-  LIBAROMA_CANVASP wmc;
-  */
+  char theme_bg[256];
   LIBAROMA_CANVASP dc;
   LIBAROMA_CANVASP bg;
   
@@ -120,6 +125,11 @@ struct _LIBAROMA_WINDOW{
   
   /* thread manager */
   pthread_t thread_manager;
+  
+  /* client window */
+  LIBAROMA_WINDOWP parent;
+  LIBAROMA_WINDOW_HANDLERP handler;
+  voidp client_data;
 };
 
 /*

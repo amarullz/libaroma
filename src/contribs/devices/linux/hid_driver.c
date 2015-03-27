@@ -172,9 +172,9 @@ void LINUXHIDRV_dumpdev(
 byte LINUXHIDRV_init(
     LIBAROMA_HIDP me) {
   /* allocating internal data */
-  LINUXHIDRV_INTERNALP mi = (LINUXHIDRV_INTERNALP) malloc(sizeof(LINUXHIDRV_INTERNAL));
-  /* cleanup */
-  memset(mi, 0, sizeof(LINUXHIDRV_INTERNAL));
+  LINUXHIDRV_INTERNALP mi = (LINUXHIDRV_INTERNALP)
+    calloc(sizeof(LINUXHIDRV_INTERNAL),1);
+    
   /* set internal address */
   me->internal = (voidp) mi;
   /* set initial value */

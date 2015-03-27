@@ -578,12 +578,11 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_listitem_option(
     return 0;
   }
   _LIBAROMA_LISTITEM_OPTIONP mi = (_LIBAROMA_LISTITEM_OPTIONP)
-    malloc(sizeof(_LIBAROMA_LISTITEM_OPTION));
+    calloc(sizeof(_LIBAROMA_LISTITEM_OPTION),1);
   if (!mi){
     ALOGW("listitem_option cannot allocate internal data");
     return NULL;
   }
-  memset(mi,0,sizeof(_LIBAROMA_LISTITEM_OPTION));
   mi->selected=0;
   mi->icon=NULL;
   

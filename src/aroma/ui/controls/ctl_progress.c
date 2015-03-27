@@ -41,10 +41,6 @@ static LIBAROMA_CONTROL_HANDLER _libaroma_ctl_progress_handler={
 };
 
 #define _LIBAROMA_CTL_PROGRESS_BEZIER_TIMING    500
-#define _LIBAROMA_CTL_PROGRESS_SPIN_SPEED       0.2
-#define _LIBAROMA_CTL_PROGRESS_SPIN_CYCLE_TIME  600
-#define _LIBAROMA_CTL_PROGRESS_SPIN_MAX_LENGTH  254.0
-#define _LIBAROMA_CTL_PROGRESS_SPIN_BAR_LENGTH  16
 
 
 
@@ -60,15 +56,13 @@ struct __LIBAROMA_CTL_PROGRESS{
   int max;
   int value;
   int preval;
-  int curval;
+  float curval;
   int currx;
   long tick;
+  long growtime;
   float state;
   float currstate;
-  
-  long timeStartGrowing;
-  byte barGrowingFromFront;
-  float barExtraLength;
+  float currfrom;
 };
 
 /*
@@ -79,49 +73,43 @@ struct __LIBAROMA_CTL_PROGRESS{
 byte _libaroma_ctl_progress_thread(LIBAROMA_CONTROLP ctl) {
   _LIBAROMA_CTL_PROGRESSP me = (_LIBAROMA_CTL_PROGRESSP) ctl->internal;
   byte res = 0;
-  if (me->type&LIBAROMA_CTL_PROGRESS_CIRCULAR){
-    long now = libaroma_tick();
-    long deltaTime = now - me->tick;
-    me->tick=now;
-    if (deltaTime>600){
-      deltaTime=0;
-      me->currstate=0;
-    }
-    
-    me->timeStartGrowing += deltaTime;
-    if (me->timeStartGrowing>600){
-      me->timeStartGrowing -= 600;
-      me->barGrowingFromFront = !me->barGrowingFromFront;
-    }
-    
-    float distance = (float)
-      cos((me->timeStartGrowing/600.0+1)*__PI)/2.0+0.5;
-    if (me->barGrowingFromFront) {
-        me->barExtraLength = distance * 254.0;
-    } else {
-        float newLength = 254.0 * (1 - distance);
-        me->currstate += (me->barExtraLength - newLength);
-        me->barExtraLength = newLength;
-    }
-    me->currstate += deltaTime*0.2;
-    if (me->currstate>360) {
-        me->currstate -= 360;
-    }
-    res=1;
-  }
-  else{
-    if ((me->type&3)!=LIBAROMA_CTL_PROGRESS_DETERMINATE){
-      long diff = libaroma_tick() - me->tick;
-      if (diff>_LIBAROMA_CTL_PROGRESS_BEZIER_TIMING*4){
-        me->state=1.0;
+  if ((me->type&3)!=LIBAROMA_CTL_PROGRESS_DETERMINATE){
+    if (me->type&LIBAROMA_CTL_PROGRESS_CIRCULAR){
+      /* circular indeterminate/query */
+      long now = libaroma_tick();
+      long deltaTime = now - me->tick;
+      me->tick=now;
+      if (deltaTime>600){
+        deltaTime=0;
+        me->currstate=0;
       }
-      else{
-        me->state = ((float) diff)/
-          ((float) _LIBAROMA_CTL_PROGRESS_BEZIER_TIMING*4);
+      me->growtime += deltaTime;
+      if (me->growtime>600){
+        me->growtime -= 600;
+        me->currx = me->currx?0:1;
       }
-      if (me->currstate!=me->state){
-        me->currstate=me->state;
-        // libaroma_control_draw(ctl,0);
+      
+      float distance = (float)
+        cos((me->growtime/600.0+1)*__PI)/2.0+0.5;
+      if (me->currx) {
+          me->state = distance * 254.0;
+      } else {
+          float newLength = 254.0 * (1 - distance);
+          me->currstate += (me->state - newLength);
+          me->state = newLength;
+      }
+      me->currstate += deltaTime*0.2;
+      if (me->currstate>360) {
+          me->currstate -= 360;
+      }
+      res=1;
+    }
+    else{
+      me->state=libaroma_control_state(
+        me->tick, _LIBAROMA_CTL_PROGRESS_BEZIER_TIMING*4
+      );
+      if (me->state!=me->currstate){
+        me->currstate = me->state;
         res=1;
       }
       if (me->state>=1.0){
@@ -129,29 +117,28 @@ byte _libaroma_ctl_progress_thread(LIBAROMA_CONTROLP ctl) {
         me->tick=libaroma_tick();
       }
     }
-    else if (me->state<1.0){
-      long diff = libaroma_tick() - me->tick;
-      if (diff>_LIBAROMA_CTL_PROGRESS_BEZIER_TIMING){
-        me->state = 1.0;
+  }
+  else if (me->state<1.0){
+    me->state =libaroma_control_state(
+      me->tick, _LIBAROMA_CTL_PROGRESS_BEZIER_TIMING
+    );
+    float bzs = libaroma_cubic_bezier_swiftout(me->state);
+    me->curval = me->preval+((me->value - me->preval) * bzs);
+    if (me->currfrom>0){
+      me->currfrom-= me->currfrom * bzs;
+      if (me->currfrom<0){
+        me->currfrom=0;
       }
-      else{
-        me->state = libaroma_cubic_bezier_swiftout(
-          ((float) diff)/((float) _LIBAROMA_CTL_PROGRESS_BEZIER_TIMING)
-        );
-      }
-      me->curval = me->preval+((me->value - me->preval) * me->state);
-      if (me->currstate!=me->state){
-        if (me->currx>0){
-          me->currx-=(me->currx*me->state);
-          if (me->currx<0){
-            me->currx=0;
-          }
+    }
+    if (me->currstate!=me->state){
+      if (me->currx>0){
+        me->currx-=me->currx*bzs;
+        if (me->currx<0){
+          me->currx=0;
         }
-        /* redraw */
-        me->currstate = me->state;
-        // libaroma_control_draw(ctl,0);
-        res=1;
       }
+      me->currstate = me->state;
+      res=1;
     }
   }
   return res;
@@ -168,14 +155,11 @@ void _libaroma_ctl_progress_update(
   if ((me->type&3)==LIBAROMA_CTL_PROGRESS_DETERMINATE){
     me->preval = me->curval;
   }
-  if (me->type&LIBAROMA_CTL_PROGRESS_CIRCULAR){
-    me->currstate=0;
-    me->barGrowingFromFront=1;
-    me->barExtraLength=0;
-    me->timeStartGrowing=0;
+  if ((!(me->type&LIBAROMA_CTL_PROGRESS_CIRCULAR))||
+      ((me->type&3)==LIBAROMA_CTL_PROGRESS_DETERMINATE)){
+    me->tick=libaroma_tick();
   }
   me->state=0.0;
-  me->tick=libaroma_tick();
 } /* End of _libaroma_ctl_progress_update */
 
 /*
@@ -208,18 +192,32 @@ void _libaroma_ctl_progress_draw(
   libaroma_control_erasebg(ctl,c);
   
   if (me->type&LIBAROMA_CTL_PROGRESS_CIRCULAR){
-    float from = me->currstate - 90;
-    float length = 16 + me->barExtraLength;
     int sz = MIN(c->w>>1,c->h>>1);
-    float width = ((float) sz*8)/libaroma_dp(12);
+    float width = ((float) sz) / 6.0;
+    float from= -90;
+    float length=0;
+    if ((me->type&3)==LIBAROMA_CTL_PROGRESS_DETERMINATE){
+      from += me->currfrom;
+      length = (360.0 * me->curval) / me->max;
+    }
+    else{
+      from += me->currstate;
+      length = 16 + me->state;
+      me->currfrom = me->currstate;
+      me->curval = (length/360.0) * me->max;
+      if ((me->type&3)==LIBAROMA_CTL_PROGRESS_QUERY){
+        from=360.0-from;
+        length=360.0-length;
+      }
+    }
     libaroma_draw_arc(
-        c,
-        c->w>>1,c->h>>1,
-        sz, sz, width,
-        from, from+length,
-        libaroma_wm_get_color("highlight"),
-        0xff,0,0.5
-      );
+      c,
+      c->w>>1,c->h>>1,
+      sz, sz, width,
+      from, from+length,
+      libaroma_wm_get_color("highlight"),
+      0xff,0,0.5
+    );
   }
   else{
     int ix = libaroma_dp(4);
@@ -342,12 +340,11 @@ LIBAROMA_CONTROLP libaroma_ctl_progress(
 ){
   /* init internal data */
   _LIBAROMA_CTL_PROGRESSP me = (_LIBAROMA_CTL_PROGRESSP)
-      malloc(sizeof(_LIBAROMA_CTL_PROGRESS));
+      calloc(sizeof(_LIBAROMA_CTL_PROGRESS),1);
   if (!me){
     ALOGW("libaroma_ctl_progress alloc progress memory failed");
     return NULL;
   }
-  memset(me,0,sizeof(_LIBAROMA_CTL_PROGRESS));
   
   /* set internal data */
   me->type = type;
@@ -355,7 +352,6 @@ LIBAROMA_CONTROLP libaroma_ctl_progress(
   me->value= value;
   me->preval=value;
   me->curval=value;
-  me->barGrowingFromFront=1;
   me->state= 1;
   
   /* init control */

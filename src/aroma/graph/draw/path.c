@@ -33,12 +33,11 @@
  * Descriptions: create new path
  */
 LIBAROMA_PATHP libaroma_path(float x, float y){
-  LIBAROMA_PATHP path = (LIBAROMA_PATHP) malloc(sizeof(LIBAROMA_PATH));
+  LIBAROMA_PATHP path = (LIBAROMA_PATHP) calloc(sizeof(LIBAROMA_PATH),1);
   if (!path){
     ALOGW("libaroma_path alloc LIBAROMA_PATHP failed");
     return NULL;
   }
-  memset(path,0,sizeof(LIBAROMA_PATH));
   path->p=(LIBAROMA_PATH_POINTP) malloc(sizeof(LIBAROMA_PATH_POINT));
   if (!path->p){
     free(path);

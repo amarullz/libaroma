@@ -47,16 +47,13 @@ byte libaroma_hid_init() {
   
   /* allocating input instance */
   ALOGV("allocating hid instance");
-  _libaroma_hid = (LIBAROMA_HIDP) malloc(sizeof(LIBAROMA_HID));
+  _libaroma_hid = (LIBAROMA_HIDP) calloc(sizeof(LIBAROMA_HID),1);
   
   /* check allocation */
   if (!_libaroma_hid) {
     ALOGE("unable to allocating hid instance");
     goto return_error_clean;
   }
-  
-  /* cleanup */
-  memset(_libaroma_hid, 0, sizeof(LIBAROMA_HID));
   
   /* check framebuffer */
   if (libaroma_fb() == NULL) {

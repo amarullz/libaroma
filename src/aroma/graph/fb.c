@@ -57,12 +57,11 @@ LIBAROMA_FBP libaroma_fb_init() {
   
   /* allocating instance memory */
   ALOGV("libaroma_fb_init allocating framebuffer instance");
-  _libaroma_fb = (LIBAROMA_FBP) malloc(sizeof(LIBAROMA_FB));
+  _libaroma_fb = (LIBAROMA_FBP) calloc(sizeof(LIBAROMA_FB),1);
   if (!_libaroma_fb){
     ALOGE("libaroma_fb_init allocating framebuffer instance failed");
     return NULL;
   }
-  memset(_libaroma_fb, 0, sizeof(LIBAROMA_FB));
   
   /* init driver */
   ALOGV("Init framebuffer driver");
