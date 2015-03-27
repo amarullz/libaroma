@@ -59,9 +59,10 @@ dword libaroma_rgb32(byte r, byte g, byte b);
 word libaroma_rgb_to16(dword rgb);
 dword libaroma_rgb_to32(word rgb);
 dword libaroma_rgb_to_rgba(word rgb, byte alpha);
-void libaroma_color_set(wordp dst, word color, int n);
+void libaroma_color_set(wordp __restrict dst, word color, int n);
 void libaroma_color_set32(dwordp dst, dword color, int n);
-void libaroma_color_copy32(dwordp dst, wordp src, int n, bytep rgb_pos);
+void libaroma_color_copy32(
+  dwordp __restrict dst, wordp __restrict src, int n, bytep __restrict rgb_pos);
 void libaroma_color_copy16(wordp dst, dwordp src, int n, bytep rgb_pos);
 
 /* Blt Engine */
@@ -85,38 +86,43 @@ word libaroma_alpha(word dcl, word scl, byte l);
 dword libaroma_alpha32(word dcl, word scl, byte l);
 word libaroma_alpha_multi(word dcl, word scl, byte lr, byte lg, byte lb);
 word libaroma_alphab(word scl, byte l);
-void libaroma_alpha_black(int n, wordp dst, wordp top, byte alpha);
-void libaroma_alpha_const(int n, wordp dst,
-    wordp bottom, wordp top, byte alpha);
-void libaroma_alpha_const_line(int _Y, int n, wordp dst,
-    wordp bottom, wordp top, byte alpha);
-void libaroma_alpha_px(int n, wordp dst, wordp bottom,
-    wordp top, bytep alpha);
-void libaroma_alpha_px_line(int _Y, int n, wordp dst,
-    wordp bottom, wordp top, bytep alpha);
-void libaroma_alpha_rgba_fill(int n, wordp dst, wordp bottom,
+
+void libaroma_alpha_black(int n, wordp __restrict dst, 
+    wordp __restrict top, byte alpha);
+void libaroma_alpha_const(int n, wordp __restrict dst,
+    wordp __restrict bottom, wordp __restrict top, byte alpha);
+void libaroma_alpha_const_line(int _Y, int n, wordp __restrict dst,
+    wordp __restrict bottom, wordp __restrict top, byte alpha);
+void libaroma_alpha_px(int n, wordp __restrict dst, wordp __restrict bottom,
+    wordp __restrict top, bytep __restrict alpha);
+void libaroma_alpha_px_line(int _Y, int n, wordp __restrict dst,
+    wordp __restrict bottom, wordp __restrict top, bytep __restrict alpha);
+void libaroma_alpha_rgba_fill(int n, wordp __restrict dst,
+    wordp __restrict bottom,
     word top, byte alpha);
-void libaroma_alpha_rgba_fill_line(int _Y, int n, wordp dst, wordp bottom,
+void libaroma_alpha_rgba_fill_line(int _Y, int n, wordp __restrict dst,
+    wordp __restrict bottom,
     word top, byte alpha);
-void libaroma_alpha_mono(int n, wordp dst, wordp bottom,
-    word top, bytep alpha);
-void libaroma_alpha_multi_line(int n, wordp dst, wordp bottom,
-    word top, bytep alphargb);
+void libaroma_alpha_mono(int n, wordp __restrict dst, wordp __restrict bottom,
+    word top, bytep __restrict alpha);
+void libaroma_alpha_multi_line(int n, wordp __restrict dst, 
+    wordp __restrict bottom,
+    word top, bytep __restrict alphargb);
 
 /* Aligned blit Engine */
-void libaroma_blt_align16(wordp dst, wordp src,
+void libaroma_blt_align16(wordp __restrict dst, wordp __restrict src,
     int w, int h, int dst_stride, int src_stride);
-void libaroma_blt_align32_to16(wordp dst, dwordp src,
+void libaroma_blt_align32_to16(wordp __restrict dst, dwordp __restrict src,
     int w, int h, int dst_stride, int src_stride);
-void libaroma_blt_align16_to32(dwordp dst, wordp src,
+void libaroma_blt_align16_to32(dwordp __restrict dst, wordp __restrict src,
     int w, int h, int dst_stride, int src_stride);
-void libaroma_blt_align32(dwordp dst, dwordp src,
+void libaroma_blt_align32(dwordp __restrict dst, dwordp __restrict src,
     int w, int h, int dst_stride, int src_stride);
-void libaroma_blt_align_to32_pos(dwordp dst, wordp src,
+void libaroma_blt_align_to32_pos(dwordp __restrict dst, wordp __restrict src,
     int w, int h, int dst_stride, int src_stride,
     bytep rgb_pos);
-void libaroma_blt_align_to16_pos(wordp dst, dwordp src,
+void libaroma_blt_align_to16_pos(wordp __restrict dst, dwordp __restrict src,
     int w, int h, int dst_stride, int src_stride,
-    bytep rgb_pos);
+    bytep __restrict rgb_pos);
 
 #endif /* __libaroma_engine_h__ */

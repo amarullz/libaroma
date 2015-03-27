@@ -93,6 +93,8 @@ byte LINUXHIDRV_translate_touch(
   static int MT_TRACKING_IS_UNTOUCHED = 0;
   static int TOUCH_RELEASE_NEXTSYN = 0;
   
+  //printf("rt: %i, %i, %i\n",ev->type, ev->code, ev->value);
+  
   /* process EV_ABS event */
   if (ev->type==EV_ABS) {
     switch (ev->code) {

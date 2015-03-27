@@ -236,8 +236,8 @@ byte QCOMFB_check_id(LINUXFBDR_INTERNALP mi){
     if (mdp_version>=400) {
       overlay_supported = 1;
     }
-    else if (mdp_version>=40){
-      return 0;
+    else if (mdp_version>=44){
+      return 1;
     }
   }
   else if (!strncmp(mi->fix.id, "mdssfb", strlen("mdssfb"))) {
@@ -431,7 +431,7 @@ byte QCOMFB_allocate_overlays(LIBAROMA_FBP me){
  */
 byte QCOMFB_sync(
     LIBAROMA_FBP me,
-    wordp src,
+    wordp __restrict src,
     int x,
     int y,
     int w,

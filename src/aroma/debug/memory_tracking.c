@@ -278,6 +278,25 @@ void * ___mtrack_malloc(size_t size, char * filename, long line) {
   return ret;
 }
 
+void * ___mtrack_calloc(size_t num, size_t size, char * filename, long line) {
+  libaroma_mutex_lock(___mtrack.mutex);
+  
+  if (size < 1) {
+    printf("MEM-TRACK[W]: calloc zero size on %s line %d\n", filename, (int) line);
+  }
+  
+  void * ret = calloc(num,size);
+  
+  if (ret) {
+    if (!___mtrack_set(ret, size*num, filename, line)) {
+      printf("MEM-TRACK[W]: calloc: allocated used address on %s line %d\n", filename, (int) line);
+    }
+  }
+  
+  libaroma_mutex_unlock(___mtrack.mutex);
+  return ret;
+}
+
 void ___mtrack_free(void ** x, char * filename, long line) {
   libaroma_mutex_lock(___mtrack.mutex);
   

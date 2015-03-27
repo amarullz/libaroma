@@ -28,10 +28,10 @@
 #define __libaroma_draw_c__
 
 #include "draw/commondraw.c"  /* common draw */
+#include "draw/path.c"        /* path drawing */
 #include "draw/scale.c"       /* scale & resize */
 #include "draw/gradient.c"    /* gradient */
 #include "draw/blur.c"        /* blur */
 #include "draw/filters.c"     /* color filters */
-#include "draw/artworker.c"   /* artworker */
 
 #endif /* __libaroma_draw_c__ */

@@ -104,6 +104,15 @@ struct __LIBAROMA_CTL_SCROLL{
   long client_touch_start;
   byte client_touched;
   
+  /* overshoot */
+  byte ovs_bounce;
+  long ovs_start;
+  float ovs_state;
+  float ovs_ustate;
+  long ovs_ustart;
+  int ovs_x;
+  int ovs_y;
+  
   /* fling items */
   int bounce_velocity;
   int velocity;
@@ -444,6 +453,51 @@ byte _libaroma_ctl_scroll_thread(LIBAROMA_CONTROLP ctl) {
         #pragma omp section
         {
         #endif
+          /* overshoot */
+          if (me->ovs_ustart>1){
+            float nowstate=
+              libaroma_control_state(me->ovs_ustart,
+                me->ovs_bounce==2?1000:400);
+            if (nowstate<1){
+              if (nowstate!=me->ovs_ustate){
+                me->ovs_ustate=nowstate;
+                need_drawing=1;
+              }
+            }
+            if ((nowstate>=1)&&(me->ovs_ustate<1)){
+              me->ovs_state=0;
+              me->ovs_start=0;
+              me->ovs_ustart=0;
+              me->ovs_ustate=0;
+              need_drawing=1;
+            }
+          }
+          else if ((me->ovs_start>0)||(me->ovs_state)){
+            float nowstate=
+              libaroma_control_state(me->ovs_start,(me->ovs_bounce==1)?800:1600);
+            if (nowstate<1){
+              if (nowstate!=me->ovs_state){
+                me->ovs_state=nowstate;
+                need_drawing=1;
+              }
+            }
+            if ((me->ovs_state<1)&&((nowstate>=1)||
+                ((nowstate>=0.22)&&(me->ovs_ustart==1)&&(me->ovs_state<1)))
+               ){
+              me->ovs_state=0.5;
+              me->ovs_ustart=libaroma_tick();
+              me->ovs_ustate=0;
+              if (!me->ovs_bounce){
+                me->ovs_bounce=2;
+              }
+              need_drawing=1;
+            }
+          }
+        #ifdef LIBAROMA_CONFIG_OPENMP
+        }
+        #pragma omp section
+        {
+        #endif
           /* fling handler */
           if ((me->velocity!=0)&&(!me->touched)){
             /* onfling */
@@ -461,6 +515,13 @@ byte _libaroma_ctl_scroll_thread(LIBAROMA_CONTROLP ctl) {
                 if (me->scroll_y!=scroll_y){
                   me->bounce_velocity=MAX(-libaroma_dp(3840),
                     MIN(libaroma_dp(3840),(me->velocity*153)>>8));
+                  me->ovs_bounce=1;
+                  me->ovs_state=0;
+                  me->ovs_y=0;
+                  me->ovs_y=MIN(ctl->w*0.4,me->bounce_velocity>>4);
+                  me->ovs_ustate=0;
+                  me->ovs_ustart=1;
+                  me->ovs_start=libaroma_tick()-16;
                 }
                 me->velocity = 0;
                 need_drawing=1;
@@ -470,6 +531,13 @@ byte _libaroma_ctl_scroll_thread(LIBAROMA_CONTROLP ctl) {
                 if (me->scroll_y!=scroll_y){
                   me->bounce_velocity=MAX(-libaroma_dp(3840),
                     MIN(libaroma_dp(3840),(me->velocity*153)>>8));
+                  me->ovs_bounce=1;
+                  me->ovs_state=0;
+                  me->ovs_y=0;
+                  me->ovs_y=MAX(0-ctl->w*0.4,me->bounce_velocity>>4);
+                  me->ovs_ustate=0;
+                  me->ovs_ustart=1;
+                  me->ovs_start=libaroma_tick()-16;
                 }
                 me->velocity = 0;
                 need_drawing=1;
@@ -559,7 +627,6 @@ byte _libaroma_ctl_scroll_thread(LIBAROMA_CONTROLP ctl) {
         }
       }
     #endif
-    
     if (need_drawing){
       me->synced_y=-1;
     }
@@ -664,13 +731,6 @@ void _libaroma_ctl_scroll_draw(
                   ALOGV("Error bottom_h: %i,%i - %i",
                     bottom_y,bottom_h,c->h);
                 }
-                /*
-                if (bottom_h>2){
-                  libaroma_draw_rect(
-                    c, 0, top_h, c->w, 2, RGB(880000), 0xff
-                  );
-                }
-                */
               }
             #ifdef LIBAROMA_CONFIG_OPENMP
             }
@@ -771,19 +831,77 @@ void _libaroma_ctl_scroll_draw(
           /* shadow */
           if (me->flags&LIBAROMA_CTL_SCROLL_WITH_SHADOW){
             libaroma_gradient_ex1(c, 0, 0, ctl->w,
-              libaroma_dp(5),0,0,0,0,120,0,2);
-            /*
-            libaroma_gradient_ex1(c, 0, 0, ctl->w,
-              ctl->h,
-              RGB(000000),
-              RGB(008800),0,0,
-              255,50,0);
-            */
+              libaroma_dp(3),0,0,0,0,100,0,2);
           }
         #ifdef LIBAROMA_CONFIG_OPENMP
         }
       }
       #endif
+      
+      /* overshoot draw */
+      if ((me->max_scroll_y>0)&&(me->ovs_state>0)&&(me->ovs_state<1)){
+        int overshoot_sz = MIN(abs(me->ovs_y)/3,c->h/4);
+        if (overshoot_sz>0){
+          float opa = 0;
+          if (me->ovs_state<0.25){
+            opa = libaroma_cubic_bezier_easein(me->ovs_state*4);
+          }
+          else{
+            opa = 1;
+          }
+          if (me->ovs_ustate>0){
+            opa*=1-libaroma_cubic_bezier_swiftout(me->ovs_ustate);
+          }
+          opa = MAX(0,MIN(1,opa));
+          overshoot_sz = overshoot_sz * opa;
+          float opacity = ((float) overshoot_sz) / (c->h/4);
+          overshoot_sz = MIN(overshoot_sz,c->h/5);
+          if (overshoot_sz>1){
+            LIBAROMA_CANVASP ovshot = libaroma_canvas_ex(
+              c->w, overshoot_sz, 1);
+            libaroma_canvas_setcolor(ovshot,RGB(009587),0);
+            int ovs_h = overshoot_sz >> 1;
+            if (me->ovs_y<0){
+              LIBAROMA_PATHP path=libaroma_path(0,0);
+              int hv = MAX(1,MIN(1,(me->ovs_x>>1) / (ovshot->w>>1))) * ovs_h;
+              int rv = MAX(1,MIN(1,((ovshot->w>>1)-(me->ovs_x>>1)) /
+                (ovshot->w>>1))) * ovs_h;
+              libaroma_path_add(path, 0, hv);
+              libaroma_path_curve(
+                path,
+                ovs_h,
+                me->ovs_x>>1, ovs_h+hv,
+                (ovshot->w>>1)+(me->ovs_x>>1), ovs_h+rv,
+                ovshot->w-1, rv
+              );
+              libaroma_path_add(path, ovshot->w-1, 0);
+              libaroma_path_draw(ovshot, path, 0,
+                0x60*opacity, 1, 0.33);
+              libaroma_path_free(path);
+              
+              libaroma_draw(c,ovshot,0,0,1);
+            }
+            else{
+              LIBAROMA_PATHP path=libaroma_path(0,ovshot->h-1);
+              libaroma_path_add(path, 0, ovs_h);
+              libaroma_path_curve(
+                path,
+                ovs_h,
+                me->ovs_x>>1, 0,
+                (ovshot->w>>1)+(me->ovs_x>>1), 0,
+                ovshot->w-1, ovs_h
+              );
+              libaroma_path_add(path, ovshot->w-1, ovshot->h-1);
+              libaroma_path_draw(ovshot, path, 0,
+                0x60*opacity, 1, 0.33);
+              libaroma_path_free(path);
+              
+              libaroma_draw(c,ovshot,0,c->h-overshoot_sz,1);
+            }
+            libaroma_canvas_free(ovshot);
+          }
+        }
+      }
     }
     else{
       libaroma_canvas_setcolor(c,me->color_bg,0xff);
@@ -863,6 +981,7 @@ dword _libaroma_ctl_scroll_touch_handler(
       me->touch_x=x;
       me->touch_y=y;
       me->touch_scroll_y = me->scroll_y;
+      me->ovs_x=x;
     }
     break;
     case LIBAROMA_HID_EV_STATE_UP:{
@@ -924,10 +1043,19 @@ dword _libaroma_ctl_scroll_touch_handler(
       me->touched=0;
       me->touch_x=0;
       me->touch_y=0;
+      
+      me->ovs_x=x;
+      if (!me->ovs_ustart){
+        me->ovs_ustate=0;
+        me->ovs_ustart=1;
+        me->ovs_bounce=3;
+      }
     }
     break;
     case LIBAROMA_HID_EV_STATE_MOVE:{
       ALOGT("scroll_message - touch move: %i, %i",x, y);
+      me->ovs_x=x;
+      
       me->bounce_velocity=0;
       byte is_first_allowed = 0;
       if (me->allow_scroll==2){
@@ -967,6 +1095,35 @@ dword _libaroma_ctl_scroll_touch_handler(
       if ((me->allow_scroll==1)&&(me->touch_y!=y)){
         int move_sz = me->touch_y - y;
         if (!me->handle_touched){
+          
+          if (me->scroll_y+move_sz<0){
+            if (!me->ovs_start){
+              me->ovs_start=libaroma_tick();
+              me->ovs_bounce=0;
+              me->ovs_state=0;
+              me->ovs_ustate=0;
+              me->ovs_ustart=0;
+              me->ovs_y=0;
+            }
+            me->ovs_y+=move_sz;
+          }
+          else if (me->scroll_y+move_sz>me->max_scroll_y){
+            if (!me->ovs_start){
+              me->ovs_start=libaroma_tick();
+              me->ovs_bounce=0;
+              me->ovs_state=0;
+              me->ovs_ustate=0;
+              me->ovs_ustart=0;
+              me->ovs_y=0;
+            }
+            me->ovs_y+=move_sz;
+          }
+          else if (!me->ovs_ustart){
+            me->ovs_ustate=0;
+            me->ovs_ustart=1;
+            me->ovs_bounce=3;
+          }
+          
           /* normal scroll */
           if (is_first_allowed){
             libaroma_ctl_scroll_request_pos(ctl, me->touch_scroll_y+move_sz);

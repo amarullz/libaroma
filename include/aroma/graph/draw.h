@@ -182,6 +182,42 @@ LIBAROMA_CANVASP libaroma_art_busy_progress(
     word basecolor);
 
 /*
+ * Function    : libaroma_draw_pixel
+ * Return Value: byte
+ * Descriptions: draw pixel
+ */
+byte libaroma_draw_pixel(
+    LIBAROMA_CANVASP dest,
+    int dx, int dy,
+    word color,
+    byte alpha
+  );
+
+/*
+ * Function    : libaroma_draw_alphapixel
+ * Return Value: byte
+ * Descriptions: set alpha pixel
+ */
+byte libaroma_draw_alphapixel(
+    LIBAROMA_CANVASP dest,
+    int dx, int dy,
+    byte alpha
+  );
+  
+/*
+ * Function    : libaroma_draw_line
+ * Return Value: byte
+ * Descriptions: draw line
+ */
+byte libaroma_draw_line(
+  LIBAROMA_CANVASP dest,
+  int x0, int y0, int x1, int y1,
+  float wd,
+  word color,
+  byte alpha,
+  byte is_mask);
+
+/*
  * Function    : libaroma_draw_subpixel
  * Return Value: byte
  * Descriptions: draw subpixel
@@ -192,6 +228,33 @@ byte libaroma_draw_subpixel(
     word color,
     byte alpha);
 
+/*
+ * Function    : libaroma_draw_line_width
+ * Return Value: byte
+ * Descriptions: draw line with width
+ */
+byte libaroma_draw_line_width(
+  LIBAROMA_CANVASP dest,
+  float x1, float y1, float x2, float y2,
+  float wd,
+  word color,
+  byte alpha,
+  byte is_mask,
+  float aliasing);
+
+/*
+ * Function    : libaroma_draw_arc
+ * Return Value: byte
+ * Descriptions: draw arc into canvas
+ */
+byte libaroma_draw_arc(
+  LIBAROMA_CANVASP dest,
+  float dx, float dy,
+  float radius_w, float radius_h, float width,
+  float start_angle, float end_angle,
+  word color,byte alpha,byte is_mask,float aliasing
+);
+  
 /* libaroma_draw_ex1 aliases */
 #define libaroma_draw_filter(dst,src,dx,dy,a,fcb,fparam) \
   libaroma_draw_ex1(dst,src,dx,dy,0,0,src->w, \
@@ -216,5 +279,82 @@ byte libaroma_draw_subpixel(
 /* libaroma_blur_ex aliases */
 #define libaroma_blur(dst,r) \
   libaroma_blur_ex(dst,r,0,0)
+
+
+/**** PATH DRAWING ****/
+typedef struct _LIBAROMA_PATH_POINT{
+  float x;
+  float y;
+} LIBAROMA_PATH_POINT, * LIBAROMA_PATH_POINTP;
+
+typedef struct _LIBAROMA_PATH LIBAROMA_PATH;
+typedef struct _LIBAROMA_PATH * LIBAROMA_PATHP;
+struct _LIBAROMA_PATH{
+  LIBAROMA_PATH_POINT * p;
+  int n;
+  LIBAROMA_PATH_POINT min;
+  LIBAROMA_PATH_POINT max;
+};
+
+/*
+ * Function    : libaroma_path
+ * Return Value: LIBAROMA_PATHP
+ * Descriptions: create new path
+ */
+LIBAROMA_PATHP libaroma_path(float x, float y);
+
+/*
+ * Function    : libaroma_path_free
+ * Return Value: byte
+ * Descriptions: free path
+ */
+byte libaroma_path_free(LIBAROMA_PATHP path);
+
+/*
+ * Function    : libaroma_path_add
+ * Return Value: byte
+ * Descriptions: add point into path
+ */
+byte libaroma_path_add(LIBAROMA_PATHP path, float x, float y);
+
+/*
+ * Function    : libaroma_path_curve_calc
+ * Return Value: void
+ * Descriptions: calculating bezier curve
+ */
+void libaroma_path_curve_calc(
+  float t,
+  float *x, float *y,
+  float x0, float y0,
+  float x1, float y1,
+  float x2, float y2,
+  float x3, float y3);
+  
+/*
+ * Function    : libaroma_path_curve
+ * Return Value: byte
+ * Descriptions: add curve point
+ */
+byte libaroma_path_curve(
+  LIBAROMA_PATHP path,
+  int resolution,
+  float x1, float y1,
+  float x2, float y2,
+  float x3, float y3
+);
+
+/*
+ * Function    : libaroma_path_draw
+ * Return Value: byte
+ * Descriptions: draw path
+ */
+byte libaroma_path_draw(
+  LIBAROMA_CANVASP dest,
+  LIBAROMA_PATHP path,
+  word color,
+  byte alpha,
+  byte is_mask,
+  float aliasing);
+
 
 #endif /* __libaroma_draw_h__ */

@@ -200,7 +200,9 @@ void _libaroma_ctl_list_draw_item_fresh(
   }
   
   /* cleanup */
-  libaroma_canvas_setcolor(canvas,bgcolor,0xff);
+  if (!(flag&LIBAROMA_CTL_LIST_ITEM_DRAW_ADDONS)){
+    libaroma_canvas_setcolor(canvas,bgcolor,0xff);
+  }
   LIBAROMA_CANVASP tcanvas=NULL;
   LIBAROMA_CANVASP ccv = canvas;
   /* have horizontal padding */
@@ -234,6 +236,9 @@ void _libaroma_ctl_list_free_state(LIBAROMA_CTL_LIST_ITEMP item){
     }
     if (item->state->cache_push){
       libaroma_canvas_free(item->state->cache_push);
+    }
+    if (item->state->cache_client){
+      libaroma_canvas_free(item->state->cache_client);
     }
     free(item->state);
     ALOGT("[X] State Freed %x",item->id);
@@ -297,13 +302,13 @@ byte _libaroma_ctl_list_init_state_cache(
     if (item->state->cache_rest){
       _libaroma_ctl_list_draw_item_fresh(
         ctl,item,item->state->cache_rest,bgcolor,mi->hpad,
-        LIBAROMA_CTL_LIST_ITEM_DRAW_NORMAL
+        LIBAROMA_CTL_LIST_ITEM_DRAW_NORMAL|LIBAROMA_CTL_LIST_ITEM_DRAW_CACHE
       );
     }
     if (item->state->cache_push){
       _libaroma_ctl_list_draw_item_fresh(
         ctl,item,item->state->cache_push,bgcolor,mi->hpad,
-        LIBAROMA_CTL_LIST_ITEM_DRAW_PUSHED
+        LIBAROMA_CTL_LIST_ITEM_DRAW_PUSHED|LIBAROMA_CTL_LIST_ITEM_DRAW_CACHE
       );
     }
     return 1;
@@ -380,6 +385,13 @@ void _libaroma_ctl_list_draw_item(
       else{
         libaroma_draw(canvas, item->state->cache_rest, 0, 0, 0);
       }
+      
+      if (item->state->normal_handler==2){
+        _libaroma_ctl_list_draw_item_fresh(
+          ctl, item,canvas,bgcolor,mi->hpad,
+          LIBAROMA_CTL_LIST_ITEM_DRAW_ADDONS
+        );
+      }
       return;
     }
   }
@@ -455,10 +467,10 @@ byte _libaroma_ctl_list_thread(
         byte is_draw=0;
         if (item->state){
           /* normal behaviour */
-          if (item->state->normal_handler==1){
+          if (item->state->normal_handler){
             if ((item->state->touch_start)&&(item->state->touch_state<1)){
               float nowstate=libaroma_control_state(
-                item->state->touch_start, 2000
+                item->state->touch_start, 1500
               );
               if (item->state->touch_state!=nowstate){
                 is_draw = 1;
@@ -466,7 +478,7 @@ byte _libaroma_ctl_list_thread(
               }
             }
             if (item->state->touched==1){
-              if ((item->state->touch_state>=0.4)&&(!item->state->holded)){
+              if ((item->state->touch_state>=0.6)&&(!item->state->holded)){
                 item->state->holded=1;
                 
                 /* send hold message to item */
@@ -505,7 +517,7 @@ byte _libaroma_ctl_list_thread(
             
             if (!item->state->touched&&item->state->release_start){
               float nowstate=libaroma_control_state(
-                item->state->release_start, 500
+                item->state->release_start, 300
               );
               if (item->state->release_state!=nowstate){
                 is_draw = 1;
@@ -722,7 +734,12 @@ dword _libaroma_ctl_list_scroll_message(
             /* init state item */
             if (_libaroma_ctl_list_init_state(mi->touched)){
               _libaroma_ctl_list_init_state_cache(ctl,mi->touched);
-              mi->touched->state->normal_handler = 1;
+              if (mres&LIBAROMA_CTL_LIST_ITEM_MSGRET_HAVE_ADDONS_DRAW){
+                mi->touched->state->normal_handler = 2;
+              }
+              else{
+                mi->touched->state->normal_handler = 1;
+              }
               mi->touched->state->touch_start=libaroma_tick();
               mi->touched->state->touch_state=0;
               mi->touched->state->release_state=0.0;
@@ -789,6 +806,9 @@ dword _libaroma_ctl_list_scroll_message(
             if (mi->touched->state->holded){
               param_msg = LIBAROMA_CTL_LIST_ITEM_MSGPARAM_HOLDED;
             }
+            if (mi->touched->state->normal_handler){
+              mi->touched->state->touched=2;
+            }
           }
           byte mres = 0;
           if (mi->touched->handler->message){
@@ -802,11 +822,6 @@ dword _libaroma_ctl_list_scroll_message(
               param_msg,
               x, cy
             );
-          }
-          if (mi->touched->state){
-            if (mi->touched->state->normal_handler){
-              mi->touched->state->touched=2;
-            }
           }
           if (mres&LIBAROMA_CTL_LIST_ITEM_MSGRET_NEED_DRAW){
             if (_libaroma_ctl_list_dodraw_item(ctl,mi->touched)){

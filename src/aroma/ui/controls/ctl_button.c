@@ -331,14 +331,14 @@ byte _libaroma_ctl_button_thread(LIBAROMA_CONTROLP ctl) {
   byte is_draw = me->forcedraw;
   if (!(me->style&LIBAROMA_CTL_BUTTON_DISABLED)){
     if ((me->touch_start)&&(me->touch_state<1)){
-      float nowstate=libaroma_control_state(me->touch_start, 2000);
+      float nowstate=libaroma_control_state(me->touch_start, 1500);
       if (me->touch_state!=nowstate){
         is_draw = 1;
         me->touch_state=nowstate;
       }
     }
     if (me->touched==1){
-      if ((me->touch_state>=0.4)&&(!me->holded)){
+      if ((me->touch_state>=0.6)&&(!me->holded)){
         me->holded=1;
         libaroma_window_post_command(
           LIBAROMA_CMD_SET(LIBAROMA_CMD_HOLD, 0, ctl->id)
@@ -354,7 +354,7 @@ byte _libaroma_ctl_button_thread(LIBAROMA_CONTROLP ctl) {
     }
     
     if (!me->touched&&me->release_start){
-      float nowstate=libaroma_control_state(me->release_start, 500);
+      float nowstate=libaroma_control_state(me->release_start, 300);
       if (me->release_state!=nowstate){
         is_draw = 1;
         me->release_state=nowstate;

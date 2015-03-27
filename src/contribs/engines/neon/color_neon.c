@@ -30,7 +30,7 @@
 
 
 /* assembler version of libaroma_color_copy32 */
-void libaroma_color_set_asm(wordp dst, word color, int n){
+void libaroma_color_set_asm(wordp __restrict dst, word color, int n){
   asm volatile(
     "lsr	    %2,   %2, #4 \n"
   	"vdup.16	q8,   %1 \n"
@@ -49,7 +49,7 @@ void libaroma_color_set_asm(wordp dst, word color, int n){
 
 /* set color buffer */
 /* 512 & 256bit vector */
-void libaroma_color_set(wordp dst, word color, int n) {
+void libaroma_color_set(wordp __restrict dst, word color, int n) {
   int i,left=n%16;
   if (n>=16){
     libaroma_color_set_asm(dst,color,n-left);
@@ -81,7 +81,8 @@ void libaroma_color_set(wordp dst, word color, int n) {
 }
 
 /* assembler version of libaroma_color_copy32 */
-void libaroma_color_copy32_asm(dwordp dst, wordp src, int n, byte rgb){
+void libaroma_color_copy32_asm(dwordp __restrict dst, 
+  wordp __restrict src, int n, byte rgb){
   asm volatile(
     "lsr	      %2,   %2, #3      \n"
     "mov        r4,   #2016       \n"
@@ -161,7 +162,8 @@ void libaroma_color_copy32_asm(dwordp dst, wordp src, int n, byte rgb){
 }
 
 /* 16bit to 32bit */
-void libaroma_color_copy32(dwordp dst, wordp src, int n, bytep rgb_pos) {
+void libaroma_color_copy32(dwordp __restrict dst, wordp __restrict src, 
+  int n, bytep __restrict rgb_pos) {
   int i,left=n%8;
   
   /* neon */

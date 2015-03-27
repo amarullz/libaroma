@@ -455,7 +455,7 @@ byte libaroma_font_glyph_draw(
   if (flags & _LIBAROMA_TEXTCHUNK_BOLD) {
     FT_Outline_Embolden(
       &((FT_OutlineGlyph) fglyph)->outline,
-      aglyph->size * 4);
+      aglyph->size * 3);
   }
   
   /* convert glyph to bitmap glyph */

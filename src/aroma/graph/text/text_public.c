@@ -50,7 +50,7 @@ int libaroma_text_height(
     LIBAROMA_TEXT text) {
   if (text) {
     _LIBAROMA_TEXTP txt = (_LIBAROMA_TEXTP) text;
-    return txt->h + libaroma_dp(2);
+    return txt->h;
   }
   return 0;
 } /* End of libaroma_text_height */

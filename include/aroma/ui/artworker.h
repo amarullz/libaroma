@@ -14,39 +14,35 @@
  * limitations under the License.
  *______________________________________________________________________________
  *
- * Filename    : listitem_option.h
- * Description : list item option
+ * Filename    : artworker.h
+ * Description : artworker
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 07/03/15 - Author(s): Ahmad Amarullah
+ * + 25/03/15 - Author(s): Ahmad Amarullah
  *
  */
 #ifndef __libaroma_aroma_h__
   #error "Include <aroma.h> instead."
 #endif
-#ifndef __libaroma_listitem_option_h__
-#define __libaroma_listitem_option_h__
-
-/* option signature */
-#define LIBAROMA_LISTITEM_OPTION_INDENT_NOICON      0x08
-#define LIBAROMA_LISTITEM_OPTION_SMALL_ICON         0x10
-#define LIBAROMA_LISTITEM_OPTION_SHARED_ICON        0x20
-#define LIBAROMA_LISTITEM_OPTION_FREE_ICON          0x40
-#define LIBAROMA_LISTITEM_OPTION_SWITCH             0x80
+#ifndef __libaroma_artworker_h__
+#define __libaroma_artworker_h__
 
 /*
- * Function    : libaroma_listitem_option
- * Return Value: LIBAROMA_CTL_LIST_ITEMP
- * Descriptions: create option item
+ * Function    : libaroma_art_arrowdrawer
+ * Return Value: byte
+ * Descriptions: draw arrow drawer
  */
-LIBAROMA_CTL_LIST_ITEMP libaroma_listitem_option(
-    LIBAROMA_CONTROLP ctl,
-    int id,
-    byte selected,
-    const char * main_text,
-    const char * extra_text,
-    LIBAROMA_CANVASP icon,
-    byte flags,
-    int at_index);
+byte libaroma_art_arrowdrawer(
+  LIBAROMA_CANVASP dest,
+  float t,
+  byte from_arrow,
+  int dx,
+  int dy,
+  int size,
+  word color,
+  byte alpha,
+  byte is_mask,
+  float aliasing);
 
-#endif /* __libaroma_listitem_option_h__ */
+
+#endif /* __libaroma_artworker_h__ */

@@ -46,7 +46,7 @@ void LINUXFBDR_init_16bit(LIBAROMA_FBP me) {
  */
 byte LINUXFBDR_sync_16bit(
     LIBAROMA_FBP me,
-    wordp src,
+    wordp __restrict src,
     int x,
     int y,
     int w,

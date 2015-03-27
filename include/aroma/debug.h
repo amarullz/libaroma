@@ -37,11 +37,14 @@ void ___mtrack_init_free(int free);
 void ___mtrack_dump_leak();
 void * ___mtrack_realloc(void * x, size_t size, char * filename, long line);
 void * ___mtrack_malloc(size_t size, char * filename, long line);
+void * ___mtrack_calloc(size_t num, size_t size, char * filename, long line);
 void ___mtrack_free(void ** x, char * filename, long line);
 char * ___mtrack_strdup(const char * str, char * filename, long line);
 
 #define malloc(x) \
   ___mtrack_malloc (x, ___MEMTRACK_FILE(),___MEMTRACK_LINE())
+#define calloc(x,s) \
+  ___mtrack_calloc (x, s, ___MEMTRACK_FILE(),___MEMTRACK_LINE())
 #define realloc(x,s) \
   ___mtrack_realloc(x,s, ___MEMTRACK_FILE(),___MEMTRACK_LINE())
 #define free(x) \

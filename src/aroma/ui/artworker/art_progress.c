@@ -14,18 +14,18 @@
  * limitations under the License.
  *______________________________________________________________________________
  *
- * Filename    : artworker.c
- * Description : art drawing
+ * Filename    : art_progress.c
+ * Description : artworker progress
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 20/01/15 - Author(s): Ahmad Amarullah
+ * + 25/03/15 - Author(s): Ahmad Amarullah
  *
  */
 #ifndef __libaroma_aroma_c__
   #error "Should be inside aroma.c."
 #endif
-#ifndef __libaroma_artworker_c__
-#define __libaroma_artworker_c__
+#ifndef __libaroma_art_progress_c__
+#define __libaroma_art_progress_c__
 
 /*
  * Function    : libaroma_art_busy_progress
@@ -153,4 +153,4 @@ LIBAROMA_CANVASP libaroma_art_busy_progress(
   return load_out;
 } /* End of libaroma_art_busy_progress */
 
-#endif /* __libaroma_artworker_c__ */
+#endif /* __libaroma_art_progress_c__ */

@@ -327,6 +327,134 @@ byte libaroma_draw_rect(
   return 1;
 } /* End of libaroma_draw_rect */
 
+/*
+ * Function    : libaroma_draw_pixel
+ * Return Value: byte
+ * Descriptions: draw pixel
+ */
+byte libaroma_draw_pixel(
+    LIBAROMA_CANVASP dest,
+    int dx, int dy,
+    word color,
+    byte alpha
+  ){
+  if (!dest){
+    dest=libaroma_fb()->canvas;
+  }
+  if ((dx<0)||(dy<0)||(dy>=dest->h)||(dx>=dest->w)){
+    return 0;
+  }
+  wordp d=&dest->data[dest->l * dy + dx];
+  if (alpha==0xff){
+    *d = color;
+  }
+  else if (alpha>0){
+    *d = libaroma_alpha(*d,color,alpha);
+  }
+  return 1;
+} /* End of libaroma_draw_pixel */
+
+/*
+ * Function    : libaroma_draw_alphapixel
+ * Return Value: byte
+ * Descriptions: set alpha pixel
+ */
+byte libaroma_draw_alphapixel(
+    LIBAROMA_CANVASP dest,
+    int dx, int dy,
+    byte alpha
+  ){
+  if (!dest){
+    dest=libaroma_fb()->canvas;
+  }
+  if ((dx<0)||(dy<0)||(dy>=dest->h)||(dx>=dest->w)){
+    return 0;
+  }
+  if (dest->alpha==NULL){
+    return 0;
+  }
+  dest->alpha[dest->l * dy + dx] = alpha;
+  return 1;
+} /* End of libaroma_draw_pixel */
+
+/*
+ * Function    : libaroma_draw_line
+ * Return Value: byte
+ * Descriptions: draw line
+ */
+byte libaroma_draw_line(
+  LIBAROMA_CANVASP dest,
+  int x0, int y0, int x1, int y1,
+  float wd,
+  word color,
+  byte alpha,
+  byte is_mask){
+
+#define __DRAW_PIX(x,y,a) \
+  if (is_mask==1){ \
+    if (!libaroma_draw_alphapixel( \
+      dest, x, y, \
+      MIN(alpha,MAX(0, alpha * (1-(a)))) \
+    )) { break; } \
+  } \
+  else if (is_mask==2){ \
+    if (!libaroma_draw_alphapixel( \
+      dest, x, y, \
+      MIN(0xff,MAX(0, 255 * (a))) \
+    )) { break; } \
+  } \
+  else{ \
+    if (!libaroma_draw_pixel( \
+      dest, x, y, color, \
+      MIN(0xff,MAX(0, alpha * (1-(a)))) \
+    )) { break; } \
+  }
+  
+  if (!dest){
+    dest=libaroma_fb()->canvas;
+  }
+  
+  int dx = abs(x1-x0), sx = x0 < x1 ? 1 : -1;
+  int dy = abs(y1-y0), sy = y0 < y1 ? 1 : -1;
+  int err = dx-dy, e2, x2, y2;
+  float ed = dx+dy == 0 ? 1 : sqrt((float)dx*dx+(float)dy*dy);
+  for (wd = (wd+1)/2; ; ) {
+    if ((x0>=0)&&(y0>=0)){
+      __DRAW_PIX(x0,y0,
+        abs(err-dx+dy)/ed-wd+1
+      );
+    }
+    e2 = err; x2 = x0;
+    if (2*e2 >= -dx) {
+      for (e2 += dy, y2 = y0; e2 < ed*wd && (y1 != y2 || dx > dy); e2 += dx){
+        if ((x0>=0)&&(y2>=0)){
+          __DRAW_PIX(x0, y2+=sy,
+            abs(e2)/ed-wd+1
+          );
+        }
+      }
+      if (x0==x1){
+        break;
+      }
+      e2 = err; err -= dy; x0 += sx; 
+    } 
+    if (2*e2 <= dy){
+      for (e2 = dx-e2; e2 < ed*wd && (x1 != x2 || dx < dy); e2 += dy){
+        if ((x2>=0)&&(y0>=0)){
+          __DRAW_PIX(x2 += sx, y0,
+            abs(e2)/ed-wd+1
+          );
+        }
+      }
+      if (y0==y1){
+        break;
+      }
+      err += dx; y0 += sy; 
+    }
+  }
+#undef __DRAW_PIX
+  return 1;
+} /* End of libaroma_draw_line */
 
 /*
  * Function    : libaroma_draw_subpixel
@@ -485,5 +613,180 @@ byte libaroma_draw_circle(
   }
   return 1;
 } /* End of libaroma_draw_circle */
+
+/*
+ * Function    : libaroma_draw_line_width
+ * Return Value: byte
+ * Descriptions: draw line with width
+ */
+byte libaroma_draw_line_width(
+  LIBAROMA_CANVASP dest,
+  float x1, float y1, float x2, float y2,
+  float wd,
+  word color,
+  byte alpha,
+  byte is_mask,
+  float aliasing){
+  if (!dest){
+    dest=libaroma_fb()->canvas;
+  }
+  if ((is_mask)&&(dest->alpha==NULL)){
+    return 0;
+  }
+  if ((!is_mask)&&(alpha<1)){
+    return 1;
+  }
+  
+  float angle = atan2(y2 - y1, x2 - x1);
+  float t2sina1 = wd / 2 * sin(angle);
+  float t2cosa1 = wd / 2 * cos(angle);
+  float t2sina2 = wd / 2 * sin(angle);
+  float t2cosa2 = wd / 2 * cos(angle);
+  LIBAROMA_PATHP path=libaroma_path(x1 + t2sina1, y1 - t2cosa1);
+  libaroma_path_add(path, x2 + t2sina2, y2 - t2cosa2);
+  libaroma_path_add(path, x2 - t2sina2, y2 + t2cosa2);
+  libaroma_path_add(path, x2 - t2sina2, y2 + t2cosa2);
+  libaroma_path_add(path, x1 - t2sina1, y1 + t2cosa1);
+  libaroma_path_add(path, x1 + t2sina1, y1 - t2cosa1);
+  byte res=libaroma_path_draw(
+    dest,
+    path,
+    color,
+    alpha,
+    is_mask,
+    aliasing);
+  libaroma_path_free(path);
+  return res;
+} /* End of libaroma_draw_line_width */
+
+/*
+ * Function    : _libaroma_draw_arc_findpoint
+ * Return Value: byte
+ * Descriptions: find arc point
+ */
+byte _libaroma_draw_arc_findpoint(
+    LIBAROMA_PATHP path,
+    float dx, float dy,
+    float radius_w, float radius_h,
+    float xt0, float yt0,
+    float xt1, float yt1,
+    double start, double end
+  ){
+  double radian;
+  if (start==end){
+    return 0;
+  }
+  else if (start<end){
+    radian = start + ((end - start) / 2.0);
+  }
+  else{
+    radian = end + ((start - end) / 2.0);
+  }
+  float xt = dx + radius_w*cos(radian);
+  float yt = dy + radius_h*sin(radian);
+  if ((abs(xt-xt0)>=2)||(abs(yt-yt0)>=2)) {
+    _libaroma_draw_arc_findpoint(
+      path, dx, dy, radius_w, radius_h,
+      xt0, yt0, xt, yt,
+      start, radian
+    );
+  }
+  libaroma_path_add(path, xt, yt);
+  
+  if ((abs(xt-xt1)>=2)||(abs(yt-yt1)>=2)) {
+    _libaroma_draw_arc_findpoint(
+      path, dx, dy, radius_w, radius_h,
+      xt, yt, xt1, yt1,
+      radian, end
+    );
+  }
+  libaroma_path_add(path, xt1, yt1);
+  return 1;
+} /* End of _libaroma_draw_arc_findpoint */
+
+/*
+ * Function    : libaroma_draw_arc
+ * Return Value: byte
+ * Descriptions: draw arc into canvas
+ */
+byte libaroma_draw_arc(
+  LIBAROMA_CANVASP dest,
+  float dx, float dy,
+  float radius_w, float radius_h,
+  float width,
+  float start_angle, float end_angle,
+  word color,byte alpha,byte is_mask,float aliasing
+){
+  if (!dest){
+    dest=libaroma_fb()->canvas;
+  }
+  if ((is_mask)&&(dest->alpha==NULL)){
+    return 0;
+  }
+  if ((!is_mask)&&(alpha<1)){
+    return 1;
+  }
+  if (start_angle==end_angle){
+    /* no draw needed */
+    return 1;
+  }
+  /*
+  start_angle=fmod(start_angle,360);
+  end_angle=fmod(end_angle,360);
+  */
+  /*
+  start_angle=360-start_angle;
+  end_angle=360-end_angle;
+  */
+  if (start_angle>end_angle){
+    float tmp=start_angle;
+    start_angle=end_angle;
+    end_angle=tmp;
+  }
+  
+  double start_radian = start_angle* __PI / 180.0;
+  double end_radian   = end_angle  * __PI / 180.0;
+  float start_x = dx + radius_w*cos(start_radian);
+  float start_y = dy + radius_h*sin(start_radian);
+  float end_x   = dx + radius_w*cos(end_radian);
+  float end_y   = dy + radius_h*sin(end_radian);
+  LIBAROMA_PATHP path=libaroma_path(start_x, start_y);
+  _libaroma_draw_arc_findpoint(
+      path, dx, dy, radius_w, radius_h,
+      start_x, start_y, end_x, end_y,
+      start_radian, end_radian
+    );
+  libaroma_path_add(path, end_x, end_y);
+  
+  if ((width>0)&&(width<radius_w/2)&&(width<radius_h/2)) {
+    radius_w -= width;
+    radius_h -= width;
+    
+    /* roll */
+    start_x = dx + radius_w*cos(end_radian);
+    start_y = dy + radius_h*sin(end_radian);
+    end_x   = dx + radius_w*cos(start_radian);
+    end_y   = dy + radius_h*sin(start_radian);
+    libaroma_path_add(path, start_x, start_y);
+    _libaroma_draw_arc_findpoint(
+      path, dx, dy, radius_w, radius_h,
+      start_x, start_y, end_x, end_y,
+      end_radian, start_radian
+    );
+  }
+  
+  byte res=libaroma_path_draw(
+    dest,
+    path,
+    color,
+    alpha,
+    is_mask,
+    aliasing);
+  libaroma_path_free(path);
+  return res;
+} /* End of libaroma_draw_arc */
+
+
+
 
 #endif /* __libaroma_commondraw_c__ */

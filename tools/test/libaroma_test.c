@@ -28,8 +28,193 @@
 #include <aroma.h>
 // #include <omp.h>
 
+    
+void arrow_test(){
+  int z;
+  float spinSpeed = 200.0;
+  float barSpinCycleTime = 600;
+  float timeStartGrowing = 0;
+  byte barGrowingFromFront = 1;
+  float barExtraLength = 0;
+  float mProgress = 0.0;
+  int barMaxLength = 270;
+  int barLength = 16;
+  long lastTimeAnimated = libaroma_tick();
+  
+  for (z=0;z<500;z++){
+    long now = libaroma_tick();
+    long deltaTime = now - lastTimeAnimated;
+    if (deltaTime==0){
+      usleep(16);
+      continue;
+    }
+    lastTimeAnimated = now;
+    float deltaNormalized = deltaTime * spinSpeed / 1000.0f;
+    
+    
+    timeStartGrowing += deltaTime;
+    if (timeStartGrowing > barSpinCycleTime) {
+        timeStartGrowing -= barSpinCycleTime;
+        barGrowingFromFront = !barGrowingFromFront;
+    }
 
-void LINUXFBDR_setrgbpos(LIBAROMA_FBP me, byte r, byte g, byte b);
+    float distance = (float)
+      cos((timeStartGrowing/barSpinCycleTime+1)*__PI)/2.0+0.5;
+    float destLength = (barMaxLength - barLength);
+    if (barGrowingFromFront) {
+        barExtraLength = distance * destLength;
+    } else {
+        float newLength = destLength * (1 - distance);
+        mProgress += (barExtraLength - newLength);
+        barExtraLength = newLength;
+    }
+    
+    mProgress += deltaNormalized;
+    if (mProgress>360) {
+        mProgress -= 360;
+    }
+    float from = mProgress - 90;
+    float length = barLength + barExtraLength;
+    printf("Draw: %f %f\n",from,length);
+    libaroma_draw_rect(
+      libaroma_fb()->canvas,
+      200,200,400,400,0,0xff);
+    libaroma_draw_arc(
+        libaroma_fb()->canvas,
+        300, 300,
+        80, 80, 20,
+        from, from+length,
+        RGB(ffffff),0xff,0,0.5
+      );
+    libaroma_sync();
+  }
+  
+  /*
+  int z;
+  float spinSpeed = 200.0;
+  float barSpinCycleTime = 600;
+  float timeStartGrowing = 0;
+  byte barGrowingFromFront = 1;
+  float barExtraLength = 0;
+  float mProgress = 0.0;
+  int barMaxLength = 270;
+  int barLength = 16;
+  long lastTimeAnimated = libaroma_tick();
+  
+  for (z=0;z<500;z++){
+    long now = libaroma_tick();
+    long deltaTime = now - lastTimeAnimated;
+    if (deltaTime==0){
+      usleep(16);
+      continue;
+    }
+    lastTimeAnimated = now;
+    float deltaNormalized = deltaTime * spinSpeed / 1000.0f;
+    
+    
+    timeStartGrowing += deltaTime;
+    if (timeStartGrowing > barSpinCycleTime) {
+        timeStartGrowing -= barSpinCycleTime;
+        barGrowingFromFront = !barGrowingFromFront;
+    }
+
+    float distance = (float)
+      cos((timeStartGrowing/barSpinCycleTime+1)*__PI)/2.0+0.5;
+    float destLength = (barMaxLength - barLength);
+    if (barGrowingFromFront) {
+        barExtraLength = distance * destLength;
+    } else {
+        float newLength = destLength * (1 - distance);
+        mProgress += (barExtraLength - newLength);
+        barExtraLength = newLength;
+    }
+    
+    mProgress += deltaNormalized;
+    if (mProgress>360) {
+        mProgress -= 360;
+    }
+    float from = mProgress - 90;
+    float length = barLength + barExtraLength;
+
+    libaroma_draw_rect(
+      libaroma_fb()->canvas,
+      200,200,400,400,0,0xff);
+    libaroma_draw_arc(
+        libaroma_fb()->canvas,
+        300, 300,
+        80, 80, 20,
+        from, from+length,
+        RGB(ffffff),0xff,0,0.5
+      );
+    libaroma_sync();
+  }
+  */
+    /*
+    long start=libaroma_tick();
+    do{
+      float state = libaroma_control_state(start, 1000);
+      if (state>1){
+        state=1;
+      }
+      float deg = state * 360.0;
+      
+      if (state==1){
+        break;
+      }
+    }while(1);
+    
+    for (i=0;i<=360;i++){
+      libaroma_canvas_blank(libaroma_fb()->canvas);
+      libaroma_draw_arc(
+        libaroma_fb()->canvas,
+        300, 300,
+        100, 100, 10,
+        0, i,
+        RGB(ffffff),0xff,0,0.25
+      );
+      libaroma_sync();
+    }
+    */
+  
+  /*
+  libaroma_canvas_blank(libaroma_fb()->canvas);
+    libaroma_draw_arc(
+      libaroma_fb()->canvas,
+      300, 300,
+      100, 100, 10,
+      -90, 270,
+      RGB(ffffff),0xff,0,0.25
+    );
+    libaroma_sync();
+  libaroma_png_save(libaroma_fb()->canvas,"/sdcard/libaroma_screenshoot1.png");
+  sleep(2);
+  */
+  
+  /*
+  int i,z;
+  for (z=0;z<11;z++){
+    for (i=0;i<50;i++){
+      float t = (((float) i)/49.0);
+      libaroma_canvas_blank(libaroma_fb()->canvas);
+      libaroma_art_arrowdrawer(
+        libaroma_fb()->canvas, t, z%2,
+        300, 300, libaroma_dp(24), RGB(ffffff), 0xff,0,0.25
+      );
+      
+      libaroma_art_arrowdrawer(
+        libaroma_fb()->canvas, t, z%2,
+        300, 600, 24, RGB(ffffff), 0xff,0,0.25
+      );
+      
+      libaroma_sync();
+    }
+    usleep(300000);
+  }
+  libaroma_png_save(libaroma_fb()->canvas,"/sdcard/libaroma_screenshoot1.png");
+  */
+}
+
+
 
 /*
  * Function    : main
@@ -53,8 +238,8 @@ int main(int argc, char **argv){
   //snprintf(libaroma_config()->fb_shm_name,64,"");
   
   // libaroma_config()->runtime_monitor = 2;
-  //pid_t pp = getppid();
-  //kill(pp, 19);
+  pid_t pp = getppid();
+  kill(pp, 19);
   
   snprintf(libaroma_config()->fb_shm_name,64,"");
   /* start libaroma process */
@@ -77,6 +262,9 @@ int main(int argc, char **argv){
 
   /* clean display */
   libaroma_canvas_blank(libaroma_fb()->canvas);
+  
+  //arrow_test();
+  
   libaroma_sync();
   
   /* 674 - 677 == 128bit: 6327ms vs 256bit: 2162ms - 1471 */
@@ -119,6 +307,7 @@ int main(int argc, char **argv){
     100,
     0
   );
+  
   
   LIBAROMA_CONTROLP btn1 = libaroma_ctl_button(
     win, 1,
@@ -163,14 +352,22 @@ int main(int argc, char **argv){
   LIBAROMA_CONTROLP btn6 = libaroma_ctl_button(
     win, 6,
     LIBAROMA_POS_HALF, 180, LIBAROMA_SIZE_HALF, 60,
-    "<img=file:///sdcard/plus.png>Change Text",
+    "Screenshoot",
     LIBAROMA_CTL_BUTTON_RAISED|LIBAROMA_CTL_BUTTON_COLORED,
     RGB(ffcccc)
   );
   
+  LIBAROMA_CONTROLP progress2 = libaroma_ctl_progress(
+    win, 51,
+    0, 246, LIBAROMA_SIZE_HALF, 48,
+    LIBAROMA_CTL_PROGRESS_INDETERMINATE|LIBAROMA_CTL_PROGRESS_CIRCULAR,
+    100,
+    0
+  );
+  
   LIBAROMA_CONTROLP btn_exit = libaroma_ctl_button(
     win, 7,
-    0, 240, LIBAROMA_SIZE_FULL, 60,
+    LIBAROMA_POS_HALF, 240, LIBAROMA_SIZE_HALF, 60,
     "<b>Tap & Hold</b> to Exit",
     LIBAROMA_CTL_BUTTON_RAISED|LIBAROMA_CTL_BUTTON_COLORED,
     RGB(F44336)
@@ -188,27 +385,34 @@ int main(int argc, char **argv){
   LIBAROMA_CONTROLP list_test = libaroma_ctl_list(
     win, 90, /* win, id */
     0, 300, LIBAROMA_SIZE_FULL, LIBAROMA_SIZE_FULL, /* x,y,w,h */
-    8, 8, /* horiz, vert padding */
+    0, 8, /* horiz, vert padding */
     RGB(ffffff), /* bgcolor */
     LIBAROMA_CTL_SCROLL_WITH_SHADOW|LIBAROMA_CTL_SCROLL_WITH_HANDLE /* flags */
   );
   
-  LIBAROMA_CANVASP list_icon = libaroma_image_uri("file:///sdcard/plus.png");
+  LIBAROMA_CANVASP list_icon = libaroma_image_uri("file:///sdcard/ic_settings_data_usage.png");
   char main_text[256];
   char extra_text[256];
   int itm=0;
   for (itm=0;itm<250;itm++){
     snprintf(main_text,256,"Item id#%i",itm);
-    snprintf(extra_text,256,"This is <b>just extra text</b> for item %i",itm);
+    byte add_flags=0;
+    if (itm%3==1){
+      add_flags=LIBAROMA_LISTITEM_OPTION_SWITCH;
+      snprintf(extra_text,256,"Secondary text for list item %i is three line list item text",itm);
+    }
+    else if (itm%3==2){
+      snprintf(extra_text,256,"Secondary text %i",itm);
+    }
     libaroma_listitem_option(
       list_test, itm, 0,
       main_text,
-      (itm%2==0)?extra_text:NULL,
+      (itm%3!=0)?extra_text:NULL,
       list_icon,
       LIBAROMA_LISTITEM_OPTION_INDENT_NOICON|
+      LIBAROMA_LISTITEM_WITH_SEPARATOR|
       LIBAROMA_LISTITEM_OPTION_SHARED_ICON|
-      LIBAROMA_LISTITEM_LARGE_PADDING|
-      LIBAROMA_LISTITEM_WITH_SEPARATOR,
+      add_flags,
       -1
     );
   }
@@ -218,7 +422,7 @@ int main(int argc, char **argv){
 
   /* show window */
   //libaroma_window_show(win);
-  libaroma_window_anishow(win, LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_RIGHT, 1000);
+  libaroma_window_anishow(win, LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_LEFT, 400);
   
   // libaroma_window_anishow(win, LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_LEFT, 500);
   
@@ -282,6 +486,10 @@ int main(int argc, char **argv){
           // LINUXFBDR_setrgbpos(libaroma_fb(), 16, 8, 0);
           
           // libaroma_ctl_button_text(btn6,"<img=file:///sdcard/plus.png;24dp;24dp>Click");
+          if (click_value==0){
+            libaroma_png_save(libaroma_fb()->canvas,"/sdcard/libaroma_screenshoot.png");
+          }
+          
           click_value++;
           char clstr[128];
           snprintf(clstr,128,"Clicked %i",click_value);
@@ -298,8 +506,7 @@ int main(int argc, char **argv){
             list_icon,
             LIBAROMA_LISTITEM_OPTION_INDENT_NOICON|
             LIBAROMA_LISTITEM_OPTION_SHARED_ICON|
-            LIBAROMA_LISTITEM_WITH_SEPARATOR|
-            LIBAROMA_LISTITEM_LARGE_PADDING,
+            LIBAROMA_LISTITEM_WITH_SEPARATOR,
             -1
           );
           itm++;
@@ -404,7 +611,7 @@ int main(int argc, char **argv){
   /* end libaroma process */
   libaroma_end();
   
-  // kill(pp, 18);
+  kill(pp, 18);
   return 0;
 } /* End of main */
 

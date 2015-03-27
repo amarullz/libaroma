@@ -29,29 +29,30 @@
 #define __libaroma_alpha_neon_c__
 #ifdef __ARM_HAVE_NEON
 
-
-#define __ALPHA_NEON_USE_ASM 1
+#define __ALPHA_NEON_RESTRICT__ __restrict
+// #define __ALPHA_NEON_USE_ASM 1
 
 #ifdef __ALPHA_NEON_USE_ASM
 
 /* asm alpha px */
 void libaroma_alpha_px_asm(
     int n,
-    wordp dst,
-    wordp bottom,
-    wordp top,
-    bytep alpha){
+    wordp __ALPHA_NEON_RESTRICT__ dst,
+    wordp __ALPHA_NEON_RESTRICT__ bottom,
+    wordp __ALPHA_NEON_RESTRICT__ top,
+    bytep __ALPHA_NEON_RESTRICT__ alpha){
   asm volatile(
     "lsr        %0,   %0, #3    \n" /* div 8 */
-    "mov        r5,   #2016     \n"
+    
     "vmov.i16   q0,   #255      \n"
     "vmov.i16   q1,   #256      \n"
     "vmov.i16   q12,  #31       \n"
     "vmov.i16   q13,  #63488    \n"
-    "vdup.16    q14,  r5        \n"
+    "vmov.u16   q14,  #63       \n" /* mask b - q2 */
+    "vqshl.u16  q14,  q14, #5   \n" /* 504 >> 2 = 2016 */
     
     
-    ".libaroma_alpha_px_asm_loop: \n"
+    "0: \n"
     "vld1.8 {d16}, [%4]!        \n" /* vld1_u8(alpha) */
     "vmovl.u8 q8, d16           \n" /* q8=op */
     "vsub.i16 q11, q1, q8       \n" /* q11=ro */
@@ -102,24 +103,24 @@ void libaroma_alpha_px_asm(
     "vst1.16  {d16-d17}, [%1]!  \n" /* store */
     
     "subs     %0, %0, #1        \n" /* n-- */
-    "bne  .libaroma_alpha_px_asm_loop  \n"
+    "bne  0b  \n"
     :
     : "r"(n),       /* r0 - 0 */
       "r"(dst),     /* r1 - 1 */
       "r"(bottom),  /* r2 - 2 */
       "r"(top),     /* r3 - 3 */
       "r"(alpha)    /* r4 - 4 */
-    : "r5"
+    :
   );
 }
 
 /* asm alpha mono */
 void libaroma_alpha_mono_asm(
     int n,
-    wordp dst,
-    wordp bottom,
+    wordp __ALPHA_NEON_RESTRICT__ dst,
+    wordp __ALPHA_NEON_RESTRICT__ bottom,
     word  top,
-    bytep alpha){
+    bytep __ALPHA_NEON_RESTRICT__ alpha){
   asm volatile(
     "lsr        %0,   %0, #3    \n" /* div 8 */
     "mov        r5,   #2016     \n"
@@ -138,7 +139,7 @@ void libaroma_alpha_mono_asm(
     "vand       q4, q10, q12    \n" /* blue */
     "vshl.i16   q4, q4, #3      \n"
     
-    ".libaroma_alpha_mono_asm_loop: \n"
+    "0: \n"
     "vld1.8 {d16}, [%4]!        \n" /* vld1_u8(alpha) */
     "vmovl.u8 q8, d16           \n" /* q8=op */
     "vsub.i16 q11, q1, q8       \n" /* q11=ro */
@@ -176,7 +177,7 @@ void libaroma_alpha_mono_asm(
     
     "vst1.16  {d16-d17}, [%1]!  \n" /* store */
     "subs     %0, %0, #1        \n" /* n-- */
-    "bne  .libaroma_alpha_mono_asm_loop  \n"
+    "bne  0b \n"
     :
     : "r"(n),       /* r0 - 0 */
       "r"(dst),     /* r1 - 1 */
@@ -190,8 +191,8 @@ void libaroma_alpha_mono_asm(
 /* asm alpha rgba fill */
 void libaroma_alpha_rgba_fill_asm(
     int n,
-    wordp dst,
-    wordp bottom,
+    wordp __ALPHA_NEON_RESTRICT__ dst,
+    wordp __ALPHA_NEON_RESTRICT__ bottom,
     word topr,
     word topg,
     word topb,
@@ -254,15 +255,15 @@ void libaroma_alpha_rgba_fill_asm(
 /* asm alpha rgba fill */
 void libaroma_alpha_rgba_fill_line_asm(
     int n,
-    wordp dst,
-    wordp bottom,
+    wordp __ALPHA_NEON_RESTRICT__ dst,
+    wordp __ALPHA_NEON_RESTRICT__ bottom,
     word topr,
     word topg,
     word topb,
     word falpha,
-    const byte * dither_r,
-    const byte * dither_g,
-    const byte * dither_b){
+    const byte * __ALPHA_NEON_RESTRICT__ dither_r,
+    const byte * __ALPHA_NEON_RESTRICT__ dither_g,
+    const byte * __ALPHA_NEON_RESTRICT__ dither_b){
   asm volatile(
     "lsr        %0,   %0, #3    \n" /* div 8 */
     /* loads dither data */
@@ -344,12 +345,12 @@ void libaroma_alpha_rgba_fill_line_asm(
 /* asm alpha multiline */
 void libaroma_alpha_multi_line_asm(
     int n,
-    wordp dst,
-    wordp bottom,
+    wordp __ALPHA_NEON_RESTRICT__ dst,
+    wordp __ALPHA_NEON_RESTRICT__ bottom,
     byte topr,
     byte topg,
     byte topb,
-    bytep alpha){
+    bytep __ALPHA_NEON_RESTRICT__ alpha){
   asm volatile(
     "lsr        %0,   %0, #3      \n" /* div 8 */
     "mov        r7,   #2016       \n" 
@@ -413,98 +414,91 @@ void libaroma_alpha_multi_line_asm(
 /* asm alpha line px */
 void libaroma_alpha_px_line_asm(
     int n,
-    wordp dst,
-    wordp bottom,
-    wordp top,
-    bytep alpha,
-    const byte * dither_r,
-    const byte * dither_g,
-    const byte * dither_b){
+    wordp __ALPHA_NEON_RESTRICT__ dst,
+    wordp __ALPHA_NEON_RESTRICT__ bottom,
+    wordp __ALPHA_NEON_RESTRICT__ top,
+    bytep __ALPHA_NEON_RESTRICT__ alpha,
+    const byte * __ALPHA_NEON_RESTRICT__ dither_r,
+    const byte * __ALPHA_NEON_RESTRICT__ dither_g,
+    const byte * __ALPHA_NEON_RESTRICT__ dither_b){
   asm volatile(
     "lsr        %0,   %0, #3    \n" /* div 8 */
     
-    /* loads dither data */
-    "vld1.8     {d10},  [%5]    \n" /* dither_r */
-    "vld1.8     {d8},   [%6]    \n" /* dither_g */
-    "vld1.8     {d16},  [%7]    \n" /* dither_b */
-    "vmovl.u8   q0, d10         \n" /* dr = q0 */
-    "vmovl.u8   q1, d8          \n" /* dg = q1 */
-    "vmovl.u8   q2, d16         \n" /* db = q2 */
-    
     /* color masks */
-    "mov        r8,   #2016     \n"
-    "vmov.i16   q15,  #63488    \n" /* mask r */
-    "vdup.16    q13,  r8        \n" /* mask g */
-    "vmov.i16   q14,  #31       \n" /* mask b */
+    "vmov.u16   q0,   #63488    \n" /* mask r - q0 */
+    "vmov.u16   q1,   #63       \n" /* mask b - q2 */
+    "vqshl.u16  q1,   q1, #5    \n" /* 504 >> 2 = 2016 */
+    "vmov.u16   q2,   #31       \n" /* mask b - q2 */
+    "vmov.u16   q3,   #255      \n" /* 0xFF   - q3 */
+    "vmov.u16   q4,   #256      \n" /* 0x100  - q4 */
     
-    /* alpha consts */
-    "vmov.i16   q11,  #255      \n" /* xalpha */
-    "vmov.i16   q6,   #256      \n" /* falpha */
+    /* loads dither data */
+    "vld1.u8     {d10},  [%5]   \n" /* dither_r - q5 */
+    "vmovl.u8   q5, d10         \n"
+    "vld1.u8     {d12},  [%6]   \n" /* dither_g - q6 */
+    "vmovl.u8   q6, d12         \n"
+    "vld1.u8     {d14},  [%7]   \n" /* dither_b - q7 */
+    "vmovl.u8   q7, d14         \n"
+
+".libaroma_alpha_px_line_asm_loop: \n"
+    "vld1.u8    {d16},  [%4]!   \n" /* alpha - q8 */
+    "vmovl.u8   q8, d16         \n"
+    "vsub.u16   q9, q4, q8      \n" /* 256-alpha - q9 */
     
-    ".libaroma_alpha_px_line_asm_loop: \n"
+    "vld1.u16   {q10},[%2]! \n" /* bottom - q10 */
+    "vld1.u16   {q11},[%3]! \n" /* top - q11 */
     
-    "vld1.8     {d16},  [%4]!   \n" /* load alpha */
-    "vmovl.u8   q8, d16         \n" /* q8=op */
-    "vsub.i16   q12, q6, q8     \n" /* q12=ro */
+    "vand       q12, q10, q0  \n"
+    "vrshr.u16  q12, q12, #8  \n"
+    "vmul.u16   q12, q12, q9  \n" /* bottom */
+    "vand       q13, q11, q0  \n"
+    "vrshr.u16  q13, q13, #8  \n"
+    "vmul.u16   q13, q13, q8  \n" /* top */
+    "vadd.u16   q13, q13, q12 \n"
+    "vshr.u16   q13, q13, #8  \n" /* red result = q13 */
+    "vadd.u16   q13, q13, q5  \n" /* dither - red = q5 */
+    "vmin.u16   q13, q13, q3  \n" /* min(color,255) */
+    "vshr.u16   q13, q13, #3  \n" /* color >> 3 << 11 */
+    "vqshl.u16  q13, q13, #11 \n"
     
-    "vld1.16    {d18-d19},[%2]! \n" /* bottom */
-    "vld1.16    {d20-d21},[%3]! \n" /* top */
+    "vand       q12, q10, q1  \n"
+    "vrshr.u16  q12, q12, #3  \n"
+    "vmul.u16   q12, q12, q9  \n" /* bottom */
+    "vand       q14, q11, q1  \n"
+    "vrshr.u16  q14, q14, #3  \n"
+    "vmul.u16   q14, q14, q8  \n" /* top */
+    "vadd.u16   q14, q14, q12 \n"
+    "vshr.u16   q14, q14, #8  \n" /* green result = q14 */
+    "vadd.u16   q14, q14, q6  \n" /* dither - green = q6 */
+    "vmin.u16   q14, q14, q3  \n" /* min(color,255) */
+    "vshr.u16   q14, q14, #2  \n" /* color >> 2 << 5 */
+    "vqshl.u16  q14, q14, #5  \n"
     
-    /* red */
-    "vand       q3, q9, q15 \n"
-    "vrshr.u16  q3, q3, #8  \n"
-    "vmul.i16   q3, q3, q12 \n"
-    "vand       q4, q10,q15 \n"
-    "vrshr.u16  q4, q4, #8  \n"
-    "vmul.i16   q4, q4, q8  \n"
-    "vadd.i16   q4, q3, q4  \n"
-    "vshr.u16   q4, q4, #8  \n"
+    "vorr       q13, q13, q14 \n" /* r | g = q13 */
     
-    /* green */    
-    "vand       q3, q9, q13 \n"
-    "vrshr.u16  q3, q3, #3  \n"
-    "vmul.i16   q3, q3, q12 \n"
-    "vand       q5, q10,q13 \n"
-    "vrshr.u16  q5, q5, #3  \n"
-    "vmul.i16   q5, q5, q8  \n"
-    "vadd.i16   q5, q3, q5  \n"
-    "vshr.u16   q5, q5, #8  \n"
+    "vand       q12, q10, q2  \n"
+    "vshl.u16   q12, q12, #3  \n"
+    "vmul.u16   q12, q12, q9  \n" /* bottom */
+    "vand       q14, q11, q2  \n"
+    "vshl.u16   q14, q14, #3  \n"
+    "vmul.u16   q14, q14, q8  \n" /* top */
+    "vadd.u16   q14, q14, q12 \n"
+    "vshr.u16   q14, q14, #8  \n" /* blue result = q14 */
+    "vadd.u16   q14, q14, q7  \n" /* dither - blue = q7 */
+    "vmin.u16   q14, q14, q3  \n" /* min(color,255) */
+    "vshr.u16   q14, q14, #3  \n" /* color >> 3 */
     
-    "vadd.i16   q4 ,q4, q0  \n" /* r */
-    "vmin.u16   q4, q4, q11 \n"
-    "vshr.u16   q4, q4, #3  \n"
-    "vqshl.u16  q4, q4, #11 \n"
+    "vorr       q13, q13, q14 \n" /* rg | b = q13 */
     
-    "vadd.i16   q5, q5, q1  \n" /* g */
-    "vmin.u16   q5, q5, q11 \n"
-    "vshr.u16   q5, q5, #2  \n"
-    "vqshl.u16  q5, q5, #5  \n"
+    /* q12 & q14 is free */
     
-    "vorr       q4, q4, q5  \n" /* r|g */
+    "vceq.u16   q12, q8, q3   \n" /* op==255 */
+    "vceq.u16   q14, q8, #0   \n" /* op==0 */
     
-    /* blue */
-    "vand       q3, q9, q14 \n"
-    "vshl.i16   q3, q3, #3  \n"
-    "vmul.i16   q3, q3, q12 \n"
-    "vand       q5, q10,q14 \n"
-    "vshl.i16   q5, q5, #3  \n"
-    "vmul.i16   q5, q5, q8  \n"
-    "vadd.i16   q5, q3, q5  \n"
-    "vshr.u16   q5, q5, #8  \n"
-    "vadd.i16   q5, q5, q2  \n"
-    "vmin.u16   q5, q5, q11 \n"
-    "vshr.u16   q5, q5, #3  \n"
+    "vbsl       q12, q11, q13 \n"
+    "vbsl       q14, q10, q12 \n"
     
-    "vorr       q4, q4, q5  \n" /* rg | b */
-    
-    "vceq.i16   q5, q8, q11 \n" /* op==255 */
-    "vceq.i16   q8, q8, #0  \n" /* op==0 */
-    
-    "vbsl       q5, q10, q4  \n"
-    "vbsl       q8, q9,  q5 \n"
-    
-    "vst1.16    {d16-d17}, [%1]! \n" /* store */
-    
+    "vst1.u16   {d28-d29}, [%1]! \n" /* store */
     "subs     %0, %0, #1        \n" /* n-- */
     "bne  .libaroma_alpha_px_line_asm_loop  \n"
     :
@@ -516,16 +510,16 @@ void libaroma_alpha_px_line_asm(
       "r"(dither_r),/* r5 - 5 */
       "r"(dither_g),/* r6 - 6 */
       "r"(dither_b) /* r7 - 7 */
-    : "r8"
+    : "memory"
   );
 }
 
 /* asm alpha const */
 void libaroma_alpha_const_asm(
     int n,
-    wordp dst,
-    wordp bottom,
-    wordp top,
+    wordp __ALPHA_NEON_RESTRICT__ dst,
+    wordp __ALPHA_NEON_RESTRICT__ bottom,
+    wordp __ALPHA_NEON_RESTRICT__ top,
     word alpha){
   asm volatile(
     "lsr        %0,   %0,   #3    \n" /* div 8 */
@@ -597,13 +591,13 @@ void libaroma_alpha_const_asm(
 /* asm alpha line px */
 void libaroma_alpha_const_line_asm(
     int n,
-    wordp dst,
-    wordp bottom,
-    wordp top,
+    wordp __ALPHA_NEON_RESTRICT__ dst,
+    wordp __ALPHA_NEON_RESTRICT__ bottom,
+    wordp __ALPHA_NEON_RESTRICT__ top,
     word alpha,
-    const byte * dither_r,
-    const byte * dither_g,
-    const byte * dither_b){
+    const byte * __ALPHA_NEON_RESTRICT__ dither_r,
+    const byte * __ALPHA_NEON_RESTRICT__ dither_g,
+    const byte * __ALPHA_NEON_RESTRICT__ dither_b){
   asm volatile(
     "lsr        %0,   %0, #3    \n" /* div 8 */
     
@@ -698,8 +692,8 @@ void libaroma_alpha_const_line_asm(
 /* asm alpha const */
 void libaroma_alpha_black_asm(
     int n,
-    wordp dst,
-    wordp top,
+    wordp __ALPHA_NEON_RESTRICT__ dst,
+    wordp __ALPHA_NEON_RESTRICT__ top,
     word alpha){
   asm volatile(
     "lsr        %0,   %0,   #3    \n" /* div 8 */
@@ -748,6 +742,9 @@ void libaroma_alpha_black_asm(
 
 #else
 
+
+#endif /* __ALPHA_NEON_USE_ASM */
+
 /* constants neon variables */
 static byte __neon_const_initialized=0;
 static uint16x8_t __neon_const_xalph;
@@ -758,7 +755,7 @@ static uint16x8_t __neon_const_msk_g;
 static uint16x8_t __neon_const_msk_b;
 
 /* init constants */
-inline void __neon_alpha_const_init(){
+void __neon_alpha_const_init(){
   if (!__neon_const_initialized){
     __neon_const_xalph = vdupq_n_u16(0xff);   /* max value */
     __neon_const_zalph = vdupq_n_u16(0);      /* zero value */
@@ -771,7 +768,7 @@ inline void __neon_alpha_const_init(){
 }
 
 /* init dither table */
-inline void __neon_dither_table(
+void __neon_dither_table(
     int y, uint16x8_t *r, uint16x8_t *g, uint16x8_t *b
 ){
   uint8x8_t tr,tg,tb;
@@ -782,20 +779,19 @@ inline void __neon_dither_table(
 }
 
 
-#endif /* __ALPHA_NEON_USE_ASM */
-
 
 
 /* dithered alpha blending */
 void libaroma_alpha_px_line(
-    int _Y, int n, wordp dst,
-    wordp bottom, wordp top, bytep alpha){
+    int _Y, int n, wordp __ALPHA_NEON_RESTRICT__ dst,
+    wordp __ALPHA_NEON_RESTRICT__ bottom, wordp __ALPHA_NEON_RESTRICT__ top, 
+    bytep __ALPHA_NEON_RESTRICT__ alpha){
   int i,left=n%8;
   
   /* neon */
   if (n>=8){
 #ifdef __ALPHA_NEON_USE_ASM
-    byte table_p = ((_Y & 7) << 3);
+    size_t table_p = ((_Y & 7) << 3);
     libaroma_alpha_px_line_asm(
       n-left,
       dst,
@@ -869,8 +865,9 @@ void libaroma_alpha_px_line(
 
 /* non-dithered alpha blending */
 void libaroma_alpha_px(
-    int n, wordp dst,
-    wordp bottom, wordp top, bytep alpha) {
+    int n, wordp __ALPHA_NEON_RESTRICT__ dst,
+    wordp __ALPHA_NEON_RESTRICT__ bottom, wordp __ALPHA_NEON_RESTRICT__ top, 
+    bytep __ALPHA_NEON_RESTRICT__ alpha) {
   int i,left=n%8;
   
   /* neon */
@@ -916,7 +913,6 @@ void libaroma_alpha_px(
       vst1q_u16(dst+i,o);
     }
 #endif
-
   }
   /* leftover */
   if (left>0) {
@@ -928,8 +924,9 @@ void libaroma_alpha_px(
 
 /* dithered alpha blending - constant alpha */
 void libaroma_alpha_const_line(
-    int _Y, int n, wordp dst,
-    wordp bottom, wordp top, byte alpha) {
+    int _Y, int n, wordp __ALPHA_NEON_RESTRICT__ dst,
+    wordp __ALPHA_NEON_RESTRICT__ bottom, 
+    wordp __ALPHA_NEON_RESTRICT__ top, byte alpha) {
   if (alpha==0xff){
     if (dst!=top){
       memcpy(dst,top,n*2);
@@ -1016,8 +1013,9 @@ void libaroma_alpha_const_line(
 
 /* non-dithered alpha blending - constant alpha */
 void libaroma_alpha_const(
-    int n, wordp dst,
-    wordp bottom, wordp top, byte alpha) {
+    int n, wordp __ALPHA_NEON_RESTRICT__ dst,
+    wordp __ALPHA_NEON_RESTRICT__ bottom, wordp __ALPHA_NEON_RESTRICT__ top, 
+    byte alpha) {
   if (alpha==0xff){
     if (dst!=top){
       memcpy(dst,top,n*2);
@@ -1080,8 +1078,8 @@ void libaroma_alpha_const(
 
 /* alpha blending with black */
 void libaroma_alpha_black(
-    int n, wordp dst,
-    wordp top, byte alpha) {
+    int n, wordp __ALPHA_NEON_RESTRICT__ dst,
+    wordp __ALPHA_NEON_RESTRICT__ top, byte alpha) {
   if (alpha==0xff){
     if (dst!=top){
       memcpy(dst,top,n*2);
@@ -1134,8 +1132,9 @@ void libaroma_alpha_black(
 
 /* alphablending - constant top & alpha */
 void libaroma_alpha_rgba_fill(
-    int n, wordp dst,
-    wordp bottom, word top, byte alpha) {
+    int n, wordp __ALPHA_NEON_RESTRICT__ dst,
+    wordp __ALPHA_NEON_RESTRICT__ bottom, word top,
+    byte alpha) {
   if (alpha==0xff){
     libaroma_color_set(dst,top,n);
     return;
@@ -1199,8 +1198,8 @@ void libaroma_alpha_rgba_fill(
 /* alphablending - constant top & alpha */
 void libaroma_alpha_rgba_fill_line(
     int _Y,
-    int n, wordp dst,
-    wordp bottom, word top, byte alpha) {
+    int n, wordp __ALPHA_NEON_RESTRICT__ dst,
+    wordp __ALPHA_NEON_RESTRICT__ bottom, word top, byte alpha) {
   if (alpha==0xff){
     libaroma_color_set(dst,top,n);
     return;
@@ -1280,8 +1279,9 @@ void libaroma_alpha_rgba_fill_line(
 }
 
 /* alphablending - constant top dynamic alpha */
-void libaroma_alpha_mono(int n, wordp dst, wordp bottom,
-    word top, bytep alpha){
+void libaroma_alpha_mono(int n, wordp __ALPHA_NEON_RESTRICT__ dst, 
+    wordp __ALPHA_NEON_RESTRICT__ bottom,
+    word top, bytep __ALPHA_NEON_RESTRICT__ alpha){
   int i,left=n%8;
   
   /* neon */
@@ -1340,8 +1340,9 @@ void libaroma_alpha_mono(int n, wordp dst, wordp bottom,
 }
 
 /* subpixel alphablending  */
-void libaroma_alpha_multi_line(int n, wordp dst, wordp bottom,
-    word top, bytep alphargb) {
+void libaroma_alpha_multi_line(int n, wordp __ALPHA_NEON_RESTRICT__ dst,
+    wordp __ALPHA_NEON_RESTRICT__ bottom,
+    word top, bytep __ALPHA_NEON_RESTRICT__ alphargb) {
   int i,left=n%8;
   
   /* neon */

@@ -36,6 +36,7 @@ typedef struct _LIBAROMA_CONTROL LIBAROMA_CONTROL;
 typedef struct _LIBAROMA_CONTROL * LIBAROMA_CONTROLP;
 
 /* include module headers */
+#include "ui/artworker.h"
 #include "ui/hid.h"
 #include "ui/messages.h"
 #include "ui/motions.h"

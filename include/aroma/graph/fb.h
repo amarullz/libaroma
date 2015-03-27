@@ -47,7 +47,7 @@ typedef struct _LIBAROMA_FB * LIBAROMA_FBP;
 typedef void (*LIBAROMA_FBCB_RELEASE) \
   (LIBAROMA_FBP);
 typedef byte (*LIBAROMA_FBCB_SYNC) \
-  (LIBAROMA_FBP, wordp, int, int, int, int);
+  (LIBAROMA_FBP, wordp __restrict, int, int, int, int);
 typedef byte (*LIBAROMA_FBCB_SNAPSHOOT) \
   (LIBAROMA_FBP, wordp);
 typedef byte (*LIBAROMA_FBCB_CONFIG) \

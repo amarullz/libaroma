@@ -29,6 +29,7 @@
 
 /* Common macros */
 #define __PI 3.14159265359
+#define __PI180 0.01745329251994
 
 /* LIBAROMA_START_* : Application start runtime type */
 #define LIBAROMA_START_UNSAFE     0x0

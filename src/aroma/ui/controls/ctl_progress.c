@@ -40,7 +40,13 @@ static LIBAROMA_CONTROL_HANDLER _libaroma_ctl_progress_handler={
   thread:_libaroma_ctl_progress_thread
 };
 
-#define _LIBAROMA_CTL_PROGRESS_BEZIER_TIMING 500
+#define _LIBAROMA_CTL_PROGRESS_BEZIER_TIMING    500
+#define _LIBAROMA_CTL_PROGRESS_SPIN_SPEED       0.2
+#define _LIBAROMA_CTL_PROGRESS_SPIN_CYCLE_TIME  600
+#define _LIBAROMA_CTL_PROGRESS_SPIN_MAX_LENGTH  254.0
+#define _LIBAROMA_CTL_PROGRESS_SPIN_BAR_LENGTH  16
+
+
 
 /*
  * Structure   : __LIBAROMA_CTL_PROGRESS
@@ -59,6 +65,10 @@ struct __LIBAROMA_CTL_PROGRESS{
   long tick;
   float state;
   float currstate;
+  
+  long timeStartGrowing;
+  byte barGrowingFromFront;
+  float barExtraLength;
 };
 
 /*
@@ -69,47 +79,79 @@ struct __LIBAROMA_CTL_PROGRESS{
 byte _libaroma_ctl_progress_thread(LIBAROMA_CONTROLP ctl) {
   _LIBAROMA_CTL_PROGRESSP me = (_LIBAROMA_CTL_PROGRESSP) ctl->internal;
   byte res = 0;
-  if (me->type!=LIBAROMA_CTL_PROGRESS_DETERMINATE){
-    long diff = libaroma_tick() - me->tick;
-    if (diff>_LIBAROMA_CTL_PROGRESS_BEZIER_TIMING*4){
-      me->state=1.0;
+  if (me->type&LIBAROMA_CTL_PROGRESS_CIRCULAR){
+    long now = libaroma_tick();
+    long deltaTime = now - me->tick;
+    me->tick=now;
+    if (deltaTime>600){
+      deltaTime=0;
+      me->currstate=0;
     }
-    else{
-      me->state = ((float) diff)/
-        ((float) _LIBAROMA_CTL_PROGRESS_BEZIER_TIMING*4);
+    
+    me->timeStartGrowing += deltaTime;
+    if (me->timeStartGrowing>600){
+      me->timeStartGrowing -= 600;
+      me->barGrowingFromFront = !me->barGrowingFromFront;
     }
-    if (me->currstate!=me->state){
-      me->currstate=me->state;
-      // libaroma_control_draw(ctl,0);
-      res=1;
+    
+    float distance = (float)
+      cos((me->timeStartGrowing/600.0+1)*__PI)/2.0+0.5;
+    if (me->barGrowingFromFront) {
+        me->barExtraLength = distance * 254.0;
+    } else {
+        float newLength = 254.0 * (1 - distance);
+        me->currstate += (me->barExtraLength - newLength);
+        me->barExtraLength = newLength;
     }
-    if (me->state>=1.0){
-      me->state=0;
-      me->tick=libaroma_tick();
+    me->currstate += deltaTime*0.2;
+    if (me->currstate>360) {
+        me->currstate -= 360;
     }
+    res=1;
   }
-  else if (me->state<1.0){
-    long diff = libaroma_tick() - me->tick;
-    if (diff>_LIBAROMA_CTL_PROGRESS_BEZIER_TIMING){
-      me->state = 1.0;
-    }
-    else{
-      me->state = libaroma_cubic_bezier_swiftout(
-        ((float) diff)/((float) _LIBAROMA_CTL_PROGRESS_BEZIER_TIMING)
-      );
-    }
-    me->curval = me->preval+((me->value - me->preval) * me->state);
-    if (me->currstate!=me->state){
-      if (me->currx>0){
-        me->currx-=(me->currx*me->state);
-        if (me->currx<0){
-          me->currx=0;
-        }
+  else{
+    if ((me->type&3)!=LIBAROMA_CTL_PROGRESS_DETERMINATE){
+      long diff = libaroma_tick() - me->tick;
+      if (diff>_LIBAROMA_CTL_PROGRESS_BEZIER_TIMING*4){
+        me->state=1.0;
       }
-      /* redraw */
-      me->currstate = me->state;
-      // libaroma_control_draw(ctl,0);
-      res=1;
+      else{
+        me->state = ((float) diff)/
+          ((float) _LIBAROMA_CTL_PROGRESS_BEZIER_TIMING*4);
+      }
+      if (me->currstate!=me->state){
+        me->currstate=me->state;
+        // libaroma_control_draw(ctl,0);
+        res=1;
+      }
+      if (me->state>=1.0){
+        me->state=0;
+        me->tick=libaroma_tick();
+      }
+    }
+    else if (me->state<1.0){
+      long diff = libaroma_tick() - me->tick;
+      if (diff>_LIBAROMA_CTL_PROGRESS_BEZIER_TIMING){
+        me->state = 1.0;
+      }
+      else{
+        me->state = libaroma_cubic_bezier_swiftout(
+          ((float) diff)/((float) _LIBAROMA_CTL_PROGRESS_BEZIER_TIMING)
+        );
+      }
+      me->curval = me->preval+((me->value - me->preval) * me->state);
+      if (me->currstate!=me->state){
+        if (me->currx>0){
+          me->currx-=(me->currx*me->state);
+          if (me->currx<0){
+            me->currx=0;
+          }
+        }
+        /* redraw */
+        me->currstate = me->state;
+        // libaroma_control_draw(ctl,0);
+        res=1;
+      }
     }
   }
   return res;
@@ -123,8 +165,14 @@ byte _libaroma_ctl_progress_thread(LIBAROMA_CONTROLP ctl) {
 void _libaroma_ctl_progress_update(
     LIBAROMA_CONTROLP ctl,
     _LIBAROMA_CTL_PROGRESSP me){
-  if (me->type==LIBAROMA_CTL_PROGRESS_DETERMINATE){
+  if ((me->type&3)==LIBAROMA_CTL_PROGRESS_DETERMINATE){
     me->preval = me->curval;
+  }
+  if (me->type&LIBAROMA_CTL_PROGRESS_CIRCULAR){
+    me->currstate=0;
+    me->barGrowingFromFront=1;
+    me->barExtraLength=0;
+    me->timeStartGrowing=0;
   }
   me->state=0.0;
   me->tick=libaroma_tick();
@@ -159,83 +207,99 @@ void _libaroma_ctl_progress_draw(
   
   libaroma_control_erasebg(ctl,c);
   
-  int ix = libaroma_dp(4);
-  int iy = libaroma_dp(2);
-  int iw = ctl->w-ix*2;
-  int ih = ctl->h-iy*2;
-  libaroma_draw_rect(c,
-    ix, iy, iw, ih,
-    libaroma_wm_get_color("control"),
-    0xcc
-  );
-  
-  if (me->type==LIBAROMA_CTL_PROGRESS_DETERMINATE){
-    int val_w = (iw * me->curval) / me->max;
-    libaroma_draw_rect(c,
-      me->currx+ix,iy,val_w,ih,
-      libaroma_wm_get_color("highlight"),
-      0xcc
-    );
+  if (me->type&LIBAROMA_CTL_PROGRESS_CIRCULAR){
+    float from = me->currstate - 90;
+    float length = 16 + me->barExtraLength;
+    int sz = MIN(c->w>>1,c->h>>1);
+    float width = ((float) sz*8)/libaroma_dp(12);
+    libaroma_draw_arc(
+        c,
+        c->w>>1,c->h>>1,
+        sz, sz, width,
+        from, from+length,
+        libaroma_wm_get_color("highlight"),
+        0xff,0,0.5
+      );
   }
   else{
-    int dw = iw *2;
-    float easein  = libaroma_cubic_bezier_easein(me->state);
-    float easeout = libaroma_cubic_bezier_easeout(me->state);
-    int left, right;
+    int ix = libaroma_dp(4);
+    int iy = libaroma_dp(2);
+    int iw = ctl->w-ix*2;
+    int ih = ctl->h-iy*2;
+    libaroma_draw_rect(c,
+      ix, iy, iw, ih,
+      libaroma_wm_get_color("control"),
+      0xcc
+    );
     
-    if (me->type==LIBAROMA_CTL_PROGRESS_INDETERMINATE){
-      left = dw * easeout;
-      right = dw * easein;
+    if ((me->type&3)==LIBAROMA_CTL_PROGRESS_DETERMINATE){
+      int val_w = (iw * me->curval) / me->max;
+      libaroma_draw_rect(c,
+        me->currx+ix,iy,val_w,ih,
+        libaroma_wm_get_color("highlight"),
+        0xcc
+      );
     }
     else{
-      right = dw * (1.0-easeout);
-      left = dw * (1.0-easein);
-    }
-    
-    int l1=left;
-    int r1=right;
-    int l2=0;
-    int r2=0;
-    if (right>iw){
-      r1 = iw;
-      r2 = right - iw;
-    }
-    if (left>iw){
-      l1 = iw;
-      l2 = left - iw;
-    }
-    if (r2>iw){
-      r2=iw;
-    }
-    if (r1>iw){
-      r1=iw;
-    }
-    byte hr1=0;
-    if ((r1>0)&&(l1<iw)){
-      hr1=1;
-      int w = r1-l1;
-      if (w>0){
-        libaroma_draw_rect(c,
-          l1+ix,iy,w,ih,
-          libaroma_wm_get_color("highlight"),
-          0xcc
-        );
+      int dw = iw *2;
+      float easein  = libaroma_cubic_bezier_easein(me->state);
+      float easeout = libaroma_cubic_bezier_easeout(me->state);
+      int left, right;
+      
+      if ((me->type&3)==LIBAROMA_CTL_PROGRESS_INDETERMINATE){
+        left = dw * easeout;
+        right = dw * easein;
       }
-    }
-    if ((r2>0)&&(l2<iw)){
-      int w = r2-l2;
-      if (w>0){
-        libaroma_draw_rect(c,
-          l2+ix,iy,w,ih,
-          libaroma_wm_get_color("highlight"),
-          0xcc
-        );
+      else{
+        right = dw * (1.0-easeout);
+        left = dw * (1.0-easein);
       }
+      
+      int l1=left;
+      int r1=right;
+      int l2=0;
+      int r2=0;
+      if (right>iw){
+        r1 = iw;
+        r2 = right - iw;
+      }
+      if (left>iw){
+        l1 = iw;
+        l2 = left - iw;
+      }
+      if (r2>iw){
+        r2=iw;
+      }
+      if (r1>iw){
+        r1=iw;
+      }
+      byte hr1=0;
+      if ((r1>0)&&(l1<iw)){
+        hr1=1;
+        int w = r1-l1;
+        if (w>0){
+          libaroma_draw_rect(c,
+            l1+ix,iy,w,ih,
+            libaroma_wm_get_color("highlight"),
+            0xcc
+          );
+        }
+      }
+      if ((r2>0)&&(l2<iw)){
+        int w = r2-l2;
+        if (w>0){
+          libaroma_draw_rect(c,
+            l2+ix,iy,w,ih,
+            libaroma_wm_get_color("highlight"),
+            0xcc
+          );
+        }
+      }
+      
+      /* update position */
+      me->curval = ((hr1?r1-l1:r2-l2)*me->max)/iw;
+      me->currx = (hr1?l1:l2);
     }
-    
-    /* update position */
-    me->curval = ((hr1?r1-l1:r2-l2)*me->max)/iw;
-    me->currx = (hr1?l1:l2);
   }
 } /* End of _libaroma_ctl_progress_draw */
 
@@ -291,6 +355,7 @@ LIBAROMA_CONTROLP libaroma_ctl_progress(
   me->value= value;
   me->preval=value;
   me->curval=value;
+  me->barGrowingFromFront=1;
   me->state= 1;
   
   /* init control */
@@ -298,7 +363,7 @@ LIBAROMA_CONTROLP libaroma_ctl_progress(
     libaroma_control_new(
       id,
       x, y, w, h,
-      libaroma_dp(48),libaroma_dp(8), /* min size */
+      libaroma_dp(24),libaroma_dp(8), /* min size */
       me,
       &_libaroma_ctl_progress_handler,
       win

@@ -56,9 +56,10 @@ bytep _libaroma_gradient_corner(
   return out;
 }
 
-void _libaroma_gradient_draw_rounded(
-    wordp line_mem, bytep line_alpha, wordp roundTmp,
-    bytep roundData, int roundSize, byte isRight, int y) {
+static inline void _libaroma_gradient_draw_rounded(
+    wordp __restrict line_mem, bytep __restrict line_alpha,
+    wordp __restrict roundTmp,
+    bytep __restrict roundData, int roundSize, byte isRight, int y) {
   int i;
   if (line_alpha != NULL) {
     if (isRight) {
@@ -82,10 +83,17 @@ void _libaroma_gradient_draw_rounded(
       }
     }
     else {
+      libaroma_alpha_px(
+        roundSize,
+        line_mem,
+        roundTmp,
+        line_mem,
+        roundData+y*roundSize
+      );/*
       for (i = 0; i < roundSize; i++) {
         line_mem[i] = libaroma_alpha(roundTmp[i],
           line_mem[i], roundData[y * roundSize + i]);
-      }
+      }*/
     }
   }
 }
@@ -153,15 +161,14 @@ byte libaroma_gradient_ex1(
   }
   byte  roundCorners[4] = { 0, 0, 0, 0 };
   bytep roundData = NULL;
-  wordp roundTmp  = NULL;
   if ((roundSize > 0) && (roundFlag != 0)) {
     roundCorners[0]  = ((roundFlag & 0x1000) == 0x1000) ? 1 : 0;
     roundCorners[1]  = ((roundFlag & 0x0100) == 0x0100) ? 1 : 0;
     roundCorners[2]  = ((roundFlag & 0x0010) == 0x0010) ? 1 : 0;
     roundCorners[3]  = ((roundFlag & 0x0001) == 0x0001) ? 1 : 0;
     roundData = _libaroma_gradient_corner(roundSize);
-    roundTmp  = (wordp) malloc(roundSize * 2 * 2);
-    memset(roundTmp, 0, roundSize * 2 * 2);
+    // roundTmp  = (wordp) malloc(roundSize * 2 * 2);
+    // memset(roundTmp, 0, roundSize * 2 * 2);
   }
   
   /* draw */
@@ -171,6 +178,10 @@ byte libaroma_gradient_ex1(
 #endif
   for (_Y = 0; _Y < h; _Y++) {
     bytep line_alpha = NULL;
+    wordp roundTmp  = NULL;
+    if (roundData!=NULL){
+      roundTmp  = (wordp) malloc(roundSize * 2 * 2);
+    }
     /*
     wordp alphaTmpLine = NULL;
     if (useAlpha) {
@@ -205,7 +216,7 @@ byte libaroma_gradient_ex1(
     int data_posxy = (ypos * dst->l) + x;
     wordp line_mem = (wordp) dst->data + data_posxy;
     if (useCanvasAlpha) {
-      line_alpha = (bytep) dst->alpha + data_posxy;
+      line_alpha = dst->alpha+data_posxy;
     }
     /* Save Bg Data */
     byte drawRound = 0;
@@ -236,14 +247,17 @@ byte libaroma_gradient_ex1(
     
     /* Draw Now */
     if (useAlpha) {
+      byte cA = startAlpha;
+      if (startAlpha!=endAlpha){
 #ifdef LIBAROMA_CONFIG_GRADIENT_FLOAT
-      byte cA = ((byte) MIN(
+      cA = ((byte) MIN(
         ((startAlpha * r_intensity) + (endAlpha * intensity)), 0xff));
 #else
-      byte cA = ((byte) MIN(
+      cA = ((byte) MIN(
         (((startAlpha * r_intensity) >> 8) +
         ((endAlpha * intensity) >> 8)), 0xff));
 #endif
+      }
       if (!samecolor){
         if (noDither){
           /*
@@ -291,13 +305,16 @@ byte libaroma_gradient_ex1(
       }
       
       if (useCanvasAlpha) {
+        byte cA = startAlpha;
+        if (startAlpha!=endAlpha){
 #ifdef LIBAROMA_CONFIG_GRADIENT_FLOAT
-        byte cA = ((byte) MIN(((startAlpha * r_intensity) +
-          (endAlpha * intensity)), 0xff));
+          cA = ((byte) MIN(((startAlpha * r_intensity) +
+            (endAlpha * intensity)), 0xff));
 #else
-        byte cA = ((byte) MIN((((startAlpha * r_intensity) >> 8) +
-          ((endAlpha * intensity) >> 8)), 0xff));
+          cA = ((byte) MIN((((startAlpha * r_intensity) >> 8) +
+            ((endAlpha * intensity) >> 8)), 0xff));
 #endif
+        }
         memset(line_alpha, cA, w);
       }
     }
@@ -310,7 +327,7 @@ byte libaroma_gradient_ex1(
         }
         if (roundCorners[1]) {
           if (line_alpha != NULL) {
-            line_alpha = line_alpha + w - roundSize;
+            line_alpha = line_alpha + w - (roundSize);
           }
           _libaroma_gradient_draw_rounded(line_mem + w - roundSize,
             line_alpha, roundTmp + roundSize, roundData, roundSize, 1, _Y);
@@ -323,7 +340,7 @@ byte libaroma_gradient_ex1(
         }
         if (roundCorners[3]) {
           if (line_alpha != NULL) {
-            line_alpha = line_alpha + w - roundSize;
+            line_alpha = line_alpha + w - (roundSize);
           }
           _libaroma_gradient_draw_rounded(line_mem + w - roundSize,
             line_alpha, roundTmp + roundSize,
@@ -335,10 +352,13 @@ byte libaroma_gradient_ex1(
     if (useAlpha) {
       free(alphaTmpLine);
     }*/
+    if (roundData != NULL) {
+      free(roundTmp);
+    }
   }
   if (roundData != NULL) {
     free(roundData);
-    free(roundTmp);
+    //free(roundTmp);
   }
   return 1;
 } /* End of libaroma_gradient_ex1 */

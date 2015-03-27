@@ -27,7 +27,7 @@
 #ifndef __libaroma_alignblt_c__
 #define __libaroma_alignblt_c__
 
-void libaroma_blt_align16(wordp dst, wordp src,
+void libaroma_blt_align16(wordp __restrict dst, wordp __restrict src,
     int w, int h, int dst_stride, int src_stride) {
   int i;
   int w2 = w<<1;
@@ -44,7 +44,7 @@ void libaroma_blt_align16(wordp dst, wordp src,
     );
   }
 }
-void libaroma_blt_align32_to16(wordp dst, dwordp src,
+void libaroma_blt_align32_to16(wordp __restrict dst, dwordp __restrict src,
     int w, int h, int dst_stride, int src_stride) {
   int i;
   int dline = w+(dst_stride>>1);
@@ -58,7 +58,7 @@ void libaroma_blt_align32_to16(wordp dst, dwordp src,
     );
   }
 }
-void libaroma_blt_align16_to32(dwordp dst, wordp src,
+void libaroma_blt_align16_to32(dwordp __restrict dst, wordp __restrict src,
     int w, int h, int dst_stride, int src_stride) {
   int i;
   int dline = w+(dst_stride>>2);
@@ -72,7 +72,7 @@ void libaroma_blt_align16_to32(dwordp dst, wordp src,
     );
   }
 }
-void libaroma_blt_align32(dwordp dst, dwordp src,
+void libaroma_blt_align32(dwordp __restrict dst, dwordp __restrict src,
     int w, int h, int dst_stride, int src_stride) {
   int i;
   int w4 = w<<2;
@@ -89,7 +89,7 @@ void libaroma_blt_align32(dwordp dst, dwordp src,
     );
   }
 }
-void libaroma_blt_align_to32_pos(dwordp dst, wordp src,
+void libaroma_blt_align_to32_pos(dwordp __restrict dst, wordp __restrict src,
     int w, int h, int dst_stride, int src_stride,
     bytep rgb_pos) {
   int i;
@@ -104,9 +104,9 @@ void libaroma_blt_align_to32_pos(dwordp dst, wordp src,
     );
   }
 }
-void libaroma_blt_align_to16_pos(wordp dst, dwordp src,
+void libaroma_blt_align_to16_pos(wordp __restrict dst, dwordp __restrict src,
     int w, int h, int dst_stride, int src_stride,
-    bytep rgb_pos) {
+    bytep __restrict rgb_pos) {
   int i;
   int dline = w+(dst_stride>>1);
   int sline = w+(src_stride>>2);
