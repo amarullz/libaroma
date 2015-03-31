@@ -91,6 +91,39 @@ void _libaroma_window_measure_save(LIBAROMA_WINDOWP win, LIBAROMA_CONTROLP ctl){
   }
 } /* End of _libaroma_window_measure_save */
 
+int libaroma_window_measure_calculate(
+    int cv, int pos, int max, int is_size, int x){
+  if (is_size){
+    if (pos<=0){
+      switch (pos){
+        case LIBAROMA_POS_HALF: return (max / 2)-x; break;
+        case LIBAROMA_POS_1P3: return (max / 3)-x; break;
+        case LIBAROMA_POS_2P3: return (max * 2 / 3)-x; break;
+        case LIBAROMA_POS_1P4: return (max / 4)-x; break;
+        case LIBAROMA_POS_3P4: return (max * 3 / 4)-x; break;
+        case LIBAROMA_SIZE_FULL: return max; break;
+        case LIBAROMA_SIZE_HALF: return max / 2; break;
+        case LIBAROMA_SIZE_THIRD: return max / 3; break;
+        case LIBAROMA_SIZE_QUARTER: return max / 4; break;
+        default: return abs(pos);
+      }
+    }
+  }
+  else{
+    if (pos<0){
+      switch (pos){
+        case LIBAROMA_POS_HALF: return max / 2; break;
+        case LIBAROMA_POS_1P3: return max / 3; break;
+        case LIBAROMA_POS_2P3: return max * 2 / 3; break;
+        case LIBAROMA_POS_1P4: return max / 4; break;
+        case LIBAROMA_POS_3P4: return max * 3 / 4; break;
+        default: return abs(pos);
+      }
+    }
+  }
+  return cv;
+}
+
 /*
  * Function    : libaroma_window_measure_size
  * Return Value: byte
@@ -98,6 +131,10 @@ void _libaroma_window_measure_save(LIBAROMA_WINDOWP win, LIBAROMA_CONTROLP ctl){
  */
 byte libaroma_window_measure_size(LIBAROMA_WINDOWP win){
   if (win){
+    if (win->parent!=NULL){
+      ALOGW("window_resize cannot be used for child window");
+      return 0;
+    }
     if (_libaroma_window_measurement_dp){
       win->x = libaroma_dp(win->rx);
       win->y = libaroma_dp(win->ry);
@@ -110,44 +147,20 @@ byte libaroma_window_measure_size(LIBAROMA_WINDOWP win){
       win->w = win->rw;
       win->h = win->rh;
     }
-    if (win->rx<0){
-      switch (win->rx){
-        case LIBAROMA_POS_HALF: win->x = libaroma_wm()->w / 2; break;
-        case LIBAROMA_POS_1P3: win->x = libaroma_wm()->w / 3; break;
-        case LIBAROMA_POS_2P3: win->x = libaroma_wm()->w * 2 / 3; break;
-        case LIBAROMA_POS_1P4: win->x = libaroma_wm()->w / 4; break;
-        case LIBAROMA_POS_3P4: win->x = libaroma_wm()->w * 3 / 4; break;
-        default: win->x = abs(win->rx);
-      }
-    }
-    if (win->ry<0){
-      switch (win->ry){
-        case LIBAROMA_POS_HALF: win->y = libaroma_wm()->h / 2; break;
-        case LIBAROMA_POS_1P3: win->y = libaroma_wm()->h / 3; break;
-        case LIBAROMA_POS_2P3: win->y = libaroma_wm()->h * 2 / 3; break;
-        case LIBAROMA_POS_1P4: win->y = libaroma_wm()->h / 4; break;
-        case LIBAROMA_POS_3P4: win->y = libaroma_wm()->h * 3 / 4; break;
-        default: win->y = abs(win->ry);
-      }
-    }
-    if (win->rw<=0){
-      switch (win->rw){
-        case LIBAROMA_SIZE_FULL: win->w = libaroma_wm()->w; break;
-        case LIBAROMA_SIZE_HALF: win->w = libaroma_wm()->w / 2; break;
-        case LIBAROMA_SIZE_THIRD: win->w = libaroma_wm()->w / 3; break;
-        case LIBAROMA_SIZE_QUARTER: win->w = libaroma_wm()->w / 4; break;
-        default: win->w = abs(win->rw);
-      }
-    }
-    if (win->rh<=0){
-      switch (win->rh){
-        case LIBAROMA_SIZE_FULL: win->h = libaroma_wm()->h; break;
-        case LIBAROMA_SIZE_HALF: win->h = libaroma_wm()->h / 2; break;
-        case LIBAROMA_SIZE_THIRD: win->h = libaroma_wm()->h / 3; break;
-        case LIBAROMA_SIZE_QUARTER: win->h = libaroma_wm()->h / 4; break;
-        default: win->h = abs(win->rh);
-      }
-    }
+    
+    win->x=libaroma_window_measure_calculate(
+      win->x, win->rx, libaroma_wm()->w, 0, 0
+    );
+    win->y=libaroma_window_measure_calculate(
+      win->y, win->ry, libaroma_wm()->h, 0, 0
+    );
+    win->w=libaroma_window_measure_calculate(
+      win->w, win->rw, libaroma_wm()->w, 1, win->x
+    );
+    win->h=libaroma_window_measure_calculate(
+      win->h, win->rh, libaroma_wm()->h, 1, win->y
+    );
+    
     if (win->w+win->x>libaroma_wm()->w){
       win->w = libaroma_wm()->w-win->x;
     }
@@ -214,11 +227,9 @@ byte libaroma_window_free(
       libaroma_wm_compose(&_msg, LIBAROMA_MSG_WIN_INACTIVE, NULL, 0, 0));
   }
   
-  if (win->parent!=NULL){
-    if (win->handler!=NULL){
-      if (win->handler->prefree!=NULL){
-        win->handler->prefree(win);
-      }
+  if (win->handler!=NULL){
+    if (win->handler->prefree!=NULL){
+      win->handler->prefree(win);
     }
   }
   
@@ -242,11 +253,10 @@ byte libaroma_window_free(
     win->dc=NULL;
   }
   
-  if (win->parent!=NULL){
-    if (win->handler!=NULL){
-      if (win->handler->postfree!=NULL){
-        win->handler->postfree(win);
-      }
+
+  if (win->handler!=NULL){
+    if (win->handler->postfree!=NULL){
+      win->handler->postfree(win);
     }
   }
   free(win);
@@ -263,21 +273,32 @@ byte _libaroma_window_updatebg(LIBAROMA_WINDOWP win){
     ALOGW("window_recalculate win is NULL");
     return 0;
   }
-  if (win->parent!=NULL){
-    if (win->handler!=NULL){
-      if (win->handler->updatebg!=NULL){
-        return win->handler->updatebg(win);
-      }
+  if (win->handler!=NULL){
+    if (win->handler->updatebg!=NULL){
+      return win->handler->updatebg(win);
     }
-    return 0;
   }
-  /* draw background */
-  if (win->bg!=NULL){
-    libaroma_canvas_free(win->bg);
+  if (win->parent!=NULL){
+    return 0;
   }
   int w = win->w;
   int h = win->h;
+  
+  /* draw background */
+  if (win->bg!=NULL){
+    if ((win->bg->w==w)&&(win->bg->h==h)){
+      /* not need recreate background */
+      return 1;
+    }
+    libaroma_canvas_free(win->bg);
+  }
   win->bg = libaroma_canvas(w,h);
+  libaroma_canvas_setcolor(
+    win->bg,
+    libaroma_wm_get_color("window"),
+    0xff
+  );
+  /*
   libaroma_grad(win->bg,0,0,w,h,
     libaroma_wm_get_color("window"),
     libaroma_wm_get_color("window_gradient")
@@ -285,7 +306,7 @@ byte _libaroma_window_updatebg(LIBAROMA_WINDOWP win){
   libaroma_wm_draw_theme(
       win->bg, 
       win->theme_bg,
-      0,0,w,h,NULL);
+      0,0,w,h,NULL);*/
   return 1;
 } /* End of _libaroma_window_updatebg */
 
@@ -525,44 +546,20 @@ byte libaroma_window_measure(LIBAROMA_WINDOWP win, LIBAROMA_CONTROLP ctl){
       ctl->w = ctl->rw;
       ctl->h = ctl->rh;
     }
-    if (ctl->rx<0){
-      switch (ctl->rx){
-        case LIBAROMA_POS_HALF: ctl->x = win->w / 2; break;
-        case LIBAROMA_POS_1P3: ctl->x = win->w / 3; break;
-        case LIBAROMA_POS_2P3: ctl->x = win->w * 2 / 3; break;
-        case LIBAROMA_POS_1P4: ctl->x = win->w / 4; break;
-        case LIBAROMA_POS_3P4: ctl->x = win->w * 3 / 4; break;
-        default: ctl->x = abs(ctl->rx);
-      }
-    }
-    if (ctl->ry<0){
-      switch (ctl->ry){
-        case LIBAROMA_POS_HALF: ctl->y = win->h / 2; break;
-        case LIBAROMA_POS_1P3: ctl->y = win->h / 3; break;
-        case LIBAROMA_POS_2P3: ctl->y = win->h * 2 / 3; break;
-        case LIBAROMA_POS_1P4: ctl->y = win->h / 4; break;
-        case LIBAROMA_POS_3P4: ctl->y = win->h * 3 / 4; break;
-        default: ctl->y = abs(ctl->ry);
-      }
-    }
-    if (ctl->rw<=0){
-      switch (ctl->rw){
-        case LIBAROMA_SIZE_FULL: ctl->w = win->w; break;
-        case LIBAROMA_SIZE_HALF: ctl->w = win->w / 2; break;
-        case LIBAROMA_SIZE_THIRD: ctl->w = win->w / 3; break;
-        case LIBAROMA_SIZE_QUARTER: ctl->w = win->w / 4; break;
-        default: ctl->w = abs(ctl->rw);
-      }
-    }
-    if (ctl->rh<=0){
-      switch (ctl->rh){
-        case LIBAROMA_SIZE_FULL: ctl->h = win->h; break;
-        case LIBAROMA_SIZE_HALF: ctl->h = win->h / 2; break;
-        case LIBAROMA_SIZE_THIRD: ctl->h = win->h / 3; break;
-        case LIBAROMA_SIZE_QUARTER: ctl->h = win->h / 4; break;
-        default: ctl->h = abs(ctl->rh);
-      }
-    }
+    
+    ctl->x=libaroma_window_measure_calculate(
+      ctl->x, ctl->rx, win->w, 0, 0
+    );
+    ctl->y=libaroma_window_measure_calculate(
+      ctl->y, ctl->ry, win->h, 0, 0
+    );
+    ctl->w=libaroma_window_measure_calculate(
+      ctl->w,ctl->rw, win->w, 1, ctl->x
+    );
+    ctl->h=libaroma_window_measure_calculate(
+      ctl->h,ctl->rh, win->h, 1, ctl->y
+    );
+    
     if (ctl->w+ctl->x>win->w){
       ctl->w = win->w-ctl->x;
     }
@@ -727,12 +724,12 @@ byte libaroma_window_sync(LIBAROMA_WINDOWP win, int x, int y, int w, int h){
     ALOGW("libaroma_window_sync win is null");
     return 0;
   }
-  if (win->parent!=NULL){
-    if (win->handler!=NULL){
-      if (win->handler->sync!=NULL){
-        return win->handler->sync(win,x,y,w,h);
-      }
+  if (win->handler!=NULL){
+    if (win->handler->sync!=NULL){
+      return win->handler->sync(win,x,y,w,h);
     }
+  }
+  if (win->parent!=NULL){
     return 0;
   }
   if (!win->lock_sync){
@@ -762,12 +759,12 @@ byte libaroma_window_invalidate(LIBAROMA_WINDOWP win, byte sync){
     ALOGW("window_invalidate win is null");
     return 0;
   }
-  if (win->parent!=NULL){
-    if (win->handler!=NULL){
-      if (win->handler->invalidate!=NULL){
-        return win->handler->invalidate(win,sync);
-      }
+  if (win->handler!=NULL){
+    if (win->handler->invalidate!=NULL){
+      return win->handler->invalidate(win,sync);
     }
+  }
+  if (win->parent!=NULL){
     return 0;
   }
   

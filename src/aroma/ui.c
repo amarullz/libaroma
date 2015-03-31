@@ -45,6 +45,8 @@
 #include "ui/controls/ctl_label.c"
 #include "ui/controls/ctl_progress.c"
 #include "ui/controls/ctl_button.c"
+#include "ui/controls/ctl_pager.c"
+#include "ui/controls/ctl_tabs.c"
 
 /* scroll control set */
 #include "ui/controls/ctl_scroll.c"

@@ -67,15 +67,15 @@
 /*
  * Special Size & Position
  */
-#define LIBAROMA_POS_HALF     -1
-#define LIBAROMA_POS_1P3      -2
-#define LIBAROMA_POS_2P3      -3
-#define LIBAROMA_POS_1P4      -4
-#define LIBAROMA_POS_3P4      -5
 #define LIBAROMA_SIZE_FULL     0
 #define LIBAROMA_SIZE_HALF    -1
 #define LIBAROMA_SIZE_THIRD   -2
 #define LIBAROMA_SIZE_QUARTER -3
+#define LIBAROMA_POS_HALF     -4
+#define LIBAROMA_POS_1P3      -5
+#define LIBAROMA_POS_2P3      -6
+#define LIBAROMA_POS_1P4      -7
+#define LIBAROMA_POS_3P4      -8
 
 /* client window handler */
 typedef struct _LIBAROMA_WINDOW_HANDLER{
@@ -84,6 +84,21 @@ typedef struct _LIBAROMA_WINDOW_HANDLER{
   byte (*updatebg)(LIBAROMA_WINDOWP);
   byte (*invalidate)(LIBAROMA_WINDOWP,byte);
   byte (*sync)(LIBAROMA_WINDOWP,int,int,int,int);
+  
+  /* controls */
+  byte (*control_draw_flush)(
+    LIBAROMA_WINDOWP,LIBAROMA_CONTROLP,LIBAROMA_CANVASP,byte
+  );
+  byte (*control_erasebg)(
+    LIBAROMA_WINDOWP,LIBAROMA_CONTROLP,LIBAROMA_CANVASP
+  );
+  byte (*control_isvisible)(
+    LIBAROMA_WINDOWP,LIBAROMA_CONTROLP
+  );
+  LIBAROMA_CANVASP (*control_draw_begin)(
+    LIBAROMA_WINDOWP,LIBAROMA_CONTROLP
+  );
+  
 } LIBAROMA_WINDOW_HANDLER, * LIBAROMA_WINDOW_HANDLERP;
 
 /*

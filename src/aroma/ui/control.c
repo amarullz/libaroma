@@ -84,6 +84,13 @@ byte libaroma_control_draw_flush(
     return 0;
   }
   LIBAROMA_WINDOWP win = ctl->window;
+  if (win->handler!=NULL){
+    if (win->handler->control_draw_flush!=NULL){
+      return win->handler->control_draw_flush(
+        win, ctl, canvas, sync
+      );
+    }
+  }
   if (win->dc==NULL){
     ALOGW("window_control_draw window dc uninitialized");
     return 0;
@@ -116,6 +123,13 @@ byte libaroma_control_erasebg(
     return 0;
   }
   LIBAROMA_WINDOWP win = ctl->window;
+  if (win->handler!=NULL){
+    if (win->handler->control_erasebg!=NULL){
+      return win->handler->control_erasebg(
+        win, ctl, canvas
+      );
+    }
+  }
   if (win->bg==NULL){
     ALOGW("window_control_erasebg window bg uninitialized");
     return 0;
@@ -144,6 +158,13 @@ byte libaroma_control_isvisible(LIBAROMA_CONTROLP ctl){
     return 0;
   }
   LIBAROMA_WINDOWP win = ctl->window;
+  if (win->handler!=NULL){
+    if (win->handler->control_isvisible!=NULL){
+      return win->handler->control_isvisible(
+        win, ctl
+      );
+    }
+  }
   int sx = ctl->x;
   int sy = ctl->y;
   if (sx+ctl->w<0){
@@ -173,6 +194,13 @@ LIBAROMA_CANVASP libaroma_control_draw_begin(
     return NULL;
   }
   LIBAROMA_WINDOWP win = ctl->window;
+  if (win->handler!=NULL){
+    if (win->handler->control_draw_begin!=NULL){
+      return win->handler->control_draw_begin(
+        win, ctl
+      );
+    }
+  }
   if (win->dc==NULL){
     return NULL;
   }

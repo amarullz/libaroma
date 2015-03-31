@@ -14,45 +14,47 @@
  * limitations under the License.
  *______________________________________________________________________________
  *
- * Filename    : ui.h
- * Description : user interface & hid handler
+ * Filename    : ctl_tabs.h
+ * Description : Tabs control
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 21/01/15 - Author(s): Ahmad Amarullah
+ * + 30/03/15 - Author(s): Ahmad Amarullah
  *
  */
 #ifndef __libaroma_aroma_h__
   #error "Include <aroma.h> instead."
 #endif
-#ifndef __libaroma_ui_h__
-#define __libaroma_ui_h__
+#ifndef __libaroma_ctl_tabs_h__
+#define __libaroma_ctl_tabs_h__
 
 /*
- * typedef : Window & Control Structure
+ * Function    : libaroma_ctl_tabs
+ * Return Value: LIBAROMA_CONTROLP
+ * Descriptions: create button control
  */
-typedef struct _LIBAROMA_WINDOW LIBAROMA_WINDOW;
-typedef struct _LIBAROMA_WINDOW * LIBAROMA_WINDOWP;
-typedef struct _LIBAROMA_CONTROL LIBAROMA_CONTROL;
-typedef struct _LIBAROMA_CONTROL * LIBAROMA_CONTROLP;
+LIBAROMA_CONTROLP libaroma_ctl_tabs(
+    LIBAROMA_WINDOWP win,
+    word id,
+    int x, int y, int w, int h,
+    word bgcolor,
+    word selcolor
+);
 
-/* include module headers */
-#include "ui/artworker.h"
-#include "ui/hid.h"
-#include "ui/messages.h"
-#include "ui/motions.h"
-#include "ui/window.h"
-#include "ui/window_manager.h"
-#include "ui/control.h"
+/*
+ * Function    : libaroma_ctl_tabs_set_pager
+ * Return Value: byte
+ * Descriptions: set pager
+ */
+byte libaroma_ctl_tabs_set_pager(
+  LIBAROMA_CONTROLP ctl, LIBAROMA_CONTROLP pager);
 
-/* control set */
-#include "ui/controls/ctl_label.h"
-#include "ui/controls/ctl_progress.h"
-#include "ui/controls/ctl_button.h"
-#include "ui/controls/ctl_pager.h"
-#include "ui/controls/ctl_tabs.h"
+/*
+ * Function    : libaroma_ctl_tabs_set_texts
+ * Return Value: byte
+ * Descriptions: set tab texts
+ */
+byte libaroma_ctl_tabs_set_texts(LIBAROMA_CONTROLP ctl,
+  char ** texts, int textn);
 
-/* scroll control set */
-#include "ui/controls/ctl_scroll.h"
-#include "ui/controls/ctl_list.h"
 
-#endif /* __libaroma_ui_h__ */
+#endif /* __libaroma_ctl_tabs_h__ */
