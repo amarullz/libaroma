@@ -45,6 +45,7 @@ typedef struct _LIBAROMA_CONTROL * LIBAROMA_CONTROLP;
 #include "ui/control.h"
 
 /* control set */
+#include "ui/controls/ctl_bar.h"
 #include "ui/controls/ctl_label.h"
 #include "ui/controls/ctl_progress.h"
 #include "ui/controls/ctl_button.h"

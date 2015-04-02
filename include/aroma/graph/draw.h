@@ -79,11 +79,11 @@ byte libaroma_draw_circle(
     byte alpha);
     
 /*
- * Function    : libaroma_draw_ex1
+ * Function    : libaroma_draw_ex2
  * Return Value: byte
  * Descriptions: canvas drawing
  */
-byte libaroma_draw_ex1(
+byte libaroma_draw_ex2(
   LIBAROMA_CANVASP dst,
   LIBAROMA_CANVASP src,
   int dx, int dy,
@@ -92,7 +92,9 @@ byte libaroma_draw_ex1(
   byte draw_flags,
   byte opacity,
   LIBAROMA_DRAW_FILTER filter_callback,
-  dword filter_param
+  dword filter_param,
+  byte ismask,
+  word maskcolor
 );
 
 /*
@@ -256,6 +258,12 @@ byte libaroma_draw_arc(
 );
   
 /* libaroma_draw_ex1 aliases */
+#define libaroma_draw_mask(dst,src,dx,dy,cl,op) \
+  libaroma_draw_ex2(dst,src,dx,dy,0,0,src->w,src->h,1,op,NULL,0,1,cl)
+#define libaroma_draw_mask_ex(dst,src,dx,dy,sx,sy,sw,sh,cl,op) \
+  libaroma_draw_ex2(dst,src,dx,dy,sx,sy,sw,sh,1,op,NULL,0,1,cl)
+#define libaroma_draw_ex1(dst,src,dx,dy,sx,sy,sw,sh,a,op,fcb,fparam) \
+  libaroma_draw_ex2(dst,src,dx,dy,sx,sy,sw,sh,a,op,fcb,fparam,0,0)
 #define libaroma_draw_filter(dst,src,dx,dy,a,fcb,fparam) \
   libaroma_draw_ex1(dst,src,dx,dy,0,0,src->w, \
   src->h,a,0xff,fcb,fparam)

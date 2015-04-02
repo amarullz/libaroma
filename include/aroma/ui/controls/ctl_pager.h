@@ -34,7 +34,8 @@ typedef struct _LIBAROMA_CTL_PAGER_CONTROLLER_HANDLER{
     LIBAROMA_CONTROLP pager,
     int cx,
     int fw,
-    int pw
+    int pw,
+    int target_page
   );
   
   void (*onscroll_finish)(

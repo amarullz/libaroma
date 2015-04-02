@@ -37,7 +37,9 @@ LIBAROMA_CONTROLP libaroma_ctl_tabs(
     word id,
     int x, int y, int w, int h,
     word bgcolor,
-    word selcolor
+    word selcolor,
+    int hpad,
+    int left_pad
 );
 
 /*
@@ -54,7 +56,14 @@ byte libaroma_ctl_tabs_set_pager(
  * Descriptions: set tab texts
  */
 byte libaroma_ctl_tabs_set_texts(LIBAROMA_CONTROLP ctl,
-  char ** texts, int textn);
+  char ** texts, int textn, byte update_now);
 
-
+/*
+ * Function    : libaroma_ctl_bar_set_color
+ * Return Value: byte
+ * Descriptions: set color
+ */
+byte libaroma_ctl_tabs_set_color(LIBAROMA_CONTROLP ctl,
+  word bgcolor, word selcolor, byte update_now);
+  
 #endif /* __libaroma_ctl_tabs_h__ */

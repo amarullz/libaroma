@@ -223,9 +223,10 @@ byte libaroma_draw_scale_smooth(
       p2 = line2 + offsetX + sx;
       p3 = line1 + sx1;
       p4 = line2 + sx1;
+      /*
       if (p4>(dword)(dst->l*dst->h)) {
         break;
-      }
+      }*/
       pixel1 = src->data[p1];
       pixel2 = src->data[p2];
       pixel3 = src->data[p3];
@@ -273,7 +274,7 @@ byte libaroma_draw_scale_smooth(
             wc1 + (al3 * hc1 + al4 * hc2) * wc2) >> 14);
           *dstp = libaroma_alpha(
               libaroma_alpha(res, *dstp, dst->alpha[dst_pos]), res, asz);
-          dst->alpha[dst_pos] = MIN(dst->alpha[dst_pos] + asz, 0xff);
+          dst->alpha[dst_pos] = MIN(dst->alpha[dst_pos]+asz, 0xff);
         }
         else {
           *dstp = libaroma_alpha(*dstp, res, (((al1 * hc1 + al2 * hc2) *

@@ -42,6 +42,7 @@
 #include "ui/control.c"
 
 /* control set - libaroma_ctl_* */
+#include "ui/controls/ctl_bar.c"
 #include "ui/controls/ctl_label.c"
 #include "ui/controls/ctl_progress.c"
 #include "ui/controls/ctl_button.c"

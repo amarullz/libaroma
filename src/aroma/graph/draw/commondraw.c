@@ -54,11 +54,11 @@ byte libaroma_draw_limited(
 } /* End of libaroma_draw_limited */
 
 /*
- * Function    : libaroma_draw_ex1
+ * Function    : libaroma_draw_ex2
  * Return Value: byte
  * Descriptions: canvas drawing
  */
-byte libaroma_draw_ex1(
+byte libaroma_draw_ex2(
   LIBAROMA_CANVASP dst,
   LIBAROMA_CANVASP src,
   int dx, int dy,
@@ -67,7 +67,9 @@ byte libaroma_draw_ex1(
   byte draw_flags, 
   byte opacity,
   LIBAROMA_DRAW_FILTER filter_callback,
-  dword filter_param
+  dword filter_param,
+  byte ismask,
+  word maskcolor
 ) {
   if (src == NULL) {
     ALOGW("libaroma_draw_ex1 src = NULL");
@@ -155,6 +157,10 @@ byte libaroma_draw_ex1(
       useAlpha = 0;
     }
   }
+  if (!useAlpha){
+    ismask=0;
+  }
+  
   if (filter_callback != NULL) {
     int x;
     bytep alpha_mem;
@@ -185,19 +191,27 @@ byte libaroma_draw_ex1(
   #pragma omp parallel for
 #endif
       for (y = 0; y < sr_h; y++) {
-        wordp dst_mem = (wordp) (dst_data + ((ds_y + y) * pos_dc_w) + pos_ds_x);
-        wordp src_mem = (wordp) (src_data + ((sr_y + y) * pos_sc_w) + pos_sr_x);
-        if (noDither){
-          libaroma_alpha_px(
-            sr_w, dst_mem, dst_mem,
-            src_mem, (bytep) (src->alpha + (y * src->l) + sr_x)
+        wordp dst_mem = (wordp) (dst_data+((ds_y + y)*pos_dc_w)+pos_ds_x);
+        if (ismask){
+          libaroma_alpha_mono(
+            sr_w, dst_mem, dst_mem, maskcolor, 
+            (bytep) (src->alpha + (y * src->l) + sr_x)
           );
         }
         else{
-          libaroma_alpha_px_line(
-            y, sr_w, dst_mem, dst_mem,
-            src_mem, (bytep) (src->alpha + (y * src->l) + sr_x)
-          );
+          wordp src_mem = (wordp) (src_data+((sr_y + y)*pos_sc_w)+pos_sr_x);
+          if (noDither){
+            libaroma_alpha_px(
+              sr_w, dst_mem, dst_mem,
+              src_mem, (bytep) (src->alpha + (y * src->l) + sr_x)
+            );
+          }
+          else{
+            libaroma_alpha_px_line(
+              y, sr_w, dst_mem, dst_mem,
+              src_mem, (bytep) (src->alpha + (y * src->l) + sr_x)
+            );
+          }
         }
       }
     }
@@ -224,10 +238,9 @@ byte libaroma_draw_ex1(
       for (y = 0; y < sr_h; y++) {
         wordp tmp_dst = (wordp) malloc(sr_w * 2);
         wordp dst_mem = (wordp) (dst_data + ((ds_y + y) * pos_dc_w) + pos_ds_x);
-        wordp src_mem = (wordp) (src_data + ((sr_y + y) * pos_sc_w) + pos_sr_x);
-        if (noDither){
-          libaroma_alpha_px(
-            sr_w, tmp_dst, dst_mem, src_mem,
+        if (ismask){
+          libaroma_alpha_mono(
+            sr_w, tmp_dst, dst_mem, maskcolor, 
             (bytep) (src->alpha + (y * src->l) + sr_x)
           );
           libaroma_alpha_const(
@@ -235,13 +248,25 @@ byte libaroma_draw_ex1(
           );
         }
         else{
-          libaroma_alpha_px_line(
-            y, sr_w, tmp_dst, dst_mem, src_mem,
-            (bytep) (src->alpha + (y * src->l) + sr_x)
-          );
-          libaroma_alpha_const_line(
-            y, sr_w, dst_mem, dst_mem, tmp_dst, opacity
-          );
+          wordp src_mem = (wordp) (src_data+((sr_y + y)*pos_sc_w)+pos_sr_x);
+          if (noDither){
+            libaroma_alpha_px(
+              sr_w, tmp_dst, dst_mem, src_mem,
+              (bytep) (src->alpha + (y * src->l) + sr_x)
+            );
+            libaroma_alpha_const(
+              sr_w, dst_mem, dst_mem, tmp_dst, opacity
+            );
+          }
+          else{
+            libaroma_alpha_px_line(
+              y, sr_w, tmp_dst, dst_mem, src_mem,
+              (bytep) (src->alpha + (y * src->l) + sr_x)
+            );
+            libaroma_alpha_const_line(
+              y, sr_w, dst_mem, dst_mem, tmp_dst, opacity
+            );
+          }
         }
         free(tmp_dst);
       }

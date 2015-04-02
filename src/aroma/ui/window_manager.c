@@ -35,6 +35,27 @@
 static LIBAROMA_WMP _libaroma_wm=NULL;
 
 /*
+ * Variable    : _libaroma_wm_mutex
+ * Type        : pthread_mutex_t
+ * Descriptions: window manager message queue pthread mutex
+ */
+static pthread_mutex_t  _libaroma_wm_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+/*
+ * Variable    : _libaroma_wm_cond
+ * Type        : pthread_cond_t
+ * Descriptions: window manager message queue pthread cond
+ */
+static pthread_cond_t   _libaroma_wm_cond  = PTHREAD_COND_INITIALIZER;
+
+/*
+ * Variable    : _libaroma_wm_mutex
+ * Type        : pthread_mutex_t
+ * Descriptions: window manager ui mutex
+ */
+static LIBAROMA_MUTEX _libaroma_wm_ui_mutex;
+
+/*
  * Function    : libaroma_wm
  * Return Value: LIBAROMA_WMP
  * Descriptions: get window manager instance
@@ -186,6 +207,7 @@ byte libaroma_wm_init(){
     ALOGW("libaroma_wm_init alloc window manager memory failed");
     return 0;
   }
+  libaroma_mutex_init(_libaroma_wm_ui_mutex);
   _libaroma_wm->theme = libaroma_sarray(_libaroma_wm_theme_release);
   _libaroma_wm->color = libaroma_sarray(NULL);
   _libaroma_wm->w = libaroma_fb()->w;
@@ -207,6 +229,7 @@ byte libaroma_wm_release(){
     ALOGW("window manager uninitialized");
     return 0;
   }
+  libaroma_mutex_lock(_libaroma_wm_ui_mutex);
   if (_libaroma_wm->client_started){
     libaroma_wm_client_stop();
   }
@@ -216,6 +239,8 @@ byte libaroma_wm_release(){
   if (_libaroma_wm->workspace_bg){
     libaroma_canvas_free(_libaroma_wm->workspace_bg);
   }
+  libaroma_mutex_unlock(_libaroma_wm_ui_mutex);
+  libaroma_mutex_free(_libaroma_wm_ui_mutex);
   free(_libaroma_wm);
   _libaroma_wm=NULL;
   return 1;
@@ -302,7 +327,6 @@ byte libaroma_wm_set_workspace(int x, int y, int w, int h){
         &_msg, LIBAROMA_MSG_WIN_RESIZE, NULL, 0, 0)
     );
   }
-  
   return 1;
 } /* End of libaroma_wm_set_workspace */
 
@@ -428,20 +452,6 @@ LIBAROMA_CANVASP libaroma_wm_canvas(int x, int y, int w, int h){
 } /* End of libaroma_wm_canvas */
 
 /*
- * Variable    : _libaroma_wm_mutex
- * Type        : pthread_mutex_t
- * Descriptions: window manager message queue pthread mutex
- */
-static pthread_mutex_t  _libaroma_wm_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-/*
- * Variable    : _libaroma_wm_cond
- * Type        : pthread_cond_t
- * Descriptions: window manager message queue pthread cond
- */
-static pthread_cond_t   _libaroma_wm_cond  = PTHREAD_COND_INITIALIZER;
-
-/*
  * Function    : libaroma_wm_getmessage
  * Return Value: byte
  * Descriptions: get window manager client message
@@ -478,7 +488,7 @@ byte libaroma_wm_getmessage(LIBAROMA_MSGP msg){
  * Descriptions: window manager message thread
  */
 static void * _libaroma_wm_message_thread(void * cookie) {
-  ALOGV("starting WMM");
+  ALOGV("starting wm messaging");
   while (_libaroma_wm->client_started){
     LIBAROMA_MSG msg;
     byte ret=libaroma_msg(&msg);
@@ -504,9 +514,45 @@ static void * _libaroma_wm_message_thread(void * cookie) {
       }
     }
   }
-  ALOGV("WMM ended");
+  ALOGV("wm messaging ended");
   return NULL;
 }
+
+/*
+ * Function    : _libaroma_wm_ui_thread
+ * Return Value: static void *
+ * Descriptions: window manager ui manager
+ */
+static void * _libaroma_wm_ui_thread(void * cookie) {
+  ALOGV("starting wm ui thread");
+  LIBAROMA_SLEEPER sleeper_s;
+  byte need_sync = 0;
+  while(_libaroma_wm->client_started){
+    /* run child thread process */
+    libaroma_sleeper_start(&sleeper_s);
+    if (_libaroma_wm->client_started){
+      libaroma_mutex_lock(_libaroma_wm_ui_mutex);
+      if (_libaroma_wm->active_window!=NULL){
+        if (_libaroma_wm->active_window->ui_thread!=NULL){
+          if (_libaroma_wm->active_window->ui_thread(
+            _libaroma_wm->active_window
+          )){
+            need_sync=1;
+          }
+        }
+      }
+      libaroma_mutex_unlock(_libaroma_wm_ui_mutex);
+      if (need_sync){
+        libaroma_sync();
+        need_sync=0;
+        continue;
+      }
+    }
+    libaroma_sleeper(&sleeper_s,16666);
+  }
+  ALOGV("wm ui thread ended");
+  return NULL;
+} /* End of _libaroma_wm_ui_thread */
 
 /*
  * Function    : libaroma_wm_client_start
@@ -524,12 +570,19 @@ byte libaroma_wm_client_start(){
   /* start message thread */
   _libaroma_wm->client_started = 1;
   _libaroma_wm->queue = libaroma_stack(NULL);
+  
+  /* start message thread */
   pthread_create(&_libaroma_wm->message_thread,
     NULL, _libaroma_wm_message_thread, NULL);
-    /*
+  
+  /* start ui thread */
+  pthread_create(&_libaroma_wm->ui_thread,
+    NULL, _libaroma_wm_ui_thread, NULL);
+  
+  /* realtime ui thread */
   struct sched_param params;
-  params.sched_priority = sched_get_priority_max(SCHED_FIFO)/2;
-  pthread_setschedparam(_libaroma_wm->message_thread, SCHED_FIFO, &params);*/
+  params.sched_priority = sched_get_priority_max(SCHED_FIFO);
+  pthread_setschedparam(_libaroma_wm->ui_thread, SCHED_FIFO, &params);
   return 1;
 } /* End of libaroma_wm_client_start */
 
@@ -543,6 +596,7 @@ byte libaroma_wm_client_stop(){
     ALOGW("window manager uninitialized");
     return 0;
   }
+  
   /* set exit state */
   _libaroma_wm->client_started = 0;
   
@@ -550,12 +604,17 @@ byte libaroma_wm_client_stop(){
   libaroma_msg_post(LIBAROMA_MSG_NONE,0,0,0,0,NULL);
   
   /* wait message thread */
+  pthread_join(_libaroma_wm->ui_thread,NULL);
   pthread_join(_libaroma_wm->message_thread,NULL);
   _libaroma_wm->message_thread=0;
+  _libaroma_wm->ui_thread=0;
+  
+  /* cleanup queue */
   libaroma_stack_free(_libaroma_wm->queue);
   
   /* stop message queue */
   libaroma_msg_stop();
+  
   return 1;
 } /* End of libaroma_wm_client_stop */
 
@@ -835,14 +894,12 @@ byte libaroma_wm_set_active_window(LIBAROMA_WINDOWP win){
     ALOGW("window manager uninitialized");
     return 0;
   }
-  if (!_libaroma_wm->client_started){
-    /* start message client if not started yet */
-    libaroma_wm_client_start();
-  }
+  
+  libaroma_mutex_lock(_libaroma_wm_ui_mutex);
   if (_libaroma_wm->active_window==win){
+    libaroma_mutex_unlock(_libaroma_wm_ui_mutex);
     return 1;
   }
-  libaroma_wm_message_clear();
   
   LIBAROMA_MSG _msg;
   if (_libaroma_wm->active_window!=NULL){
@@ -866,10 +923,20 @@ byte libaroma_wm_set_active_window(LIBAROMA_WINDOWP win){
       _libaroma_wm->active_window,
       &_msg
     );
+    if ((!_libaroma_wm->client_started)&&(win)){
+      /* start message client if not started yet */
+      libaroma_wm_client_start();
+    }
+    libaroma_wm_message_clear();
   }
   else{
     _libaroma_wm->active_window = NULL;
+    if (_libaroma_wm->client_started){
+      /* start message client if not started yet */
+      libaroma_wm_client_stop();
+    }
   }
+  libaroma_mutex_unlock(_libaroma_wm_ui_mutex);
   return 1;
 } /* End of libaroma_wm_set_active_window */
 

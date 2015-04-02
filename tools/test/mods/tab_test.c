@@ -26,7 +26,10 @@ void tab_test(){
     111,
     0, 40, LIBAROMA_SIZE_FULL, 48,
     RGB(009385),
-    RGB(ffffff)
+    RGB(ffffff),
+    0, 0
+    // 8,
+    // 64 /* 72-8 */
   );
   libaroma_ctl_tabs_set_pager(tabs,pager);
   char * tab_texts[10]={
@@ -42,7 +45,7 @@ void tab_test(){
     "LAST TABS"
   };
   libaroma_ctl_tabs_set_texts(
-    tabs,tab_texts,10);
+    tabs,tab_texts,10,0);
   
   int pw = libaroma_px(pager->w);
   LIBAROMA_CONTROLP btn6 = libaroma_ctl_button(

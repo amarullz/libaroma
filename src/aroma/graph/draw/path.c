@@ -38,7 +38,7 @@ LIBAROMA_PATHP libaroma_path(float x, float y){
     ALOGW("libaroma_path alloc LIBAROMA_PATHP failed");
     return NULL;
   }
-  path->p=(LIBAROMA_PATH_POINTP) malloc(sizeof(LIBAROMA_PATH_POINT));
+  path->p=(LIBAROMA_PATH_POINTP) malloc(sizeof(LIBAROMA_PATH_POINT)*32);
   if (!path->p){
     free(path);
     ALOGW("libaroma_path alloc path->p failed");
@@ -80,13 +80,16 @@ byte libaroma_path_add(LIBAROMA_PATHP path, float x, float y){
   if (!path->p){
     return 0;
   }
-  LIBAROMA_PATH_POINTP newp = (LIBAROMA_PATH_POINTP) realloc(
-    path->p,sizeof(LIBAROMA_PATH_POINT)*(path->n+1)
-  );
-  if (!newp){
-    ALOGW("libaroma_path_add cannot realloc path->p");
+  if (path->n%32==0){
+    LIBAROMA_PATH_POINTP newp = (LIBAROMA_PATH_POINTP) realloc(
+      path->p,sizeof(LIBAROMA_PATH_POINT)*(path->n+32)
+    );
+    if (!newp){
+      ALOGW("libaroma_path_add cannot realloc path->p");
+      return 0;
+    }
+    path->p = newp;
   }
-  path->p = newp;
   path->p[path->n].x=x;
   path->p[path->n].y=y;
   path->max.x=MAX(path->max.x,x);

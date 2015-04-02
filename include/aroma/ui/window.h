@@ -139,7 +139,7 @@ struct _LIBAROMA_WINDOW{
   LIBAROMA_CONTROLP touched;
   
   /* thread manager */
-  pthread_t thread_manager;
+  byte (*ui_thread)(LIBAROMA_WINDOWP);
   
   /* client window */
   LIBAROMA_WINDOWP parent;
@@ -163,6 +163,13 @@ LIBAROMA_WINDOWP libaroma_window(
   char * bg_theme_name,
   int x, int y, int w, int h
 );
+
+/*
+ * Function    : libaroma_window_measure_point
+ * Return Value: int
+ * Descriptions: mesure point
+ */
+int libaroma_window_measure_point(int x);
 
 /*
  * Function    : libaroma_window_free

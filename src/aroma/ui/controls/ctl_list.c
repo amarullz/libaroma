@@ -920,11 +920,8 @@ LIBAROMA_CONTROLP libaroma_ctl_list(
     ALOGW("libaroma_ctl_list cannot allocating memory for list control");
     return NULL;
   }
-  mi->vpad = libaroma_window_usedp(2)?
-      libaroma_dp(vertical_padding):vertical_padding;
-  mi->hpad = libaroma_window_usedp(2)?
-      libaroma_dp(horizontal_padding):horizontal_padding;
-  
+  mi->vpad = libaroma_window_measure_point(vertical_padding);
+  mi->hpad = libaroma_window_measure_point(horizontal_padding);
   mi->h = mi->vpad*2;
   mi->flags = flags;
   libaroma_mutex_init(mi->mutex);

@@ -429,7 +429,8 @@ byte _libaroma_ctl_pager_thread(LIBAROMA_CONTROLP ctl) {
                     me->controller->pager,
                     me->scroll_x,
                     me->win->w,
-                    ctl->w
+                    ctl->w,
+                    me->page_position
                   );
                 }
               }
@@ -732,7 +733,8 @@ dword _libaroma_ctl_pager_msg(
                               me->controller->pager,
                               scroll_x,
                               me->win->w,
-                              ctl->w
+                              ctl->w,
+                              me->page_position
                             );
                           }
                         }

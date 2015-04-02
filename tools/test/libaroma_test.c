@@ -28,6 +28,7 @@
 #include <aroma.h>
 
 /* include test modules */
+#include "mods/bar_test.c"
 #include "mods/tab_test.c"
 #include "mods/common_test.c"
 
@@ -69,7 +70,9 @@ int main(int argc, char **argv){
   */
   init_libaroma();
   
-  tab_test();
+  // tab_test();
+  
+  bar_test();
   
   /* start common test */
   // common_test();

@@ -482,7 +482,7 @@ byte _libaroma_ctl_scroll_thread(LIBAROMA_CONTROLP ctl) {
               }
             }
             if ((me->ovs_state<1)&&((nowstate>=1)||
-                ((nowstate>=0.22)&&(me->ovs_ustart==1)&&(me->ovs_state<1)))
+                ((nowstate>=0.2)&&(me->ovs_ustart==1)&&(me->ovs_state<1)))
                ){
               me->ovs_state=0.5;
               me->ovs_ustart=libaroma_tick();
@@ -805,6 +805,7 @@ void _libaroma_ctl_scroll_draw(
                   hdl_w = ctl_y*2;
                   hdl_r = libaroma_dp(5);
                   ctl_h = ctl->h - hdl_w;
+                  handle_opa = 120;
                 }
                 int hdl_ch= (ctl->h * ctl_h)/me->client_h;
                 int hdl_h = MAX(hdl_ch,libaroma_dp(36));
@@ -840,7 +841,8 @@ void _libaroma_ctl_scroll_draw(
       
       /* overshoot draw */
       if ((me->max_scroll_y>0)&&(me->ovs_state>0)&&(me->ovs_state<1)){
-        int overshoot_sz = MIN(abs(me->ovs_y)/3,c->h/4);
+        int max_ovsz = MIN(c->h/4,libaroma_dp(80));
+        int overshoot_sz = MIN(abs(me->ovs_y)/3,max_ovsz);
         if (overshoot_sz>0){
           float opa = 0;
           if (me->ovs_state<0.25){
@@ -854,8 +856,8 @@ void _libaroma_ctl_scroll_draw(
           }
           opa = MAX(0,MIN(1,opa));
           overshoot_sz = overshoot_sz * opa;
-          float opacity = ((float) overshoot_sz) / (c->h/4);
-          overshoot_sz = MIN(overshoot_sz,c->h/5);
+          float opacity = ((float) overshoot_sz) / max_ovsz;
+          overshoot_sz = MIN(MIN(overshoot_sz,c->h/5),libaroma_dp(72));
           if (overshoot_sz>1){
             LIBAROMA_CANVASP ovshot = libaroma_canvas_ex(
               c->w, overshoot_sz, 1);
@@ -931,11 +933,16 @@ dword _libaroma_ctl_scroll_touch_handler(
           libaroma_dp(2)*255
         )||
         me->bounce_velocity)?1:0;
-      me->handle_touched=
+      byte is_direct_handle = 0;
+      if (me->flags&LIBAROMA_CTL_SCROLL_WITH_HANDLE){
+        me->handle_touched=
           (x>ctl->w-libaroma_dp(_LIBAROMA_CTL_SCROLL_HANDLE_DP))?1:0;
-      byte is_direct_handle = 
-        (me->flags&LIBAROMA_CTL_SCROLL_WITH_HANDLE) &&
-        (me->handle_touched)&&(me->scroll_state)&&(me->max_scroll_y>0);
+        is_direct_handle = 
+        ((me->handle_touched)&&(me->scroll_state)&&(me->max_scroll_y>0))?1:0;
+      }
+      else{
+        me->handle_touched=0;
+      }
       
       /* set fling value */
       me->bounce_velocity=0;
@@ -984,75 +991,8 @@ dword _libaroma_ctl_scroll_touch_handler(
       me->ovs_x=x;
     }
     break;
+    case LIBAROMA_HID_EV_STATE_MOVE:
     case LIBAROMA_HID_EV_STATE_UP:{
-      ALOGT("scroll_message - touch up: %i, %i",x, y);
-      me->bounce_velocity=0;
-      if (!me->handle_touched){
-        if (me->allow_scroll){
-          int current_point = (y==0)?me->prev_point[me->prevn-1]:y;
-          long current_time = libaroma_tick();
-          int first_point   = me->prev_point[0];
-          long first_time   = me->prev_time[0];
-          if (current_time-first_time<1) {
-            first_time--;
-          }
-          if (current_time-first_time<=300) {
-            int diff = first_point - current_point;
-            int time = current_time - first_time;
-            me->touched=0;
-            me->velocity = round(((double) diff/(time>>4))*360);
-          }
-        }
-      }
-      else if (me->allow_scroll==1){
-        if (!(me->flags&LIBAROMA_CTL_SCROLL_NO_INDICATOR)){
-          me->scroll_tick = libaroma_tick();
-          me->scroll_state=256;
-          me->synced_y=-1;
-        }
-      }
-      
-      /* clear item touch if initialized */
-      libaroma_mutex_lock(me->mutex);
-      if ((me->client_touch_start||me->client_touched)&&
-        (me->client.handler->message)){
-        int client_x = x;
-        int client_y = y + me->scroll_y;
-        if (me->client_touch_start){
-          if (_libaroma_ctl_scroll_client_msg(
-              ctl,LIBAROMA_CTL_SCROLL_MSG_TOUCH_DOWN,
-              client_x, client_y
-            )==LIBAROMA_CTL_SCROLL_MSG_NEED_DRAW){
-            me->synced_y=-1;
-          }
-        }
-        if (_libaroma_ctl_scroll_client_msg(
-            ctl,LIBAROMA_CTL_SCROLL_MSG_TOUCH_UP,
-            client_x, client_y
-          )==LIBAROMA_CTL_SCROLL_MSG_NEED_DRAW){
-          me->synced_y=-1;
-        }
-      }
-      me->client_touch_start=0;
-      me->client_touched=0;
-      libaroma_mutex_unlock(me->mutex);
-      
-      /* reset */
-      me->handle_touched=0;
-      me->allow_scroll=0;
-      me->touched=0;
-      me->touch_x=0;
-      me->touch_y=0;
-      
-      me->ovs_x=x;
-      if (!me->ovs_ustart){
-        me->ovs_ustate=0;
-        me->ovs_ustart=1;
-        me->ovs_bounce=3;
-      }
-    }
-    break;
-    case LIBAROMA_HID_EV_STATE_MOVE:{
       ALOGT("scroll_message - touch move: %i, %i",x, y);
       me->ovs_x=x;
       
@@ -1156,6 +1096,73 @@ dword _libaroma_ctl_scroll_touch_handler(
           libaroma_ctl_scroll_request_pos(ctl,req_y);
         }
         me->touch_y=y;
+      }
+      if (state==LIBAROMA_HID_EV_STATE_UP){
+        ALOGT("scroll_message - touch up: %i, %i",x, y);
+        me->bounce_velocity=0;
+        if (!me->handle_touched){
+          if (me->allow_scroll){
+            int current_point = (y==0)?me->prev_point[me->prevn-1]:y;
+            long current_time = libaroma_tick();
+            int first_point   = me->prev_point[0];
+            long first_time   = me->prev_time[0];
+            if (current_time-first_time<1) {
+              first_time--;
+            }
+            if (current_time-first_time<=300) {
+              int diff = first_point - current_point;
+              int time = current_time - first_time;
+              me->touched=0;
+              me->velocity = round(((double) diff/(time>>4))*360);
+            }
+          }
+        }
+        else if (me->allow_scroll==1){
+          if (!(me->flags&LIBAROMA_CTL_SCROLL_NO_INDICATOR)){
+            me->scroll_tick = libaroma_tick();
+            me->scroll_state=256;
+            me->synced_y=-1;
+          }
+        }
+        
+        /* clear item touch if initialized */
+        libaroma_mutex_lock(me->mutex);
+        if ((me->client_touch_start||me->client_touched)&&
+          (me->client.handler->message)){
+          int client_x = x;
+          int client_y = y + me->scroll_y;
+          if (me->client_touch_start){
+            if (_libaroma_ctl_scroll_client_msg(
+                ctl,LIBAROMA_CTL_SCROLL_MSG_TOUCH_DOWN,
+                client_x, client_y
+              )==LIBAROMA_CTL_SCROLL_MSG_NEED_DRAW){
+              me->synced_y=-1;
+            }
+          }
+          if (_libaroma_ctl_scroll_client_msg(
+              ctl,LIBAROMA_CTL_SCROLL_MSG_TOUCH_UP,
+              client_x, client_y
+            )==LIBAROMA_CTL_SCROLL_MSG_NEED_DRAW){
+            me->synced_y=-1;
+          }
+        }
+        me->client_touch_start=0;
+        me->client_touched=0;
+        libaroma_mutex_unlock(me->mutex);
+        
+        /* reset */
+        me->handle_touched=0;
+        me->allow_scroll=0;
+        me->touched=0;
+        me->touch_x=0;
+        me->touch_y=0;
+        
+        me->ovs_x=x;
+        if (!me->ovs_ustart){
+          me->ovs_ustate=0;
+          me->ovs_ustart=1;
+          me->ovs_bounce=3;
+        }
       }
     }
     break;

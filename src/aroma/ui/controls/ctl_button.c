@@ -201,10 +201,10 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
     LIBAROMA_TEXT_FIXED_INDENT|
     LIBAROMA_TEXT_FIXED_COLOR|
     LIBAROMA_TEXT_NOHR,
-    120
+    100
   );
   libaroma_mutex_unlock(me->mutex);
-  int y = ctl->h/2 - libaroma_text_height(textp)/2;
+  int y = (ctl->h>>1) - ((libaroma_text_height(textp)>>1)+libaroma_dp(1));
   
   if (is_disabled){
     rest_text_color=me->isdark?0xffff:0;

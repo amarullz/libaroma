@@ -46,7 +46,7 @@ static LIBAROMA_CONTROL_HANDLER _libaroma_ctl_tabs_handler={
 
 void _libaroma_ctl_tabs_pager_onscroll(
   LIBAROMA_CONTROLP ctl, LIBAROMA_CONTROLP pager,
-  int cx, int fw, int pw
+  int cx, int fw, int pw, int tp
 );
 void _libaroma_ctl_tabs_pager_onscroll_finish(
   LIBAROMA_CONTROLP ctl, LIBAROMA_CONTROLP pager, int page_number
@@ -75,6 +75,10 @@ struct __LIBAROMA_CTL_TABS{
   word selcolor;
   word bgcolor;
   
+  LIBAROMA_CANVASP change_dc;
+  long change_start;
+  float change_state;
+  
   byte forcedraw;
   int draw_x;
   int req_x;
@@ -100,6 +104,8 @@ struct __LIBAROMA_CTL_TABS{
   
   int touchdown_x;
   int touchdown_y;
+  int hpad; /* horizontal padding */
+  int left_pad; /* left horizontal padding */
 };
 
 /*
@@ -113,12 +119,12 @@ int _libaroma_ctl_tabs_indicator_x(LIBAROMA_CONTROLP ctl, int pageno){
     _libaroma_ctl_tabs_handler, _LIBAROMA_CTL_TABSP, 0
   );
   int i;
-  int curr_x = 0;
+  int curr_x = me->left_pad+me->hpad;
   for (i=0;i<me->pagen;i++){
     if (i==pageno){
       return curr_x;
     }
-    curr_x+=me->textw[i]+libaroma_dp(16);
+    curr_x+=me->textw[i]+libaroma_dp(24);
   }
   return 0;
 } /* End of _libaroma_ctl_tabs_indicator_x */
@@ -155,7 +161,7 @@ int _libaroma_ctl_tabs_calc_x(LIBAROMA_CONTROLP ctl,byte force){
 
 void _libaroma_ctl_tabs_pager_onscroll(
   LIBAROMA_CONTROLP ctl, LIBAROMA_CONTROLP pager, 
-  int cx, int fw, int pw
+  int cx, int fw, int pw, int tp
 ){
   _LIBAROMA_CTL_CHECK(
     _libaroma_ctl_tabs_handler, _LIBAROMA_CTL_TABSP,
@@ -165,7 +171,7 @@ void _libaroma_ctl_tabs_pager_onscroll(
   if ((target_page>=0)&&(target_page<me->pagen)){
     int add_x   = cx-(target_page * pw);
     float state = ((float) add_x) / ((float) pw);
-    int tw = me->textw[target_page]+libaroma_dp(16);
+    int tw = me->textw[target_page]+libaroma_dp(24);
     int rw = tw;
     int diff_w = 0;
     me->active_w = tw;
@@ -173,26 +179,25 @@ void _libaroma_ctl_tabs_pager_onscroll(
     /* set width */
     if (me->active_page<=target_page){
       if (target_page<me->pagen-1){
-        rw = me->textw[target_page+1]+libaroma_dp(16);
+        rw = me->textw[target_page+1]+libaroma_dp(24);
         diff_w = (rw-tw) * state;
         me->active_w = tw + diff_w;
       }
     }
     else {
       if (target_page<me->pagen-1){
-        rw = me->textw[target_page+1]+libaroma_dp(16);
+        rw = me->textw[target_page+1]+libaroma_dp(24);
         diff_w = (tw-rw) * state;
         me->active_w = tw - diff_w;
       }
     }
-    
-        
     /* calculate x position */
     int tx = _libaroma_ctl_tabs_indicator_x(ctl,target_page);
     me->active_x = tx+state*tw;
     _libaroma_ctl_tabs_calc_x(ctl,0);
     me->forcedraw=1;
   }
+  me->active_page = tp;
   libaroma_mutex_unlock(me->mutex);
 }
 void _libaroma_ctl_tabs_pager_onscroll_finish(
@@ -204,7 +209,7 @@ void _libaroma_ctl_tabs_pager_onscroll_finish(
   libaroma_mutex_lock(me->mutex);
   if ((page_number>=0)&&(page_number<me->pagen)){
     me->active_x = _libaroma_ctl_tabs_indicator_x(ctl,page_number);
-    me->active_w = me->textw[page_number]+libaroma_dp(16);
+    me->active_w = me->textw[page_number]+libaroma_dp(24);
     me->active_page = page_number;
     _libaroma_ctl_tabs_calc_x(ctl,1);
     me->no_auto_scroll=0;
@@ -223,10 +228,10 @@ int _libaroma_ctl_tabs_pager_pos_x(LIBAROMA_CONTROLP ctl, int x){
     _libaroma_ctl_tabs_handler, _LIBAROMA_CTL_TABSP, -1
   );
   int i;
-  int curr_x = 0;
+  int curr_x = me->left_pad+me->hpad;
   int xshow = x + me->draw_x;
   for (i=0;i<me->pagen;i++){
-    int itw = me->textw[i] + libaroma_dp(16);
+    int itw = me->textw[i] + libaroma_dp(24);
     if ((xshow>=curr_x)&&(xshow<curr_x+itw)){
       return i;
     }
@@ -246,14 +251,27 @@ void _libaroma_ctl_tabs_internal_draw(LIBAROMA_CONTROLP ctl){
     return;
   }
   
+  byte isactive=0;
+  if (ctl->window->active){
+    isactive=1;
+  }
+  if ((isactive)&&(me->change_start==1)){
+    me->change_start=libaroma_tick();
+    me->change_state=0;
+  }
+  else{
+    me->change_start=0;
+    me->change_state=0;
+  }
+  
   int i;
   LIBAROMA_CANVASP rest_canvas=NULL;
   LIBAROMA_CANVASP push_canvas=NULL;
   libaroma_mutex_lock(me->mutex);
   LIBAROMA_TEXT * texts = NULL;
   
-  word pushtxt_color = libaroma_color_isdark(me->selcolor)?0xffff:0;
-  word resttxt_color = libaroma_color_isdark(me->bgcolor)?0xffff:0;
+  word pushtxt_color = libaroma_color_isdark(me->bgcolor)?0xffff:0;
+  word resttxt_color = libaroma_alpha(me->bgcolor,pushtxt_color,153);
   
   int active_page = 0;
   int page_n = me->textn;
@@ -268,9 +286,9 @@ void _libaroma_ctl_tabs_internal_draw(LIBAROMA_CONTROLP ctl){
   
   int show_w = ctl->w;
   me->pagen = page_n;
-  int max_w = show_w / MAX(1,MIN(3,page_n));
-  int sum_w = 0;
-  int sum_pad = libaroma_dp(16) * page_n;
+  int sum_w = me->left_pad+(me->hpad*2);
+  int max_w = (show_w-sum_w) / MAX(1,MIN(3,page_n));
+  int sum_pad = libaroma_dp(24) * page_n;
   if (me->textw){
     free(me->textw);
     me->textw=NULL;
@@ -286,32 +304,38 @@ void _libaroma_ctl_tabs_internal_draw(LIBAROMA_CONTROLP ctl){
       }
       texts[i] = libaroma_text(
         text,resttxt_color,
-        max_w-libaroma_dp(16),
+        max_w-libaroma_dp(24),
         LIBAROMA_FONT(0,3)|
         LIBAROMA_TEXT_SINGLELINE|((page_n<=3)?LIBAROMA_TEXT_CENTER:0)|
         LIBAROMA_TEXT_FIXED_INDENT|
         LIBAROMA_TEXT_FIXED_COLOR|
         LIBAROMA_TEXT_NOHR,
-        120
+        100
       );
       if (page_n>3){
         me->textw[i]=
           libaroma_text_line_info(texts[i],0,LIBAROMA_TEXTLINE_INFO_RIGHT);
       }
       else{
-        me->textw[i]=max_w-libaroma_dp(16);
+        me->textw[i]=max_w-libaroma_dp(24);
       }
       itextw[i]=me->textw[i];
       sum_w += me->textw[i];
     }
     
     /* add width */
-    if (sum_w<show_w){
-      int adds = show_w - sum_w;
+    if (sum_w<show_w-sum_pad){
+      int adds = (show_w-sum_pad) - sum_w;
       int additems = ceil(((float) adds) / ((float) page_n));
       for (i=0;i<page_n;i++){
         me->textw[i]+=additems;
         sum_w+=additems;
+        /* fix size */
+        if (sum_w>show_w-sum_pad){
+          int diff = (show_w-sum_pad)-sum_w;
+          sum_w-=diff;
+          me->textw[i]-=diff;
+        }
       }
     }
     
@@ -320,14 +344,14 @@ void _libaroma_ctl_tabs_internal_draw(LIBAROMA_CONTROLP ctl){
     rest_canvas = libaroma_canvas(cw, ch);
     push_canvas = libaroma_canvas(cw, ch);
     libaroma_canvas_setcolor(rest_canvas, me->bgcolor, 0xff);
-    libaroma_canvas_setcolor(push_canvas, me->selcolor, 0xff);
+    libaroma_canvas_setcolor(push_canvas, me->bgcolor, 0xff);
     
     /* draw texts */
-    int xpos = 0;
+    int xpos = me->left_pad+me->hpad;
     for (i=0;i<page_n;i++){
-      int itw = me->textw[i] + libaroma_dp(16);
+      int itw = me->textw[i] + libaroma_dp(24);
       int itx = (itw>>1) - (itextw[i]>>1);
-      int y = (ch>>1) - (libaroma_text_height(texts[i])>>1);
+      int y = (ch>>1) - ((libaroma_text_height(texts[i])>>1)+libaroma_dp(1));
       libaroma_text_draw_color(
         rest_canvas,texts[i], xpos+itx, y, resttxt_color
       );
@@ -356,7 +380,7 @@ void _libaroma_ctl_tabs_internal_draw(LIBAROMA_CONTROLP ctl){
     
     /* save indicator */
     me->active_x=_libaroma_ctl_tabs_indicator_x(ctl,active_page);
-    me->active_w=me->textw[active_page]+libaroma_dp(16);
+    me->active_w=me->textw[active_page]+libaroma_dp(24);
     me->active_page = active_page;
     free(texts);
     free(itextw);
@@ -371,7 +395,7 @@ void _libaroma_ctl_tabs_internal_draw(LIBAROMA_CONTROLP ctl){
       me->push_canvas=NULL;
     }
   }
-  
+  me->forcedraw=1;
   libaroma_mutex_unlock(me->mutex);
 } /* End of _libaroma_ctl_tabs_internal_draw */
 static void * _libaroma_ctl_tabs_req_internal_draw_thread(void * ctl){
@@ -409,6 +433,20 @@ void _libaroma_ctl_tabs_draw(
     }
   }
   me->forcedraw = 0;
+  
+  if ((me->change_start>1)&&(me->change_state<1)){
+    if (!me->change_dc){
+      me->change_dc = libaroma_canvas(c->w,c->h);
+      if (me->change_dc){
+        libaroma_draw(me->change_dc,c,0,0,0);
+      }
+    }
+  }
+  else if (me->change_dc){
+    libaroma_canvas_free(me->change_dc);
+    me->change_dc=NULL;
+  }
+  
   libaroma_control_erasebg(ctl,c);
   me->draw_x=me->req_x;
   int ax = me->active_x - me->draw_x;
@@ -420,25 +458,33 @@ void _libaroma_ctl_tabs_draw(
     c->w, c->h,
     0, 0xff
   );
-  
-  /* draw indicator */
-  libaroma_draw_rect(
-    c,
-    ax, c->h-libaroma_dp(2), aw, libaroma_dp(2),
-    me->selcolor, 0xff
-  );
-  
+  if (me->active_page>=0){
+    /* active page */
+    int touched_x = _libaroma_ctl_tabs_indicator_x(ctl,me->active_page);
+    if (touched_x>=0){
+      int touched_w = me->textw[me->active_page]+libaroma_dp(24);
+      int xstart = touched_x - me->draw_x;
+      int xend = xstart + touched_w;
+      if ((xstart<c->w)&&(xend>0)){
+        libaroma_draw_ex(c, 
+          me->push_canvas,
+          xstart, 0,
+          touched_x, 0,
+          touched_w, c->h,
+          0, 0xff
+        );
+      }
+    }
+  }
   
   if (me->touched_id>=0){
     if ((me->touch_state>0)&&(me->release_state<1)) {
       int touched_x = _libaroma_ctl_tabs_indicator_x(ctl,me->touched_id);
       if (touched_x>=0){
-        int touched_w = me->textw[me->touched_id]+libaroma_dp(16);
+        int touched_w = me->textw[me->touched_id]+libaroma_dp(24);
         LIBAROMA_CANVASP cc = libaroma_canvas_area(
-          me->push_canvas, touched_x, 0, touched_w, me->push_canvas->h
-        );
-        LIBAROMA_CANVASP rc = libaroma_canvas_area(
-          me->rest_canvas, touched_x, 0, touched_w, me->push_canvas->h
+          (me->active_page==me->touched_id)?me->push_canvas:me->rest_canvas,
+            touched_x, 0, touched_w, me->rest_canvas->h
         );
         LIBAROMA_CANVASP tc = libaroma_canvas(
           touched_w, cc->h
@@ -454,35 +500,49 @@ void _libaroma_ctl_tabs_draw(
         }
         cbz_state = libaroma_cubic_bezier_easein(ripplestate);
         float ropa  = (me->touched==1)?1:1-me->release_state;
-        byte opa    = (0xff * pst_state) * ropa;
+        byte opa    = (100 * pst_state) * ropa;
         int msize = MAX(MIN(cc->w,cc->h)>>1,libaroma_dp(5));
         int psize = MAX(cc->w,cc->h);
         psize+=(abs(touch_x-cc->w/2)+abs(touch_y-cc->h/2)) * 2;
-        libaroma_draw(tc, rc, 0, 0, 0);
-        libaroma_draw_opacity(tc, cc, 0, 0, 2,opa*0.5);
+        libaroma_draw(tc, cc, 0, 0, 0);
+        libaroma_draw_rect(
+          tc,
+          0,0,cc->w,cc->h,
+          me->selcolor, opa*0.5
+        );
         int rsize=psize * cbz_state;
         if (rsize<msize){
           opa = (opa * rsize) / msize;
         }
         rsize+=msize;
-        libaroma_draw_mask_circle(
-            tc, 
-            cc,
-            touch_x, touch_y, 
-            touch_x, touch_y, 
-            rsize,
-            opa
-          );
+        libaroma_draw_circle(
+          tc,me->selcolor,touch_x, touch_y, rsize, MAX(0,opa-(opa*0.5))
+        );
         libaroma_draw_ex(
           c,tc,touched_x-me->draw_x,0,
           0,0,
           tc->w,tc->h,
           0,0xff);
         
-        libaroma_canvas_free(rc);  
         libaroma_canvas_free(cc);
         libaroma_canvas_free(tc);
       }
+    }
+  }
+  
+  /* draw indicator */
+  libaroma_draw_rect(
+    c,
+    ax, c->h-libaroma_dp(2), aw, libaroma_dp(2),
+    me->selcolor, 0xff
+  );
+  
+  if ((me->change_start>1)&&(me->change_state<1)){
+    if (me->change_dc){
+      float xstate = libaroma_cubic_bezier_swiftout(me->change_state);
+      libaroma_draw_opacity(
+        c, me->change_dc, 0, 0, 0, 0xff * (1-xstate)
+      );
     }
   }
   
@@ -501,10 +561,29 @@ byte _libaroma_ctl_tabs_thread(LIBAROMA_CONTROLP ctl) {
   );
   byte is_draw = me->forcedraw;
   libaroma_mutex_lock(me->mutex);
+  
+  if (me->change_start>1){
+    float nowstate=libaroma_control_state(me->change_start, 180);
+    if (nowstate>=1){
+      is_draw = 1;
+      me->change_state=0;
+      me->change_start=0;
+      if (me->change_dc){
+        libaroma_canvas_free(me->change_dc);
+        me->change_dc=NULL;
+      }
+    }
+    else if (me->change_state!=nowstate){
+      is_draw = 1;
+      me->change_state=nowstate;
+    }
+  }
+  
+  
   if (me->request_x!=-1){
     /* direct request */
     if (me->request_x!=me->req_x){
-      int move_sz = ((me->request_x-me->req_x)*32)>>8;
+      int move_sz = ((me->request_x-me->req_x)*64)>>8;
       if (abs(move_sz)<2){
         if (move_sz<0){
           move_sz=-1;
@@ -659,6 +738,10 @@ void _libaroma_ctl_tabs_destroy(
     libaroma_canvas_free(me->push_canvas);
     me->push_canvas=NULL;
   }
+  if (me->change_dc){
+    libaroma_canvas_free(me->change_dc);
+    me->change_dc=NULL;
+  }
   if (me->textw){
     free(me->textw);
   }
@@ -724,7 +807,7 @@ dword _libaroma_ctl_tabs_msg(
                 int active_x = _libaroma_ctl_tabs_indicator_x(
                   ctl,me->touched_id);
                 if (abs(active_x-me->active_x)>(ctl->w>>2)){
-                  int active_w = me->textw[me->touched_id]+libaroma_dp(16);
+                  int active_w = me->textw[me->touched_id]+libaroma_dp(24);
                   int center_c = active_x + (active_w>>1);
                   int draw_x   = center_c - (ctl->w >> 1);
                   if (draw_x<0){
@@ -819,7 +902,9 @@ LIBAROMA_CONTROLP libaroma_ctl_tabs(
     word id,
     int x, int y, int w, int h,
     word bgcolor,
-    word selcolor
+    word selcolor,
+    int hpad,
+    int left_pad
 ){
   /* init internal data */
   _LIBAROMA_CTL_TABSP me = (_LIBAROMA_CTL_TABSP)
@@ -829,6 +914,8 @@ LIBAROMA_CONTROLP libaroma_ctl_tabs(
     return NULL;
   }
   
+  me->hpad=libaroma_window_measure_point(hpad);
+  me->left_pad=libaroma_window_measure_point(left_pad);
   me->selcolor=selcolor;
   me->bgcolor=bgcolor;
   me->touched_id=-1;
@@ -884,7 +971,7 @@ byte libaroma_ctl_tabs_set_pager(
  * Descriptions: set tab texts
  */
 byte libaroma_ctl_tabs_set_texts(LIBAROMA_CONTROLP ctl,
-  char ** texts, int textn){
+  char ** texts, int textn, byte update_now){
   /* internal check */
   _LIBAROMA_CTL_CHECK(
     _libaroma_ctl_tabs_handler, _LIBAROMA_CTL_TABSP, 0
@@ -905,10 +992,38 @@ byte libaroma_ctl_tabs_set_texts(LIBAROMA_CONTROLP ctl,
   }
   me->textn=textn;
   libaroma_mutex_unlock(me->mutex);
-  _libaroma_ctl_tabs_req_internal_draw(ctl);
+  if (update_now){
+    _libaroma_ctl_tabs_req_internal_draw(ctl);
+  }
   return 1;
 } /* End of libaroma_ctl_tabs_set_texts */
 
-
+/*
+ * Function    : libaroma_ctl_bar_set_color
+ * Return Value: byte
+ * Descriptions: set color
+ */
+byte libaroma_ctl_tabs_set_color(LIBAROMA_CONTROLP ctl,
+  word bgcolor, word selcolor, byte update_now){
+  _LIBAROMA_CTL_CHECK(
+    _libaroma_ctl_tabs_handler, _LIBAROMA_CTL_TABSP, 0
+  );
+  libaroma_mutex_lock(me->mutex);
+  me->bgcolor = bgcolor;
+  me->selcolor = selcolor;
+  libaroma_mutex_unlock(me->mutex);
+  if (update_now){
+    if (ctl->window!=NULL){
+      if (me->change_dc){
+        libaroma_canvas_free(me->change_dc);
+        me->change_dc=NULL;
+      }
+      me->change_start = 1;
+      me->change_state = 0;
+      _libaroma_ctl_tabs_req_internal_draw(ctl);
+    }
+  }
+  return 1;
+} /* End of libaroma_ctl_bar_set_color */
 
 #endif /* __libaroma_ctl_tabs_c__ */

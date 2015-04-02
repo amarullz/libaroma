@@ -41,4 +41,6 @@
 #define LIBAROMA_CONFIG_HICOLOR_BIT       0
 */
 
+#define LIBAROMA_CONFIG_NOFONT_SUBPIXEL   1
+
 #endif /* __libaroma_config_features_h__ */

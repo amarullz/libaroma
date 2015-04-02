@@ -56,6 +56,18 @@ byte libaroma_window_usedp(byte isdp){
 } /* End of libaroma_window_usedp */
 
 /*
+ * Function    : libaroma_window_measure_point
+ * Return Value: int
+ * Descriptions: mesure point
+ */
+int libaroma_window_measure_point(int x){
+  if (_libaroma_window_measurement_dp){
+    return libaroma_dp(x);
+  }
+  return x;
+} /* End of libaroma_window_measure_point */
+
+/*
  * Function    : _libaroma_window_measure_save
  * Return Value: void
  * Descriptions: save measurement value
@@ -178,6 +190,31 @@ byte libaroma_window_measure_size(LIBAROMA_WINDOWP win){
 } /* End of libaroma_window_measure */
 
 /*
+ * Function    : _libaroma_window_ui_thread
+ * Return Value: byte
+ * Descriptions: window ui thread
+ */
+byte _libaroma_window_ui_thread(LIBAROMA_WINDOWP win) {
+  int i;
+  byte need_sync = 0;
+  if (win->active==1){
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
+    for (i=0;i<win->childn;i++){
+      LIBAROMA_CONTROLP c=win->childs[i];
+      if (c->handler->thread!=NULL){
+        if (c->handler->thread(c)){
+          libaroma_control_draw(c,0);
+          need_sync=1;
+        }
+      }
+    }
+  }
+  return need_sync;
+} /* End of _libaroma_window_ui_thread */
+
+/*
  * Function    : libaroma_window
  * Return Value: LIBAROMA_WINDOWP
  * Descriptions: new window
@@ -203,6 +240,7 @@ LIBAROMA_WINDOWP libaroma_window(
   win->ry = y;
   win->rw = w;
   win->rh = h;
+  win->ui_thread = _libaroma_window_ui_thread;
   libaroma_window_measure_size(win);
   return win;
 } /* End of libaroma_window */
@@ -222,6 +260,11 @@ byte libaroma_window_free(
   
   /* inactivate it */
   if (win->parent==NULL){
+    if (libaroma_wm_get_active_window()==win){
+      /* detach active window from window manager */
+      libaroma_wm_set_active_window(NULL);
+    }
+    
     LIBAROMA_MSG _msg;
     libaroma_window_process_event(win,
       libaroma_wm_compose(&_msg, LIBAROMA_MSG_WIN_INACTIVE, NULL, 0, 0));
@@ -298,15 +341,6 @@ byte _libaroma_window_updatebg(LIBAROMA_WINDOWP win){
     libaroma_wm_get_color("window"),
     0xff
   );
-  /*
-  libaroma_grad(win->bg,0,0,w,h,
-    libaroma_wm_get_color("window"),
-    libaroma_wm_get_color("window_gradient")
-  );
-  libaroma_wm_draw_theme(
-      win->bg, 
-      win->theme_bg,
-      0,0,w,h,NULL);*/
   return 1;
 } /* End of _libaroma_window_updatebg */
 
@@ -672,48 +706,6 @@ LIBAROMA_CONTROLP libaroma_window_setfocus(
 } /* End of libaroma_window_setfocus */
 
 /*
- * Function    : _libaroma_window_thread_manager
- * Return Value: static void *
- * Descriptions: window thread manager
- */
-static void * _libaroma_window_thread_manager(void * cookie) {
-  LIBAROMA_WINDOWP win = (LIBAROMA_WINDOWP) cookie;
-  ALOGV("begin window thread manager...");
-  int i;
-  LIBAROMA_SLEEPER sleeper_s;
-  byte need_sync = 0;
-  while(win->active){
-    /* run child thread process */
-    libaroma_sleeper_start(&sleeper_s);
-    if (win->active==1){
-#ifdef LIBAROMA_CONFIG_OPENMP
-  #pragma omp parallel for
-#endif
-      for (i=0;i<win->childn;i++){
-        LIBAROMA_CONTROLP c=win->childs[i];
-        if (c->handler->thread!=NULL){
-          if (c->handler->thread(c)){
-            libaroma_control_draw(c,0);
-            need_sync=1;
-          }
-        }
-      }
-      if (need_sync){
-        libaroma_window_sync(win, 
-          0, 0, 
-          win->w, win->h
-        );
-        need_sync=0;
-        continue;
-      }
-    }
-    libaroma_sleeper(&sleeper_s,16666);
-  }
-  ALOGV("end window thread manager...");
-  return NULL;
-} /* End of _libaroma_window_thread_manager */
-
-/*
  * Function    : libaroma_window_sync
  * Return Value: byte
  * Descriptions: sync window canvas
@@ -1048,19 +1040,6 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
                 win->childs[i]->handler->message(win->childs[i], msg);
               }
             }
-            
-            /* start thread manager */
-            pthread_create(
-              &win->thread_manager,
-              NULL,
-              _libaroma_window_thread_manager,
-              (voidp) win);
-            
-            
-            struct sched_param params;
-            params.sched_priority = sched_get_priority_max(SCHED_FIFO);
-            pthread_setschedparam(win->thread_manager, SCHED_FIFO, &params);
-            
           }
         }
       }
@@ -1081,8 +1060,6 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
         if (win->active){
           /* stop thread manager */
           win->active=0;
-          pthread_join(win->thread_manager, NULL);
-          win->thread_manager = 0;
           
           /* send inactive message to child */
           int i;
