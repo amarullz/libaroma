@@ -82,6 +82,13 @@ LIBAROMA_GLYPH libaroma_font_glyph(
 );
 
 /*
+ * Function    : libaroma_font_size_px
+ * Return Value: short
+ * Descriptions: font size in px
+ */
+short libaroma_font_size_px(byte size);
+
+/*
  * Function    : libaroma_font
  * Return Value: byte
  * Descriptions: load new font

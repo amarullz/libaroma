@@ -15,17 +15,15 @@
  *______________________________________________________________________________
  *
  * Filename    : text.c
- * Description : text & font engine
+ * Description : text engine
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 20/01/15 - Author(s): Ahmad Amarullah
+ * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_text_c__
 #define __libaroma_text_c__
+#include <aroma_internal.h>
 
 /* headers */
 #include "text/text_header.h"
@@ -42,3 +40,4 @@
 #include "text/text_public.c"
 
 #endif /* __libaroma_text_c__ */
+

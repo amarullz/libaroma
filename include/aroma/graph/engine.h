@@ -70,6 +70,9 @@ void libaroma_btl16(int n, wordp dst, const dwordp src);
 void libaroma_btl32(int n, dwordp dst, const wordp src);
 
 /* Dither Engine */
+byte * libaroma_dither_table_r();
+byte * libaroma_dither_table_g();
+byte * libaroma_dither_table_b();
 byte libaroma_dither_table_pos(int x, int y);
 byte libaroma_dither_r(byte p);
 byte libaroma_dither_g(byte p);

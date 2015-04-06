@@ -21,11 +21,27 @@
  * + 20/01/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_text_header_h__
 #define __libaroma_text_header_h__
+
+#ifndef true
+#define true 1
+#endif
+#ifndef false
+#define false 0
+#endif
+
+#include <ft2build.h>         /* Freetype 2 */
+#include FT_FREETYPE_H
+#include FT_TRUETYPE_IDS_H
+#include FT_LCD_FILTER_H
+#include FT_BITMAP_H
+#include FT_OUTLINE_H
+#include FT_ADVANCES_H
+#include FT_TRUETYPE_TABLES_H
+#include FT_GLYPH_H
+#include <hb.h>               /* Harfbuzz-ng */
+#include <hb-ucdn/ucdn.h>     /* Harfbuzz-UCDN */
 
 /* include definition & structures */
 #include "text_defs.h"

@@ -21,9 +21,6 @@
  * + 21/01/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_text_public_c__
 #define __libaroma_text_public_c__
 

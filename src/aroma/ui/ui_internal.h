@@ -21,9 +21,6 @@
  * + 07/02/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_ui_internal_h__
 #define __libaroma_ui_internal_h__
 
@@ -47,6 +44,13 @@ byte libaroma_window_measure(LIBAROMA_WINDOWP win, LIBAROMA_CONTROLP ctl);
 LIBAROMA_CONTROLP libaroma_window_attach(
   LIBAROMA_WINDOWP win,
   LIBAROMA_CONTROLP ctl);
+
+/*
+ * Function    : _libaroma_window_is_inside
+ * Return Value: byte
+ * Descriptions: check position coordinate
+ */
+byte _libaroma_window_is_inside(LIBAROMA_CONTROLP ctl, int x, int y);
 
 /*
  * Function    : libaroma_window_process_event

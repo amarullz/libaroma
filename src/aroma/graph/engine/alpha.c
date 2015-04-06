@@ -18,14 +18,12 @@
  * Description : alpha blend engine
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 19/01/15 - Author(s): Ahmad Amarullah
+ * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_alpha_c__
 #define __libaroma_alpha_c__
+#include <aroma_internal.h>
 
 word libaroma_alpha(word dcl, word scl, byte l) {
   if (scl == dcl) {
@@ -110,10 +108,6 @@ word libaroma_alphab(word scl, byte l) {
       ((libaroma_color_b(scl) * na) >> 11)
     );
 }
-
-#ifdef LIBAROMA_CONFIG_ENGINE_ALPHA
-#include LIBAROMA_CONFIG_ENGINE_ALPHA
-#endif
 
 #ifndef __engine_have_libaroma_alpha_black
 void libaroma_alpha_black(int n, wordp dst, wordp top, byte alpha) {
@@ -211,4 +205,6 @@ void libaroma_alpha_multi_line(int n, wordp dst, wordp bottom,
 }
 #endif
 
+
 #endif /* __libaroma_alpha_c__ */
+

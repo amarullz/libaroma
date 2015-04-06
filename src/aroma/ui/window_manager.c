@@ -15,17 +15,17 @@
  *______________________________________________________________________________
  *
  * Filename    : window_manager.c
- * Description : libaroma window manager
+ * Description : window manager
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 26/01/15 - Author(s): Ahmad Amarullah
+ * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_window_manager_c__
 #define __libaroma_window_manager_c__
+#include <aroma_internal.h>
+#include "ui_internal.h"
+
 
 /*
  * Variable    : _libaroma_wm
@@ -525,11 +525,9 @@ static void * _libaroma_wm_message_thread(void * cookie) {
  */
 static void * _libaroma_wm_ui_thread(void * cookie) {
   ALOGV("starting wm ui thread");
-  LIBAROMA_SLEEPER sleeper_s;
   byte need_sync = 0;
   while(_libaroma_wm->client_started){
     /* run child thread process */
-    libaroma_sleeper_start(&sleeper_s);
     if (_libaroma_wm->client_started){
       libaroma_mutex_lock(_libaroma_wm_ui_mutex);
       if (_libaroma_wm->active_window!=NULL){
@@ -548,7 +546,7 @@ static void * _libaroma_wm_ui_thread(void * cookie) {
         continue;
       }
     }
-    libaroma_sleeper(&sleeper_s,16666);
+    libaroma_usleep(16000);
   }
   ALOGV("wm ui thread ended");
   return NULL;
@@ -955,3 +953,5 @@ LIBAROMA_WINDOWP libaroma_wm_get_active_window(){
 
 
 #endif /* __libaroma_window_manager_c__ */
+
+

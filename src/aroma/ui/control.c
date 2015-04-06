@@ -15,17 +15,16 @@
  *______________________________________________________________________________
  *
  * Filename    : control.c
- * Description : window control manager
+ * Description : control
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 28/01/15 - Author(s): Ahmad Amarullah
+ * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_control_c__
 #define __libaroma_control_c__
+#include <aroma_internal.h>
+#include "ui_internal.h"
 
 /*
  * Function    : libaroma_control_new
@@ -275,4 +274,8 @@ float libaroma_control_state(long start, int duration){
   return ((float) diff)/((float) duration);
 } /* End of libaroma_control_state */
 
+
+
 #endif /* __libaroma_control_c__ */
+
+

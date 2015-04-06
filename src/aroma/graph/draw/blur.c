@@ -15,17 +15,15 @@
  *______________________________________________________________________________
  *
  * Filename    : blur.c
- * Description : blur processor
+ * Description : blur
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 19/01/15 - Author(s): Ahmad Amarullah
+ * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_blur_c__
 #define __libaroma_blur_c__
+#include <aroma_internal.h>
 
 float * _libaroma_blur_kernel(const int inRadius) {
   int mem_amount = (inRadius * 2) + 1;
@@ -166,4 +164,6 @@ LIBAROMA_CANVASP libaroma_blur_ex(
   return t2;
 } /* End of libaroma_blur_ex */
 
+
 #endif /* __libaroma_blur_c__ */
+

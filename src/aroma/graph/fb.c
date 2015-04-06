@@ -15,18 +15,18 @@
  *______________________________________________________________________________
  *
  * Filename    : fb.c
- * Description : framebuffer
+ * Description : framebuffer handler
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 19/01/15 - Author(s): Ahmad Amarullah
+ * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_fb_c__
 #define __libaroma_fb_c__
+#include <aroma_internal.h>
 
+byte LIBAROMA_FB_INIT_FUNCTION(
+    LIBAROMA_FBP);
 /*
  * Variable    : _libaroma_fb
  * Type        : LIBAROMA_FBP
@@ -46,13 +46,13 @@ LIBAROMA_FBP libaroma_fb() {
 
 /*
  * Function    : libaroma_fb_init
- * Return Value: LIBAROMA_FBP
+ * Return Value: byte
  * Descriptions: init framebuffer
  */
-LIBAROMA_FBP libaroma_fb_init() {
+byte libaroma_fb_init() {
   if (_libaroma_fb != NULL) {
     ALOGE("libaroma_fb_init framebuffer already initialized");
-    return NULL;
+    return 0;
   }
   
   /* allocating instance memory */
@@ -60,7 +60,7 @@ LIBAROMA_FBP libaroma_fb_init() {
   _libaroma_fb = (LIBAROMA_FBP) calloc(sizeof(LIBAROMA_FB),1);
   if (!_libaroma_fb){
     ALOGE("libaroma_fb_init allocating framebuffer instance failed");
-    return NULL;
+    return 0;
   }
   
   /* init driver */
@@ -69,7 +69,7 @@ LIBAROMA_FBP libaroma_fb_init() {
     free(_libaroma_fb);
     _libaroma_fb = NULL;
     ALOGE("libaroma_fb_init driver error");
-    return NULL;
+    return 0;
   }
   
   /* check callbacks */
@@ -80,7 +80,7 @@ LIBAROMA_FBP libaroma_fb_init() {
     free(_libaroma_fb);
     _libaroma_fb = NULL;
     ALOGE("libaroma_fb_init driver doesn't set the callbacks");
-    return NULL;
+    return 0;
   }
   
   /* check dpi */
@@ -125,8 +125,7 @@ LIBAROMA_FBP libaroma_fb_init() {
     }
   }
   
-  /* Return The Instance */
-  return _libaroma_fb;
+  return 1;
 } /* End of libaroma_fb_init */
 
 /*
@@ -372,4 +371,6 @@ LIBAROMA_CANVASP libaroma_fb_snapshoot_canvas() {
   return NULL;
 } /* End of libaroma_fb_snapshoot */
 
+
 #endif /* __libaroma_fb_c__ */
+

@@ -15,17 +15,17 @@
  *______________________________________________________________________________
  *
  * Filename    : compiler_message.c
- * Description : libaroma compiler message
+ * Description : compiler message
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 19/01/15 - Author(s): Ahmad Amarullah
+ * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_compiler_message_c__
 #define __libaroma_compiler_message_c__
+#include <aroma_internal.h>
+
+
 /* stringfy */
 #define __LIBAROMA_STRINGFY(X) #X
 #define __LIBAROMA_STR(macro) __LIBAROMA_STRINGFY(macro)
@@ -191,3 +191,4 @@
 #undef __LIBAROMA_CMSG_SUBPIXEL
 
 #endif /* __libaroma_compiler_message_c__ */
+

@@ -15,17 +15,16 @@
  *______________________________________________________________________________
  *
  * Filename    : gradient.c
- * Description : gradient rectangle draw
+ * Description : gradient drawing
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 19/01/15 - Author(s): Ahmad Amarullah
+ * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_gradient_c__
 #define __libaroma_gradient_c__
+#include <aroma_internal.h>
+
 
 bytep _libaroma_gradient_corner(
     int r) {
@@ -356,3 +355,4 @@ byte libaroma_gradient_ex1(
 
 
 #endif /* __libaroma_gradient_c__ */
+

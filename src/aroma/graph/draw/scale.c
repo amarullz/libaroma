@@ -18,14 +18,12 @@
  * Description : scale drawing
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 19/01/15 - Author(s): Ahmad Amarullah
+ * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_scale_c__
 #define __libaroma_scale_c__
+#include <aroma_internal.h>
 
 /*
  * Function    : libaroma_draw_scale_nearest
@@ -322,6 +320,5 @@ byte libaroma_draw_scale(
 } /* End of function_name */
 
 
-
-
 #endif /* __libaroma_scale_c__ */
+

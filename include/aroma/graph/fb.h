@@ -41,19 +41,6 @@ typedef struct _LIBAROMA_FB LIBAROMA_FB;
 typedef struct _LIBAROMA_FB * LIBAROMA_FBP;
 
 /*
- * Typedef     : LIBAROMA_FBCB_*
- * Descriptions: Framebuffer Callbacks
- */
-typedef void (*LIBAROMA_FBCB_RELEASE) \
-  (LIBAROMA_FBP);
-typedef byte (*LIBAROMA_FBCB_SYNC) \
-  (LIBAROMA_FBP, wordp __restrict, int, int, int, int);
-typedef byte (*LIBAROMA_FBCB_SNAPSHOOT) \
-  (LIBAROMA_FBP, wordp);
-typedef byte (*LIBAROMA_FBCB_CONFIG) \
-  (LIBAROMA_FBP, const char *, const char *, dword);
-
-/*
  * Structure   : _LIBAROMA_FB
  * Typedef     : LIBAROMA_FB, * LIBAROMA_FBP
  * Descriptions: Framebuffer Structure
@@ -66,10 +53,10 @@ struct _LIBAROMA_FB{
   voidp internal;   /* driver internal data */
   
   /* callbacks */
-  LIBAROMA_FBCB_RELEASE release;
-  LIBAROMA_FBCB_SYNC sync;
-  LIBAROMA_FBCB_SNAPSHOOT snapshoot;
-  LIBAROMA_FBCB_CONFIG config;
+  void (*release)(LIBAROMA_FBP);
+  byte (*sync)(LIBAROMA_FBP, wordp __restrict, int, int, int, int);
+  byte (*snapshoot)(LIBAROMA_FBP, wordp);
+  byte (*config)(LIBAROMA_FBP, const char *, const char *, dword);
   
   /* Optional - DPI */
   int dpi;

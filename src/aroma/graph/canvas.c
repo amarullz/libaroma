@@ -18,16 +18,12 @@
  * Description : libaroma canvas
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 19/01/15 - Author(s): Ahmad Amarullah
+ * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_canvas_c__
 #define __libaroma_canvas_c__
-
-
+#include <aroma_internal.h>
 /*
  * Structure   : _LIBAROMA_CANVAS_SHMEM_HEADER
  * Typedef     : LIBAROMA_CANVAS_SHMEM_HEADER, * LIBAROMA_CANVAS_SHMEM_HEADERP
@@ -146,6 +142,7 @@ LIBAROMA_CANVASP libaroma_canvas_new_ex(
     byte hiColor,
     const char * shmemname){
   LIBAROMA_CANVASP c;
+#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
   if (shmemname != NULL) {
     /* vars */
     char nm[LIBAROMA_STREAM_URI_LENGTH];
@@ -283,6 +280,7 @@ LIBAROMA_CANVASP libaroma_canvas_new_ex(
     }
     return c;
   }
+#endif
 
   /* private memory canvas */
   if ((w < 1) || (h < 1)) {
@@ -463,6 +461,7 @@ void libaroma_canvas_free_ex1(
     goto freec;
   }
   else if (cv->flags & LIBAROMA_CANVAS_SHARED) {
+#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
     LIBAROMA_CANVAS_SHMEMP csh_mem = 
       (LIBAROMA_CANVAS_SHMEMP) (((bytep) cv) + sizeof(LIBAROMA_CANVAS));
     munmap(csh_mem->mmap, csh_mem->sz);
@@ -478,6 +477,7 @@ void libaroma_canvas_free_ex1(
       }
     }
     goto freecanvas;
+#endif
   }
   
   if (cv->data) {
@@ -489,13 +489,13 @@ void libaroma_canvas_free_ex1(
   if (cv->hicolor) {
     free(cv->hicolor);
   }
-
+#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
 freecanvas:
+#endif
   free(*c);
 freec:
   *c = NULL;
 } /* End of libaroma_canvas_free_ex1 */
 
-
-
 #endif /* __libaroma_canvas_c__ */
+

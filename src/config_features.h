@@ -15,14 +15,14 @@
  *______________________________________________________________________________
  *
  * Filename    : config_features.h
- * Description : features configuration - PLEASE USE CFLAGS
+ * Description : features configuration
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 26/01/15 - Author(s): Ahmad Amarullah
+ * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
+#ifndef __libaroma_aroma_internal_h__
+  #error "Include <aroma_internal.h> instead."
 #endif
 #ifndef __libaroma_config_features_h__
 #define __libaroma_config_features_h__
@@ -41,6 +41,12 @@
 #define LIBAROMA_CONFIG_HICOLOR_BIT       0
 */
 
-#define LIBAROMA_CONFIG_NOFONT_SUBPIXEL   1
+
+/* Libaroma disabled features - Please use CFLAGS */
+/* ==============================================
+#define LIBAROMA_CONFIG_NO_SYSLINUX     1
+#define LIBAROMA_CONFIG_NO_PTHREAD      1
+*/
 
 #endif /* __libaroma_config_features_h__ */
+

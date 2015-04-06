@@ -36,24 +36,21 @@ typedef struct _LIBAROMA_CONTROL LIBAROMA_CONTROL;
 typedef struct _LIBAROMA_CONTROL * LIBAROMA_CONTROLP;
 
 /* include module headers */
-#include "ui/artworker.h"
-#include "ui/hid.h"
-#include "ui/messages.h"
-#include "ui/motions.h"
 #include "ui/window.h"
 #include "ui/window_manager.h"
 #include "ui/control.h"
 
-/* control set */
-#include "ui/controls/ctl_bar.h"
-#include "ui/controls/ctl_label.h"
-#include "ui/controls/ctl_progress.h"
-#include "ui/controls/ctl_button.h"
-#include "ui/controls/ctl_pager.h"
-#include "ui/controls/ctl_tabs.h"
+/* libaroma control set */
+#include "controls/ctl_bar.h"
+#include "controls/ctl_label.h"
+#include "controls/ctl_progress.h"
+#include "controls/ctl_button.h"
+#include "controls/ctl_pager.h"
+#include "controls/ctl_tabs.h"
+#include "controls/ctl_scroll.h"
+#include "controls/ctl_list.h"
 
-/* scroll control set */
-#include "ui/controls/ctl_scroll.h"
-#include "ui/controls/ctl_list.h"
+/* list items */
+#include "controls/listitem/listitem_option.h"
 
 #endif /* __libaroma_ui_h__ */

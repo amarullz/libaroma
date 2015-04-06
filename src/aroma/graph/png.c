@@ -15,17 +15,16 @@
  *______________________________________________________________________________
  *
  * Filename    : png.c
- * Description : png reader
+ * Description : png
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 20/01/15 - Author(s): Ahmad Amarullah
+ * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_png_c__
 #define __libaroma_png_c__
+#include <aroma_internal.h>
+#include <png.h>
 
 /*
  * Structure   : __LIBAROMA_PNG_ADAPTER
@@ -595,5 +594,5 @@ finalize:
 } /* End of libaroma_png_save */
 
 
-
 #endif /* __libaroma_png_c__ */
+

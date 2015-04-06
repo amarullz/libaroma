@@ -27,6 +27,10 @@
 #ifndef __libaroma_types_h__
 #define __libaroma_types_h__
 
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 /* primitive unsigneds */
 typedef uint8_t byte;
 typedef uint16_t word;

@@ -15,17 +15,16 @@
  *______________________________________________________________________________
  *
  * Filename    : commondraw.c
- * Description : common drawing operation
+ * Description : common drawing
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 19/01/15 - Author(s): Ahmad Amarullah
+ * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_commondraw_c__
 #define __libaroma_commondraw_c__
+#include <aroma_internal.h>
+
 
 /*
  * Function    : libaroma_draw_limit
@@ -812,6 +811,5 @@ byte libaroma_draw_arc(
 } /* End of libaroma_draw_arc */
 
 
-
-
 #endif /* __libaroma_commondraw_c__ */
+

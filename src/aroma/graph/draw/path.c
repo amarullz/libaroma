@@ -15,17 +15,16 @@
  *______________________________________________________________________________
  *
  * Filename    : path.c
- * Description : graphic path
+ * Description : path drawing
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 23/03/15 - Author(s): Ahmad Amarullah
+ * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_path_c__
 #define __libaroma_path_c__
+#include <aroma_internal.h>
+
 
 /*
  * Function    : libaroma_path
@@ -408,4 +407,6 @@ byte libaroma_path_draw(
   return 1;
 } /* End of libaroma_path_draw */
 
+
 #endif /* __libaroma_path_c__ */
+

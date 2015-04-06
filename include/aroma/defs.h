@@ -29,7 +29,6 @@
 
 /* Common macros */
 #define __PI 3.14159265359
-#define __PI180 0.01745329251994
 
 /* LIBAROMA_START_* : Application start runtime type */
 #define LIBAROMA_START_UNSAFE     0x0
@@ -51,5 +50,9 @@
 #define LOWORD(l) ((word)(l))
 #define HIWORD(l) ((word)(((dword)(l)>>16)&0xFFFF))
 #define MAKEDWORD(lo,hi) ((dword)(((word)(lo))|((dword)((word)(hi)))<<16))
+
+#ifndef __restrict
+#define __restrict
+#endif
 
 #endif /* __libaroma_defs_h__ */

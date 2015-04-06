@@ -32,23 +32,6 @@ extern "C" {
 /* include core headers */
 #include "aroma/core.h"
 
-/*
- * Function    : libaroma_start
- * Return Value: byte
- * Descriptions: Start libaroma application
- */
-byte libaroma_start();
-
-/*
- * Function    : libaroma_end
- * Return Value: byte
- * Descriptions: End libaroma application
- */
-byte libaroma_end();
-
-/* include high level api */
-#include "aroma/api.h"
-
 /* end of extern for cpp */
 #ifdef __cplusplus
 }

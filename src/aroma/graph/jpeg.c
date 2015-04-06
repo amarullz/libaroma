@@ -15,17 +15,20 @@
  *______________________________________________________________________________
  *
  * Filename    : jpeg.c
- * Description : jpeg reader
+ * Description : jpeg
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 20/01/15 - Author(s): Ahmad Amarullah
+ * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_jpeg_c__
 #define __libaroma_jpeg_c__
+#include <aroma_internal.h>
+#include <jinclude.h>         /* JPEG */
+#include <jpeglib.h>
+#include <jerror.h>
+#include <setjmp.h>
+
 #ifndef LIBAROMA_CONFIG_NOJPEG
 
 /*
@@ -223,8 +226,8 @@ exit:
   }
   return cv;
 } /* End of libaroma_jpeg_ex */
-
-
-
 #endif /* LIBAROMA_CONFIG_NOJPEG */
+
+
 #endif /* __libaroma_jpeg_c__ */
+

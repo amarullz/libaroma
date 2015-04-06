@@ -15,17 +15,15 @@
  *______________________________________________________________________________
  *
  * Filename    : alignblt.c
- * Description : aligned blt engine
+ * Description : align blit
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 19/01/15 - Author(s): Ahmad Amarullah
+ * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_alignblt_c__
 #define __libaroma_alignblt_c__
+#include <aroma_internal.h>
 
 void libaroma_blt_align16(wordp __restrict dst, wordp __restrict src,
     int w, int h, int dst_stride, int src_stride) {
@@ -120,4 +118,6 @@ void libaroma_blt_align_to16_pos(wordp __restrict dst, dwordp __restrict src,
   }
 }
 
+
 #endif /* __libaroma_alignblt_c__ */
+

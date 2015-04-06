@@ -18,18 +18,13 @@
  * Description : blit engine
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 19/01/15 - Author(s): Ahmad Amarullah
+ * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_blt_c__
 #define __libaroma_blt_c__
+#include <aroma_internal.h>
 
-#ifdef LIBAROMA_CONFIG_ENGINE_BLT
-#include LIBAROMA_CONFIG_ENGINE_BLT
-#endif
 
 #ifndef __engine_have_libaroma_btl16
 void libaroma_btl16(int n, wordp dst, const dwordp src) {
@@ -50,3 +45,4 @@ void libaroma_btl32(int n, dwordp dst, const wordp src) {
 #endif
 
 #endif /* __libaroma_blt_c__ */
+

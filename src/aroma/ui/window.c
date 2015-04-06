@@ -15,17 +15,18 @@
  *______________________________________________________________________________
  *
  * Filename    : window.c
- * Description : window api
+ * Description : window
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 27/01/15 - Author(s): Ahmad Amarullah
+ * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_window_c__
 #define __libaroma_window_c__
+#include <aroma_internal.h>
+#include "ui_internal.h"
+
+
 /* check wm macro */
 #define __CHECK_WM(RETVAL) \
   if (libaroma_wm()==NULL){ \
@@ -841,9 +842,7 @@ byte libaroma_window_anishow(
     
     long start = libaroma_tick();
     int delta = 0;
-    //LIBAROMA_SLEEPER sleeper_s;
     while ((delta=libaroma_tick()-start)<duration){
-      //libaroma_sleeper_start(&sleeper_s);
       float state = ((float) delta)/((float) duration);
       if (state>=1.0){
         break;
@@ -918,9 +917,6 @@ byte libaroma_window_anishow(
           start=0;
           break;
       }
-      
-      /* 60hz sleep */
-      //libaroma_sleeper(&sleeper_s,16666);
     }
     
     retval = 1;
@@ -1156,4 +1152,8 @@ dword libaroma_window_pool(
 
 
 #undef __CHECK_WM
+
+
 #endif /* __libaroma_window_c__ */
+
+

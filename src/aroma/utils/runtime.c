@@ -20,34 +20,38 @@
  * + This is part of libaroma, an embedded ui toolkit.
  * + 19/01/15 - Author(s): Ahmad Amarullah
  *
- */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
+ */ 
 #ifndef __libaroma_runtime_c__
 #define __libaroma_runtime_c__
+#include <aroma_internal.h>
 
-/*
- * Structure   : _LIBAROMA_RUNTIME
- * Typedef     : LIBAROMA_RUNTIME, * LIBAROMA_RUNTIMEP
- * Descriptions: runtime pid structure
- */
-typedef struct _LIBAROMA_RUNTIME LIBAROMA_RUNTIME;
-typedef struct _LIBAROMA_RUNTIME * LIBAROMA_RUNTIMEP;
-struct _LIBAROMA_RUNTIME{
-  pid_t parent;
-  pid_t monitor;
-  pid_t me;
-  byte core_online[16];
-  byte core_num;
-};
+#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
+#ifdef __linux__
+  #include <sys/wait.h>
 
-/*
- * Variable    : _libaroma_runtime
- * Type        : LIBAROMA_RUNTIME
- * Descriptions: runtime pid storage
- */
-static LIBAROMA_RUNTIME _libaroma_runtime = { 0 };
+  /*
+   * Structure   : _LIBAROMA_RUNTIME
+   * Typedef     : LIBAROMA_RUNTIME, * LIBAROMA_RUNTIMEP
+   * Descriptions: runtime pid structure
+   */
+  typedef struct _LIBAROMA_RUNTIME LIBAROMA_RUNTIME;
+  typedef struct _LIBAROMA_RUNTIME * LIBAROMA_RUNTIMEP;
+  struct _LIBAROMA_RUNTIME{
+    pid_t parent;
+    pid_t monitor;
+    pid_t me;
+    byte core_online[16];
+    byte core_num;
+  };
+  
+  /*
+   * Variable    : _libaroma_runtime
+   * Type        : LIBAROMA_RUNTIME
+   * Descriptions: runtime pid storage
+   */
+  static LIBAROMA_RUNTIME _libaroma_runtime = { 0 };
+#endif
+#endif
 
 /*
  * Function    : libaroma_runtime_activate_cores
@@ -56,6 +60,7 @@ static LIBAROMA_RUNTIME _libaroma_runtime = { 0 };
  */
 void libaroma_runtime_activate_cores(int num_cores){
 /* only for linux */
+#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
 #ifdef __linux__
   int i;
   _libaroma_runtime.core_num=0;
@@ -93,18 +98,14 @@ void libaroma_runtime_activate_cores(int num_cores){
   for (i=0;i<_libaroma_runtime.core_num;i++){
     snprintf(path,256,"/sys/devices/system/cpu/cpu%i/cpufreq",i);
     snprintf(cmds,1024,"%s/scaling_governor",path);
-    
     fp = fopen(cmds, "w+");
     if(fp){
       fwrite("performance",1,11,fp);
       fclose(fp);
     }
-    
-    // snprintf(cmds,1024,"echo performance > %s/scaling_governor",path);
-    // system(cmds);
   }
   ALOGI("Processor Activated : %i Core(s)",_libaroma_runtime.core_num);
-
+#endif
 #endif
 } /* End of libaroma_runtime_activate_cores */
 
@@ -114,6 +115,8 @@ void libaroma_runtime_activate_cores(int num_cores){
  * Descriptions: rollback processor state
  */
 void libaroma_runtime_rollback_cores(){
+#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
+#ifdef __linux__
   int i;
   FILE * fp;
   struct stat st;
@@ -132,16 +135,9 @@ void libaroma_runtime_rollback_cores(){
     }
   }
   _libaroma_runtime.core_num=0;
+#endif
+#endif
 } /* End of libaroma_runtime_rollback_cores */
-
-/*
- * Function    : libaroma_runtime
- * Return Value: LIBAROMA_RUNTIMEP
- * Descriptions: Get runtime variable
- */
-LIBAROMA_RUNTIMEP libaroma_runtime() {
-  return &_libaroma_runtime;
-} /* End of libaroma_runtime */
 
 /*
  * Function    : libaroma_runtime_mute_parent
@@ -149,7 +145,11 @@ LIBAROMA_RUNTIMEP libaroma_runtime() {
  * Descriptions: Pause parent process
  */
 void libaroma_runtime_mute_parent() {
+#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
+#ifdef __linux__
   kill(_libaroma_runtime.parent, 19);
+#endif
+#endif
 } /* End of libaroma_runtime_mute_parent */
 
 
@@ -159,7 +159,11 @@ void libaroma_runtime_mute_parent() {
  * Descriptions: Continue parent process
  */
 void libaroma_runtime_continue_parent() {
+#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
+#ifdef __linux__
   kill(_libaroma_runtime.parent, 18);
+#endif
+#endif
 } /* End of libaroma_runtime_continue_parent */
 
 /*
@@ -168,6 +172,8 @@ void libaroma_runtime_continue_parent() {
  * Descriptions: Init libaroma runtime
  */
 void libaroma_runtime_init() {
+#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
+#ifdef __linux__
   _libaroma_runtime.parent   = getppid();  /* root */
   _libaroma_runtime.monitor  = getpid();   /* monitor */
   _libaroma_runtime.me       = fork();     /* child - fork */
@@ -199,6 +205,8 @@ void libaroma_runtime_init() {
   libaroma_runtime_continue_parent();
   ALOGS("RUNTIME: Exit Status (%i)", status);
   _exit(0);
+#endif
+#endif
 } /* End of libaroma_runtime_init */
 
 #endif /* __libaroma_runtime_c__ */

@@ -21,11 +21,11 @@
  * + 19/01/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_zip_c__
 #define __libaroma_zip_c__
+#include <aroma_internal.h>
+#include <zlib.h>
+#include <Zip.h>
 
 /*
  * Function    : libaroma_zip
@@ -63,7 +63,8 @@ byte libaroma_zip_extract(
     LIBAROMA_ZIP zip,
     const char * zpath,
     const char * dest) {
-  const ZipEntry * zdata = mzFindZipEntry((ZipArchive *) zip, zpath);\
+#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
+  const ZipEntry * zdata = mzFindZipEntry((ZipArchive *) zip, zpath);
   if (zdata == NULL) {
     ALOGW("libaroma_zip_extract zdata=NULL (%s)", zpath);
     return 0;
@@ -77,6 +78,9 @@ byte libaroma_zip_extract(
   byte ok = mzExtractZipEntryToFile((ZipArchive *) zip, zdata, fd);
   close(fd);
   return ok;
+#else
+  return 0;
+#endif
 } /* End of libaroma_zip_extract */
 
 /*

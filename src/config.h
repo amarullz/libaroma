@@ -21,11 +21,12 @@
  * + 19/01/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
+#ifndef __libaroma_aroma_internal_h__
+  #error "Should be inside aroma_internal.c."
 #endif
 #ifndef __libaroma_config_h__
 #define __libaroma_config_h__
+
 
 /*
  * Libaroma version configurations
@@ -95,20 +96,5 @@
   #endif /* LIBAROMA_CONFIG_OS */
 #endif /* __linux__ */
 
-/*
- * libaroma engine configs for ARMv7 neon
- */
-#ifdef __ARM_HAVE_NEON
-  #include <arm_neon.h> /* include arm_neon.h */
-    /* NOTE: use this path = "../../contribs/engines/ */
-  #define LIBAROMA_CONFIG_ENGINE_ALPHA \
-    "../../../contribs/engines/neon/alpha_neon.c"
-  #define LIBAROMA_CONFIG_ENGINE_BLT \
-    "../../../contribs/engines/neon/blt_neon.c"
-  #define LIBAROMA_CONFIG_ENGINE_COLOR \
-    "../../../contribs/engines/neon/color_neon.c"
-  #define LIBAROMA_CONFIG_ENGINE_DITHER \
-    "../../../contribs/engines/neon/dither_neon.c"
-#endif /* __ARM_HAVE_NEON */
 
 #endif /* __libaroma_config_h__ */

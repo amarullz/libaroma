@@ -27,7 +27,6 @@
 #ifndef __libaroma_canvas_h__
 #define __libaroma_canvas_h__
 
-
 /*
  * Structure   : _LIBAROMA_CANVAS
  * Typedef     : LIBAROMA_CANVAS, * LIBAROMA_CANVASP
@@ -40,7 +39,6 @@ struct _LIBAROMA_CANVAS{
   int      h;       /* height */
   int      l;       /* line size */
   int      s;       /* width x height */
-  /* int      sz;       data size */
   wordp    data;    /* color data */
   bytep    alpha;   /* alpha data */
   bytep    hicolor; /* hicolor data */

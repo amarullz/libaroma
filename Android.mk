@@ -42,8 +42,8 @@ LIBAROMA_MK_DEBUG_COMPILER := 1
 ## device sources
 ##
 LIBAROMA_MK_DEVICE_FILES := \
-  src/contribs/devices/linux/fb_driver.c \
-  src/contribs/devices/linux/hid_driver.c
+  src/contrib/linux/fb_driver.c \
+  src/contrib/linux/hid_driver.c
 
 ##
 ## libs path
@@ -77,8 +77,20 @@ LIBAROMA_MK_MINZIP_LIB := libminzip_libaroma
   ## sources
   ##
   LOCAL_SRC_FILES := \
-    src/aroma.c \
+    src/aroma/aroma.c \
+    src/aroma/version.c \
+    src/aroma/utils/*.c \
+    src/aroma/debug/*.c \
+    src/aroma/graph/*.c \
+    src/aroma/graph/draw/*.c \
+    src/aroma/graph/engine/*.c \
+    src/aroma/hid/*.c \
+    src/aroma/ui/*.c \
+    src/aroma/controls/*.c \
+    src/aroma/controls/listitem/*.c \
+    \
     $(LIBAROMA_MK_DEVICE_FILES)
+    $(LIBAROMA_MK_ENGINE_FILES)
   
   ##
   ## includes
@@ -116,6 +128,9 @@ LIBAROMA_MK_MINZIP_LIB := libminzip_libaroma
   ##
   ifeq ($(ARCH_ARM_HAVE_NEON),true)
     AROMA_ARM_NEON    := true
+    LOCAL_SRC_FILES += \
+      src/contrib/arm_neon/*.c
+
     LOCAL_CFLAGS += \
       -D__ARM_HAVE_NEON \
       -mfloat-abi=softfp \

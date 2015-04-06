@@ -21,11 +21,9 @@
  * + 19/01/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_stream_c__
 #define __libaroma_stream_c__
+#include <aroma_internal.h>
 
 /*
  * Variable    : _libaroma_stream_uri_cb
@@ -51,6 +49,9 @@ void libaroma_stream_set_uri_callback(
  */
 LIBAROMA_STREAMP libaroma_stream_file(
     char * path) {
+#ifdef LIBAROMA_CONFIG_NO_SYSLINUX
+  return NULL;
+#else
   if (!path) {
     ALOGW("libaroma_stream_file path is invalid");
     return NULL;
@@ -85,6 +86,7 @@ LIBAROMA_STREAMP libaroma_stream_file(
   snprintf(ret->uri,
       LIBAROMA_STREAM_URI_LENGTH, "file://%s", path);
   return ret;
+#endif
 } /* End of libaroma_stream_file */
 
 /*
@@ -94,6 +96,9 @@ LIBAROMA_STREAMP libaroma_stream_file(
  */
 LIBAROMA_STREAMP libaroma_stream_shmem(
     char * memname) {
+#ifdef LIBAROMA_CONFIG_NO_SYSLINUX
+  return NULL;
+#else
   if (!memname) {
     ALOGW("libaroma_stream_shmem memname is invalid");
     return 0;
@@ -143,6 +148,7 @@ LIBAROMA_STREAMP libaroma_stream_shmem(
   snprintf(ret->uri,
       LIBAROMA_STREAM_URI_LENGTH, "shmem://%s", memname);
   return ret;
+#endif
 } /* End of libaroma_stream_shmem */
 
 /*
@@ -271,8 +277,10 @@ byte libaroma_stream_close(
     return 0;
   }
   if (a->ismmap) {
+#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
     /* File */
     munmap(a->data, a->size);
+#endif
   }
   else if (a->data) {
     free(a->data);
@@ -310,6 +318,9 @@ char * libaroma_stream_to_string(
 LIBAROMA_SHMEMP libaroma_shmem(
     const char * name,
     int sz) {
+#ifdef LIBAROMA_CONFIG_NO_SYSLINUX
+  return NULL;
+#else
   /* Copy Name */
   char nm[LIBAROMA_STREAM_URI_LENGTH];
   if (name[0]=='@'){
@@ -371,6 +382,7 @@ LIBAROMA_SHMEMP libaroma_shmem(
   ret->size     = sz;
   snprintf(ret->name, LIBAROMA_STREAM_URI_LENGTH, "%s", nm);
   return ret;
+#endif
 } /* End of libaroma_shmem */
 
 /*
@@ -381,6 +393,7 @@ LIBAROMA_SHMEMP libaroma_shmem(
 byte libaroma_shmem_close(
     LIBAROMA_SHMEMP a,
     byte del) {
+#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
   if (!a) {
     ALOGW("libaroma_shmem_close LIBAROMA_SHMEMP not valid");
     return 0;
@@ -394,6 +407,7 @@ byte libaroma_shmem_close(
     }
   }
   free(a);
+#endif
   return 1;
 } /* End of libaroma_shmem_close */
 

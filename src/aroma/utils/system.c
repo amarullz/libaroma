@@ -21,12 +21,9 @@
  * + 14/02/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_system_c__
 #define __libaroma_system_c__
-
+#include <aroma_internal.h>
 
 /*
  * Function    : libaroma_getprop

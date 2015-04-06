@@ -15,17 +15,15 @@
  *______________________________________________________________________________
  *
  * Filename    : filters.c
- * Description : drawing filter
+ * Description : draw filter
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 19/01/15 - Author(s): Ahmad Amarullah
+ * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_filters_c__
 #define __libaroma_filters_c__
+#include <aroma_internal.h>
 
 /*
  * Function    : libaroma_draw_filter_saturation
@@ -50,5 +48,5 @@ word libaroma_draw_filter_saturation(
 } /* End of libaroma_draw_filter_saturation */
 
 
-
 #endif /* __libaroma_filters_c__ */
+

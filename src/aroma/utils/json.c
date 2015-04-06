@@ -31,11 +31,9 @@
  * + 19/01/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_json_c__
 #define __libaroma_json_c__
+#include <aroma_internal.h>
 
 /* include */
 #include <float.h>

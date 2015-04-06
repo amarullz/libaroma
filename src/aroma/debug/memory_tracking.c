@@ -28,7 +28,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
 
 #ifndef LIBAROMA_MUTEX
 #ifdef LIBAROMA_CONFIG_OPENMP
@@ -39,6 +38,7 @@
   #define libaroma_mutex_lock(x) omp_set_nest_lock(&x)
   #define libaroma_mutex_unlock(x) omp_unset_nest_lock(&x)
 #else
+  #include <pthread.h>
   #define LIBAROMA_MUTEX pthread_mutex_t
   #define libaroma_mutex_init(x) pthread_mutex_init(&x,NULL)
   #define libaroma_mutex_free(x) pthread_mutex_destroy(&x)

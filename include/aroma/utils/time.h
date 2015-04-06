@@ -28,39 +28,11 @@
 #define __libaroma_time_h__
 
 /*
- * Structure   : _LIBAROMA_SLEEPER
- * Typedef     : LIBAROMA_SLEEPER, * LIBAROMA_SLEEPERP
- * Descriptions: High resolution sleep structure
- */
-typedef struct timeval LIBAROMA_SLEEPER;
-typedef struct timeval * LIBAROMA_SLEEPERP;
-
-/*
- * Typedef     : LIBAROMA_TIMER_CB
- * Descriptions: timer callback
- */
-typedef void (*LIBAROMA_TIMER_CB)(void *);
-
-/*
  * Function    : libaroma_tick
  * Return Value: long
  * Descriptions: system tick in ms
  */
 long libaroma_tick();
-
-/*
- * Function    : libaroma_sleeper_start
- * Return Value: byte
- * Descriptions: High resolution sleep start
- */
-byte libaroma_sleeper_start(LIBAROMA_SLEEPERP sp);
-
-/*
- * Function    : libaroma_sleeper
- * Return Value: byte
- * Descriptions: High resolution sleep
- */
-byte libaroma_sleeper(LIBAROMA_SLEEPERP sp, long delay);
 
 /*
  * Function    : libaroma_sleep
@@ -71,21 +43,11 @@ void libaroma_sleep(
     long ms);
 
 /*
- * Function    : libaroma_timer
- * Return Value: int
- * Descriptions: new timer
+ * Function    : libaroma_usleep
+ * Return Value: void
+ * Descriptions: usleep
  */
-int libaroma_timer(
-    LIBAROMA_TIMER_CB cb,
-    voidp param,
-    long ms);
-
-/*
- * Function    : libaroma_timer_delete
- * Return Value: byte
- * Descriptions: delete/cancel timer
- */
-byte libaroma_timer_delete(
-    int id);
-
+void libaroma_usleep(
+    long us);
+    
 #endif /* __libaroma_time_h__ */

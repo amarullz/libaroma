@@ -27,27 +27,12 @@
 #ifndef __libaroma_control_h__
 #define __libaroma_control_h__
 
-/*
- * Typedef     : LIBAROMA_CTLCB_*
- * Descriptions: control callbacks
- */
-typedef dword (*LIBAROMA_CTLCB_MESSAGE) \
-  (LIBAROMA_CONTROLP, LIBAROMA_MSGP);
-typedef void (*LIBAROMA_CTLCB_DRAW) \
-  (LIBAROMA_CONTROLP, LIBAROMA_CANVASP);
-typedef byte (*LIBAROMA_CTLCB_FOCUS) \
-  (LIBAROMA_CONTROLP, byte);
-typedef void (*LIBAROMA_CTLCB_DESTROY) \
-  (LIBAROMA_CONTROLP);
-typedef byte (*LIBAROMA_CTLCB_THREAD) \
-  (LIBAROMA_CONTROLP);
-
 typedef struct {
-  LIBAROMA_CTLCB_MESSAGE message;
-  LIBAROMA_CTLCB_DRAW draw;
-  LIBAROMA_CTLCB_FOCUS focus;
-  LIBAROMA_CTLCB_DESTROY destroy;
-  LIBAROMA_CTLCB_THREAD thread;
+  dword (*message)(LIBAROMA_CONTROLP, LIBAROMA_MSGP);
+  void (*draw)(LIBAROMA_CONTROLP, LIBAROMA_CANVASP);
+  byte (*focus)(LIBAROMA_CONTROLP, byte);
+  void (*destroy)(LIBAROMA_CONTROLP);
+  byte (*thread)(LIBAROMA_CONTROLP);
 } LIBAROMA_CONTROL_HANDLER, * LIBAROMA_CONTROL_HANDLERP;
 
 /*

@@ -21,12 +21,8 @@
  * + 20/01/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_font_freetype_c__
 #define __libaroma_font_freetype_c__
-
 
 /*
  * Function    : libaroma_font_set_size
@@ -455,7 +451,8 @@ byte libaroma_font_glyph_draw(
   if (flags & _LIBAROMA_TEXTCHUNK_BOLD) {
     FT_Outline_Embolden(
       &((FT_OutlineGlyph) fglyph)->outline,
-      MIN(aglyph->size * 3,48));
+      aglyph->size * 2
+    );
   }
   
   /* convert glyph to bitmap glyph */

@@ -15,19 +15,16 @@
  *______________________________________________________________________________
  *
  * Filename    : version.c
- * Description : libaroma version
+ * Description : version information
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 19/01/15 - Author(s): Ahmad Amarullah
+ * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_c__
-  #error "Should be inside aroma.c."
-#endif
 #ifndef __libaroma_version_c__
 #define __libaroma_version_c__
+#include <aroma_internal.h>
 
-/* GET AROMA CORE INFO */
 /*
  * Variable    : _LIBAROMA_VERSION*
  * Type        : char []
@@ -133,25 +130,5 @@ char * libaroma_info(int type) {
   return LIBAROMA_CONFIG_NAME;
 }
 
-/* backtrace */
-#ifdef __GLIBC__
-#include <execinfo.h>
-void ___libaroma_debug_backtrace_fn(void){
-  void *array[LIBAROMA_CONFIG_DEBUG_TRACE];
-  size_t size;
-  char **strings;
-  size_t i;
-  size = backtrace (array, LIBAROMA_CONFIG_DEBUG_TRACE);
-  if (size){
-    strings = backtrace_symbols (array, size);
-    for (i=1;i<size; i++){
-      fprintf(libaroma_debug_output(),"   [TRACE] %s\n",
-        strings[i]
-      );
-    }
-    free (strings);
-  }
-}
-#endif
-
 #endif /* __libaroma_version_c__ */
+

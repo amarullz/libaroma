@@ -27,28 +27,42 @@
 #ifndef __libaroma_core_h__
 #define __libaroma_core_h__
 
-#include "sys.h"    /* libaroma system headers */
-#include "types.h"  /* libaroma standard types */
-#include "defs.h"   /* libaroma defines */
-#include "utils.h"  /* libaroma utility modules */
-#include "graph.h"  /* libaroma graph modules */
-#include "ui.h"     /* libaroma ui modules */
-#include "debug.h"  /* libaroma debug modules */
+#include "types.h"            /* libaroma standard types */
+#include "defs.h"             /* libaroma defines */
+#include "utils/array.h"      /* array */
+#include "utils/time.h"       /* time */
+#include "utils/zip.h"        /* zip */
+#include "utils/strings.h"    /* strings */
+#include "utils/minutf8.h"    /* utf8 */
+#include "utils/stream.h"     /* stream */
+#include "utils/json.h"       /* json */
+#include "utils/system.h"     /* system */
+#include "utils/motions.h"    /* motion interpolation */
+#include "graph/engine.h"     /* graph engine */
+#include "graph/canvas.h"     /* canvas */
+#include "graph/fb.h"         /* framebuffer */
+#include "graph/draw.h"       /* common drawing */
+#include "graph/png.h"        /* png */
+#include "graph/jpeg.h"       /* jpeg */
+#include "graph/image.h"      /* image */
+#include "graph/text.h"       /* font & text */
+#include "graph/artworker.h"  /* art drawing */
+#include "hid/hid.h"          /* hid & input handler */
+#include "hid/messages.h"     /* message queue */
+#include "ui.h"               /* ui, window & controls */
 
 /*
- * Structure   : _LIBAROMA_CONFIG
+ * Structure   : LIBAROMA_CONFIG
  * Typedef     : LIBAROMA_CONFIG, * LIBAROMA_CONFIGP
  * Descriptions: libaroma runtime configuration
  */
-typedef struct _LIBAROMA_CONFIG LIBAROMA_CONFIG;
-typedef struct _LIBAROMA_CONFIG * LIBAROMA_CONFIGP;
-struct _LIBAROMA_CONFIG{
+typedef struct{
   char fb_shm_name[64];
   byte snapshoot_fb;
   byte multicore_init_num;
   byte runtime_monitor;
   FILE * debug_fp;
-};
+} LIBAROMA_CONFIG, * LIBAROMA_CONFIGP;
 
 /*
  * Function    : libaroma_config
@@ -62,7 +76,27 @@ LIBAROMA_CONFIGP libaroma_config();
  * Return Value: char *
  * Descriptions: Get libaroma version information
  */
-char * libaroma_info(
-    int type);
+char * libaroma_info(int type);
+
+/*
+ * Function    : libaroma_debug_set_output
+ * Return Value: void
+ * Descriptions: set debug output fd
+ */
+void libaroma_debug_set_output(FILE * fd);
+
+/*
+ * Function    : libaroma_start
+ * Return Value: byte
+ * Descriptions: Start libaroma application
+ */
+byte libaroma_start();
+
+/*
+ * Function    : libaroma_end
+ * Return Value: byte
+ * Descriptions: End libaroma application
+ */
+byte libaroma_end();
 
 #endif /* __libaroma_core_h__ */
