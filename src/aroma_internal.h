@@ -36,14 +36,9 @@
 #include <limits.h>
 #include <ctype.h>
 
-/* openmp & mutexes */
-#ifdef LIBAROMA_CONFIG_OPENMP
-  #include "contrib/openmp/openmp.h"
-#endif
-
 /* debug & fallback header */
 #include "aroma/debug/debug.h"
-#include "fallback.h"
+#include "syscall.h"
 
 /* for android */
 #if ANDROID
@@ -53,6 +48,11 @@
 /* arm neon engine */
 #ifdef __ARM_HAVE_NEON
   #include "contrib/arm_neon/arm_neon.h"
+#endif
+
+/* 32bit color */
+#if LIBAROMA_CONFIG_HICOLOR_BIT > 0
+  #define LIBAROMA_CONFIG_USE_HICOLOR_BIT
 #endif
 
 #endif /* __libaroma_aroma_internal_h__ */

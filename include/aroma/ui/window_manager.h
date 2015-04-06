@@ -74,8 +74,6 @@ struct _LIBAROMA_WM{
   
   /* message state */
   LIBAROMA_STACKP queue;
-  pthread_t message_thread;
-  pthread_t ui_thread;
   
   byte client_started;
   LIBAROMA_WINDOWP active_window;

@@ -246,10 +246,10 @@ static void * _libaroma_ctl_button_req_internal_draw_thread(void * ctl){
   return NULL;
 }
 void _libaroma_ctl_button_req_internal_draw(LIBAROMA_CONTROLP ctl){
-  pthread_t pp;
-  pthread_create(&pp,NULL,_libaroma_ctl_button_req_internal_draw_thread,
-    (void *) ctl);
-  pthread_detach(pp);
+  LIBAROMA_THREAD pp;
+  libaroma_thread_create(
+    &pp,_libaroma_ctl_button_req_internal_draw_thread,(void *) ctl);
+  libaroma_thread_detach(pp);
 }
 
 /*

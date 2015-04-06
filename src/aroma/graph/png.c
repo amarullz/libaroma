@@ -578,7 +578,7 @@ finalize:
   if (fp != NULL) {
     fclose(fp);
     if (!result) {
-      unlink(filename);
+      libaroma_unlink(filename);
     }
   }
   if (info_ptr != NULL) {

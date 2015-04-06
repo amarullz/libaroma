@@ -618,10 +618,10 @@ static void * _libaroma_ctl_bar_req_internal_draw_thread(void * ctl){
 byte libaroma_ctl_bar_update(LIBAROMA_CONTROLP ctl){
   if (ctl->window){
     if (ctl->window->active){
-      pthread_t pp;
-      pthread_create(&pp,NULL,_libaroma_ctl_bar_req_internal_draw_thread,
-        (void *) ctl);
-      pthread_detach(pp);
+      LIBAROMA_THREAD pp;
+      libaroma_thread_create(
+        &pp,_libaroma_ctl_bar_req_internal_draw_thread,(void *) ctl);
+      libaroma_thread_detach(pp);
     }
   }
   return 1;

@@ -25,7 +25,7 @@
 #define __libaroma_runtime_c__
 #include <aroma_internal.h>
 
-#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
+#ifndef LIBAROMA_CONFIG_NO_RUNTIME
 #ifdef __linux__
   #include <sys/wait.h>
 
@@ -60,17 +60,16 @@
  */
 void libaroma_runtime_activate_cores(int num_cores){
 /* only for linux */
-#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
+#ifndef LIBAROMA_CONFIG_NO_RUNTIME
 #ifdef __linux__
   int i;
   _libaroma_runtime.core_num=0;
   FILE * fp;
-  struct stat st;
   char path[256];
   
   for (i=0;i<num_cores;i++){
     snprintf(path,256,"/sys/devices/system/cpu/cpu%i/online",i);
-    if (stat(path,&st)<0) {
+    if (!libaroma_file_exists(path)) {
       break;
     }
     /* read value */
@@ -115,15 +114,14 @@ void libaroma_runtime_activate_cores(int num_cores){
  * Descriptions: rollback processor state
  */
 void libaroma_runtime_rollback_cores(){
-#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
+#ifndef LIBAROMA_CONFIG_NO_RUNTIME
 #ifdef __linux__
   int i;
   FILE * fp;
-  struct stat st;
   char path[256];
   for (i=0;i<_libaroma_runtime.core_num;i++){
     snprintf(path,256,"/sys/devices/system/cpu/cpu%i/online",i);
-    if (stat(path,&st)<0) {
+    if (!libaroma_file_exists(path)) {
       break;
     }
     if(!_libaroma_runtime.core_online[i]){
@@ -145,7 +143,7 @@ void libaroma_runtime_rollback_cores(){
  * Descriptions: Pause parent process
  */
 void libaroma_runtime_mute_parent() {
-#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
+#ifndef LIBAROMA_CONFIG_NO_RUNTIME
 #ifdef __linux__
   kill(_libaroma_runtime.parent, 19);
 #endif
@@ -159,7 +157,7 @@ void libaroma_runtime_mute_parent() {
  * Descriptions: Continue parent process
  */
 void libaroma_runtime_continue_parent() {
-#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
+#ifndef LIBAROMA_CONFIG_NO_RUNTIME
 #ifdef __linux__
   kill(_libaroma_runtime.parent, 18);
 #endif
@@ -172,7 +170,7 @@ void libaroma_runtime_continue_parent() {
  * Descriptions: Init libaroma runtime
  */
 void libaroma_runtime_init() {
-#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
+#ifndef LIBAROMA_CONFIG_NO_RUNTIME
 #ifdef __linux__
   _libaroma_runtime.parent   = getppid();  /* root */
   _libaroma_runtime.monitor  = getpid();   /* monitor */

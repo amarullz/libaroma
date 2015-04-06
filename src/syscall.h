@@ -14,26 +14,31 @@
  * limitations under the License.
  *______________________________________________________________________________
  *
- * Filename    : openmp.h
- * Description : openmp internal
+ * Filename    : fallback.h
+ * Description : fallback headers
  *
  * + This is part of libaroma, an embedded ui toolkit.
  * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_openmp_h__
-#define __libaroma_openmp_h__
-#include <aroma_internal.h>
+#ifndef __libaroma_aroma_internal_h__
+  #error "Include <aroma_internal.h> instead."
+#endif
+#ifndef __libaroma_fallback_h__
+#define __libaroma_fallback_h__
 
-#ifdef LIBAROMA_CONFIG_OPENMP
-  #include <omp.h>
-  #define LIBAROMA_MUTEX omp_nest_lock_t
-  #define libaroma_mutex_init(x) omp_init_nest_lock(&x)
-  #define libaroma_mutex_free(x) omp_destroy_nest_lock(&x)
-  #define libaroma_mutex_lock(x) omp_set_nest_lock(&x)
-  #define libaroma_mutex_unlock(x) omp_unset_nest_lock(&x)
+/* add syscall wrapper here */
+#ifdef __linux__
+  #include "contrib/linux/linux_syscall.h"
 #endif
 
-#endif /* __libaroma_openmp_h__ */
+/* min & max */
+#ifndef MIN
+  #define MIN(a,b) (((a)<(b))?(a):(b))
+#endif
+#ifndef MAX
+  #define MAX(a,b) (((a)>(b))?(a):(b))
+#endif
 
+#endif /* __libaroma_fallback_h__ */
 

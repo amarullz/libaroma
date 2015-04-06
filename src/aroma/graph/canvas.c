@@ -142,7 +142,8 @@ LIBAROMA_CANVASP libaroma_canvas_new_ex(
     byte hiColor,
     const char * shmemname){
   LIBAROMA_CANVASP c;
-#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
+
+#ifdef LIBAROMA_SYSCAL_HAVE_SHMEM
   if (shmemname != NULL) {
     /* vars */
     char nm[LIBAROMA_STREAM_URI_LENGTH];
@@ -208,13 +209,13 @@ LIBAROMA_CANVASP libaroma_canvas_new_ex(
     }
     else{
       /* get size */
-      struct stat st;
-      if (fstat(fd, &st) < 0) {
+      int filesize = libaroma_filesize_fd(fd);
+      if (filesize<0) {
         ALOGW("CANVAS-SHM-OPEN stat is invalid (%s)", nm);
         close(fd);
         return NULL;
       }
-      sz = st.st_size;
+      sz = filesize;
       if (sz < 1) {
         ALOGW("CANVAS-SHM-OPEN shmem size invalid (%s)", nm);
         close(fd);
@@ -461,7 +462,7 @@ void libaroma_canvas_free_ex1(
     goto freec;
   }
   else if (cv->flags & LIBAROMA_CANVAS_SHARED) {
-#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
+#ifdef LIBAROMA_SYSCAL_HAVE_SHMEM
     LIBAROMA_CANVAS_SHMEMP csh_mem = 
       (LIBAROMA_CANVAS_SHMEMP) (((bytep) cv) + sizeof(LIBAROMA_CANVAS));
     munmap(csh_mem->mmap, csh_mem->sz);
@@ -476,8 +477,8 @@ void libaroma_canvas_free_ex1(
         ALOGV("CANVAS-FREE-SHM deleted (%s)", csh_mem->name);
       }
     }
-    goto freecanvas;
 #endif
+    goto freecanvas;
   }
   
   if (cv->data) {
@@ -489,9 +490,7 @@ void libaroma_canvas_free_ex1(
   if (cv->hicolor) {
     free(cv->hicolor);
   }
-#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
 freecanvas:
-#endif
   free(*c);
 freec:
   *c = NULL;

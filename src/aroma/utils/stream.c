@@ -49,17 +49,15 @@ void libaroma_stream_set_uri_callback(
  */
 LIBAROMA_STREAMP libaroma_stream_file(
     char * path) {
-#ifdef LIBAROMA_CONFIG_NO_SYSLINUX
-  return NULL;
-#else
+#ifdef LIBAROMA_SYSCAL_HAVE_MMAP
   if (!path) {
     ALOGW("libaroma_stream_file path is invalid");
     return NULL;
   }
   LIBAROMA_STREAMP ret;
   /* Read File Stat */
-  struct stat st;
-  if (stat(path, &st) < 0) {
+  int filesize=libaroma_filesize(path);
+  if (filesize < 0) {
     ALOGI("libaroma_stream_file (%s) not found", path);
     return NULL;
   }
@@ -70,7 +68,7 @@ LIBAROMA_STREAMP libaroma_stream_file(
     return NULL;
   }
   /* MAP */
-  bytep mem = (bytep) mmap(NULL, st.st_size,
+  bytep mem = (bytep) mmap(NULL, filesize,
                            PROT_READ, MAP_FILE | MAP_SHARED, fd, 0);
   /* Close FD */
   close(fd);
@@ -81,8 +79,47 @@ LIBAROMA_STREAMP libaroma_stream_file(
   /* Return */
   ret           = (LIBAROMA_STREAMP) malloc(sizeof(LIBAROMA_STREAM));
   ret->data     = mem;
-  ret->size     = st.st_size;
+  ret->size     = filesize;
   ret->ismmap   = 1;
+  snprintf(ret->uri,
+      LIBAROMA_STREAM_URI_LENGTH, "file://%s", path);
+  return ret;
+#else
+  if (!path) {
+    ALOGW("libaroma_stream_file path is invalid");
+    return 0;
+  }
+  LIBAROMA_STREAMP ret;
+  /* Read File Stat */
+  int filesize=libaroma_filesize(path);
+  if (filesize < 0) {
+    ALOGI("libaroma_stream_file (%s) not found", path);
+    return NULL;
+  }
+  
+  /* Allocating Memory */
+  bytep mem = malloc(filesize);
+  FILE * f = fopen(path, "rb");
+  if (f == NULL) {
+    ALOGW("libaroma_stream_file fopen error (%s)", path);
+    goto error;
+  }
+  
+  if (((int) fread(mem, 1, filesize, f)) != filesize) {
+    ALOGW("libaroma_stream_file fread error (%s)", path);
+    fclose(f);
+    goto error;
+  }
+  fclose(f);
+  goto done;
+error:
+  free(mem);
+  return NULL;
+done:
+  ret           = (LIBAROMA_STREAMP) malloc(sizeof(LIBAROMA_STREAM));
+  ret->data     = mem;
+  ret->size     = filesize;
+  ret->ismmap   = 0;
   snprintf(ret->uri,
       LIBAROMA_STREAM_URI_LENGTH, "file://%s", path);
   return ret;
@@ -96,9 +133,7 @@ LIBAROMA_STREAMP libaroma_stream_file(
  */
 LIBAROMA_STREAMP libaroma_stream_shmem(
     char * memname) {
-#ifdef LIBAROMA_CONFIG_NO_SYSLINUX
-  return NULL;
-#else
+#ifdef LIBAROMA_SYSCAL_HAVE_SHMEM
   if (!memname) {
     ALOGW("libaroma_stream_shmem memname is invalid");
     return 0;
@@ -122,15 +157,15 @@ LIBAROMA_STREAMP libaroma_stream_shmem(
   }
   
   /* read shmem stat */
-  struct stat st;
-  if (fstat(fd, &st) < 0) {
+  int filesize = libaroma_filesize_fd(fd);
+  if (filesize < 0) {
     ALOGW("libaroma_stream_shmem stat is invalid (%s)", nm);
     close(fd);
     return 0;
   }
 
   /* MAP */
-  bytep mem = (bytep) mmap(NULL, st.st_size,
+  bytep mem = (bytep) mmap(NULL, filesize,
                            PROT_READ, MAP_SHARED, fd, 0);
   /* close fd */
   close(fd);
@@ -143,11 +178,13 @@ LIBAROMA_STREAMP libaroma_stream_shmem(
   LIBAROMA_STREAMP ret =
     (LIBAROMA_STREAMP) malloc(sizeof(LIBAROMA_STREAM));
   ret->data     = mem;
-  ret->size     = st.st_size;
+  ret->size     = filesize;
   ret->ismmap   = 1;
   snprintf(ret->uri,
       LIBAROMA_STREAM_URI_LENGTH, "shmem://%s", memname);
   return ret;
+#else
+  return NULL;
 #endif
 } /* End of libaroma_stream_shmem */
 
@@ -277,7 +314,7 @@ byte libaroma_stream_close(
     return 0;
   }
   if (a->ismmap) {
-#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
+#ifdef LIBAROMA_SYSCAL_HAVE_MMAP
     /* File */
     munmap(a->data, a->size);
 #endif
@@ -318,9 +355,7 @@ char * libaroma_stream_to_string(
 LIBAROMA_SHMEMP libaroma_shmem(
     const char * name,
     int sz) {
-#ifdef LIBAROMA_CONFIG_NO_SYSLINUX
-  return NULL;
-#else
+#ifdef LIBAROMA_SYSCAL_HAVE_SHMEM
   /* Copy Name */
   char nm[LIBAROMA_STREAM_URI_LENGTH];
   if (name[0]=='@'){
@@ -340,13 +375,13 @@ LIBAROMA_SHMEMP libaroma_shmem(
       ALOGW("libaroma_shmem shm_open failed (%s)", nm);
       return 0;
     }
-    struct stat st;
-    if (fstat(fd, &st) < 0) {
+    int filesize=libaroma_filesize_fd(fd);
+    if (sz< 0) {
       ALOGW("libaroma_shmem stat is invalid (%s)", nm);
       close(fd);
       return 0;
     }
-    sz = st.st_size;
+    sz=filesize;
     if (sz < 1) {
       ALOGW("libaroma_shmem exiting shmem not found (%s)", nm);
       close(fd);
@@ -382,6 +417,8 @@ LIBAROMA_SHMEMP libaroma_shmem(
   ret->size     = sz;
   snprintf(ret->name, LIBAROMA_STREAM_URI_LENGTH, "%s", nm);
   return ret;
+#else
+  return NULL;
 #endif
 } /* End of libaroma_shmem */
 
@@ -393,7 +430,7 @@ LIBAROMA_SHMEMP libaroma_shmem(
 byte libaroma_shmem_close(
     LIBAROMA_SHMEMP a,
     byte del) {
-#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
+#ifdef LIBAROMA_SYSCAL_HAVE_SHMEM
   if (!a) {
     ALOGW("libaroma_shmem_close LIBAROMA_SHMEMP not valid");
     return 0;
@@ -407,8 +444,10 @@ byte libaroma_shmem_close(
     }
   }
   free(a);
-#endif
   return 1;
+#else
+  return 0;
+#endif
 } /* End of libaroma_shmem_close */
 
 #endif /* __libaroma_stream_c__ */

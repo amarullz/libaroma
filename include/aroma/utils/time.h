@@ -27,27 +27,4 @@
 #ifndef __libaroma_time_h__
 #define __libaroma_time_h__
 
-/*
- * Function    : libaroma_tick
- * Return Value: long
- * Descriptions: system tick in ms
- */
-long libaroma_tick();
-
-/*
- * Function    : libaroma_sleep
- * Return Value: void
- * Descriptions: sleep in ms
- */
-void libaroma_sleep(
-    long ms);
-
-/*
- * Function    : libaroma_usleep
- * Return Value: void
- * Descriptions: usleep
- */
-void libaroma_usleep(
-    long us);
-    
 #endif /* __libaroma_time_h__ */

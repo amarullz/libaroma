@@ -63,13 +63,13 @@ byte libaroma_zip_extract(
     LIBAROMA_ZIP zip,
     const char * zpath,
     const char * dest) {
-#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
+#ifdef LIBAROMA_SYSCAL_HAVE_FD
   const ZipEntry * zdata = mzFindZipEntry((ZipArchive *) zip, zpath);
   if (zdata == NULL) {
     ALOGW("libaroma_zip_extract zdata=NULL (%s)", zpath);
     return 0;
   }
-  unlink(dest);
+  libaroma_unlink(dest);
   int fd = creat(dest, 0755);
   if (fd < 0) {
     ALOGW("libaroma_zip_extract creat error (%s)", dest);

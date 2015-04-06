@@ -25,7 +25,6 @@
 #define __libaroma_messages_c__
 #include <aroma_internal.h>
 
-
 /*
  * Structure   : _LIBAROMA_MSGQUEUE
  * Typedef     : LIBAROMA_MSGQUEUE, * LIBAROMA_MSGQUEUEP
@@ -36,7 +35,7 @@ typedef struct _LIBAROMA_MSGQUEUE * LIBAROMA_MSGQUEUEP;
 struct _LIBAROMA_MSGQUEUE{
   LIBAROMA_STACKP input; /* input queue data */
   LIBAROMA_STACKP queue; /* queue data */
-  pthread_t input_thread; /* input waiter thread */
+  LIBAROMA_THREAD input_thread; /* input waiter thread */
 };
 
 /*
@@ -52,20 +51,8 @@ static LIBAROMA_MSGQUEUEP _libaroma_msgqueue=NULL;
  * Descriptions: message queue running lock
  */
 static byte _libaroma_msgqueue_isrun = 0;
-
-/*
- * Variable    : _libaroma_msgqueue_isrun
- * Type        : pthread_cond_t
- * Descriptions: message queue pthread mutex
- */
-static pthread_mutex_t  _libaroma_msgqueue_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-/*
- * Variable    : _libaroma_msgqueue_isrun
- * Type        : pthread_cond_t
- * Descriptions: message queue pthread cond
- */
-static pthread_cond_t   _libaroma_msgqueue_cond  = PTHREAD_COND_INITIALIZER;
+static LIBAROMA_COND_MUTEX  _libaroma_msgqueue_mutex;
+static LIBAROMA_COND        _libaroma_msgqueue_cond;
 
 /*
  * Function    : libaroma_msg_post_hid
@@ -131,6 +118,9 @@ byte libaroma_msg_init() {
     ALOGE("message instance already initialized");
     return 0;
   }
+  
+  libaroma_cond_init(&_libaroma_msgqueue_cond, &_libaroma_msgqueue_mutex);
+  
   /* Allocating Instance */
   _libaroma_msgqueue = (LIBAROMA_MSGQUEUEP) calloc(sizeof(LIBAROMA_MSGQUEUE),1);
   /* Init Queue Data */
@@ -140,13 +130,8 @@ byte libaroma_msg_init() {
   /* Set Message Queue is Valid */
   _libaroma_msgqueue_isrun = 1;
   /* Init Input Thread */
-  pthread_create(&_libaroma_msgqueue->input_thread,
-    NULL, _libaroma_msgqueue_hid_thread, NULL);
-/*
-  struct sched_param params;
-  params.sched_priority = sched_get_priority_max(SCHED_FIFO);
-  pthread_setschedparam(_libaroma_msgqueue->input_thread, SCHED_FIFO, &params);
-*/
+  libaroma_thread_create(
+    &_libaroma_msgqueue->input_thread,_libaroma_msgqueue_hid_thread, NULL);
   /* OK */
   return 1;
 } /* End of libaroma_msg_init */
@@ -161,10 +146,10 @@ void libaroma_msg_clean_hid() {
     ALOGE("message instance uninitialized");
     return;
   }
-  pthread_mutex_lock(&_libaroma_msgqueue_mutex);
+  libaroma_cond_lock(&_libaroma_msgqueue_mutex);
   libaroma_stack_free(_libaroma_msgqueue->input);
   _libaroma_msgqueue->input = libaroma_stack(NULL);
-  pthread_mutex_unlock(&_libaroma_msgqueue_mutex);
+  libaroma_cond_unlock(&_libaroma_msgqueue_mutex);
 } /* End of libaroma_msg_clean_hid */
 
 /*
@@ -177,10 +162,10 @@ void libaroma_msg_clean_queue() {
     ALOGE("message instance uninitialized");
     return;
   }
-  pthread_mutex_lock(&_libaroma_msgqueue_mutex);
+  libaroma_cond_lock(&_libaroma_msgqueue_mutex);
   libaroma_stack_free(_libaroma_msgqueue->queue);
   _libaroma_msgqueue->queue = libaroma_stack(NULL);
-  pthread_mutex_unlock(&_libaroma_msgqueue_mutex);
+  libaroma_cond_unlock(&_libaroma_msgqueue_mutex);
 } /* End of libaroma_msg_clean_queue */
 
 
@@ -223,19 +208,19 @@ void libaroma_msg_release() {
   /* Set Message Queue is not Valid */
   _libaroma_msgqueue_isrun = 0;
   ALOGV("libaroma_msg_release send exit signal");
-  pthread_mutex_lock(&_libaroma_msgqueue_mutex);
-  pthread_cond_signal(&_libaroma_msgqueue_cond);
-  pthread_mutex_unlock(&_libaroma_msgqueue_mutex);
+  libaroma_cond_lock(&_libaroma_msgqueue_mutex);
+  libaroma_cond_signal(&_libaroma_msgqueue_cond);
+  libaroma_cond_unlock(&_libaroma_msgqueue_mutex);
   ALOGV("libaroma_msg_release sending cancel signal");
-#ifdef _SIGNAL_H
-  pthread_kill(_libaroma_msgqueue->input_thread, 0);
-#endif
+  libaroma_thread_kill(_libaroma_msgqueue->input_thread);
   ALOGV("libaroma_msg_release release queue & hid queue data");
   libaroma_stack_free(_libaroma_msgqueue->input);
   libaroma_stack_free(_libaroma_msgqueue->queue);
   /* Free Instance */
   free(_libaroma_msgqueue);
   _libaroma_msgqueue = NULL;
+  
+  libaroma_cond_free(&_libaroma_msgqueue_cond, &_libaroma_msgqueue_mutex);
 } /* End of libaroma_msg_release */
 
 /*
@@ -265,7 +250,7 @@ byte libaroma_msg_post(
   _msg.d      = d;
   _msg.sent   = libaroma_tick();
   /* mutex lock */
-  pthread_mutex_lock(&_libaroma_msgqueue_mutex);
+  libaroma_cond_lock(&_libaroma_msgqueue_mutex);
   /* push message */
   byte ret = libaroma_stack_push(
     _libaroma_msgqueue->queue,
@@ -273,10 +258,10 @@ byte libaroma_msg_post(
     sizeof(LIBAROMA_MSG));
   /* send signal if message was pushed */
   if (ret) {
-    pthread_cond_signal(&_libaroma_msgqueue_cond);
+    libaroma_cond_signal(&_libaroma_msgqueue_cond);
   }
   /* mutex unlock */
-  pthread_mutex_unlock(&_libaroma_msgqueue_mutex);
+  libaroma_cond_unlock(&_libaroma_msgqueue_mutex);
   return ret;
 } /* End of libaroma_msg_post */
 
@@ -306,16 +291,16 @@ byte libaroma_msg_post_hid(
   _msg.d      = NULL;
   _msg.sent   = libaroma_tick();
   /* mutex lock */
-  pthread_mutex_lock(&_libaroma_msgqueue_mutex);
+  libaroma_cond_lock(&_libaroma_msgqueue_mutex);
   /* push message */
   byte ret = libaroma_stack_push(
     _libaroma_msgqueue->input, &_msg, sizeof(LIBAROMA_MSG));
   /* send signal if message was pushed */
   if (ret) {
-    pthread_cond_signal(&_libaroma_msgqueue_cond);
+    libaroma_cond_signal(&_libaroma_msgqueue_cond);
   }
   /* mutex unlock */
-  pthread_mutex_unlock(&_libaroma_msgqueue_mutex);
+  libaroma_cond_unlock(&_libaroma_msgqueue_mutex);
   /* return status */
   return ret;
 } /* End of libaroma_msg_post_hid */
@@ -328,14 +313,14 @@ byte libaroma_msg_post_hid(
 byte libaroma_msg(
     LIBAROMA_MSGP msg) {
   /* mutex lock */
-  pthread_mutex_lock(&_libaroma_msgqueue_mutex);
+  libaroma_cond_lock(&_libaroma_msgqueue_mutex);
   /* wait until data available in queue */
   while ((_libaroma_msgqueue->queue->n + _libaroma_msgqueue->input->n) < 1) {
     /* wait for signal */
-    pthread_cond_wait(&_libaroma_msgqueue_cond, &_libaroma_msgqueue_mutex);
+    libaroma_cond_wait(&_libaroma_msgqueue_cond, &_libaroma_msgqueue_mutex);
     /* if not valid, return it */
     if (!_libaroma_msgqueue_isrun) {
-      pthread_mutex_unlock(&_libaroma_msgqueue_mutex);
+      libaroma_cond_unlock(&_libaroma_msgqueue_mutex);
       return LIBAROMA_MSG_NONE;
     }
   }
@@ -356,7 +341,7 @@ byte libaroma_msg(
     free(shift_event);
   }
   /* unlock mutex */
-  pthread_mutex_unlock(&_libaroma_msgqueue_mutex);
+  libaroma_cond_unlock(&_libaroma_msgqueue_mutex);
   return ret;
 } /* End of libaroma_msg */
 

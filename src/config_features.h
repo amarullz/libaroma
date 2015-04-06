@@ -41,12 +41,5 @@
 #define LIBAROMA_CONFIG_HICOLOR_BIT       0
 */
 
-
-/* Libaroma disabled features - Please use CFLAGS */
-/* ==============================================
-#define LIBAROMA_CONFIG_NO_SYSLINUX     1
-#define LIBAROMA_CONFIG_NO_PTHREAD      1
-*/
-
 #endif /* __libaroma_config_features_h__ */
 

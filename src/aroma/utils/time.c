@@ -25,47 +25,12 @@
 #define __libaroma_time_c__
 #include <aroma_internal.h>
 
-#ifndef LIBAROMA_CONFIG_NO_SYSLINUX
-  #include <sys/time.h>
-#endif
-
 /*
  * Variable    : _libaroma_timer_active
  * Type        : byte
  * Descriptions: timer running flag
  */
 static byte _libaroma_timer_active=0;
-
-/*
- * Function    : libaroma_tick
- * Return Value: long
- * Descriptions: system tick in ms
- */
-long libaroma_tick() {
-  struct timeval now;
-  gettimeofday(&now, NULL);
-  return ((long) ((now.tv_sec-315360000) * 1000 + now.tv_usec / 1000));
-} /* End of libaroma_tick */
-
-/*
- * Function    : libaroma_sleep
- * Return Value: void
- * Descriptions: sleep in ms
- */
-void libaroma_sleep(
-    long ms){
-  usleep(ms*1000);
-}
-
-/*
- * Function    : libaroma_usleep
- * Return Value: void
- * Descriptions: usleep
- */
-void libaroma_usleep(
-    long us){
-  usleep(us);
-}
 
 /*
  * Function    : libaroma_timer_init

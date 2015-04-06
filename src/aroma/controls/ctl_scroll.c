@@ -71,8 +71,8 @@ struct __LIBAROMA_CTL_SCROLL{
   
   /* threads */
   byte active;
-  pthread_t cache_thread;
-  pthread_t calc_thread;
+  LIBAROMA_THREAD cache_thread;
+  LIBAROMA_THREAD calc_thread;
   
   /* scrolling values */
   int request_new_height;
@@ -125,8 +125,8 @@ struct __LIBAROMA_CTL_SCROLL{
   LIBAROMA_MUTEX fmutex;
   LIBAROMA_MUTEX blitmutex;
   
-  pthread_mutex_t  cmutex;
-  pthread_cond_t   ccond;
+  LIBAROMA_COND_MUTEX  cmutex;
+  LIBAROMA_COND   ccond;
 };
 
 
@@ -363,7 +363,7 @@ static void * _libaroma_ctl_scroll_cache_thread(void * cookie){
         }
       }
     }
-    libaroma_usleep(16);
+    libaroma_sleep(1);
   }
   ALOGV("End scroll updater thread");
   return NULL;
@@ -383,9 +383,9 @@ static void * _libaroma_ctl_scroll_calc_thread(void * cookie){
   ALOGV("Start scroll calculation thread");
   byte need_drawing = 0;
   while (me->active){
-    pthread_mutex_lock(&me->cmutex);
-    pthread_cond_wait(&me->ccond, &me->cmutex);
-    pthread_mutex_unlock(&me->cmutex);
+    libaroma_cond_lock(&me->cmutex);
+    libaroma_cond_wait(&me->ccond, &me->cmutex);
+    libaroma_cond_unlock(&me->cmutex);
     if (!me->active){
       break;
     }
@@ -442,9 +442,9 @@ byte _libaroma_ctl_scroll_thread(LIBAROMA_CONTROLP ctl) {
   );
   byte need_drawing=0;
   if (me->client.handler){
-    pthread_mutex_lock(&me->cmutex);
-    pthread_cond_signal(&me->ccond);
-    pthread_mutex_unlock(&me->cmutex);
+    libaroma_cond_lock(&me->cmutex);
+    libaroma_cond_signal(&me->ccond);
+    libaroma_cond_unlock(&me->cmutex);
     
     #ifdef LIBAROMA_CONFIG_OPENMP
       #pragma omp parallel sections
@@ -1210,14 +1210,12 @@ dword _libaroma_ctl_scroll_msg(
         /* start updater thread*/
         me->active=1;
         /* start cache thread */
-        pthread_create(
+        libaroma_thread_create(
           &me->cache_thread,
-          NULL,
           _libaroma_ctl_scroll_cache_thread,
           (voidp) ctl);
-        pthread_create(
+        libaroma_thread_create(
           &me->calc_thread,
-          NULL,
           _libaroma_ctl_scroll_calc_thread,
           (voidp) ctl);
       }
@@ -1226,12 +1224,12 @@ dword _libaroma_ctl_scroll_msg(
       {
         /* stop updater thread */
         me->active=0;
-        pthread_mutex_lock(&me->cmutex);
-        pthread_cond_signal(&me->ccond);
-        pthread_mutex_unlock(&me->cmutex);
+        libaroma_cond_lock(&me->cmutex);
+        libaroma_cond_signal(&me->ccond);
+        libaroma_cond_unlock(&me->cmutex);
         
-        pthread_join(me->calc_thread, NULL);
-        pthread_join(me->cache_thread, NULL);
+        libaroma_thread_join(me->calc_thread);
+        libaroma_thread_join(me->cache_thread);
         me->cache_thread=0;
         me->calc_thread=0;
       }
@@ -1259,8 +1257,7 @@ void _libaroma_ctl_scroll_destroy(
     libaroma_canvas_free(me->client_canvas);
     me->client_canvas=NULL;
   }
-  pthread_cond_destroy(&me->ccond);
-  pthread_mutex_destroy(&me->cmutex);
+  libaroma_cond_free(&me->ccond, &me->cmutex);
   libaroma_mutex_free(me->blitmutex);
   libaroma_mutex_free(me->fmutex);
   libaroma_mutex_free(me->mutex);
@@ -1288,8 +1285,7 @@ LIBAROMA_CONTROLP libaroma_ctl_scroll(
   libaroma_mutex_init(me->blitmutex); /* blit drawing mutex */
   libaroma_mutex_init(me->fmutex); /* cache drawing mutex */
   libaroma_mutex_init(me->mutex);  /* control drawing mutex */
-  pthread_mutex_init(&me->cmutex,NULL);
-  pthread_cond_init(&me->ccond,NULL);
+  libaroma_cond_init(&me->ccond, &me->cmutex);
         
   /* set internal data */
   me->flags = flags;

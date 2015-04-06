@@ -33,26 +33,10 @@
  * Descriptions: window manager storage
  */
 static LIBAROMA_WMP _libaroma_wm=NULL;
-
-/*
- * Variable    : _libaroma_wm_mutex
- * Type        : pthread_mutex_t
- * Descriptions: window manager message queue pthread mutex
- */
-static pthread_mutex_t  _libaroma_wm_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-/*
- * Variable    : _libaroma_wm_cond
- * Type        : pthread_cond_t
- * Descriptions: window manager message queue pthread cond
- */
-static pthread_cond_t   _libaroma_wm_cond  = PTHREAD_COND_INITIALIZER;
-
-/*
- * Variable    : _libaroma_wm_mutex
- * Type        : pthread_mutex_t
- * Descriptions: window manager ui mutex
- */
+static LIBAROMA_THREAD _libaroma_wm_message_thread_var;
+static LIBAROMA_THREAD _libaroma_wm_ui_thread_var;
+static LIBAROMA_COND_MUTEX  _libaroma_wm_mutex;
+static LIBAROMA_COND  _libaroma_wm_cond;
 static LIBAROMA_MUTEX _libaroma_wm_ui_mutex;
 
 /*
@@ -207,6 +191,7 @@ byte libaroma_wm_init(){
     ALOGW("libaroma_wm_init alloc window manager memory failed");
     return 0;
   }
+  libaroma_cond_init(&_libaroma_wm_cond, &_libaroma_wm_mutex);
   libaroma_mutex_init(_libaroma_wm_ui_mutex);
   _libaroma_wm->theme = libaroma_sarray(_libaroma_wm_theme_release);
   _libaroma_wm->color = libaroma_sarray(NULL);
@@ -241,6 +226,7 @@ byte libaroma_wm_release(){
   }
   libaroma_mutex_unlock(_libaroma_wm_ui_mutex);
   libaroma_mutex_free(_libaroma_wm_ui_mutex);
+  libaroma_cond_free(&_libaroma_wm_cond, &_libaroma_wm_mutex);
   free(_libaroma_wm);
   _libaroma_wm=NULL;
   return 1;
@@ -461,11 +447,11 @@ byte libaroma_wm_getmessage(LIBAROMA_MSGP msg){
     return LIBAROMA_MSG_NONE;
   }
   /* mutex lock */
-  pthread_mutex_lock(&_libaroma_wm_mutex);
+  libaroma_cond_lock(&_libaroma_wm_mutex);
   while (_libaroma_wm->queue->n < 1) {
-    pthread_cond_wait(&_libaroma_wm_cond, &_libaroma_wm_mutex);
+    libaroma_cond_wait(&_libaroma_wm_cond, &_libaroma_wm_mutex);
     if (!_libaroma_wm->client_started) {
-      pthread_mutex_unlock(&_libaroma_wm_mutex);
+      libaroma_cond_unlock(&_libaroma_wm_mutex);
       return LIBAROMA_MSG_NONE;
     }
   }
@@ -478,7 +464,7 @@ byte libaroma_wm_getmessage(LIBAROMA_MSGP msg){
     ret = shift_event->msg;
     free(shift_event);
   }
-  pthread_mutex_unlock(&_libaroma_wm_mutex);
+  libaroma_cond_unlock(&_libaroma_wm_mutex);
   return ret;
 } /* End of libaroma_wm_getmessage */
 
@@ -504,13 +490,13 @@ static void * _libaroma_wm_message_thread(void * cookie) {
       }
       /* send to window */
       if (_libaroma_wm->active_window!=NULL){
-        pthread_mutex_lock(&_libaroma_wm_mutex);
+        libaroma_cond_lock(&_libaroma_wm_mutex);
         if (libaroma_stack_push(
           _libaroma_wm->queue,&msg,
           sizeof(LIBAROMA_MSG))){
-          pthread_cond_signal(&_libaroma_wm_cond);
+          libaroma_cond_signal(&_libaroma_wm_cond);
         }
-        pthread_mutex_unlock(&_libaroma_wm_mutex);
+        libaroma_cond_unlock(&_libaroma_wm_mutex);
       }
     }
   }
@@ -546,7 +532,7 @@ static void * _libaroma_wm_ui_thread(void * cookie) {
         continue;
       }
     }
-    libaroma_usleep(16000);
+    libaroma_sleep(16);
   }
   ALOGV("wm ui thread ended");
   return NULL;
@@ -570,17 +556,15 @@ byte libaroma_wm_client_start(){
   _libaroma_wm->queue = libaroma_stack(NULL);
   
   /* start message thread */
-  pthread_create(&_libaroma_wm->message_thread,
-    NULL, _libaroma_wm_message_thread, NULL);
+  libaroma_thread_create(&_libaroma_wm_message_thread_var,
+    _libaroma_wm_message_thread, NULL);
   
   /* start ui thread */
-  pthread_create(&_libaroma_wm->ui_thread,
-    NULL, _libaroma_wm_ui_thread, NULL);
+  libaroma_thread_create(&_libaroma_wm_ui_thread_var,
+    _libaroma_wm_ui_thread, NULL);
   
-  /* realtime ui thread */
-  struct sched_param params;
-  params.sched_priority = sched_get_priority_max(SCHED_FIFO);
-  pthread_setschedparam(_libaroma_wm->ui_thread, SCHED_FIFO, &params);
+  /* high priority thread */
+  libaroma_thread_set_hiprio(_libaroma_wm_ui_thread_var);
   return 1;
 } /* End of libaroma_wm_client_start */
 
@@ -602,10 +586,10 @@ byte libaroma_wm_client_stop(){
   libaroma_msg_post(LIBAROMA_MSG_NONE,0,0,0,0,NULL);
   
   /* wait message thread */
-  pthread_join(_libaroma_wm->ui_thread,NULL);
-  pthread_join(_libaroma_wm->message_thread,NULL);
-  _libaroma_wm->message_thread=0;
-  _libaroma_wm->ui_thread=0;
+  libaroma_thread_join(_libaroma_wm_ui_thread_var);
+  libaroma_thread_join(_libaroma_wm_message_thread_var);
+  _libaroma_wm_message_thread_var=0;
+  _libaroma_wm_ui_thread_var=0;
   
   /* cleanup queue */
   libaroma_stack_free(_libaroma_wm->queue);
@@ -623,10 +607,10 @@ byte libaroma_wm_client_stop(){
  */
 void libaroma_wm_message_clear() {
   if (_libaroma_wm->client_started) {
-    pthread_mutex_lock(&_libaroma_wm_mutex);
+    libaroma_cond_lock(&_libaroma_wm_mutex);
     libaroma_stack_free(_libaroma_wm->queue);
     _libaroma_wm->queue = libaroma_stack(NULL);
-    pthread_mutex_unlock(&_libaroma_wm_mutex);
+    libaroma_cond_unlock(&_libaroma_wm_mutex);
   }
 } /* End of libaroma_wm_message_clear */
 
