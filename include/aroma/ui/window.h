@@ -84,6 +84,9 @@ typedef struct _LIBAROMA_WINDOW_HANDLER{
   byte (*updatebg)(LIBAROMA_WINDOWP);
   byte (*invalidate)(LIBAROMA_WINDOWP,byte);
   byte (*sync)(LIBAROMA_WINDOWP,int,int,int,int);
+  byte (*message_hooker)(
+    LIBAROMA_WINDOWP, LIBAROMA_MSGP, dwordp
+  );
   
   /* controls */
   byte (*control_draw_flush)(
@@ -98,7 +101,6 @@ typedef struct _LIBAROMA_WINDOW_HANDLER{
   LIBAROMA_CANVASP (*control_draw_begin)(
     LIBAROMA_WINDOWP,LIBAROMA_CONTROLP
   );
-  
 } LIBAROMA_WINDOW_HANDLER, * LIBAROMA_WINDOW_HANDLERP;
 
 /*
@@ -260,5 +262,31 @@ byte libaroma_window_post_command(dword cmd);
 dword libaroma_window_pool(
     LIBAROMA_WINDOWP win,
     LIBAROMA_MSGP msg);
+
+
+/********* ROOT WINDOW MANAGER *********/
+
+/*
+ * Function    : libaroma_window_layer_init
+ * Return Value: byte
+ * Descriptions: init window as layered window
+ */
+byte libaroma_window_layer_init(LIBAROMA_WINDOWP win);
+
+/*
+ * Function    : libaroma_window_layer_release
+ * Return Value: byte
+ * Descriptions: release layer window
+ */
+byte libaroma_window_layer_release(LIBAROMA_WINDOWP win);
+
+/*
+ * Function    : libaroma_window_sidebar
+ * Return Value: LIBAROMA_WINDOWP
+ * Descriptions: new or get sidebar window
+ */
+LIBAROMA_WINDOWP libaroma_window_sidebar(LIBAROMA_WINDOWP win);
+
+
 
 #endif /* __libaroma_window_h__ */

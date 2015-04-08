@@ -544,30 +544,36 @@ byte libaroma_png_save(
   png_write_info(png_ptr, info_ptr);
   row = (png_bytep) malloc(px_sz * c->w * sizeof(png_byte));
   int x, y;
-  for (y = 0 ; y < c->h ; y++) {
-    for (x = 0 ; x < c->w ; x++) {
-      int spos = y * c->l + x;
-      int dpos = x * px_sz;
-      word px = c->data[spos];
-      if (c->hicolor) {
-        /* hi color */
-        byte hi = c->hicolor[spos];
-        row[dpos] = libaroma_color_merge_r(px, hi);
-        row[dpos + 1] = libaroma_color_merge_g(px, hi);
-        row[dpos + 2] = libaroma_color_merge_b(px, hi);
-      }
-      else {
-        /* raw 565 */
-        row[dpos]    = libaroma_color_hi_r(libaroma_color_r(px));
-        row[dpos + 1]  = libaroma_color_hi_g(libaroma_color_g(px));
-        row[dpos + 2]  = libaroma_color_hi_b(libaroma_color_b(px));
-      }
-      if (c->alpha) {
-        /* alpha */
-        row[dpos + 3]  = c->alpha[spos];
-      }
+  if ((!c->hicolor)&&(!c->alpha)){
+    for (y = 0 ; y < c->h ; y++) {
+      libaroma_color_copy_rgb24(row,c->data+y*c->l,c->w);
+      png_write_row(png_ptr, row);
     }
-    png_write_row(png_ptr, row);
+  }
+  else{
+    for (y = 0 ; y < c->h ; y++) {
+      int slpos=y*c->l;
+      for (x = 0 ; x < c->w ; x++) {
+        int spos = slpos + x;
+        int dpos = x * px_sz;
+        word px = c->data[spos];
+        if (c->hicolor) {
+          byte hi = c->hicolor[spos];
+          row[dpos] = libaroma_color_merge_r(px, hi);
+          row[dpos + 1] = libaroma_color_merge_g(px, hi);
+          row[dpos + 2] = libaroma_color_merge_b(px, hi);
+        }
+        else {
+          row[dpos]    = libaroma_color_hi_r(libaroma_color_r(px));
+          row[dpos + 1]  = libaroma_color_hi_g(libaroma_color_g(px));
+          row[dpos + 2]  = libaroma_color_hi_b(libaroma_color_b(px));
+        }
+        if (c->alpha) {
+          row[dpos + 3]  = c->alpha[spos];
+        }
+      }
+      png_write_row(png_ptr, row);
+    }
   }
   /* end write */
   png_write_end(png_ptr, NULL);

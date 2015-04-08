@@ -22,8 +22,6 @@ echo Compiling Libaroma
   ../../../src/contrib/linux/hid_driver.c ^
   ../../../src/contrib/linux/linux_syscall.c ^
  ^
-  ../../../src/contrib/arm_neon/*.c ^
- ^
   ../../../src/aroma/aroma.c ^
   ../../../src/aroma/version.c ^
   ../../../src/aroma/utils/*.c ^

@@ -39,7 +39,7 @@ _LIBAROMA_TEXTCHUNKP _libaroma_text_parse(
   byte linespacing) {
     
   _LIBAROMA_TEXTCHUNKP chunk =
-    (_LIBAROMA_TEXTCHUNKP) malloc(sizeof(_LIBAROMA_TEXTCHUNK));
+    (_LIBAROMA_TEXTCHUNKP) calloc(sizeof(_LIBAROMA_TEXTCHUNK),1);
   
   /* linespacing */
   if (linespacing < 100) {
@@ -48,7 +48,6 @@ _LIBAROMA_TEXTCHUNKP _libaroma_text_parse(
   
   /* state */
   chunk->curr_state.flags = pflags;
-  chunk->curr_state.lflags = 0;
   chunk->curr_state.font = font;
   chunk->curr_state.color = color;
   chunk->curr_state.img_data = NULL;
@@ -67,21 +66,8 @@ _LIBAROMA_TEXTCHUNKP _libaroma_text_parse(
   chunk->def_font = font;
   chunk->max_width = max_width;
   chunk->def_linespacing = linespacing;
-  
-  /* shaping state*/
-  chunk->rtl = 0;
-  chunk->script = 0;
-  
   /* processing state */
   chunk->state = _LIBAROMA_TEXTCHUNK_STATE_OK;
-  chunk->last_res = 0;
-  chunk->last_line_y = 0;
-  
-  /* pending data */
-  chunk->next_group   = NULL;
-  chunk->pending_data = NULL;
-  chunk->imagesdata   = NULL;
-  chunk->imagesdatan  = 0;
   return chunk;
 } /* End of _libaroma_text_parse */
 

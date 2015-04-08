@@ -36,23 +36,10 @@
 #include <limits.h>
 #include <ctype.h>
 
-/* debug & fallback header */
+/* debug, syscall & fallback header */
 #include "aroma/debug/debug.h"
 #include "syscall.h"
-
-/* for android */
-#if ANDROID
-  #include "contrib/android/android.h"
-#endif
-
-/* arm neon engine */
-#ifdef __ARM_HAVE_NEON
-  #include "contrib/arm_neon/arm_neon.h"
-#endif
-
-/* 32bit color */
-#if LIBAROMA_CONFIG_HICOLOR_BIT > 0
-  #define LIBAROMA_CONFIG_USE_HICOLOR_BIT
-#endif
+#include "fallbacks.h"
+#include "aroma/graph/engine/engine_internal.h"
 
 #endif /* __libaroma_aroma_internal_h__ */

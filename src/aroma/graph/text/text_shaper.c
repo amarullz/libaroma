@@ -52,7 +52,6 @@ _LIBAROMA_TEXTSHAPEDP libaroma_text_shaper(
   hb_buffer_t * buf = hb_buffer_create();
   hb_buffer_set_unicode_funcs(buf, hb_ucdn_get_unicode_funcs());
   hb_buffer_set_direction(buf, chunk->rtl?HB_DIRECTION_RTL:HB_DIRECTION_LTR);
-  hb_buffer_set_script(buf, _LIBAROMA_UCDN_SCRIPT[chunk->script]);
   
   /* set harfbuzz text buffer */
   hb_buffer_add_utf32(
@@ -61,7 +60,8 @@ _LIBAROMA_TEXTSHAPEDP libaroma_text_shaper(
     (unsigned int) span->len,
     0,
     (unsigned int) span->len);
-  hb_buffer_guess_segment_properties(buf);
+
+  // hb_buffer_guess_segment_properties(buf);
   
   /* run harfbuzz shaper */
   hb_shape(hb_font, buf, NULL, 0);

@@ -38,9 +38,9 @@
 /*
  * syscall flags
  */
-#define LIBAROMA_SYSCAL_HAVE_SHMEM 1
-#define LIBAROMA_SYSCAL_HAVE_MMAP 1
-#define LIBAROMA_SYSCAL_HAVE_FD 1
+#define LIBAROMA_SYSCAL_HAVE_SHMEM  1
+#define LIBAROMA_SYSCAL_HAVE_MMAP   1
+#define LIBAROMA_SYSCAL_HAVE_FD     1
 
 /*
  * common syscall wrapper

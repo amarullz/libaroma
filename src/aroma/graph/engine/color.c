@@ -50,25 +50,6 @@ word libaroma_rgb_from_string(const char * c) {
   return libaroma_rgb_to16(strtoul(out, NULL, 0));
 }
 
-/* 16bit color channel */
-byte libaroma_color_r(word rgb) {
-  return ((byte) (((((word)(rgb)) & 0xF800)) >> 8));
-}
-byte libaroma_color_g(word rgb) {
-  return ((byte) (((((word)(rgb)) & 0x07E0)) >> 3));
-}
-byte libaroma_color_b(word rgb) {
-  return ((byte) (((((word)(rgb)) & 0x001F)) << 3));
-}
-
-/* hi color shifted */
-byte libaroma_color_hi_r(byte v){
-  return (v | (v >> 5));
-}
-byte libaroma_color_hi_g(byte v){
-  return (v | (v >> 6));
-}
-
 /* calculate color luminance */
 byte libaroma_color_luminance(word rgb){
   return (byte) MIN(0xff,MAX(0,
@@ -86,83 +67,6 @@ byte libaroma_color_isdark(word rgb){
     return 0;
   }
   return 1;
-}
-
-/* 32bit color channel */
-byte libaroma_color_r32(dword rgb) {
-  return (byte) ((rgb >> 16) & 0xff);
-}
-byte libaroma_color_g32(dword rgb) {
-  return (byte) ((rgb >> 8) & 0xff);
-}
-byte libaroma_color_b32(dword rgb) {
-  return (byte) (rgb & 0xff);
-}
-byte libaroma_color_a32(dword rgb) {
-  return (byte) ((rgb >> 24) & 0xff);
-}
-
-/* 16bit closest color channel */
-byte libaroma_color_close_r(byte c) { /* red & blue */
-  return (((byte) c) >> 3 << 3);
-}
-byte libaroma_color_close_g(byte c) {
-  return (((byte) c) >> 2 << 2);
-}
-
-/* hi color left */
-byte libaroma_color_left(byte r, byte g, byte b) {
-  return (
-    (((r - libaroma_color_close_r(r)) & 7) << 5) |
-    (((g - libaroma_color_close_g(g)) & 3) << 3) |
-    ((b - libaroma_color_close_b(b)) & 7)
-  );
-}
-
-/* merge hi color & main color */
-dword libaroma_color_merge(word color, byte hicolor) {
-  return libaroma_rgba(
-    libaroma_color_r(color) + (hicolor >> 5),
-    libaroma_color_g(color) + ((hicolor >> 3) & 3),
-    libaroma_color_b(color) + (hicolor & 7),
-    0xff
-  );
-}
-byte libaroma_color_merge_r(word color, byte hicolor) {
-  return ((byte) (((((word)(color)) & 0xF800)) >> 8)) + (hicolor >> 5);
-}
-byte libaroma_color_merge_g(word color, byte hicolor) {
-  return ((byte) (((((word)(color)) & 0x07E0)) >> 3)) + ((hicolor >> 3) & 3);
-}
-byte libaroma_color_merge_b(word color, byte hicolor) {
-  return ((byte) (((((word)(color)) & 0x001F)) << 3)) + (hicolor & 7);
-}
-
-/* 16bit rgb */
-word libaroma_rgb(byte r, byte g, byte b) {
-  return ((word)((r >> 3) << 11)|((g >> 2) << 5) | (b >> 3));
-}
-/* 32bit rgba */
-dword libaroma_rgba(byte r, byte g, byte b, byte a) {
-  return (dword)
-  (
-    ((r & 0xff) << 16) |
-    ((g & 0xff) << 8) |
-    (b & 0xff) |
-    ((a & 0xff) << 24)
-  );
-}
-/* 32bit rgb */
-dword libaroma_rgb32(byte r, byte g, byte b) {
-  return libaroma_rgba(r, g, b, 0xff);
-}
-
-/* Convert 32bit color to 16bit color */
-word libaroma_rgb_to16(dword rgb) {
-  return libaroma_rgb(
-    libaroma_color_r32(rgb), 
-    libaroma_color_g32(rgb), 
-    libaroma_color_b32(rgb));
 }
 
 /* Convert 16bit color to 32bit color */
@@ -259,6 +163,36 @@ void libaroma_color_copy16(wordp dst, dwordp src, int n, bytep rgb_pos) {
        (byte) ((cl >> rgb_pos[1]) & 0xff),
        (byte) ((cl >> rgb_pos[2]) & 0xff)
      );
+  }
+}
+#endif
+
+#ifndef __engine_have_libaroma_color_copy_rgb24
+/* copy to rgb24 */
+void libaroma_color_copy_rgb24(
+  bytep __restrict dst, wordp __restrict src, int n){
+  int i;
+  int j = 0;
+  for (i=0;i<n;i++) {
+    word cl = src[i];
+    dst[j++] = libaroma_color_r(cl);
+    dst[j++] = libaroma_color_g(cl);
+    dst[j++] = libaroma_color_b(cl);
+  }
+}
+#endif
+
+#ifndef __engine_have_libaroma_color_copy_bgr24
+/* copy to bgr24 */
+void libaroma_color_copy_bgr24(
+  bytep __restrict dst, wordp __restrict src, int n){
+  int i;
+  int j = 0;
+  for (i=0;i<n;i++) {
+    word cl = src[i];
+    dst[j++] = libaroma_color_b(cl);
+    dst[j++] = libaroma_color_g(cl);
+    dst[j++] = libaroma_color_r(cl);
   }
 }
 #endif

@@ -41,5 +41,12 @@
 #define LIBAROMA_CONFIG_HICOLOR_BIT       0
 */
 
+
+/* Process config - Don't change this line      */
+/* ============================================ */
+#if LIBAROMA_CONFIG_HICOLOR_BIT > 0
+  #define LIBAROMA_CONFIG_USE_HICOLOR_BIT
+#endif
+
 #endif /* __libaroma_config_features_h__ */
 

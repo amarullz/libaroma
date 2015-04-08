@@ -14,29 +14,33 @@
  * limitations under the License.
  *______________________________________________________________________________
  *
- * Filename    : blt_neon.c
- * Description : neon simd blit engine
+ * Filename    : arm_neon_blt.h
+ * Description : vector blitting
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 26/01/15 - Author(s): Ahmad Amarullah
+ * + 08/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_blt_neon_c__
-#define __libaroma_blt_neon_c__
-#include <aroma_internal.h>
+#ifndef __libaroma_aroma_internal_h__
+  #error "Include <aroma_internal.h> instead."
+#endif
+#ifndef __libaroma_arm_neon_blt_h__
+#define __libaroma_arm_neon_blt_h__
 
-#ifdef __ARM_HAVE_NEON
-
-/* NEON SIMD 32bit to 16bit BLT */
-void libaroma_btl16(int n, wordp dst, const dwordp src) {
+/*
+ * blitting 32bit to 16bit
+ */
+static inline void libaroma_btl16(
+  int n,
+  wordp __restrict dst,
+  const dwordp __restrict src
+){
   int i,left=n%8;
   
-  /* neon */
   if (n>=8){
     uint8_t *p888 = (uint8_t *) src;
-    uint8x8x4_t rgba;
-    for (i=0;i<n-left;i+=8) {
-      rgba = vld4_u8(p888+i*4);
+    for (i=0;i<n-left;i+=8){
+      uint8x8x4_t rgba = vld4_u8(p888+i*4);
       vst1q_u16(dst+i, vorrq_u16(
         vorrq_u16(
           vshlq_n_u16(vmovl_u8(vshr_n_u8(rgba.val[2],3)),11),
@@ -46,44 +50,42 @@ void libaroma_btl16(int n, wordp dst, const dwordp src) {
       ));
     }
   }
-  
   /* leftover */
   if (left>0){
-    for (i=n-left;i<n;i++) {
+    for (i=n-left;i<n;i++){
       dst[i] = libaroma_rgb_to16(src[i]);
     }
   }
 }
 
 /* NEON SIMD 16bit to 32bit BLT */
-void libaroma_btl32(int n, dwordp dst, const wordp src) {
+/*
+ * blitting 16bit to 32bit
+ */
+static inline void libaroma_btl32(
+  int n,
+  dwordp dst,
+  const wordp src
+) {
   int i,left=n%8;
-  /* neon */
   if (n>=8){
-    uint8x8_t mask5, mask6, alp;
-#ifdef LIBAROMA_CONFIG_USE_HICOLOR_BIT
-    uint8x8_t r, g, b;
-#endif
-    mask5 = vmov_n_u8(0xf8); /* 5 mask - red */
-    mask6 = vmov_n_u8(0xfc); /* 6 mask - green */
-    alp   = vmov_n_u8(0xff); /* Alpha constant */
+    uint8x8_t mask5 = vmov_n_u8(0xf8);
+    uint8x8_t mask6 = vmov_n_u8(0xfc);
+    uint8x8_t alp   = vmov_n_u8(0xff);
     uint8_t * p888  = (uint8_t *) dst;
-    uint8x8x4_t rgb;
-    uint16x8_t pix;
     for (i=0;i<n-left;i+=8) {
-      pix = vld1q_u16(src+i); /* load 8 pixel */
+      uint16x8_t pix = vld1q_u16(src+i); /* load 8 pixel */
+      uint8x8x4_t rgb;
 #ifdef LIBAROMA_CONFIG_USE_HICOLOR_BIT
       /* right shift */
-      r = vand_u8(vshrn_n_u16(pix, 8),mask5);
-      g = vand_u8(vshrn_n_u16(pix, 3),mask6);
-      b = vshl_n_u8(vmovn_u16(pix), 3);
-      /* Small Byte Left : 11111xxx 111111xx 11111xxx */
+      uint8x8_t r = vand_u8(vshrn_n_u16(pix, 8),mask5);
+      uint8x8_t g = vand_u8(vshrn_n_u16(pix, 3),mask6);
+      uint8x8_t b = vshl_n_u8(vmovn_u16(pix), 3);
       rgb.val[3] = alp;
       rgb.val[2] = vorr_u8(r, vshr_n_u8(r, 5));
       rgb.val[1] = vorr_u8(g, vshr_n_u8(g, 6));
       rgb.val[0] = vorr_u8(b, vshr_n_u8(b, 5));
 #else
-      /* Small Byte Left : 11111xxx 111111xx 11111xxx */
       rgb.val[3] = alp;
       rgb.val[2] = vand_u8(vshrn_n_u16(pix, 8),mask5);
       rgb.val[1] = vand_u8(vshrn_n_u16(pix, 3),mask6);
@@ -92,7 +94,6 @@ void libaroma_btl32(int n, dwordp dst, const wordp src) {
       vst4_u8(p888+4*i, rgb);
     }
   }
-  
   /* leftover */
   if (left>0){
     for (i=n-left;i<n;i++) {
@@ -101,5 +102,5 @@ void libaroma_btl32(int n, dwordp dst, const wordp src) {
   }
 }
 
-#endif /* __ARM_HAVE_NEON */
-#endif /* __libaroma_blt_neon_c__ */
+#endif /* __libaroma_arm_neon_blt_h__ */
+

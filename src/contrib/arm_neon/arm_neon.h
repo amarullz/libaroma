@@ -26,7 +26,12 @@
 
 #include <arm_neon.h>
 
-/* arm neon engine */
+#include "arm_neon_dither.h"
+#include "arm_neon_blt.h"
+#include "arm_neon_color.h"
+#include "arm_neon_alpha.h"
+
+/* arm neon available engines */
 #define __engine_have_libaroma_btl16 1
 #define __engine_have_libaroma_btl32 1
 #define __engine_have_libaroma_alpha_black 1
@@ -41,6 +46,8 @@
 #define __engine_have_libaroma_color_set 1
 #define __engine_have_libaroma_color_copy32 1
 #define __engine_have_libaroma_color_copy16 1
+#define __engine_have_libaroma_color_copy_rgb24 1
+#define __engine_have_libaroma_color_copy_bgr24 1
 #define __engine_have_libaroma_dither_line 1
 #define __engine_have_libaroma_dither_line_const 1
 

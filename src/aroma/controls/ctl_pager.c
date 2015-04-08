@@ -49,7 +49,7 @@ byte _libaroma_ctl_pager_window_invalidate(LIBAROMA_WINDOWP win, byte sync);
 byte _libaroma_ctl_pager_window_sync(LIBAROMA_WINDOWP win,
   int x,int y,int w,int h);
 byte _libaroma_ctl_pager_window_updatebg(LIBAROMA_WINDOWP win);
-
+/*
 byte _libaroma_ctl_pager_window_control_draw_flush(
   LIBAROMA_WINDOWP win,LIBAROMA_CONTROLP cctl,
   LIBAROMA_CANVASP canvas,byte sync
@@ -58,6 +58,7 @@ byte _libaroma_ctl_pager_window_control_erasebg(
   LIBAROMA_WINDOWP win,LIBAROMA_CONTROLP cctl,
   LIBAROMA_CANVASP canvas
 );
+*/
 byte _libaroma_ctl_pager_window_control_isvisible(
   LIBAROMA_WINDOWP win,LIBAROMA_CONTROLP cctl
 );
@@ -70,7 +71,8 @@ static LIBAROMA_WINDOW_HANDLER _libaroma_ctl_pager_win_handler={
   updatebg:_libaroma_ctl_pager_window_updatebg,
   invalidate:_libaroma_ctl_pager_window_invalidate,
   sync:_libaroma_ctl_pager_window_sync,
-  
+  message_hooker:NULL,
+    
   control_draw_flush:NULL /*_libaroma_ctl_pager_window_control_draw_flush*/,
   control_erasebg:NULL /*_libaroma_ctl_pager_window_control_erasebg*/,
   control_isvisible:_libaroma_ctl_pager_window_control_isvisible,
@@ -115,7 +117,6 @@ struct __LIBAROMA_CTL_PAGER{
   LIBAROMA_CTL_PAGER_CONTROLLERP controller;
 };
 
-
 /*
  * Function    : _libaroma_ctl_pager_direct_canvas
  * Return Value: byte
@@ -134,12 +135,10 @@ byte _libaroma_ctl_pager_direct_canvas(LIBAROMA_CONTROLP ctl, byte state){
   }
   else{
     if (me->on_direct_canvas){
-      if (ctl->window->dc) {
-        LIBAROMA_CANVASP c = libaroma_canvas_area(
-          ctl->window->dc,ctl->x, ctl->y, ctl->w, ctl->h
-        );
-        libaroma_draw_ex(me->win->dc,c,0,0,xt,0,c->w,c->h,0,0xff);
-        libaroma_canvas_free(c);
+      LIBAROMA_CANVASP ccv = libaroma_control_draw_begin(ctl);
+      if (ccv) {
+        libaroma_draw_ex(me->win->dc,ccv,0,0,xt,0,ccv->w,ccv->h,0,0xff);
+        libaroma_canvas_free(ccv);
       }
       me->on_direct_canvas=0;
     }
@@ -259,17 +258,19 @@ LIBAROMA_CANVASP _libaroma_ctl_pager_window_control_draw_begin(
     );
   }
   else{
-    if (ctl->window->dc){
-      int xt = me->scroll_x;
-      int x = cctl->x+ctl->x - xt;
-      int y = cctl->y+ctl->y;
-      int w = cctl->w;
-      int h = cctl->h;
+    int xt = me->scroll_x;
+    int x = cctl->x - xt;
+    int y = cctl->y;
+    int w = cctl->w;
+    int h = cctl->h;
+    LIBAROMA_CANVASP ccv = libaroma_control_draw_begin(ctl);
+    if (ccv){
       c = libaroma_canvas_area(
-        ctl->window->dc,x,y,w,h
+        ccv,x,y,w,h
       );
+      libaroma_canvas_free(ccv);
     }
-    else {
+    else{
       libaroma_mutex_unlock(me->mutex);
       return NULL;
     }

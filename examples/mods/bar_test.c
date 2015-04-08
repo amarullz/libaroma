@@ -107,9 +107,29 @@ void bar_test(){
   libaroma_ctl_bar_set_icon(
     bar,NULL,0,LIBAROMA_CTL_BAR_ICON_DRAWER, 1
   );
-  
 
+  LIBAROMA_WINDOWP sidebar=
+    libaroma_window_sidebar(win);
+  if (sidebar){
+    printf("SIDEBAR INITIALIZED\n");
+  }
+  else{
+    printf("SIDEBAR FAILED\n");
+  }
+  LIBAROMA_CONTROLP buttonsidebar = libaroma_ctl_button(
+    sidebar, 88, 0, 0, LIBAROMA_SIZE_FULL, 60,
+    "Side Button", LIBAROMA_CTL_BUTTON_COLORED, RGB(008800)
+  );
+  // libaroma_window_layer_init(win);
+  
   libaroma_window_anishow(win, LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_LEFT, 400);
+  
+  
+  
+  
+  // libaroma_window_layer_init(win);
+  
+  
   
   byte gap_wide = 1;
   int change_id=0;

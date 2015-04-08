@@ -1018,6 +1018,13 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
     return 0;
   }
   dword ret = 0;
+  if (win->handler){
+    if (win->handler->message_hooker){
+      if (win->handler->message_hooker(win,msg,&ret)){
+        return ret;
+      }
+    }
+  }
   switch (msg->msg){
     case LIBAROMA_MSG_WIN_ACTIVE:
       {
