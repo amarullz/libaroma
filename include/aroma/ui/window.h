@@ -287,6 +287,11 @@ byte libaroma_window_layer_release(LIBAROMA_WINDOWP win);
  */
 LIBAROMA_WINDOWP libaroma_window_sidebar(LIBAROMA_WINDOWP win, int width);
 
-
+/*
+ * Function    : libaroma_window_sidebar_show
+ * Return Value: byte
+ * Descriptions: show/hide sidebar
+ */
+byte libaroma_window_sidebar_show(LIBAROMA_WINDOWP win, byte show);
 
 #endif /* __libaroma_window_h__ */

@@ -28,7 +28,6 @@
 
 #define _LIBAROMA_CTL_TABS_HOLD_TIMING 300
 #define _LIBAROMA_CTL_TABS_ANI_TIMING 500
-#define _LIBAROMA_CTL_TABS_HISTORY 10
 
 /* HANDLER */
 dword _libaroma_ctl_tabs_msg(LIBAROMA_CONTROLP, LIBAROMA_MSGP);
@@ -88,21 +87,13 @@ struct __LIBAROMA_CTL_TABS{
   
   byte no_auto_scroll;
   byte allow_scroll;
-  byte touched;
-  long touch_start;
   int touched_id;
   int velocity;
   int touch_x;
   int touch_scroll_x;
-  int prevn;
-  int prev_point[_LIBAROMA_CTL_TABS_HISTORY];
-  long prev_time[_LIBAROMA_CTL_TABS_HISTORY];
-  float touch_state;
-  long release_start;
-  float release_state;
   
-  int touchdown_x;
-  int touchdown_y;
+  LIBAROMA_RIPPLE ripple;
+  LIBAROMA_FLING fling;
   int hpad; /* horizontal padding */
   int left_pad; /* left horizontal padding */
 };
@@ -478,48 +469,35 @@ void _libaroma_ctl_tabs_draw(
   }
   
   if (me->touched_id>=0){
-    if ((me->touch_state>0)&&(me->release_state<1)) {
-      int touched_x = _libaroma_ctl_tabs_indicator_x(ctl,me->touched_id);
-      if (touched_x>=0){
-        int touched_w = me->textw[me->touched_id]+libaroma_dp(24);
+    int touched_x = _libaroma_ctl_tabs_indicator_x(ctl,me->touched_id);
+    if (touched_x>=0){
+      int touched_w = me->textw[me->touched_id]+libaroma_dp(24);
+      int x=touched_x;
+      int y=0;
+      int size=0;
+      byte push_opacity=0;
+      byte ripple_opacity=180;
+      if (libaroma_ripple_calculation(
+        &me->ripple, touched_w, c->h, &push_opacity, &ripple_opacity,
+        &x, &y, &size
+      )){
         LIBAROMA_CANVASP cc = libaroma_canvas_area(
           (me->active_page==me->touched_id)?me->push_canvas:me->rest_canvas,
-            touched_x, 0, touched_w, me->rest_canvas->h
+            touched_x, 0, touched_w, c->h
         );
-        LIBAROMA_CANVASP tc = libaroma_canvas(
-          touched_w, cc->h
-        );
-        int touch_x = me->touchdown_x - touched_x;
-        int touch_y = me->touchdown_y;
-        
-        float ripplestate = me->touch_state;
-        float pst_state = MIN(me->touch_state*15,1);
-        float cbz_state;
-        if (me->release_state>0){
-          ripplestate += (1.0-me->touch_state)*me->release_state;
-        }
-        cbz_state = libaroma_cubic_bezier_easein(ripplestate);
-        float ropa  = (me->touched==1)?1:1-me->release_state;
-        byte opa    = (100 * pst_state) * ropa;
-        int msize = MAX(MIN(cc->w,cc->h)>>1,libaroma_dp(5));
-        int psize = MAX(cc->w,cc->h);
-        psize+=(abs(touch_x-cc->w/2)+abs(touch_y-cc->h/2)) * 2;
+        LIBAROMA_CANVASP tc = libaroma_canvas(touched_w, cc->h);
         libaroma_draw(tc, cc, 0, 0, 0);
         libaroma_draw_rect(
-          tc,
-          0,0,cc->w,cc->h,
-          me->selcolor, opa*0.5
+          tc,0,0,cc->w,cc->h,
+          me->selcolor, push_opacity
         );
-        int rsize=psize * cbz_state;
-        if (rsize<msize){
-          opa = (opa * rsize) / msize;
-        }
-        rsize+=msize;
+        
         libaroma_draw_circle(
-          tc,me->selcolor,touch_x, touch_y, rsize, MAX(0,opa-(opa*0.5))
+          tc,me->selcolor,x,y,size,MAX(0,ripple_opacity-(ripple_opacity*0.5))
         );
         libaroma_draw_ex(
-          c,tc,touched_x-me->draw_x,0,
+          c,tc,
+          touched_x-me->draw_x,0,
           0,0,
           tc->w,tc->h,
           0,0xff);
@@ -604,9 +582,9 @@ byte _libaroma_ctl_tabs_thread(LIBAROMA_CONTROLP ctl) {
     }
     me->velocity=0;
   }
-  else if ((me->velocity!=0)&&(!me->touched)){
+  else if ((me->velocity!=0)&&(!libaroma_ripple_istouched(&me->ripple))){
     me->velocity=(me->velocity*246)>>8;
-    if ((abs(me->velocity)<256)||(me->touched)) {
+    if ((abs(me->velocity)<256)||(libaroma_ripple_istouched(&me->ripple))) {
       /* ended */
       me->velocity = 0;
       is_draw=1;
@@ -634,46 +612,12 @@ byte _libaroma_ctl_tabs_thread(LIBAROMA_CONTROLP ctl) {
     }
   }
   if (me->touched_id>=0){
-    if (me->touch_start){
-      long tstart = me->touch_start + 180;
-      int now = libaroma_tick();
-      if (now>tstart){
-        if (me->touch_start&&(me->touch_state<1)){
-          float nowstate=libaroma_control_state(tstart, 1500);
-          if (me->touch_state!=nowstate){
-            is_draw = 1;
-            me->touch_state=nowstate;
-          }
-        }
-        if (me->touched==2){
-          if (me->touch_state>=0.1){
-            me->touched=0;
-            me->touch_start=0;
-            me->release_start=libaroma_tick();
-            me->release_state=0.0;
-          }
-        }
-      }
-      else if (me->touched==2){
-        me->touch_start=0;
-        me->touch_state=0;
-        me->touched=0;
-      }
+    byte res = libaroma_ripple_thread(&me->ripple, 180);
+    if (res&LIBAROMA_RIPPLE_REDRAW){
+      is_draw = 1;
     }
-    else if (me->touched==2){
-      me->touched=0;
-    }
-    if (!me->touched&&me->release_start){
-      float nowstate=libaroma_control_state(me->release_start, 300);
-      if (me->release_state!=nowstate){
-        is_draw = 1;
-        me->release_state=nowstate;
-      }
-      if (me->release_state>=1){
-        me->release_start=0;
-        me->touch_start=0;
-        me->touched_id=-1;
-      }
+    if (res&LIBAROMA_RIPPLE_RELEASED){
+      me->touched_id=-1;
     }
   }
   if (me->draw_x!=me->req_x){
@@ -770,39 +714,24 @@ dword _libaroma_ctl_tabs_msg(
         int y = msg->y;
         libaroma_window_calculate_pos(NULL,ctl,&x,&y);
         if (msg->state==LIBAROMA_HID_EV_STATE_DOWN){
-          me->touchdown_x=x+me->draw_x;
-          me->touchdown_y=y;
-          me->prevn=1;
-          me->prev_point[0]=x;
-          me->prev_time[0]=libaroma_tick();
+          libaroma_fling_down(&me->fling, x);
           me->touch_x=x;
           me->touch_scroll_x = me->draw_x;
           me->touched_id=_libaroma_ctl_tabs_pager_pos_x(ctl,x);
+          if (me->touched_id>=0){
+            libaroma_ripple_down(&me->ripple,x+me->draw_x,y);
+          }
           me->allow_scroll=2;
-          me->touched=1;
-          me->touch_start=libaroma_tick();
-          me->touch_state=0.0;
-          me->release_state=0.0;
-          me->release_start=0;
         }
         else if (msg->state==LIBAROMA_HID_EV_STATE_UP){
-          if (me->allow_scroll){
-            int current_point = (x==0)?me->prev_point[me->prevn-1]:x;
-            long current_time = libaroma_tick();
-            int first_point   = me->prev_point[0];
-            long first_time   = me->prev_time[0];
-            if (current_time-first_time<1) {
-              first_time--;
-            }
-            if (current_time-first_time<=300) {
-              int diff = first_point - current_point;
-              int time = current_time - first_time;
-              me->velocity = round(((double) diff/(time>>4))*360);
+          if (me->allow_scroll==1){
+            me->velocity = libaroma_fling_up(&me->fling, x);
+            if (me->velocity){
               me->request_x=-1;
             }
           }
-          if ((y>=0)&&(y<ctl->h)&&(x>=0)&&(x<ctl->w)){
-            if (me->touch_start&&(me->touched_id>=0)){
+          else if ((y>=0)&&(y<ctl->h)&&(x>=0)&&(x<ctl->w)){
+            if (me->touched_id>=0){
               if (me->controller.pager){
                 int active_x = _libaroma_ctl_tabs_indicator_x(
                   ctl,me->touched_id);
@@ -819,17 +748,13 @@ dword _libaroma_ctl_tabs_msg(
                   me->request_x = draw_x;
                   me->no_auto_scroll = 1;
                 }
-                if (me->touch_start+180>libaroma_tick()){
-                  me->touch_start=libaroma_tick()-180;
-                }
+                libaroma_ripple_up(&me->ripple,180);
                 libaroma_ctl_pager_set_active_page(
                   me->controller.pager, me->touched_id,0);
               }
             }
           }
-          if (me->touched==1){
-            me->touched=2;
-          }
+          libaroma_ripple_cancel(&me->ripple);
           me->forcedraw = 1;
         }
         else if (msg->state==LIBAROMA_HID_EV_STATE_MOVE){
@@ -839,9 +764,7 @@ dword _libaroma_ctl_tabs_msg(
             int scrdp=libaroma_dp(24);
             if (abs(move_sz)>=scrdp){
               me->allow_scroll=1;
-              if (me->touched==1){
-                me->touched=2;
-              }
+              libaroma_ripple_cancel(&me->ripple);
               first_allow_scroll=1;
               me->forcedraw = 1;
             }
@@ -865,24 +788,11 @@ dword _libaroma_ctl_tabs_msg(
             me->forcedraw = 1;
             
             /* set history */
-            long ctick = libaroma_tick();
-            me->prevn++;
-            if (me->prevn>_LIBAROMA_CTL_TABS_HISTORY){
-              int i;
-              for (i=1;i<_LIBAROMA_CTL_TABS_HISTORY;i++){
-                me->prev_point[i-1]=me->prev_point[i];
-                me->prev_time[i-1]=me->prev_time[i];
-              }
-              me->prevn--;
-            }
-            me->prev_point[me->prevn-1]=x;
-            me->prev_time[me->prevn-1]=ctick;
+            libaroma_fling_move(&me->fling, x);
             me->touch_x=x;
           }
           if ((y<0)||(y>=ctl->h)||(x<0)||(x>=ctl->w)){
-            if (me->touched==1){
-              me->touched=2;
-            }
+            libaroma_ripple_cancel(&me->ripple);
             me->forcedraw = 1;
           }
         }

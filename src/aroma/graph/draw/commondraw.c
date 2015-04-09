@@ -65,8 +65,6 @@ byte libaroma_draw_ex2(
   int sw, int sh,
   byte draw_flags, 
   byte opacity,
-  LIBAROMA_DRAW_FILTER filter_callback,
-  dword filter_param,
   byte ismask,
   word maskcolor
 ) {
@@ -87,7 +85,7 @@ byte libaroma_draw_ex2(
   
   byte useAlpha = (draw_flags&LIBAROMA_DRAW_WITH_ALPHA)?1:0;
   byte noDither = (draw_flags&LIBAROMA_DRAW_NODITHER)?1:0;
-  
+  byte toBlack  = (draw_flags&LIBAROMA_DRAW_TO_BLACK)?1:0;
   
   /* fix positions */
   if (sx < 0) {
@@ -160,31 +158,7 @@ byte libaroma_draw_ex2(
     ismask=0;
   }
   
-  if (filter_callback != NULL) {
-    int x;
-    bytep alpha_mem;
-#ifdef LIBAROMA_CONFIG_OPENMP
-  #pragma omp parallel for
-#endif
-    for (y = 0; y < sr_h; y++) {
-      wordp dst_mem = (wordp) (dst_data + ((ds_y + y) * pos_dc_w) + pos_ds_x);
-      wordp src_mem = (wordp) (src_data + ((sr_y + y) * pos_sc_w) + pos_sr_x);
-      if (useAlpha) {
-        alpha_mem = src->alpha + (y * src->l) + sr_x;
-      }
-      for (x = 0; x < sr_w; x++) {
-        word scrfilter = filter_callback(src_mem[x], filter_param);
-        if (useAlpha) {
-          scrfilter = libaroma_alpha(dst_mem[x], scrfilter, alpha_mem[x]);
-        }
-        if (opacity != 0xff) {
-          scrfilter = libaroma_alpha(dst_mem[x], scrfilter, opacity);
-        }
-        dst_mem[x] = scrfilter;
-      }
-    }
-  }
-  else if (opacity == 0xff) {
+  if (opacity == 0xff) {
     if (useAlpha) {
 #ifdef LIBAROMA_CONFIG_OPENMP
   #pragma omp parallel for
@@ -248,7 +222,14 @@ byte libaroma_draw_ex2(
         }
         else{
           wordp src_mem = (wordp) (src_data+((sr_y + y)*pos_sc_w)+pos_sr_x);
-          if (noDither){
+          if (toBlack){
+            libaroma_alpha_px(
+              sr_w, tmp_dst, dst_mem, src_mem,
+              (bytep) (src->alpha + (y * src->l) + sr_x)
+            );
+            libaroma_alpha_black(sr_w, dst_mem, tmp_dst, opacity);
+          }
+          else if (noDither){
             libaroma_alpha_px(
               sr_w, tmp_dst, dst_mem, src_mem,
               (bytep) (src->alpha + (y * src->l) + sr_x)
@@ -278,7 +259,10 @@ byte libaroma_draw_ex2(
       for (y = 0; y < sr_h; y++) {
         wordp dst_mem = (wordp) (dst_data + ((ds_y + y) * pos_dc_w) + pos_ds_x);
         wordp src_mem = (wordp) (src_data + ((sr_y + y) * pos_sc_w) + pos_sr_x);
-        if (noDither){
+        if (toBlack){
+          libaroma_alpha_black(sr_w, dst_mem, src_mem, opacity);
+        }
+        else if (noDither){
           libaroma_alpha_const(
             sr_w, dst_mem, dst_mem, src_mem, opacity
           );
