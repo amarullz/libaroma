@@ -21,13 +21,13 @@ void bar_test(){
   
   _y+=48;
   LIBAROMA_CONTROLP pager=libaroma_ctl_pager(
-    win, 3, 3,
+    win, 3, 5,
     0, _y, LIBAROMA_SIZE_FULL, LIBAROMA_SIZE_FULL
   );
   
   /* set pager & tab text */
-  char * tab_texts[3]={ "FIRST", "SECOND", "THIRD" };
-  libaroma_ctl_tabs_set_texts(tabs,tab_texts,3,0);
+  char * tab_texts[5]={ "FIRST TABS", "SECOND TABS", "THIRD TABS", "FOURTH TABS", "FIFTH TABS" };
+  libaroma_ctl_tabs_set_texts(tabs,tab_texts,5,0);
   libaroma_ctl_tabs_set_pager(tabs,pager);
   
   /* pager window */
@@ -110,7 +110,7 @@ void bar_test(){
 
   
   LIBAROMA_WINDOWP sidebar=
-    libaroma_window_sidebar(win,LIBAROMA_POS_3P4);
+    libaroma_window_sidebar(win,0);
   if (sidebar){
     printf("SIDEBAR INITIALIZED\n");
   }
@@ -140,6 +140,8 @@ void bar_test(){
     dword command=libaroma_window_pool(win,&msg);
     byte cmd  = LIBAROMA_CMD(command);
     word id   = LIBAROMA_CMD_ID(command);
+    byte param = LIBAROMA_CMD_PARAM(command);
+    
     if (msg.msg==LIBAROMA_MSG_KEY_SELECT){
       if (msg.state==0){
         printf("Screenshoot...\n");
@@ -154,7 +156,15 @@ void bar_test(){
         }
       }
       else if (cmd==1){
-        if (id==7){
+        if (id==1){
+          if (param==1){
+            /* drawer icon touched */
+            printf("Open sidebar %i\n",
+              libaroma_window_sidebar_show(sidebar, 1)
+            );
+          }
+        }
+        else if (id==7){
           libaroma_ctl_bar_set_textgap(bar,gap_wide,1);
           gap_wide=gap_wide?0:1;
         }

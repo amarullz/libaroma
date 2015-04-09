@@ -119,11 +119,6 @@ void libaroma_control_draw_end(
   LIBAROMA_CONTROLP ctl, LIBAROMA_CANVASP c, byte sync
 );
 
-/*
- * Function    : libaroma_control_state
- * Return Value: float
- * Descriptions: calculate state
- */
-float libaroma_control_state(long start, int duration);
+#define libaroma_control_state(s,d) libaroma_duration_state(s,d)
 
 #endif /* __libaroma_ui_internal_h__ */

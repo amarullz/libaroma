@@ -25,6 +25,22 @@
 #define __libaroma_motions_c__
 #include <aroma_internal.h>
 
+/******************************************************************************
+ * Interpolator                                                               *
+ ******************************************************************************/
+/*
+ * Function    : libaroma_duration_state
+ * Return Value: float
+ * Descriptions: calculate state by duration
+ */
+float libaroma_duration_state(long start, int duration){
+  long diff = libaroma_tick() - start;
+  if (diff>duration){
+    return 1.0;
+  }
+  return ((float) diff)/((float) duration);
+} /* End of libaroma_duration_state */
+
 float _libaroma_cubic_bezier_curve(float v1,float v2,float t){
 	float v = 1 - t;
 	return (3*v*v*t*v1+3*v*t*t*v2+t*t*t);
@@ -39,5 +55,246 @@ float libaroma_cubic_bezier(float x1,float y1,float x2,float y2,float t) {
 	  _libaroma_cubic_bezier_curve(y1,y2,t)
 	);
 } /* End of libaroma_cubic_bezier */
+
+/*
+ * Function    : libaroma_motion_fluid
+ * Return Value: float
+ * Descriptions: fluid motion
+ */
+float libaroma_motion_fluid(float t){
+  if (t<1.0){
+    t *= 8;
+    if (t<1.0) {
+      t -= (1.0 - (float) exp(-t));
+    } else {
+      float start = 0.36787944117;
+      t = 1.0 - exp(1.0-t);
+      t = start + t * (1.0 - start);
+    }
+    t+=(0.002*t);
+    if (t>=1){
+      t=1.0;
+    }
+  }
+  else{
+    t=1.0;
+  }
+  return t;
+} /* End of libaroma_motion_fluid */
+
+/******************************************************************************
+ * Fling Motions                                                              *
+ ******************************************************************************/
+ 
+/*
+ * Function    : libaroma_fling_down
+ * Return Value: void
+ * Descriptions: init first fling
+ */
+void libaroma_fling_down(LIBAROMA_FLINGP p, int pos){
+  p->n=1;
+  p->points[0]=pos;
+  p->times[0]=libaroma_tick();
+} /* End of libaroma_fling_down */
+
+/*
+ * Function    : libaroma_fling_move
+ * Return Value: void
+ * Descriptions: add fling point
+ */
+void libaroma_fling_move(LIBAROMA_FLINGP p, int pos){
+  long ctick = libaroma_tick();
+  p->n++;
+  if (p->n>LIBAROMA_FLING_HISTORY){
+    int i;
+    for (i=1;i<LIBAROMA_FLING_HISTORY;i++){
+      p->points[i-1]=p->points[i];
+      p->times[i-1]=p->times[i];
+    }
+    p->n--;
+  }
+  p->points[p->n-1]=pos;
+  p->times[p->n-1]=ctick;
+} /* End of libaroma_fling_move */
+
+/*
+ * Function    : libaroma_fling_up
+ * Return Value: int
+ * Descriptions: process up event and get velocity
+ */
+int libaroma_fling_up(LIBAROMA_FLINGP p, int pos){
+  int current_point = (pos==0)?p->points[p->n-1]:pos;
+  long current_time = libaroma_tick();
+  int first_point   = p->points[0];
+  long first_time   = p->times[0];
+  if (current_time-first_time<1) {
+    first_time--;
+  }
+  if (current_time-first_time<=300) {
+    int diff = first_point - current_point;
+    int time = current_time - first_time;
+    return round(((double) diff/(time>>4))*360);
+  }
+  return 0;
+} /* End of libaroma_fling_up */
+
+/******************************************************************************
+ * Ripple Motions                                                             *
+ ******************************************************************************/
+
+/*
+ * Function    : libaroma_ripple_thread
+ * Return Value: byte
+ * Descriptions: ripple thread hanlder
+ */
+byte libaroma_ripple_thread(LIBAROMA_RIPPLEP me, long wait_ms){
+  byte ret = 0;
+  if (me->touch_start){
+    long touch_start = me->touch_start + wait_ms;
+    if (libaroma_tick()>touch_start){
+      if ((touch_start)&&(me->touch_state<1)){
+        float nowstate=libaroma_duration_state(touch_start, 1500);
+        if (me->touch_state!=nowstate){
+          ret |= LIBAROMA_RIPPLE_REDRAW;
+          me->touch_state=nowstate;
+        }
+      }
+      if (me->touched==1){
+        if ((me->touch_state>=0.6)&&(!me->holded)){
+          me->holded=1;
+          ret |= LIBAROMA_RIPPLE_HOLDED;
+        }
+      }
+      else if (me->touched==2){
+        if (me->touch_state>=0.1){
+          me->touched=0;
+          me->touch_start=0;
+          me->release_start=libaroma_tick();
+          me->release_state=0.0;
+        }
+      }
+    }
+    else if (me->touched==2){
+      me->touch_start=0;
+      me->touch_state=0;
+      me->touched=0;
+    }
+  }
+  else if (me->touched==2){
+    me->touched=0;
+  }
+  if (!me->touched&&me->release_start){
+    float nowstate=libaroma_duration_state(me->release_start, 300);
+    if (me->release_state!=nowstate){
+      ret |= LIBAROMA_RIPPLE_REDRAW;
+      me->release_state=nowstate;
+    }
+    if (me->release_state>=1){
+      me->release_start=0;
+      me->touch_start=0;
+      ret |= LIBAROMA_RIPPLE_RELEASED;
+    }
+  }
+  return ret;
+} /* End of libaroma_ripple_thread */
+
+/*
+ * Function    : libaroma_ripple_down
+ * Return Value: void
+ * Descriptions: ripple down handler
+ */
+void libaroma_ripple_down(LIBAROMA_RIPPLEP me, int x, int y){
+  me->x=x;
+  me->y=y;
+  me->touch_start=libaroma_tick();
+  me->touch_state=0.0;
+  me->release_state=0.0;
+  me->release_start=0;
+  me->holded=0;
+  me->touched=1;
+} /* End of libaroma_ripple_down */
+
+/*
+ * Function    : libaroma_ripple_up
+ * Return Value: byte
+ * Descriptions: ripple up handler
+ */
+byte libaroma_ripple_up(LIBAROMA_RIPPLEP me, long wait_ms){
+  byte res=0;
+  if (me->touched){
+    res |= LIBAROMA_RIPPLE_TOUCHED;
+    if (me->holded){
+      res |= LIBAROMA_RIPPLE_HOLDED;
+    }
+    me->touched=2;
+    if (wait_ms>0){
+      if (me->touch_start+wait_ms>libaroma_tick()){
+        me->touch_start=libaroma_tick()-wait_ms;
+      }
+    }
+  }
+  return res;
+} /* End of libaroma_ripple_up */
+
+/*
+ * Function    : libaroma_ripple_cancel
+ * Return Value: void
+ * Descriptions: cancle ripple
+ */
+void libaroma_ripple_cancel(LIBAROMA_RIPPLEP me){
+  if (me->touched==1){
+    me->touched=2;
+  }
+} /* End of libaroma_ripple_cancel */
+
+/*
+ * Function    : libaroma_ripple_calculation
+ * Return Value: byte
+ * Descriptions: ripple drawing calculation
+ */
+byte libaroma_ripple_calculation(
+  LIBAROMA_RIPPLEP me,
+  int w, int h,
+  bytep push_opacity,
+  bytep ripple_opacity,
+  int * x, int *y, int * size
+){
+  if (libaroma_ripple_isactive(me)) {
+    float ripplestate = me->touch_state;
+    if (me->release_state>0){
+      ripplestate += (1.0-me->touch_state)*me->release_state;
+    }
+    float cbz_state = libaroma_cubic_bezier_easein(ripplestate);
+    float pst_state = MIN(me->touch_state*15,1);
+    byte target_opa = *ripple_opacity?*ripple_opacity:0xff;
+    float ropa  = (me->touched==1)?1:1-me->release_state;
+    byte opa    = (target_opa * pst_state) * ropa;
+    *push_opacity = opa>>1;
+    if (*push_opacity){
+      int msize   = MAX(MIN(w,h)>>1,libaroma_dp(5));
+      int psize   = MAX(w,h);
+      psize      += (abs((me->x-*x)-(w>>1))+abs((me->y-*y)-(h>>1))) << 1;
+      
+      int rsize=psize * cbz_state;
+      if (rsize<msize){
+        opa = (opa * rsize) / msize;
+      }
+      rsize+=msize;
+      
+      *ripple_opacity = opa;
+      *x = me->x-*x;
+      *y = me->y-*y;
+      *size = rsize;
+      return 1;
+    }
+    return 0;
+  }
+  return 0;
+} /* End of libaroma_ripple_calculation */
+
+
+
+
+
 
 #endif /* __libaroma_motions_c__ */

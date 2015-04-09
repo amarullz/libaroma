@@ -29,7 +29,6 @@
 #define _LIBAROMA_CTL_PAGER_HOLD_TIMING 300
 #define _LIBAROMA_CTL_PAGER_ANI_TIMING 500
 #define _LIBAROMA_CTL_PAGER_TOUCH_CLIENT_WAIT 120
-#define _LIBAROMA_CTL_PAGER_HISTORY           15
 
 /* HANDLER */
 dword _libaroma_ctl_pager_msg(LIBAROMA_CONTROLP, LIBAROMA_MSGP);
@@ -96,7 +95,6 @@ struct __LIBAROMA_CTL_PAGER{
   int scroll_x;
   int max_scroll_x;
   
-  byte touched;
   byte allow_scroll;
   int touch_x;
   int touch_y;
@@ -105,9 +103,7 @@ struct __LIBAROMA_CTL_PAGER{
   LIBAROMA_CONTROLP pretouched;
   
   int scroll_duration;
-  int prevn;
-  int prev_point[_LIBAROMA_CTL_PAGER_HISTORY];
-  long prev_time[_LIBAROMA_CTL_PAGER_HISTORY];
+  LIBAROMA_FLING fling;
   
   byte redraw;
   LIBAROMA_MUTEX mutex;
@@ -394,7 +390,6 @@ byte _libaroma_ctl_pager_thread(LIBAROMA_CONTROLP ctl) {
         libaroma_mutex_unlock(me->mutex);
         
         /* fling */
-        // printf("thread fling start : %ld\n",me->scroll_target_start);
         if (me->scroll_target_start>0){
           int xt = me->page_position * ctl->w;
           int dxt= (xt - me->scroll_target_from_x);
@@ -402,23 +397,8 @@ byte _libaroma_ctl_pager_thread(LIBAROMA_CONTROLP ctl) {
             me->scroll_target_start,
             MAX(100,me->scroll_duration)
           );
-          if (state<1.0){
-            state *= 8;
-            if (state<1.0) {
-              state -= (1.0 - (float) exp(-state));
-            } else {
-              float start = 0.36787944117;
-              state = 1.0 - exp(1.0-state);
-              state = start + state * (1.0 - start);
-            }
-            state+=(0.002*state);
-            if (state>=1){
-              state=1.0;
-            }
-          }
-          else{
-            state=1.0;
-          }
+          state = libaroma_motion_fluid(state);
+          
           int difxt = dxt * (1.0-state);
           me->scroll_x = xt-difxt;
           /* onscroll controller message */
@@ -651,12 +631,9 @@ dword _libaroma_ctl_pager_msg(
             me->scroll_target_start=0;
             me->allow_scroll=1;
           }
-          me->touched=1;
           me->touch_x=x;
           me->touch_y=y;
-          me->prevn=1;
-          me->prev_point[0]=x;
-          me->prev_time[0]=libaroma_tick();
+          libaroma_fling_down(&me->fling, x);
         }
         else if (win->touched!=NULL){
           x+=xt;
@@ -697,7 +674,6 @@ dword _libaroma_ctl_pager_msg(
                     }
                     me->client_touch_start=0;
                     me->allow_scroll=0;
-                    me->touched=0;
                     me->touch_x=x;
                     me->touch_y=y;
                     me->redraw=1;
@@ -748,47 +724,29 @@ dword _libaroma_ctl_pager_msg(
                   }
                   
                   me->touch_x=x;
-                  
-                  /* set history */
-                  long ctick = libaroma_tick();
-                  me->prevn++;
-                  if (me->prevn>_LIBAROMA_CTL_PAGER_HISTORY){
-                    int i;
-                    for (i=1;i<_LIBAROMA_CTL_PAGER_HISTORY;i++){
-                      me->prev_point[i-1]=me->prev_point[i];
-                      me->prev_time[i-1]=me->prev_time[i];
-                    }
-                    me->prevn--;
-                  }
-                  me->prev_point[me->prevn-1]=x;
-                  me->prev_time[me->prevn-1]=ctick;
+                  libaroma_fling_move(&me->fling, x);
                 }
               }
             }
           }
           else if (msg->state==LIBAROMA_HID_EV_STATE_UP){
             if (me->allow_scroll){
-              int current_point = (x==0)?me->prev_point[me->prevn-1]:x;
-              long current_time = libaroma_tick();
-              int first_point   = me->prev_point[0];
-              long first_time   = me->prev_time[0];
-              if (current_time-first_time<1) {
-                first_time--;
-              }
+              int vel = libaroma_fling_up(&me->fling, x);
               int target_x = me->page_position;
               double velocity = 0;
-              if (current_time-first_time<=250) {
+              if (vel) {
                 if (me->page_position*ctl->w<me->scroll_x){
-                  target_x++;
+                  if (vel>0){
+                    target_x++;
+                  }
                 }
                 else if (me->page_position*ctl->w>me->scroll_x){
-                  target_x--;
+                  if (vel<0){
+                    target_x--;
+                  }
                 }
-                int diff = libaroma_px(abs(first_point - current_point))+1;
-                int time = current_time - first_time;
-                velocity = fabs((((double) diff) / ((double) time/30)));
+                velocity = ((float) vel) / 800.0;
               }
-              
               libaroma_ctl_pager_set_active_page(
                 ctl, target_x, velocity
               );
@@ -807,7 +765,6 @@ dword _libaroma_ctl_pager_msg(
             me->client_touch_start=0;
             me->pretouched=NULL;
             libaroma_mutex_unlock(me->mutex);
-            me->touched=0;
             me->touch_x=x;
             me->touch_y=y;
             me->redraw=1;
@@ -850,7 +807,7 @@ byte libaroma_ctl_pager_set_active_page(
     else{
       float pageWidth = width;
       float pageDelta = abs(dx)/pageWidth;
-      duration = (int) ((pageDelta + 1) * 100);
+      duration = (int) ((pageDelta + 1) * 300);
     }
     duration = MAX(100,MIN(duration, 600));
     _libaroma_ctl_pager_direct_canvas(ctl, 0);

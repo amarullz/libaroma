@@ -43,8 +43,6 @@ static LIBAROMA_CONTROL_HANDLER _libaroma_ctl_scroll_handler={
  * SCROLL CONTROL BEHAVIOUR CONFIGURATIONS
  *
  */
-/* number of saved touch position for fling routine */
-#define _LIBAROMA_CTL_SCROLL_HISTORY                    15
 /* max cache height size */
 #define _LIBAROMA_CTL_SCROLL_MAX_CACHE          (libaroma_fb()->h * 6)
 /* size of touch handle */
@@ -115,9 +113,7 @@ struct __LIBAROMA_CTL_SCROLL{
   /* fling items */
   int bounce_velocity;
   int velocity;
-  int prevn;
-  int prev_point[_LIBAROMA_CTL_SCROLL_HISTORY];
-  long prev_time[_LIBAROMA_CTL_SCROLL_HISTORY];
+  LIBAROMA_FLING fling;
   
   /* client data */
   LIBAROMA_CTL_SCROLL_CLIENT client;
@@ -840,7 +836,7 @@ void _libaroma_ctl_scroll_draw(
       
       /* overshoot draw */
       if ((me->max_scroll_y>0)&&(me->ovs_state>0)&&(me->ovs_state<1)){
-        int max_ovsz = MIN(c->h/4,libaroma_dp(80));
+        int max_ovsz = MIN(c->h/4,libaroma_dp(90));
         int overshoot_sz = MIN(abs(me->ovs_y)/3,max_ovsz);
         if (overshoot_sz>0){
           float opa = 0;
@@ -854,8 +850,13 @@ void _libaroma_ctl_scroll_draw(
             opa*=1-libaroma_cubic_bezier_swiftout(me->ovs_ustate);
           }
           opa = MAX(0,MIN(1,opa));
-          overshoot_sz = overshoot_sz * opa;
-          float opacity = ((float) overshoot_sz) / max_ovsz;
+          if (me->ovs_ustate>0){
+            overshoot_sz = overshoot_sz * opa;
+          }
+          else{
+            overshoot_sz = overshoot_sz * MIN(1,opa*2);
+          }
+          float opacity=((float) overshoot_sz) / max_ovsz;
           overshoot_sz = MIN(MIN(overshoot_sz,c->h/5),libaroma_dp(72));
           if (overshoot_sz>1){
             LIBAROMA_CANVASP ovshot = libaroma_canvas_ex(
@@ -979,9 +980,7 @@ dword _libaroma_ctl_scroll_touch_handler(
         me->request_scroll_y=-1;
       }
       
-      me->prevn=1;
-      me->prev_point[0]=y;
-      me->prev_time[0]=libaroma_tick();
+      libaroma_fling_down(&me->fling, y);
       
       /* save touch value */
       me->touch_x=x;
@@ -1074,18 +1073,7 @@ dword _libaroma_ctl_scroll_touch_handler(
           me->touch_scroll_y = me->scroll_y;
           
           /* set history */
-          long ctick = libaroma_tick();
-          me->prevn++;
-          if (me->prevn>_LIBAROMA_CTL_SCROLL_HISTORY){
-            int i;
-            for (i=1;i<_LIBAROMA_CTL_SCROLL_HISTORY;i++){
-              me->prev_point[i-1]=me->prev_point[i];
-              me->prev_time[i-1]=me->prev_time[i];
-            }
-            me->prevn--;
-          }
-          me->prev_point[me->prevn-1]=y;
-          me->prev_time[me->prevn-1]=ctick;
+          libaroma_fling_move(&me->fling, y);
         }
         else if (me->max_scroll_y>0){
           int ctl_h = ctl->h-libaroma_dp(36);
@@ -1101,18 +1089,9 @@ dword _libaroma_ctl_scroll_touch_handler(
         me->bounce_velocity=0;
         if (!me->handle_touched){
           if (me->allow_scroll){
-            int current_point = (y==0)?me->prev_point[me->prevn-1]:y;
-            long current_time = libaroma_tick();
-            int first_point   = me->prev_point[0];
-            long first_time   = me->prev_time[0];
-            if (current_time-first_time<1) {
-              first_time--;
-            }
-            if (current_time-first_time<=300) {
-              int diff = first_point - current_point;
-              int time = current_time - first_time;
+            me->velocity=libaroma_fling_up(&me->fling, y);
+            if (me->velocity){
               me->touched=0;
-              me->velocity = round(((double) diff/(time>>4))*360);
             }
           }
         }
