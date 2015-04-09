@@ -158,9 +158,12 @@ byte libaroma_ctl_bar_tools_free(LIBAROMA_CTL_BAR_TOOLSP tools){
   if (!tools){
     return 0;
   }
-  int i;
-  for (i=0;i<tools->n;i++){
-    _libaroma_ctl_bar_tools_item_free(&tools->tools[i]);
+  if (tools->tools){
+    int i;
+    for (i=0;i<tools->n;i++){
+      _libaroma_ctl_bar_tools_item_free(&tools->tools[i]);
+    }
+    free(tools->tools);
   }
   free(tools);
   return 1;

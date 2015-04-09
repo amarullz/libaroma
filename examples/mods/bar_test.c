@@ -108,8 +108,9 @@ void bar_test(){
     bar,NULL,0,LIBAROMA_CTL_BAR_ICON_DRAWER, 1
   );
 
+  
   LIBAROMA_WINDOWP sidebar=
-    libaroma_window_sidebar(win);
+    libaroma_window_sidebar(win,LIBAROMA_POS_3P4);
   if (sidebar){
     printf("SIDEBAR INITIALIZED\n");
   }

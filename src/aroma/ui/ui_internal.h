@@ -37,6 +37,14 @@
 byte libaroma_window_measure(LIBAROMA_WINDOWP win, LIBAROMA_CONTROLP ctl);
 
 /*
+ * Function    : libaroma_window_measure_calculate
+ * Return Value: int
+ * Descriptions: calculate measurement
+ */
+int libaroma_window_measure_calculate(
+    int cv, int pos, int max, int is_size, int x);
+    
+/*
  * Function    : libaroma_window_attach
  * Return Value: LIBAROMA_CONTROLP
  * Descriptions: attach control into window

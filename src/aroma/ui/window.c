@@ -104,6 +104,11 @@ void _libaroma_window_measure_save(LIBAROMA_WINDOWP win, LIBAROMA_CONTROLP ctl){
   }
 } /* End of _libaroma_window_measure_save */
 
+/*
+ * Function    : libaroma_window_measure_calculate
+ * Return Value: int
+ * Descriptions: calculate measurement
+ */
 int libaroma_window_measure_calculate(
     int cv, int pos, int max, int is_size, int x){
   if (is_size){
@@ -135,7 +140,9 @@ int libaroma_window_measure_calculate(
     }
   }
   return cv;
-}
+} /* End of libaroma_window_measure_calculate */
+
+
 
 /*
  * Function    : libaroma_window_measure_size

@@ -265,9 +265,11 @@ LIBAROMA_CANVASP _libaroma_ctl_pager_window_control_draw_begin(
     int h = cctl->h;
     LIBAROMA_CANVASP ccv = libaroma_control_draw_begin(ctl);
     if (ccv){
-      c = libaroma_canvas_area(
-        ccv,x,y,w,h
-      );
+      if ((ccv->w>x)&&(ccv->h>y)){
+        c = libaroma_canvas_area(
+          ccv,x,y,w,h
+        );
+      }
       libaroma_canvas_free(ccv);
     }
     else{
@@ -565,6 +567,7 @@ dword _libaroma_ctl_pager_msg(
       break;
     case LIBAROMA_MSG_WIN_MEASURED:
       {
+        libaroma_mutex_lock(me->mutex);
         win->x = 0;
         win->y = 0;
         win->w = ctl->w*me->pagen;
@@ -582,6 +585,7 @@ dword _libaroma_ctl_pager_msg(
             win->h
           );
         }
+        libaroma_mutex_unlock(me->mutex);
         _libaroma_ctl_pager_window_updatebg(win);
         
         /* remeasured all childs */

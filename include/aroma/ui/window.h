@@ -285,7 +285,7 @@ byte libaroma_window_layer_release(LIBAROMA_WINDOWP win);
  * Return Value: LIBAROMA_WINDOWP
  * Descriptions: new or get sidebar window
  */
-LIBAROMA_WINDOWP libaroma_window_sidebar(LIBAROMA_WINDOWP win);
+LIBAROMA_WINDOWP libaroma_window_sidebar(LIBAROMA_WINDOWP win, int width);
 
 
 

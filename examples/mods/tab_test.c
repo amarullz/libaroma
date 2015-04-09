@@ -20,7 +20,7 @@ void tab_test(){
   );
   
   LIBAROMA_WINDOWP win2 = libaroma_ctl_pager_get_window(pager);
-  
+  /*
   LIBAROMA_CONTROLP tabs=libaroma_ctl_tabs(
     win,
     111,
@@ -28,8 +28,6 @@ void tab_test(){
     RGB(009385),
     RGB(ffffff),
     0, 0
-    // 8,
-    // 64 /* 72-8 */
   );
   libaroma_ctl_tabs_set_pager(tabs,pager);
   char * tab_texts[10]={
@@ -46,7 +44,7 @@ void tab_test(){
   };
   libaroma_ctl_tabs_set_texts(
     tabs,tab_texts,10,0);
-  
+  */
   int pw = libaroma_px(pager->w);
   LIBAROMA_CONTROLP btn6 = libaroma_ctl_button(
     win2, 5,

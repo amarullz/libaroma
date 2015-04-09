@@ -767,8 +767,16 @@ byte _libaroma_window_sidebar_message_hooker(
       break;
     case LIBAROMA_MSG_WIN_MEASURED:
       {
+        int target_w  = libaroma_window_usedp(2)?win->rw:libaroma_dp(win->rw);
+        if (target_w==0){
+          target_w=win->parent->w-libaroma_dp(56);
+        }
+        target_w = libaroma_window_measure_calculate(
+          target_w,win->rw,win->parent->w,1,0
+        );
+    
         win->x=win->y=win->rx=win->ry=win->left=win->top=0;
-        win->w  = win->parent->w-libaroma_dp(56);
+        win->w  = target_w;
         win->h  = win->parent->h;
         if (libaroma_window_usedp(2)){
           win->rw=win->width=libaroma_px(win->w);
@@ -838,7 +846,7 @@ byte _libaroma_window_sidebar_ui_thread(LIBAROMA_WINDOWP win) {
  * Return Value: LIBAROMA_WINDOWP
  * Descriptions: new or get sidebar window
  */
-LIBAROMA_WINDOWP libaroma_window_sidebar(LIBAROMA_WINDOWP win){
+LIBAROMA_WINDOWP libaroma_window_sidebar(LIBAROMA_WINDOWP win, int width){
   if (!libaroma_window_layer_init(win)){
     return NULL;
   }
@@ -858,6 +866,7 @@ LIBAROMA_WINDOWP libaroma_window_sidebar(LIBAROMA_WINDOWP win){
     ALOGW("window_sidebar alloc sidebar data failed");
     return NULL;
   }
+  sidebar->rw = width;
   sidebar->handler=&_libaroma_window_sidebar_handler;
   sidebar->parent=win;
   sidebar->ui_thread=_libaroma_window_sidebar_ui_thread;
