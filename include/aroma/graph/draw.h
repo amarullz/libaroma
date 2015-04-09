@@ -36,7 +36,6 @@ typedef word (*LIBAROMA_DRAW_FILTER)(word color, dword param);
 /* drawing flags */
 #define LIBAROMA_DRAW_WITH_ALPHA    0x1
 #define LIBAROMA_DRAW_NODITHER      0x2
-#define LIBAROMA_DRAW_TO_BLACK      0x4
 
 /*
  * Function    : libaroma_draw_limit
@@ -92,6 +91,8 @@ byte libaroma_draw_ex2(
   int sw, int sh,
   byte draw_flags,
   byte opacity,
+  LIBAROMA_DRAW_FILTER filter_callback,
+  dword filter_param,
   byte ismask,
   word maskcolor
 );
@@ -165,6 +166,14 @@ LIBAROMA_CANVASP libaroma_blur_ex(
   byte isMask,
   word maskColor
 );
+
+/*
+ * Function    : libaroma_draw_filter_saturation
+ * Return Value: word
+ * Descriptions: saturation filter
+ */
+word libaroma_draw_filter_saturation(
+    word color, dword param);
 
 /*
  * Function    : libaroma_art_busy_progress
@@ -250,13 +259,18 @@ byte libaroma_draw_arc(
   
 /* libaroma_draw_ex1 aliases */
 #define libaroma_draw_mask(dst,src,dx,dy,cl,op) \
-  libaroma_draw_ex2(dst,src,dx,dy,0,0,src->w,src->h,1,op,1,cl)
+  libaroma_draw_ex2(dst,src,dx,dy,0,0,src->w,src->h,1,op,NULL,0,1,cl)
 #define libaroma_draw_mask_ex(dst,src,dx,dy,sx,sy,sw,sh,cl,op) \
-  libaroma_draw_ex2(dst,src,dx,dy,sx,sy,sw,sh,1,op,1,cl)
-#define libaroma_draw_ex1(dst,src,dx,dy,sx,sy,sw,sh,a,op) \
-  libaroma_draw_ex2(dst,src,dx,dy,sx,sy,sw,sh,a,op,0,0)
+  libaroma_draw_ex2(dst,src,dx,dy,sx,sy,sw,sh,1,op,NULL,0,1,cl)
+#define libaroma_draw_ex1(dst,src,dx,dy,sx,sy,sw,sh,a,op,fcb,fparam) \
+  libaroma_draw_ex2(dst,src,dx,dy,sx,sy,sw,sh,a,op,fcb,fparam,0,0)
+#define libaroma_draw_filter(dst,src,dx,dy,a,fcb,fparam) \
+  libaroma_draw_ex1(dst,src,dx,dy,0,0,src->w, \
+  src->h,a,0xff,fcb,fparam)
+#define libaroma_draw_filter_opacity(dst,src,dx,dy,a,o,fcb,fparam) \
+  libaroma_draw_ex1(dst,src,dx,dy,0,0,src->w,src->h,a,o,fcb,fparam)
 #define libaroma_draw_ex(dst,src,dx,dy,sx,sy,sw,sh,useAlpha,opacity) \
-  libaroma_draw_ex1(dst,src,dx,dy,sx,sy,sw,sh,useAlpha,opacity)
+  libaroma_draw_ex1(dst,src,dx,dy,sx,sy,sw,sh,useAlpha,opacity,NULL,0)
 #define libaroma_draw(dst,src,dx,dy,useAlpha) \
   libaroma_draw_ex(dst,src,dx,dy,0,0,src->w,src->h,useAlpha,0xff)
 #define libaroma_draw_opacity(dst,src,dx,dy,useAlpha,opacity) \

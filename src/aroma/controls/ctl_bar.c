@@ -26,6 +26,8 @@
 #include <aroma_internal.h>
 #include "../ui/ui_internal.h"
 
+#define _LIBAROMA_CTL_BAR_HOLD_TIMING           300
+#define _LIBAROMA_CTL_BAR_ANI_TIMING            500
 #define _LIBAROMA_CTL_BAR_CHANGE_TITLE          0x1
 #define _LIBAROMA_CTL_BAR_CHANGE_COLOR          0x2
 #define _LIBAROMA_CTL_BAR_CHANGE_TOOLS          0x4
@@ -83,8 +85,16 @@ struct __LIBAROMA_CTL_BAR{
   byte touched_state;
   int touch_bound_x;
   int touch_bound_w;
+  byte touched;
+  byte holded;
+  int touch_x;
+  int touch_y;
+  long touch_start;
+  float touch_state;
+  float release_state;
+  long release_start;
   
-  LIBAROMA_RIPPLE ripple;
+  
   LIBAROMA_CTL_BAR_TOOLSP tools;
   LIBAROMA_MUTEX mutex;
 };
@@ -181,8 +191,8 @@ byte libaroma_ctl_bar_tools_set(
   
   byte prevchecked = (tools->tools[index].icon_flags&
     LIBAROMA_CTL_BAR_TOOL_SWITCH_CHECKED)?1:0;
+  
   _libaroma_ctl_bar_tools_item_free(&tools->tools[index]);
-  tools->tools[index].id=id;
   if (title){
     tools->tools[index].title = strdup(title);
   }
@@ -345,6 +355,8 @@ byte _libaroma_ctl_bar_draw_switch(
   return 0;
 } /* End of _libaroma_ctl_bar_draw_switch */
 
+
+
 /*
  * Function    : _libaroma_ctl_bar_internal_draw
  * Return Value: void
@@ -488,7 +500,6 @@ void _libaroma_ctl_bar_internal_draw(LIBAROMA_CONTROLP ctl){
         if (me->tools->tools[i].icon_flags&LIBAROMA_CTL_BAR_TOOL_ICON_SHARED){
           ic = libaroma_canvas_ex(icosz,icosz,1);
           if (ic){
-            is_new=1;
             memset(ic->alpha,0,ic->s);
             libaroma_draw_scale_smooth(
               ic, me->tools->tools[i].icon,
@@ -837,82 +848,106 @@ void _libaroma_ctl_bar_draw(
       libaroma_draw(c, me->dc, 0, 0, 0);
     }
     
-    if (me->touched_state){
+    
+    if ((me->touch_state>0)&&(me->release_state<1)) {
       if (me->touched_switch){
-        if ((me->ripple.touch_state>0)&&(me->ripple.release_state<1)) {
-          int switch_id = me->touched_state-10;
-          if (switch_id>=0){
-            if (me->tools){
-              if (switch_id<me->tools->n){
-                float outstate = 1.0-libaroma_cubic_bezier_swiftout(
-                  MIN(MAX(0,(me->ripple.release_state-0.5)*2),1)
+        int switch_id = me->touched_state-10;
+        if (switch_id>=0){
+          if (me->tools){
+            if (switch_id<me->tools->n){
+              float outstate = 1.0-libaroma_cubic_bezier_swiftout(
+                MIN(MAX(0,(me->release_state-0.5)*2),1)
+              );
+              if (me->touched_switch>=2){
+                float xstate = libaroma_cubic_bezier_swiftout(
+                  MIN(me->release_state*2,1)
                 );
-                if (me->touched_switch>=2){
-                  float xstate = libaroma_cubic_bezier_swiftout(
-                    MIN(me->ripple.release_state*2,1)
-                  );
+                _libaroma_ctl_bar_draw_switch(
+                  ctl, c, switch_id, 1, xstate, 0xff * outstate
+                );
+                if (me->touched_switch!=3){
+                  me->touched_switch=3;
                   _libaroma_ctl_bar_draw_switch(
-                    ctl, c, switch_id, 1, xstate, 0xff * outstate
-                  );
-                  if (me->touched_switch!=3){
-                    me->touched_switch=3;
-                    _libaroma_ctl_bar_draw_switch(
-                      ctl, me->dc,switch_id, 1, 1, 0
-                    );
-                  }
-                }
-                else{
-                  _libaroma_ctl_bar_draw_switch(
-                    ctl, c, switch_id, 1, 1, 0xff * outstate
+                    ctl, me->dc,switch_id, 1, 1, 0
                   );
                 }
+              }
+              else{
+                _libaroma_ctl_bar_draw_switch(
+                  ctl, c, switch_id, 1, 1, 0xff * outstate
+                );
               }
             }
           }
         }
       }
       else{
-        int x=me->touch_bound_x;
-        int y=0;
-        int size=0;
-        byte push_opacity=0;
-        byte ripple_opacity=0x80;
+        float ripplestate = me->touch_state;
+        float pst_state = MIN(me->touch_state*15,1);
+        float cbz_state;
+        if (me->release_state>0){
+          ripplestate += (1.0-me->touch_state)*me->release_state;
+        }
         int bound_w = me->touch_bound_w+libaroma_dp(16);
-        if (libaroma_ripple_calculation(
-          &me->ripple, bound_w, ctl->h, &push_opacity, &ripple_opacity,
-          &x, &y, &size
-        )){
-          int center_x = me->touch_bound_x+(me->touch_bound_w>>1);
-          int center_y = c->h>>1;
-          int copy_l = center_x - bound_w;
-          int copy_r = center_x + bound_w;
-          if (copy_l<0){
-            copy_l = 0;
-          }
-          if (copy_r>c->w){
-            copy_r = c->w;
-          }
-          libaroma_draw_circle(
-            c, me->selcolor, center_x, center_y, bound_w, push_opacity
-          );
-          int copy_w = copy_r - copy_l;
-          LIBAROMA_CANVASP rdc = NULL;
-          if (copy_w>0){
-            rdc = libaroma_canvas(copy_w,c->h);
-            if (rdc){
-              libaroma_draw_ex(rdc,c,0,0,copy_l,0,rdc->w, rdc->h, 0, 0xff);
-              libaroma_draw_circle(
-                rdc, me->selcolor, center_x-copy_l, center_y,
-                bound_w, ripple_opacity
-              );
-            }
-          }
+        cbz_state = libaroma_cubic_bezier_easein(ripplestate);
+        float ropa  = (me->touched==1)?1:1-me->release_state;
+        byte opa    = (0x60 * pst_state) * ropa;
+        
+        int msize = MAX(MIN(bound_w,ctl->h)>>1,libaroma_dp(5));
+        int psize = MAX(bound_w,ctl->h);
+        psize+=(abs(me->touch_x-ctl->w/2)+abs(me->touch_y-bound_w/2)) * 2;
+        
+        int center_x = me->touch_bound_x+(me->touch_bound_w>>1);
+        int center_y = c->h>>1;
+        
+        int copy_l = center_x - bound_w;
+        int copy_r = center_x + bound_w;
+        if (copy_l<0){
+          copy_l = 0;
+        }
+        if (copy_r>c->w){
+          copy_r = c->w;
+        }
+        libaroma_draw_circle(
+          c, 
+          me->selcolor,
+          center_x, center_y,
+          bound_w,
+          (byte) opa/2
+        );
+        
+        int copy_w = copy_r - copy_l;
+        LIBAROMA_CANVASP rdc = NULL;
+        int rsize=psize * cbz_state;
+        if (rsize<msize){
+          opa = (opa * rsize) / msize;
+        }
+        rsize+=msize;
+        if (copy_w>0){
+          rdc = libaroma_canvas(copy_w,c->h);
           if (rdc){
-            libaroma_draw_mask_circle(c, rdc, 
-              me->touch_bound_x+x, y, 
-              me->touch_bound_x+x-copy_l, y, size, 0xff);
-            libaroma_canvas_free(rdc);
+            libaroma_draw_ex(rdc, c, 0, 0, copy_l, 0,
+              rdc->w, rdc->h, 0, 0xff);
+            libaroma_draw_circle(
+              rdc, 
+              me->selcolor,
+              center_x-copy_l, center_y,
+              bound_w,
+              (byte) opa
+            );
           }
+        }
+        
+        if (rdc){
+          libaroma_draw_mask_circle(
+            c, 
+            rdc, 
+            me->touch_x, me->touch_y, 
+            me->touch_x-copy_l, me->touch_y, 
+            rsize,
+            0xff
+          );
+          libaroma_canvas_free(rdc);
         }
       }
     }
@@ -948,35 +983,50 @@ byte _libaroma_ctl_bar_thread(LIBAROMA_CONTROLP ctl) {
     }
   }
   
-  byte res = libaroma_ripple_thread(&me->ripple, 0);
-  if (res){
-    if (res&LIBAROMA_RIPPLE_REDRAW){
+  if ((me->touch_start)&&(me->touch_state<1)){
+    float nowstate=libaroma_control_state(me->touch_start, 1500);
+    if (me->touch_state!=nowstate){
       is_draw = 1;
+      me->touch_state=nowstate;
     }
-    if (res&LIBAROMA_RIPPLE_HOLDED){
-      /* send window message */
-      if (me->touched_state<10){
-        libaroma_window_post_command(
-          LIBAROMA_CMD_SET(LIBAROMA_CMD_HOLD,me->touched_state,ctl->id)
-        );
-      }
-      else{
-        int tools_id = me->touched_state-10;
-        byte sstate=(me->tools->tools[tools_id].icon_flags&
-              LIBAROMA_CTL_BAR_TOOL_SWITCH_CHECKED)?1:0;
-        libaroma_window_post_command(
-          LIBAROMA_CMD_SET(LIBAROMA_CMD_HOLD,sstate,
-          me->tools->tools[tools_id].id)
-        );
-      }
+  }
+  if (me->touched==1){
+    if ((me->touch_state>=0.6)&&(!me->holded)){
+      me->holded=1;
+      /*
+      libaroma_window_post_command(
+        LIBAROMA_CMD_SET(LIBAROMA_CMD_HOLD, 0, ctl->id)
+      );
+      */
+      printf("Touched Holded %i\n",me->touched_state);
     }
-    if (res&LIBAROMA_RIPPLE_RELEASED){
+  }else if (me->touched==2){
+    if (me->touch_state>=0.1){
+      me->touched=0;
+      me->touch_start=0;
+      me->release_start=libaroma_tick();
+      me->release_state=0.0;
+    }
+  }
+  
+  if (!me->touched&&me->release_start){
+    float nowstate=libaroma_control_state(me->release_start, 300);
+    if (me->release_state!=nowstate){
+      is_draw = 1;
+      me->release_state=nowstate;
+    }
+    if (me->release_state>=1){
+      me->release_start=0;
+      me->touch_start=0;
+      me->release_state=0;
+      me->touch_state=0;
       me->touched_state = 0;
       me->touch_bound_x = 0;
       me->touch_bound_w = 0;
       me->touched_switch = 0;
     }
   }
+  
   return is_draw;
 } /* End of _libaroma_ctl_bar_thread */
 
@@ -1079,57 +1129,59 @@ dword _libaroma_ctl_bar_msg(
               me->touch_bound_w = libaroma_dp(48);
             }
           }
+          me->touched=0;
+          me->holded=0;
           if (me->touched_state){
-            libaroma_ripple_down(&me->ripple,x,y);
+            me->touch_x=x;
+            me->touch_y=y;
+            me->touch_start=libaroma_tick();
+            me->touch_state=0.0;
+            me->release_state=0.0;
+            me->release_start=0;
+            me->touched=1;
+            printf("App Bar Touched Id: %i\n",me->touched_state);
           }
         }
         else if (msg->state==LIBAROMA_HID_EV_STATE_UP){
-          byte res = libaroma_ripple_up(&me->ripple,0);
-          if ((res&LIBAROMA_RIPPLE_TOUCHED)&&
-              (!(res&LIBAROMA_RIPPLE_HOLDED))){
-            if (me->touched_switch){
-              int switch_id = me->touched_state-10;
-              if (switch_id>=0){
-                if (me->tools){
-                  if (switch_id<me->tools->n){
-                    if (me->tools->tools[switch_id].icon_flags&
-                    LIBAROMA_CTL_BAR_TOOL_SWITCH_CHECKED){
-                      me->tools->tools[switch_id].icon_flags&=
-                        ~LIBAROMA_CTL_BAR_TOOL_SWITCH_CHECKED;
-                      me->touched_switch=2;
-                    }
-                    else{
-                      me->tools->tools[switch_id].icon_flags|=
-                        LIBAROMA_CTL_BAR_TOOL_SWITCH_CHECKED;
-                      me->touched_switch=2;
+          if (me->touched){
+            if (!me->holded){
+              if (me->touched_state){
+                /*
+                libaroma_window_post_command(
+                  LIBAROMA_CMD_SET(LIBAROMA_CMD_CLICK, 0, ctl->id)
+                );
+                */
+                printf("Touched Up %i\n",me->touched_state);
+                if (me->touched_switch){
+                  int switch_id = me->touched_state-10;
+                  if (switch_id>=0){
+                    if (me->tools){
+                      if (switch_id<me->tools->n){
+                        if (me->tools->tools[switch_id].icon_flags&
+                        LIBAROMA_CTL_BAR_TOOL_SWITCH_CHECKED){
+                          me->tools->tools[switch_id].icon_flags&=
+                            ~LIBAROMA_CTL_BAR_TOOL_SWITCH_CHECKED;
+                          me->touched_switch=2;
+                        }
+                        else{
+                          me->tools->tools[switch_id].icon_flags|=
+                            LIBAROMA_CTL_BAR_TOOL_SWITCH_CHECKED;
+                          me->touched_switch=2;
+                        }
+                      }
                     }
                   }
                 }
               }
             }
-            
-            /* send window message */
-            if (me->touched_state<10){
-              libaroma_window_post_command(
-                LIBAROMA_CMD_SET(LIBAROMA_CMD_CLICK,me->touched_state,ctl->id)
-              );
-            }
-            else{
-              int tools_id = me->touched_state-10;
-              byte sstate=(me->tools->tools[tools_id].icon_flags&
-                    LIBAROMA_CTL_BAR_TOOL_SWITCH_CHECKED)?1:0;
-              libaroma_window_post_command(
-                LIBAROMA_CMD_SET(LIBAROMA_CMD_CLICK,sstate,
-                me->tools->tools[tools_id].id)
-              );
-            }
+            me->touched=2;
           }
         }
         else if (msg->state==LIBAROMA_HID_EV_STATE_MOVE){
-          if (libaroma_ripple_istouched(&me->ripple)){
+          if (me->touched){
             if (!((x>=0)&&(x>=me->touch_bound_x)&&(y>=0)&&(x<ctl->w)&&
               (x<me->touch_bound_x+me->touch_bound_w)&&(y<ctl->h))) {
-              libaroma_ripple_cancel(&me->ripple);
+              me->touched=2;
             }
           }
         }

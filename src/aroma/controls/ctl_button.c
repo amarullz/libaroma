@@ -54,9 +54,17 @@ struct __LIBAROMA_CTL_BUTTON{
   byte style;
   byte isdark;
   word color;
-  byte forcedraw;
   
-  LIBAROMA_RIPPLE ripple;
+  byte forcedraw;
+  byte touched;
+  byte holded;
+  int touch_x;
+  int touch_y;
+  long touch_start;
+  float touch_state;
+  float release_state;
+  long release_start;
+  
   LIBAROMA_MUTEX mutex;
   LIBAROMA_CANVASP rest_canvas;
   LIBAROMA_CANVASP push_canvas;
@@ -268,24 +276,39 @@ void _libaroma_ctl_button_draw(
   }
   me->forcedraw = 0;
   
-  int x=0;
-  int y=0;
-  int size=0;
-  byte push_opacity=0;
-  byte ripple_opacity=0;
-  
   libaroma_control_erasebg(ctl,c);
   if (me->style&LIBAROMA_CTL_BUTTON_DISABLED){
     libaroma_draw(c, me->rest_canvas, 0, 0, 0);
   }
-  else if (libaroma_ripple_calculation(
-      &me->ripple, ctl->w, ctl->h, &push_opacity, &ripple_opacity,
-      &x, &y, &size
-    )){
-      libaroma_draw(c, me->rest_canvas, 0, 0, 0);
-      libaroma_draw_opacity(c,me->push_canvas,0,0,2,push_opacity);
-      libaroma_draw_mask_circle(
-        c, me->push_canvas, x, y, x, y, size, ripple_opacity
+  else if ((me->touch_state>0)&&(me->release_state<1)) {
+    float ripplestate = me->touch_state;
+    float pst_state = MIN(me->touch_state*15,1);
+    float cbz_state;
+    if (me->release_state>0){
+      ripplestate += (1.0-me->touch_state)*me->release_state;
+    }
+    cbz_state = libaroma_cubic_bezier_easein(ripplestate);
+    float ropa  = (me->touched==1)?1:1-me->release_state;
+    byte opa    = (0xff * pst_state) * ropa;
+    int msize = MAX(MIN(ctl->w,ctl->h)>>1,libaroma_dp(5));
+    int psize = MAX(ctl->w,ctl->h);
+    psize+=(abs(me->touch_x-ctl->w/2)+abs(me->touch_y-ctl->h/2)) * 2;
+    libaroma_draw(c, me->rest_canvas, 0, 0, 0);
+    libaroma_draw_opacity(c, me->push_canvas, 0, 0, 2, 
+      (byte) (me->isdark?(opa/2):(opa*0.75)));
+    
+    int rsize=psize * cbz_state;
+    if (rsize<msize){
+      opa = (opa * rsize) / msize;
+    }
+    rsize+=msize;
+    libaroma_draw_mask_circle(
+        c, 
+        me->push_canvas, 
+        me->touch_x, me->touch_y, 
+        me->touch_x, me->touch_y, 
+        rsize,
+        opa
       );
   }
   else{
@@ -306,14 +329,39 @@ byte _libaroma_ctl_button_thread(LIBAROMA_CONTROLP ctl) {
   );
   byte is_draw = me->forcedraw;
   if (!(me->style&LIBAROMA_CTL_BUTTON_DISABLED)){
-    byte res = libaroma_ripple_thread(&me->ripple, 0);
-    if (res&LIBAROMA_RIPPLE_REDRAW){
-      is_draw = 1;
+    if ((me->touch_start)&&(me->touch_state<1)){
+      float nowstate=libaroma_control_state(me->touch_start, 1500);
+      if (me->touch_state!=nowstate){
+        is_draw = 1;
+        me->touch_state=nowstate;
+      }
     }
-    if (res&LIBAROMA_RIPPLE_HOLDED){
-      libaroma_window_post_command(
-        LIBAROMA_CMD_SET(LIBAROMA_CMD_HOLD, 0, ctl->id)
-      );
+    if (me->touched==1){
+      if ((me->touch_state>=0.6)&&(!me->holded)){
+        me->holded=1;
+        libaroma_window_post_command(
+          LIBAROMA_CMD_SET(LIBAROMA_CMD_HOLD, 0, ctl->id)
+        );
+      }
+    }else if (me->touched==2){
+      if (me->touch_state>=0.1){
+        me->touched=0;
+        me->touch_start=0;
+        me->release_start=libaroma_tick();
+        me->release_state=0.0;
+      }
+    }
+    
+    if (!me->touched&&me->release_start){
+      float nowstate=libaroma_control_state(me->release_start, 300);
+      if (me->release_state!=nowstate){
+        is_draw = 1;
+        me->release_state=nowstate;
+      }
+      if (me->release_state>=1){
+        me->release_start=0;
+        me->touch_start=0;
+      }
     }
   }
   if (is_draw){
@@ -377,20 +425,30 @@ dword _libaroma_ctl_button_msg(
         
         /* touch handler */
         if (msg->state==LIBAROMA_HID_EV_STATE_DOWN){
-          libaroma_ripple_down(&me->ripple, x, y);
+          me->touch_x=x;
+          me->touch_y=y;
+          me->touch_start=libaroma_tick();
+          me->touch_state=0.0;
+          me->release_state=0.0;
+          me->release_start=0;
+          me->holded=0;
+          me->touched=1;
         }
         else if (msg->state==LIBAROMA_HID_EV_STATE_UP){
-          byte res = libaroma_ripple_up(&me->ripple,0);
-          if ((res&LIBAROMA_RIPPLE_TOUCHED)&&
-              (!(res&LIBAROMA_RIPPLE_HOLDED))){
-            libaroma_window_post_command(
-              LIBAROMA_CMD_SET(LIBAROMA_CMD_CLICK, 0, ctl->id)
-            );
+          if (me->touched){
+            if (!me->holded){
+              libaroma_window_post_command(
+                LIBAROMA_CMD_SET(LIBAROMA_CMD_CLICK, 0, ctl->id)
+              );
+            }
+            me->touched=2;
           }
         }
         else if (msg->state==LIBAROMA_HID_EV_STATE_MOVE){
-          if (!((x>=0)&&(y>=0)&&(x<ctl->w)&&(y<ctl->h))) {
-            libaroma_ripple_cancel(&me->ripple);
+          if (me->touched){
+            if (!((x>=0)&&(y>=0)&&(x<ctl->w)&&(y<ctl->h))) {
+              me->touched=2;
+            }
           }
         }
       }

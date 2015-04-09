@@ -26,8 +26,7 @@
 #include <aroma_internal.h>
 #include "ui_internal.h"
 
-/* max touch x dp to trigger sidebar */
-#define _LIBAROMA_LAYER_SIDEBAR_TOUCH_DP 16
+#define _LIBAROMA_WINDOW_LAYER_HISTORY 10
 
 /* root window client data */
 typedef struct{
@@ -36,7 +35,6 @@ typedef struct{
   byte sidebar_showed;
   int sidebar_xpos;
   int sidebar_req_x;
-  int sidebar_velocity;
   byte redraw;
   
   LIBAROMA_MUTEX mutex;
@@ -48,13 +46,9 @@ typedef struct{
   int touch_x;
   int touch_y;
   
-  byte allow_scroll;
-  long client_touch_start;
-  LIBAROMA_MSG pretouched_msg;
-  LIBAROMA_CONTROLP pretouched;
-  
-  
-  LIBAROMA_FLING fling;
+  int prevn;
+  int prev_point[_LIBAROMA_WINDOW_LAYER_HISTORY];
+  long prev_time[_LIBAROMA_WINDOW_LAYER_HISTORY];
 } _LIBAROMA_WINDOW_LAYER, *_LIBAROMA_WINDOW_LAYERP;
 
 /* window handler */
@@ -175,10 +169,12 @@ byte _libaroma_window_layer_updatedc(LIBAROMA_WINDOWP win){
                 me->sidebar_xpos,0,
                 me->sidebar_xpos,0,
                 win->dc->w-me->sidebar_xpos,win->dc->h,
-                LIBAROMA_DRAW_TO_BLACK,
-                245-(150*me->sidebar_xpos/me->sidebar->w)
+                0,0xff);
+              libaroma_draw_rect(
+                win->dc, 
+                me->sidebar_xpos, 0, win->dc->w-me->sidebar_xpos, me->sidebar->h
+                ,0,(150*me->sidebar_xpos/me->sidebar->w)+10
               );
-              
               sidebar_draw=1;
             }
           }
@@ -324,6 +320,7 @@ byte _libaroma_window_layer_set_sidebar_pos(LIBAROMA_WINDOWP win, int x){
       libaroma_window_layer_direct_canvas(win,0);
       libaroma_mutex_lock(me->mutex);
       me->sidebar_showed=1;
+      printf("side state = 1 - init\n");
     }
     if (me->sidebar_xpos!=x){
       me->redraw=1;
@@ -331,16 +328,19 @@ byte _libaroma_window_layer_set_sidebar_pos(LIBAROMA_WINDOWP win, int x){
     if (x==me->sidebar->w){
       if (me->sidebar_showed!=2){
         me->sidebar_showed=2;
+        printf("side state = 2\n");
       }
     }
     else if (me->sidebar_showed==2){
       me->sidebar_showed=1;
+      printf("side state = 1\n");
     }
     me->sidebar_xpos=x;
   }
   else{
     if (me->sidebar_showed){
       me->sidebar_showed=0;
+      printf("side state = 0\n");
       libaroma_mutex_unlock(me->mutex);
       libaroma_window_layer_direct_canvas(win,1);
       libaroma_mutex_lock(me->mutex);
@@ -384,14 +384,17 @@ byte _libaroma_window_layer_message_hooker(
             int y = msg->y;
             libaroma_window_calculate_pos(win,NULL,&x,&y);
             if (msg->state==LIBAROMA_HID_EV_STATE_DOWN){
-              if (x<libaroma_dp(_LIBAROMA_LAYER_SIDEBAR_TOUCH_DP)){
+              if (x<libaroma_dp(20)){
+                printf("start sidebar reveal\n");
                 libaroma_mutex_lock(me->mutex);
-                me->sidebar_velocity=0;
-                me->sidebar_req_x=libaroma_dp(15);
+                me->sidebar_req_x=x;
                 me->touched=1;
                 me->touch_x=x;
                 me->touch_y=y;
-                libaroma_fling_down(&me->fling, x);
+                
+                me->prevn=1;
+                me->prev_point[0]=x;
+                me->prev_time[0]=libaroma_tick();
                 libaroma_mutex_unlock(me->mutex);
                 return 1;
               }
@@ -399,35 +402,45 @@ byte _libaroma_window_layer_message_hooker(
             else if (me->touched){
               if (msg->state==LIBAROMA_HID_EV_STATE_MOVE){
                 libaroma_mutex_lock(me->mutex);
-                int reqx=x;
-                if (me->touched==2){
-                  reqx=(me->sidebar->w)+(x-me->touch_x);
+                me->sidebar_req_x=x;
+                
+                /* set history */
+                long ctick = libaroma_tick();
+                me->prevn++;
+                if (me->prevn>_LIBAROMA_WINDOW_LAYER_HISTORY){
+                  int i;
+                  for (i=1;i<_LIBAROMA_WINDOW_LAYER_HISTORY;i++){
+                    me->prev_point[i-1]=me->prev_point[i];
+                    me->prev_time[i-1]=me->prev_time[i];
+                  }
+                  me->prevn--;
                 }
-                me->sidebar_req_x=MAX(
-                  libaroma_dp(_LIBAROMA_LAYER_SIDEBAR_TOUCH_DP),reqx);
-                libaroma_fling_move(&me->fling, x);
+                me->prev_point[me->prevn-1]=x;
+                me->prev_time[me->prevn-1]=ctick;
                 libaroma_mutex_unlock(me->mutex);
               }
               else if (msg->state==LIBAROMA_HID_EV_STATE_UP){
                 libaroma_mutex_lock(me->mutex);
-                me->sidebar_velocity=
-                  ((int) (libaroma_fling_up(&me->fling, x)*1.3)>>8);
-                if (me->sidebar_velocity>=0){
+                int current_point = (x==0)?me->prev_point[me->prevn-1]:x;
+                long current_time = libaroma_tick();
+                int first_point   = me->prev_point[0];
+                long first_time   = me->prev_time[0];
+                if (current_time-first_time<1) {
+                  first_time--;
+                }
+                int velocity=0;
+                if (current_time-first_time<=300) {
+                  int diff = first_point - current_point;
+                  int time = current_time - first_time;
+                  velocity = round(((double) diff/(time>>4))*360);
+                }
+                if (velocity>=0){
                   me->sidebar_req_x=0;
                 }
                 else{
                   me->sidebar_req_x=me->sidebar->w;
-                  me->sidebar_velocity=abs(me->sidebar_velocity);
                 }
-                if (me->sidebar_velocity){
-                  /* fix velocity */
-                  int diff = me->sidebar->w;
-                  me->sidebar_velocity = MAX(MIN(
-                    me->sidebar_velocity, 0.45*diff),0.05*diff);
-                }
-                if (me->sidebar_req_x!=me->sidebar_xpos){
-                  me->touched=10;
-                }
+                me->touched=0;
                 libaroma_mutex_unlock(me->mutex);
               }
               return 1;
@@ -439,6 +452,7 @@ byte _libaroma_window_layer_message_hooker(
   }
   return 0;
 }
+
 
 /*
  * Function    : _libaroma_window_layer_ui_thread
@@ -459,31 +473,16 @@ byte _libaroma_window_layer_ui_thread(LIBAROMA_WINDOWP win) {
         libaroma_mutex_unlock(me->mutex);
         _libaroma_window_layer_set_sidebar_pos(win,1);
         libaroma_mutex_lock(me->mutex);
+        printf("sidebar width: %i\n",me->sidebar->w);
       }
       else if (me->sidebar->w<=0){
         /* invalid sidebar */
         me->sidebar_req_x=-1;
       }
       else if (me->sidebar_req_x!=me->sidebar_xpos){
-        int move_sz = (me->sidebar_req_x-me->sidebar_xpos);
-        if (me->sidebar_velocity!=0){
-          me->sidebar_velocity=(me->sidebar_velocity*246)>>8;
-          int minw=MAX(1,0.05*me->sidebar->w);
-          if (me->sidebar_velocity<=minw){
-            me->sidebar_velocity=minw;
-          }
-          if (move_sz<0){
-            move_sz = 0-me->sidebar_velocity;
-          }
-          else{
-            move_sz = me->sidebar_velocity;
-          }
-        }
-        else{
-          move_sz = (move_sz<<6)>>8;
-        }
+        int move_sz = ((me->sidebar_req_x-me->sidebar_xpos)*64)>>8;
         if (abs(move_sz)<2){
-          if (me->sidebar_req_x<me->sidebar_xpos){
+          if (move_sz<0){
             move_sz=-1;
           }
           else{
@@ -501,7 +500,6 @@ byte _libaroma_window_layer_ui_thread(LIBAROMA_WINDOWP win) {
             }
             target_sz=me->sidebar->w;
             me->sidebar_req_x=-1;
-            me->sidebar_velocity=0;
           }
         }
         else if (target_sz<=0){
@@ -514,7 +512,6 @@ byte _libaroma_window_layer_ui_thread(LIBAROMA_WINDOWP win) {
             }
             target_sz=0;
             me->sidebar_req_x=-1;
-            me->sidebar_velocity=0;
           }
         }
         libaroma_mutex_unlock(me->mutex);
@@ -680,47 +677,6 @@ byte _libaroma_window_sidebar_sync(LIBAROMA_WINDOWP win,
 } /* End of _libaroma_window_sidebar_sync */
 
 /*
- * Function    : libaroma_window_sidebar_show
- * Return Value: byte
- * Descriptions: show/hide sidebar
- */
-byte libaroma_window_sidebar_show(LIBAROMA_WINDOWP win, byte show){
-  _LIBAROMA_WINDOW_LAYERP me = _libaroma_window_layer_check(win->parent);
-  if (!me){
-    return 0;
-  }
-  libaroma_mutex_lock(me->mutex);
-  if (show){
-    if (!me->sidebar_showed){
-      libaroma_mutex_unlock(me->mutex);
-      _libaroma_window_layer_set_sidebar_pos(win->parent,1);
-      libaroma_mutex_lock(me->mutex);
-      me->sidebar_req_x=win->w;
-      me->touched=10;
-      libaroma_mutex_unlock(me->mutex);
-      return 1;
-    }
-  }
-  else{
-    if (me->sidebar_showed){
-      if (me->sidebar_showed==2){
-        libaroma_mutex_unlock(me->mutex);
-        _libaroma_window_layer_set_sidebar_pos(win->parent,win->w-1);
-        libaroma_mutex_lock(me->mutex);
-      }
-      me->sidebar_req_x=0;
-      me->touched=10;
-      libaroma_mutex_unlock(me->mutex);
-      return 1;
-    }
-  }
-  libaroma_mutex_unlock(me->mutex);
-  return 0;
-} /* End of libaroma_window_sidebar_show */
-
-
-
-/*
  * Function    : _libaroma_window_sidebar_message_hooker
  * Return Value: byte
  * Descriptions: sidebar message hooker
@@ -735,15 +691,6 @@ byte _libaroma_window_sidebar_message_hooker(
   byte return_state=0;
   libaroma_mutex_lock(me->mutex);
   switch (msg->msg){
-    case LIBAROMA_MSG_KEY_BACK:
-      {
-        libaroma_mutex_unlock(me->mutex);
-        libaroma_window_sidebar_show(win, 0);
-        libaroma_mutex_lock(me->mutex);
-        return_state=1;
-        goto end_message;
-      }
-      break;
     case LIBAROMA_MSG_TOUCH:
       {
         if (win->parent->active!=1){
@@ -752,10 +699,7 @@ byte _libaroma_window_sidebar_message_hooker(
         }
         /* touch handler */
         if (msg->state==LIBAROMA_HID_EV_STATE_DOWN){
-          memcpy(&me->pretouched_msg,msg,sizeof(LIBAROMA_MSG));
           win->touched = NULL;
-          me->pretouched=NULL;
-          
           int x = msg->x;
           int y = msg->y;
           libaroma_window_calculate_pos(win->parent,NULL,&x,&y);
@@ -763,29 +707,23 @@ byte _libaroma_window_sidebar_message_hooker(
             int i;
             for (i=0;i<win->childn;i++){
               if (_libaroma_window_is_inside(win->childs[i],x,y)){
-                me->pretouched = win->childs[i];
+                win->touched = win->childs[i];
                 break;
               }
             }
-            if (me->pretouched!=NULL){
-              if (me->pretouched->handler->message){
-                me->client_touch_start=libaroma_tick();
-              }
-              else{
-                me->pretouched=NULL;
+            if (win->touched!=NULL){
+              if (win->touched->handler->message){
+                *retval=win->touched->handler->message(win->touched, msg);
               }
             }
           }
-          /*
           else{
             libaroma_mutex_unlock(me->mutex);
-            libaroma_window_sidebar_show(win, 0);
+            _libaroma_window_layer_set_sidebar_pos(win->parent,win->w-1);
             libaroma_mutex_lock(me->mutex);
-          }*/
-          me->allow_scroll=2;
-          me->touch_x=x;
-          me->touch_y=y;
-          libaroma_fling_down(&me->fling, x);
+            me->sidebar_req_x=0;
+            me->touched=10;
+          }
         }
         else if (win->touched!=NULL){
           if (msg->state==LIBAROMA_HID_EV_STATE_MOVE){
@@ -798,76 +736,6 @@ byte _libaroma_window_sidebar_message_hooker(
               *retval=win->touched->handler->message(win->touched, msg);
             }
             win->touched=NULL;
-          }
-        }
-        else if (msg->state==LIBAROMA_HID_EV_STATE_UP){
-          int x = msg->x;
-          int y = msg->y;
-          libaroma_window_calculate_pos(win->parent,NULL,&x,&y);
-          if (x>=win->w){
-            libaroma_mutex_unlock(me->mutex);
-            libaroma_window_sidebar_show(win, 0);
-            libaroma_mutex_lock(me->mutex);
-          }
-          else if (me->pretouched){
-            if (me->pretouched->handler->message){
-              me->pretouched->handler->message(
-                me->pretouched,&me->pretouched_msg);
-              me->pretouched->handler->message(
-                me->pretouched,msg);
-            }
-            me->pretouched=NULL;
-            me->client_touch_start=0;
-            me->allow_scroll=0;
-            me->touch_x=x;
-            me->touch_y=y;
-            me->redraw=1;
-          }
-        }
-        else if (msg->state==LIBAROMA_HID_EV_STATE_MOVE){
-          int x = msg->x;
-          int y = msg->y;
-          libaroma_window_calculate_pos(win->parent,NULL,&x,&y);
-          
-          if (me->allow_scroll==2){
-            int move_sz = me->touch_x - x;
-            int move_sz_y = me->touch_y - y;
-            int scrdp=libaroma_dp(24);
-            if ((abs(move_sz_y)>=scrdp)&&(abs(move_sz_y)>=abs(move_sz))){
-              /* halt the scroll and send to control */
-              if (me->pretouched){
-                if (me->pretouched->handler->message){
-                  me->client_touch_start=0;
-                  win->touched=me->pretouched;
-                  me->pretouched=NULL;
-                  win->touched->handler->message(
-                    win->touched,&me->pretouched_msg);
-                  win->touched->handler->message(
-                    win->touched,msg);
-                }
-                else{
-                  me->pretouched=NULL;
-                }
-                me->client_touch_start=0;
-                me->allow_scroll=0;
-                me->touch_x=x;
-                me->touch_y=y;
-                me->redraw=1;
-              }
-            }
-            else if (abs(move_sz)>=scrdp){
-              me->allow_scroll=1;
-              me->client_touch_start=0;
-              me->pretouched=NULL;
-              win->touched=NULL;
-              me->sidebar_showed=1;
-              me->touched=2;
-              me->touch_x=x;
-              me->touch_y=y;
-              libaroma_mutex_unlock(me->mutex);
-              _libaroma_window_layer_set_sidebar_pos(win->parent,win->w-1);
-              libaroma_mutex_lock(me->mutex);
-            }
           }
         }
         return_state=1;
@@ -900,13 +768,13 @@ byte _libaroma_window_sidebar_message_hooker(
     case LIBAROMA_MSG_WIN_MEASURED:
       {
         int target_w  = libaroma_window_usedp(2)?win->rw:libaroma_dp(win->rw);
+        if (target_w==0){
+          target_w=win->parent->w-libaroma_dp(56);
+        }
         target_w = libaroma_window_measure_calculate(
           target_w,win->rw,win->parent->w,1,0
         );
-        int max_target_w = win->parent->w-libaroma_dp(56);
-        if (target_w>max_target_w){
-          target_w=max_target_w;
-        }
+    
         win->x=win->y=win->rx=win->ry=win->left=win->top=0;
         win->w  = target_w;
         win->h  = win->parent->h;
@@ -954,31 +822,9 @@ end_message:
  * Descriptions: window sidebar ui thread
  */
 byte _libaroma_window_sidebar_ui_thread(LIBAROMA_WINDOWP win) {
-  _LIBAROMA_WINDOW_LAYERP me = _libaroma_window_layer_check(win->parent);
-  if (!me){
-    return 0;
-  }
-  
   int i;
   byte need_sync = 0;
   if (win->active==1){
-    /* pretouched */
-    libaroma_mutex_lock(me->mutex);
-    if ((me->client_touch_start!=0)&&
-        (libaroma_tick()-me->client_touch_start>180)){
-      me->client_touch_start=0;
-      if (me->pretouched!=NULL){
-        win->touched=me->pretouched;
-        me->pretouched=NULL;
-        if (win->touched->handler->message){
-          win->touched->handler->message(
-            win->touched,&me->pretouched_msg);
-        }
-      }
-    }
-    libaroma_mutex_unlock(me->mutex);
-    
-    
 #ifdef LIBAROMA_CONFIG_OPENMP
   #pragma omp parallel for
 #endif
