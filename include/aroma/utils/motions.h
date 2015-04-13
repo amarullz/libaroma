@@ -62,6 +62,20 @@ float libaroma_cubic_bezier(float x1,float y1,float x2,float y2,float t);
  */
 float libaroma_motion_fluid(float t);
 
+/*
+ * Function    : libaroma_motion_decelerate
+ * Return Value: float
+ * Descriptions: decelerate motion
+ */
+float libaroma_motion_decelerate(float t);
+
+/*
+ * Function    : libaroma_motion_accelerate
+ * Return Value: float
+ * Descriptions: accelerate motion
+ */
+float libaroma_motion_accelerate(float t);
+
 /******************************************************************************
  * Fling Motions                                                              *
  ******************************************************************************/

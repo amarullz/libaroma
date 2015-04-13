@@ -41,7 +41,7 @@ float libaroma_duration_state(long start, int duration){
   return ((float) diff)/((float) duration);
 } /* End of libaroma_duration_state */
 
-float _libaroma_cubic_bezier_curve(float v1,float v2,float t){
+static inline float _libaroma_cubic_bezier_curve(float v1,float v2,float t){
 	float v = 1 - t;
 	return (3*v*v*t*v1+3*v*t*t*v2+t*t*t);
 }
@@ -81,6 +81,25 @@ float libaroma_motion_fluid(float t){
   }
   return t;
 } /* End of libaroma_motion_fluid */
+
+/*
+ * Function    : libaroma_motion_decelerate
+ * Return Value: float
+ * Descriptions: decelerate motion
+ */
+float libaroma_motion_decelerate(float t) {
+  return (float)(1.0-(1.0-t)*(1.0-t));
+} /* End of libaroma_motion_decelerate */
+
+/*
+ * Function    : libaroma_motion_accelerate
+ * Return Value: float
+ * Descriptions: accelerate motion
+ */
+float libaroma_motion_accelerate(float t) {
+  return t * t;
+} /* End of libaroma_motion_accelerate */
+
 
 /******************************************************************************
  * Fling Motions                                                              *
@@ -151,16 +170,16 @@ byte libaroma_ripple_thread(LIBAROMA_RIPPLEP me, long wait_ms){
   byte ret = 0;
   if (me->touch_start){
     long touch_start = me->touch_start + wait_ms;
-    if (libaroma_tick()>touch_start){
+    if ((libaroma_tick()>=touch_start)||(wait_ms==0)){
       if ((touch_start)&&(me->touch_state<1)){
-        float nowstate=libaroma_duration_state(touch_start, 1500);
+        float nowstate=libaroma_duration_state(touch_start, 1200);
         if (me->touch_state!=nowstate){
           ret |= LIBAROMA_RIPPLE_REDRAW;
           me->touch_state=nowstate;
         }
       }
       if (me->touched==1){
-        if ((me->touch_state>=0.6)&&(!me->holded)){
+        if ((me->touch_state>=0.7)&&(!me->holded)){
           me->holded=1;
           ret |= LIBAROMA_RIPPLE_HOLDED;
         }
@@ -184,7 +203,7 @@ byte libaroma_ripple_thread(LIBAROMA_RIPPLEP me, long wait_ms){
     me->touched=0;
   }
   if (!me->touched&&me->release_start){
-    float nowstate=libaroma_duration_state(me->release_start, 300);
+    float nowstate=libaroma_duration_state(me->release_start, 250);
     if (me->release_state!=nowstate){
       ret |= LIBAROMA_RIPPLE_REDRAW;
       me->release_state=nowstate;
@@ -260,30 +279,34 @@ byte libaroma_ripple_calculation(
   int * x, int *y, int * size
 ){
   if (libaroma_ripple_isactive(me)) {
-    float ripplestate = me->touch_state;
+    float cbz_state = me->touch_state;
+    float tstate    = cbz_state*7.5;
+    float ropa      = 1.0;
     if (me->release_state>0){
-      ripplestate += (1.0-me->touch_state)*me->release_state;
+      cbz_state += (1.0-cbz_state) * me->release_state;
+      ropa-= (me->release_state<1)?(MAX(0,me->release_state-0.4)*1.6):1;
     }
-    float cbz_state = libaroma_cubic_bezier_easein(ripplestate);
-    float pst_state = MIN(me->touch_state*15,1);
+    cbz_state=(cbz_state<1)?libaroma_motion_decelerate(cbz_state):1;
+    tstate=(tstate<1)?libaroma_motion_accelerate(tstate):1;
+    ropa=(ropa<1)?libaroma_motion_decelerate(ropa):1;
     byte target_opa = *ripple_opacity?*ripple_opacity:0xff;
-    float ropa  = (me->touched==1)?1:1-me->release_state;
-    byte opa    = (target_opa * pst_state) * ropa;
+    byte opa = (target_opa*tstate)*ropa;
     *push_opacity = opa>>1;
     if (*push_opacity){
-      int msize   = MAX(MIN(w,h)>>1,libaroma_dp(5));
-      int psize   = MAX(w,h);
-      psize      += (abs((me->x-*x)-(w>>1))+abs((me->y-*y)-(h>>1))) << 1;
-      
-      int rsize=psize * cbz_state;
-      if (rsize<msize){
-        opa = (opa * rsize) / msize;
+      int halfWidth=w>>1;
+      int halfHeight=h>>1;
+      int end_size = sqrt(pow(halfWidth,2)+pow(halfHeight,2))*2;
+      int rsize= end_size * cbz_state;
+      if (rsize<end_size/8){
+        opa = (opa * rsize) / (end_size/8);
       }
-      rsize+=msize;
-      
+      int mx = me->x-*x;
+      int my = me->y-*y;
+      int tx = (halfWidth-mx)*cbz_state;
+      int ty = (halfHeight-my)*cbz_state;
       *ripple_opacity = opa;
-      *x = me->x-*x;
-      *y = me->y-*y;
+      *x = mx+tx;
+      *y = my+ty;
       *size = rsize;
       return 1;
     }

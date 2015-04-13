@@ -88,12 +88,17 @@ typedef struct{
 /* item state */
 typedef struct{
   byte normal_handler;
+  
+  /*
   byte touched;
   byte holded;
   long touch_start;
   float touch_state;
   float release_state;
   long release_start;
+  */
+  LIBAROMA_RIPPLE ripple;
+  
   LIBAROMA_CANVASP cache_rest;
   LIBAROMA_CANVASP cache_push;
   LIBAROMA_CANVASP cache_client;

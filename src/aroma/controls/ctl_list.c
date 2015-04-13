@@ -337,6 +337,32 @@ void _libaroma_ctl_list_draw_item(
   /* normal animation handler */
   if (item->state){
     if (item->state->normal_handler){
+      int x=0;
+      int y=(item->y+libaroma_dp(1));
+      int size=0;
+      byte push_opacity=0;
+      byte ripple_opacity=0;
+      if (libaroma_ripple_calculation(
+        &item->state->ripple, canvas->w, canvas->h,
+        &push_opacity, &ripple_opacity,
+        &x, &y, &size
+      )){
+        libaroma_draw(canvas, item->state->cache_rest, 0, 0, 0);
+        libaroma_draw_opacity(canvas, 
+          item->state->cache_push, 0, 0, 2, 
+          (byte) push_opacity
+        );
+        libaroma_draw_mask_circle(
+            canvas, 
+            item->state->cache_push, 
+            x, y,
+            x, y,
+            size,
+            ripple_opacity
+          );
+      }
+      
+      /*
       if ((item->state->touch_state>0)&&(item->state->release_state<1)) {
         float ripplestate = item->state->touch_state;
         float pst_state = MIN(item->state->touch_state*15,1);
@@ -377,6 +403,7 @@ void _libaroma_ctl_list_draw_item(
             );
         }
       }
+      */
       else{
         libaroma_draw(canvas, item->state->cache_rest, 0, 0, 0);
       }
@@ -463,6 +490,38 @@ byte _libaroma_ctl_list_thread(
         if (item->state){
           /* normal behaviour */
           if (item->state->normal_handler){
+            byte res = libaroma_ripple_thread(&item->state->ripple, 0);
+            if (res&LIBAROMA_RIPPLE_REDRAW){
+              is_draw = 1;
+            }
+            if (res&LIBAROMA_RIPPLE_HOLDED){
+              if (item->handler->message){
+                int cx = 0; int cy=0;
+                LIBAROMA_CTL_LIST_TOUCHPOSP pos = libaroma_ctl_list_getpos(ctl);
+                if (pos){
+                  cy = pos->last_y - item->y;
+                  cx = pos->last_x;
+                }
+                byte msgret=item->handler->message(
+                  ctl,
+                  item,
+                  LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_HOLDED,
+                  LIBAROMA_CTL_LIST_ITEM_MSGPARAM_HOLDED,
+                  cx, cy
+                );
+                if (msgret&LIBAROMA_CTL_LIST_ITEM_MSGRET_NEED_DRAW){
+                  is_draw=1;
+                }
+                if (msgret&LIBAROMA_CTL_LIST_ITEM_MSGRET_UNREG_THREAD){
+                  unreg_me=1;
+                }
+              }
+            }
+            if (res&LIBAROMA_RIPPLE_RELEASED){
+              _libaroma_ctl_list_free_state(item);
+              unreg_me=1;
+            }
+            /*
             if ((item->state->touch_start)&&(item->state->touch_state<1)){
               float nowstate=libaroma_control_state(
                 item->state->touch_start, 1500
@@ -475,8 +534,6 @@ byte _libaroma_ctl_list_thread(
             if (item->state->touched==1){
               if ((item->state->touch_state>=0.6)&&(!item->state->holded)){
                 item->state->holded=1;
-                
-                /* send hold message to item */
                 if (item->handler->message){
                   int cx = 0; int cy=0;
                   LIBAROMA_CTL_LIST_TOUCHPOSP pos =
@@ -526,6 +583,7 @@ byte _libaroma_ctl_list_thread(
                 unreg_me=1;
               }
             }
+            */
           }
         }
         if (item->handler->message){
@@ -735,13 +793,17 @@ dword _libaroma_ctl_list_scroll_message(
               else{
                 mi->touched->state->normal_handler = 1;
               }
+              libaroma_mutex_lock(mi->mutex);
+              libaroma_ripple_down(&mi->touched->state->ripple, x, y);
+              /*
               mi->touched->state->touch_start=libaroma_tick();
               mi->touched->state->touch_state=0;
               mi->touched->state->release_state=0.0;
               mi->touched->state->release_start=0;
               mi->touched->state->holded=0;
               mi->touched->state->touched=1;
-              libaroma_mutex_lock(mi->mutex);
+              */
+              
               __libaroma_ctl_list_item_reg_thread(ctl, mi->touched);
               libaroma_mutex_unlock(mi->mutex);
             }
@@ -793,16 +855,18 @@ dword _libaroma_ctl_list_scroll_message(
           "list_scroll_message TOUCH_CANCEL(%i,%i)",x,y);
         mi->pos.last_x=x;
         mi->pos.last_y=y;
-        
         byte retval = 0;
         if (mi->touched!=NULL){
           dword param_msg = 0;
           if (mi->touched->state){
-            if (mi->touched->state->holded){
-              param_msg = LIBAROMA_CTL_LIST_ITEM_MSGPARAM_HOLDED;
+            if (msg==LIBAROMA_CTL_SCROLL_MSG_TOUCH_CANCEL){
+              libaroma_ripple_cancel(&mi->touched->state->ripple);
             }
-            if (mi->touched->state->normal_handler){
-              mi->touched->state->touched=2;
+            else{
+              byte res = libaroma_ripple_up(&mi->touched->state->ripple,0);
+              if (res&LIBAROMA_RIPPLE_HOLDED){
+                param_msg = LIBAROMA_CTL_LIST_ITEM_MSGPARAM_HOLDED;
+              }
             }
           }
           byte mres = 0;

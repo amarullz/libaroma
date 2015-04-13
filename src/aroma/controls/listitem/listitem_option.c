@@ -300,18 +300,18 @@ void _libaroma_listitem_option_draw(
     byte is_switch = (flags&LIBAROMA_LISTITEM_OPTION_SWITCH)?1:0;
     float relstate=1;
     if ((item->state!=NULL)&&(mi->onchangeani)){
-      if (item->state->touched==2){
+      if (item->state->ripple.touched==2){
         relstate=0;
       }
-      else if (item->state->release_start){
-        if (item->state->release_state<0.25){
+      else if (item->state->ripple.release_start){
+        if (item->state->ripple.release_state<0.25){
           relstate=0;
         }
-        else if (item->state->release_state>0.75){
+        else if (item->state->ripple.release_state>0.75){
           relstate=1;
         }
         else{
-          relstate=MAX(MIN((item->state->release_state-0.25) * 2,1),0);
+          relstate=MAX(MIN((item->state->ripple.release_state-0.25) * 2,1),0);
           relstate=libaroma_cubic_bezier_swiftout(relstate);
           relstate=MAX(MIN(1,relstate),0);
         }

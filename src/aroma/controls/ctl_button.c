@@ -283,10 +283,10 @@ void _libaroma_ctl_button_draw(
       &x, &y, &size
     )){
       libaroma_draw(c, me->rest_canvas, 0, 0, 0);
-      libaroma_draw_opacity(c,me->push_canvas,0,0,2,push_opacity);
       libaroma_draw_mask_circle(
         c, me->push_canvas, x, y, x, y, size, ripple_opacity
       );
+      libaroma_draw_opacity(c,me->push_canvas,0,0,0,push_opacity);
   }
   else{
     libaroma_draw(c, me->rest_canvas, 0, 0, 0);
