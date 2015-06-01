@@ -836,7 +836,7 @@ void _libaroma_ctl_scroll_draw(
       
       /* overshoot draw */
       if ((me->max_scroll_y>0)&&(me->ovs_state>0)&&(me->ovs_state<1)){
-        int max_ovsz = MIN(c->h/4,libaroma_dp(90));
+        int max_ovsz = MIN(c->h/4,libaroma_dp(100));
         int overshoot_sz = MIN(abs(me->ovs_y)/3,max_ovsz);
         if (overshoot_sz>0){
           float opa = 0;
@@ -857,47 +857,38 @@ void _libaroma_ctl_scroll_draw(
             overshoot_sz = overshoot_sz * MIN(1,opa*2);
           }
           float opacity=((float) overshoot_sz) / max_ovsz;
-          overshoot_sz = MIN(MIN(overshoot_sz,c->h/5),libaroma_dp(72));
+          overshoot_sz = MIN(MIN(overshoot_sz,c->h/5),libaroma_dp(80));
           if (overshoot_sz>1){
             LIBAROMA_CANVASP ovshot = libaroma_canvas_ex(
               c->w, overshoot_sz, 1);
             libaroma_canvas_setcolor(ovshot,RGB(009587),0);
-            int ovs_h = overshoot_sz >> 1;
+            int vw = c->w>>2;
+            int vx = me->ovs_x>>2;
+            int ovw= overshoot_sz>>1;
+            int x1 = 0-(vw-vx);
+            int x2 = x1+c->w+vw;
             if (me->ovs_y<0){
-              LIBAROMA_PATHP path=libaroma_path(0,0);
-              int hv = MAX(1,MIN(1,(me->ovs_x>>1) / (ovshot->w>>1))) * ovs_h;
-              int rv = MAX(1,MIN(1,((ovshot->w>>1)-(me->ovs_x>>1)) /
-                (ovshot->w>>1))) * ovs_h;
-              libaroma_path_add(path, 0, hv);
+              LIBAROMA_PATHP path=libaroma_path(x1,0);
               libaroma_path_curve(
-                path,
-                ovs_h,
-                me->ovs_x>>1, ovs_h+hv,
-                (ovshot->w>>1)+(me->ovs_x>>1), ovs_h+rv,
-                ovshot->w-1, rv
+                path, overshoot_sz, 
+                x1+ovw, overshoot_sz,
+                x2-ovw, overshoot_sz,
+                x2, 0
               );
-              libaroma_path_add(path, ovshot->w-1, 0);
-              libaroma_path_draw(ovshot, path, 0,
-                0x60*opacity, 1, 0.33);
+              libaroma_path_draw(ovshot, path, 0, 0x60*opacity, 1, 0.33);
               libaroma_path_free(path);
-              
               libaroma_draw(c,ovshot,0,0,1);
             }
             else{
-              LIBAROMA_PATHP path=libaroma_path(0,ovshot->h-1);
-              libaroma_path_add(path, 0, ovs_h);
+              LIBAROMA_PATHP path=libaroma_path(x1,overshoot_sz-1);
               libaroma_path_curve(
-                path,
-                ovs_h,
-                me->ovs_x>>1, 0,
-                (ovshot->w>>1)+(me->ovs_x>>1), 0,
-                ovshot->w-1, ovs_h
+                path, overshoot_sz, 
+                x1+ovw, 0,
+                x2-ovw, 0,
+                x2,overshoot_sz-1
               );
-              libaroma_path_add(path, ovshot->w-1, ovshot->h-1);
-              libaroma_path_draw(ovshot, path, 0,
-                0x60*opacity, 1, 0.33);
+              libaroma_path_draw(ovshot, path, 0, 0x60*opacity, 1, 0.33);
               libaroma_path_free(path);
-              
               libaroma_draw(c,ovshot,0,c->h-overshoot_sz,1);
             }
             libaroma_canvas_free(ovshot);
