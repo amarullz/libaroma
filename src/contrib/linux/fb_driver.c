@@ -31,6 +31,33 @@
 #include "fb_qcom/fb_qcom.c" /* qcom overlay */
 
 /*
+ * Function    : LINUXFBDR_config
+ * Return Value: byte
+ * Descriptions: config framebuffer
+ */
+byte LINUXFBDR_config(
+  LIBAROMA_FBP me, const char * name, const char * sval, dword dval
+){
+  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
+  if (mi==NULL){
+    return 0;
+  }
+  if (strcmp(name,"pointer")==0){
+    mi->pointered=1;
+    mi->pointer_x=LOWORD(dval);
+    mi->pointer_y=HIWORD(dval);
+    
+    struct fb_cursor cur;
+    cur.enable=1;
+    cur.hot.x=mi->pointer_x;
+    cur.hot.x=mi->pointer_y;
+    cur.set=FB_CUR_SETPOS;
+    ioctl(mi->fb,FBIO_CURSOR,&cur);
+  }
+  return 0;
+}
+
+/*
  * Function    : LINUXFBDR_init
  * Return Value: byte
  * Descriptions: init framebuffer
@@ -148,6 +175,9 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
   
   /* set dpi */
   LINUXFBDP_set_dpi(me);
+  
+  /* set config */
+  me->config = &LINUXFBDR_config;
   
   /* ok */
   goto ok;

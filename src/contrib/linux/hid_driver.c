@@ -56,7 +56,8 @@
 enum {
   LINUXHIDRV_DEVCLASS_KEYBOARD    = 0x01,
   LINUXHIDRV_DEVCLASS_TOUCH       = 0x02,
-  LINUXHIDRV_DEVCLASS_MULTITOUCH  = 0x04
+  LINUXHIDRV_DEVCLASS_MULTITOUCH  = 0x04,
+  LINUXHIDRV_DEVCLASS_POINTER     = 0x08
 };
 
 /*
@@ -131,6 +132,7 @@ typedef struct {
  */
 #include "hid_translate/translate_keyboard.c" /* keyboard */
 #include "hid_translate/translate_touch.c" /* touch */
+#include "hid_translate/translate_pointer.c" /* mouse & gamepad */
 
 /*
  * forward functions
@@ -331,8 +333,11 @@ byte LINUXHIDRV_getdevclass(
   /* figure out the kinds of events the device reports. */
   byte keyBitmask[(KEY_MAX + 1) / 8];
   byte absBitmask[(ABS_MAX + 1) / 8];
+  byte relBitmask[(REL_MAX + 1) / 8];
+  
   ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keyBitmask)), keyBitmask);
   ioctl(fd, EVIOCGBIT(EV_ABS, sizeof(absBitmask)), absBitmask);
+  ioctl(fd, EVIOCGBIT(EV_REL, sizeof(relBitmask)), relBitmask);
   
   /* reset return value */
   byte ret = 0;
@@ -374,6 +379,13 @@ byte LINUXHIDRV_getdevclass(
     /* single touch */
     ret |= LINUXHIDRV_DEVCLASS_TOUCH;
   }
+  
+  /* mouse or gamepad */
+  if (LINUXHIDRV_TEST_BIT(REL_X, relBitmask) &&
+      LINUXHIDRV_TEST_BIT(REL_Y, relBitmask)) {
+    ret |= LINUXHIDRV_DEVCLASS_POINTER;
+  }
+  
   return ret;
 }
 
@@ -507,10 +519,15 @@ byte LINUXHIDRV_translate(LIBAROMA_HIDP me, LINUXHIDRV_DEVICEP dev,
     /* it's touch device - input_translate/translate_touch.c */
     return LINUXHIDRV_translate_touch(me, dev, dest_ev, ev);
   }
+  else if (dev->devclass & LINUXHIDRV_DEVCLASS_POINTER) {
+    /* it's pointer/relative device - input_translate/translate_mice.c */
+    return LINUXHIDRV_translate_pointer(me, dev, dest_ev, ev);
+  }
   else if (dev->devclass & LINUXHIDRV_DEVCLASS_KEYBOARD) {
     /* it's key device - input_translate/translate_key.c */
     return LINUXHIDRV_translate_keyboard(me, dev, dest_ev, ev);
   }
+  
   /* don't process it */
   return LIBAROMA_HID_EV_RET_NONE;
 }

@@ -28,6 +28,11 @@
 #endif
 #include <aroma_internal.h>
 
+#ifdef LIBAROMA_TTY_KDSETMODE
+  #include <linux/kd.h>
+  #include <sys/ioctl.h>
+#endif
+
 /* init & release function */
 byte libaroma_hid_init();
 void libaroma_hid_release();
@@ -117,6 +122,7 @@ LIBAROMA_CONFIGP libaroma_config(){
  * Descriptions: Start libaroma application
  */
 byte libaroma_start() {
+
   /* Welcome Message */
   ALOGI(
     "%s Version %s",
@@ -125,6 +131,12 @@ byte libaroma_start() {
   );
   ALOGI("  %s", libaroma_info(LIBAROMA_INFO_COPYRIGHT));
   ALOGI(" ");
+  
+#ifdef LIBAROMA_TTY_KDSETMODE
+  ALOGI("KDSETMODE = KD_GRAPHICS");
+  int tty1 = open("/dev/tty1", O_RDWR);
+  ioctl(tty1, KDSETMODE, KD_GRAPHICS);
+#endif
   
   /* Init Safe Process Monitoring */
   if (libaroma_config()->runtime_monitor) {
@@ -217,6 +229,13 @@ byte libaroma_end() {
   ___mtrack_init_free(1);
 #endif
 #endif
+
+#ifdef LIBAROMA_TTY_KDSETMODE
+  ALOGI("KDSETMODE = KD_TEXT");
+  int tty1 = open("/dev/tty1", O_RDWR);
+  ioctl(tty1, KDSETMODE, KD_TEXT);
+#endif
+
   return 1;
 }
 

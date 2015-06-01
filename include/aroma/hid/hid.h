@@ -30,6 +30,7 @@
 /* hid macros */
 #define LIBAROMA_HID_KEYCODE_MAX      0x200
 #define LIBAROMA_HID_TOUCH_KEYCODE    (LIBAROMA_HID_KEYCODE_MAX-1)
+#define LIBAROMA_HID_WHEEL_KEYCODE    (LIBAROMA_HID_KEYCODE_MAX-2)
 
 /* Input Event Type */
 #define LIBAROMA_HID_EV_TYPE_NONE     0x00 /* Won't processed */

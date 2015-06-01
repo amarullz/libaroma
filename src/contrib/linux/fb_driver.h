@@ -75,12 +75,18 @@ struct _LINUXFBDR_INTERNAL{
 
   byte      double_buffering;           /* is double buffering? */
   voidp     current_buffer;             /* current buffer to write */
+  voidp     unswap_buffer;              /* unswapped buffer to write */
   
   LIBAROMA_MUTEX  mutex;
   
   int       last_vsync;
   byte      is_omap;                    /* is omap fb? - vsync */
   QCOMFB_INTERNALP  qcom;               /* qcom fb internal data */
+  
+  /* pointer */
+  byte pointered;
+  word pointer_x;
+  word pointer_y;
 };
 
 /* release function */

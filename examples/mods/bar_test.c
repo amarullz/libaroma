@@ -52,8 +52,17 @@ void bar_test(){
   
   LIBAROMA_CONTROLP button_2 = libaroma_ctl_button(
     win2, 8, pw*2, 0, pw, 60,
-    "Second Button", LIBAROMA_CTL_BUTTON_COLORED, RGB(008800)
+    "Second Button", LIBAROMA_CTL_BUTTON_COLORED|LIBAROMA_CTL_BUTTON_RAISED, RGB(008800)
   );
+  /*
+  LIBAROMA_CONTROLP progress2 = libaroma_ctl_progress(
+    win2, 51,
+    (pw*3.5)-24, 48, 48, 48,
+    LIBAROMA_CTL_PROGRESS_INDETERMINATE|LIBAROMA_CTL_PROGRESS_CIRCULAR,
+    100,
+    0
+  );
+  */
   
   /* list */
   LIBAROMA_CONTROLP list = libaroma_ctl_list(
@@ -144,8 +153,10 @@ void bar_test(){
     
     if (msg.msg==LIBAROMA_MSG_KEY_SELECT){
       if (msg.state==0){
-        printf("Screenshoot...\n");
+        printf("Screenshoot... and exit\n");
         libaroma_png_save(libaroma_fb()->canvas,"/sdcard/libaroma_screenshoot.png");
+        onpool = 0;
+        break;
       }
     }
     else if (cmd){
@@ -303,5 +314,8 @@ void bar_test(){
   if (list_icon){
     libaroma_canvas_free(list_icon);
   }
+  
+  printf("Free Window\n");
   libaroma_window_free(win);
+  printf("FREED\n");
 }

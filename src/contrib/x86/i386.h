@@ -14,39 +14,24 @@
  * limitations under the License.
  *______________________________________________________________________________
  *
- * Filename    : fallback.h
- * Description : fallback headers
+ * Filename    : i386.h
+ * Description : x86 32bit config
  *
  * + This is part of libaroma, an embedded ui toolkit.
  * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_internal_h__
-  #error "Include <aroma_internal.h> instead."
-#endif
-#ifndef __libaroma_fallback_h__
-#define __libaroma_fallback_h__
+#ifndef __libaroma_i386_h__
+#define __libaroma_i386_h__
 
-/* add syscall wrapper here */
-#ifdef __linux__
-  #include "contrib/linux/linux_syscall.h"
-#endif
-
-/* for android */
-#if ANDROID
-  #include "contrib/android/android.h"
-#endif
-
-/* X86 32bit */
 #if defined(__i386) || defined(_M_IX86)
-  #include "contrib/x86/i386.h"
-  #include "contrib/sse/sse_neon.h"
+  #ifdef LIBAROMA_CONFIG_SHMEM_PREFIX
+    #undef LIBAROMA_CONFIG_SHMEM_PREFIX
+  #endif
+  #define LIBAROMA_CONFIG_SHMEM_PREFIX "/tmp/libaromashm-"
+  
+/*  #define shm_open open
+  #define shm_unlink unlink*/
 #endif
 
-/* arm neon engine */
-#ifdef __ARM_HAVE_NEON
-  #include "contrib/arm_neon/arm_neon.h"
-#endif
-
-#endif /* __libaroma_fallback_h__ */
-
+#endif /* __libaroma_i386_h__ */

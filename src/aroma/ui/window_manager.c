@@ -38,7 +38,7 @@ static LIBAROMA_THREAD _libaroma_wm_ui_thread_var;
 static LIBAROMA_COND_MUTEX  _libaroma_wm_mutex;
 static LIBAROMA_COND  _libaroma_wm_cond;
 static LIBAROMA_MUTEX _libaroma_wm_ui_mutex;
-
+static byte _libaroma_wm_onprocessing=0;
 /*
  * Function    : libaroma_wm
  * Return Value: LIBAROMA_WMP
@@ -193,6 +193,7 @@ byte libaroma_wm_init(){
   }
   libaroma_cond_init(&_libaroma_wm_cond, &_libaroma_wm_mutex);
   libaroma_mutex_init(_libaroma_wm_ui_mutex);
+  _libaroma_wm_onprocessing=0;
   _libaroma_wm->theme = libaroma_sarray(_libaroma_wm_theme_release);
   _libaroma_wm->color = libaroma_sarray(NULL);
   _libaroma_wm->w = libaroma_fb()->w;
@@ -214,6 +215,7 @@ byte libaroma_wm_release(){
     ALOGW("window manager uninitialized");
     return 0;
   }
+  _libaroma_wm_onprocessing=1;
   libaroma_mutex_lock(_libaroma_wm_ui_mutex);
   if (_libaroma_wm->client_started){
     libaroma_wm_client_stop();
@@ -225,6 +227,7 @@ byte libaroma_wm_release(){
     libaroma_canvas_free(_libaroma_wm->workspace_bg);
   }
   libaroma_mutex_unlock(_libaroma_wm_ui_mutex);
+  _libaroma_wm_onprocessing=0;
   libaroma_mutex_free(_libaroma_wm_ui_mutex);
   libaroma_cond_free(&_libaroma_wm_cond, &_libaroma_wm_mutex);
   free(_libaroma_wm);
@@ -514,7 +517,7 @@ static void * _libaroma_wm_ui_thread(void * cookie) {
   byte need_sync = 0;
   while(_libaroma_wm->client_started){
     /* run child thread process */
-    if (_libaroma_wm->client_started){
+    if ((_libaroma_wm->client_started)&&(!_libaroma_wm_onprocessing)){
       libaroma_mutex_lock(_libaroma_wm_ui_mutex);
       if (_libaroma_wm->active_window!=NULL){
         if (_libaroma_wm->active_window->ui_thread!=NULL){
@@ -877,9 +880,11 @@ byte libaroma_wm_set_active_window(LIBAROMA_WINDOWP win){
     return 0;
   }
   
+  _libaroma_wm_onprocessing=1;
   libaroma_mutex_lock(_libaroma_wm_ui_mutex);
   if (_libaroma_wm->active_window==win){
     libaroma_mutex_unlock(_libaroma_wm_ui_mutex);
+    _libaroma_wm_onprocessing=0;
     return 1;
   }
   
@@ -919,6 +924,7 @@ byte libaroma_wm_set_active_window(LIBAROMA_WINDOWP win){
     }
   }
   libaroma_mutex_unlock(_libaroma_wm_ui_mutex);
+  _libaroma_wm_onprocessing=0;
   return 1;
 } /* End of libaroma_wm_set_active_window */
 

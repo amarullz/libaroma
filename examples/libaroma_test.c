@@ -43,7 +43,8 @@ void init_libaroma(){
     libaroma_config()->runtime_monitor = LIBAROMA_START_UNSAFE;
   */
   
-  snprintf(libaroma_config()->fb_shm_name,64,"");
+  /*snprintf(libaroma_config()->fb_shm_name,64,"");*/
+  libaroma_config()->fb_shm_name[0]=0;
   libaroma_start();
   
   /* clean display */
@@ -68,6 +69,8 @@ int main(int argc, char **argv){
     pid_t pp = getppid();
     kill(pp, 19);
   */
+  /*libaroma_config()->runtime_monitor = LIBAROMA_START_MUTEPARENT;*/
+  
   init_libaroma();
   
   // tab_test();

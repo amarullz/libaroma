@@ -234,6 +234,16 @@ void libaroma_ripple_down(LIBAROMA_RIPPLEP me, int x, int y){
 } /* End of libaroma_ripple_down */
 
 /*
+ * Function    : libaroma_ripple_move
+ * Return Value: void
+ * Descriptions: ripple move handler
+ */
+void libaroma_ripple_move(LIBAROMA_RIPPLEP me, int x, int y){
+  me->x=x;
+  me->y=y;
+} /* End of libaroma_ripple_down */
+
+/*
  * Function    : libaroma_ripple_up
  * Return Value: byte
  * Descriptions: ripple up handler

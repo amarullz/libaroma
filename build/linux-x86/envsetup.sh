@@ -1,0 +1,15 @@
+#!/bin/sh
+
+export LIBAROMA_GCC="gcc -m32 -mfpmath=sse -mmmx -msse -msse2 -msse3 -msse4.2"
+export LIBAROMA_GPP="g++ -m32 -mfpmath=sse -mmmx -msse -msse2 -msse3 -msse4.2"
+
+export LIBAROMA_CFLAGS="-Wno-sign-compare -Wno-unused-variable -O3 -fopenmp -DLIBAROMA_CONFIG_OPENMP=1 -DLIBAROMA_CONFIG_DEBUG_TRACE=0 -DLIBAROMA_CONFIG_SHMEM_PREFIX=\"/tmp/libaromashm-\" -DLIBAROMA_CONFIG_NOJPEG=1 -DLIBAROMA_TTY_KDSETMODE=1"
+export LIBAROMA_DEBUG_CFLAGS="-Wno-sign-compare -Wno-unused-variable -ggdb -fopenmp -DLIBAROMA_CONFIG_OPENMP=1 -DLIBAROMA_CONFIG_DEBUG_TRACE=0 -DLIBAROMA_CONFIG_SHMEM_PREFIX=\"/tmp/libaromashm-\" -DLIBAROMA_CONFIG_NOJPEG=1 -DLIBAROMA_TTY_KDSETMODE=1"
+
+export LIBAROMA_CONFIG_DEBUG="3"
+export LIBAROMA_CONFIG_DEBUG_FILE="0"
+export LIBAROMA_CONFIG_DEBUG_MEMORY="0"
+export LIBAROMA_CONFIG_COMPILER_MESSAGE="1"
+export LIBAROMA_CONFIG_SHMEMFB="0"
+
+bash

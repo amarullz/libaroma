@@ -289,10 +289,10 @@ byte _libaroma_ctl_bar_draw_switch(
         );
         
         if (draw_handle){
-          int vhsz=h_sz+libaroma_dp(10);
+          int vhsz=h_sz+libaroma_dp(16);
           libaroma_gradient_ex1(cv,
-            h_draw_x-libaroma_dp(5),
-            h_draw_y-libaroma_dp(5),
+            h_draw_x-libaroma_dp(8),
+            h_draw_y-libaroma_dp(8),
             vhsz, 
             vhsz, 
             me->selcolor,me->selcolor,
@@ -882,6 +882,7 @@ void _libaroma_ctl_bar_draw(
           &me->ripple, bound_w, ctl->h, &push_opacity, &ripple_opacity,
           &x, &y, &size
         )){
+          x-=libaroma_dp(8);
           int center_x = me->touch_bound_x+(me->touch_bound_w>>1);
           int center_y = c->h>>1;
           int copy_l = center_x - bound_w;
@@ -1130,6 +1131,9 @@ dword _libaroma_ctl_bar_msg(
             if (!((x>=0)&&(x>=me->touch_bound_x)&&(y>=0)&&(x<ctl->w)&&
               (x<me->touch_bound_x+me->touch_bound_w)&&(y<ctl->h))) {
               libaroma_ripple_cancel(&me->ripple);
+            }
+            else{
+              libaroma_ripple_move(&me->ripple, x, y);
             }
           }
         }

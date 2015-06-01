@@ -158,6 +158,13 @@ void libaroma_ripple_down(LIBAROMA_RIPPLEP me, int x, int y);
 byte libaroma_ripple_up(LIBAROMA_RIPPLEP me, long wait_ms);
 
 /*
+ * Function    : libaroma_ripple_move
+ * Return Value: void
+ * Descriptions: ripple move handler
+ */
+void libaroma_ripple_move(LIBAROMA_RIPPLEP me, int x, int y);
+
+/*
  * Function    : libaroma_ripple_calculation
  * Return Value: byte
  * Descriptions: ripple drawing calculation

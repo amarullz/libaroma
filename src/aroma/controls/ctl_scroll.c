@@ -962,7 +962,7 @@ dword _libaroma_ctl_scroll_touch_handler(
               ctl,LIBAROMA_CTL_SCROLL_MSG_ISNEED_TOUCH,
               client_x, client_y
             )==LIBAROMA_CTL_SCROLL_MSG_HANDLED){
-          me->client_touch_start=libaroma_tick();
+          me->client_touch_start=msg->sent; /*libaroma_tick();*/
           me->allow_scroll=2;
         }
       }
@@ -1036,7 +1036,7 @@ dword _libaroma_ctl_scroll_touch_handler(
           
           if (me->scroll_y+move_sz<0){
             if (!me->ovs_start){
-              me->ovs_start=libaroma_tick();
+              me->ovs_start=msg->sent; /*libaroma_tick();*/
               me->ovs_bounce=0;
               me->ovs_state=0;
               me->ovs_ustate=0;
@@ -1047,7 +1047,7 @@ dword _libaroma_ctl_scroll_touch_handler(
           }
           else if (me->scroll_y+move_sz>me->max_scroll_y){
             if (!me->ovs_start){
-              me->ovs_start=libaroma_tick();
+              me->ovs_start=msg->sent; /*libaroma_tick();*/
               me->ovs_bounce=0;
               me->ovs_state=0;
               me->ovs_ustate=0;
@@ -1097,7 +1097,7 @@ dword _libaroma_ctl_scroll_touch_handler(
         }
         else if (me->allow_scroll==1){
           if (!(me->flags&LIBAROMA_CTL_SCROLL_NO_INDICATOR)){
-            me->scroll_tick = libaroma_tick();
+            me->scroll_tick = msg->sent; /*libaroma_tick();*/
             me->scroll_state=256;
             me->synced_y=-1;
           }

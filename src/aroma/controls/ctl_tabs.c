@@ -795,6 +795,9 @@ dword _libaroma_ctl_tabs_msg(
             libaroma_ripple_cancel(&me->ripple);
             me->forcedraw = 1;
           }
+          else{
+            libaroma_ripple_move(&me->ripple, x+me->draw_x, y);
+          }
         }
       }
       break;

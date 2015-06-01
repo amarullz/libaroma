@@ -93,6 +93,7 @@ struct __LIBAROMA_CTL_PAGER{
   long scroll_target_start;
   int scroll_target_from_x;
   int scroll_x;
+  int req_scroll_x;
   int max_scroll_x;
   
   byte allow_scroll;
@@ -389,8 +390,52 @@ byte _libaroma_ctl_pager_thread(LIBAROMA_CONTROLP ctl) {
         }
         libaroma_mutex_unlock(me->mutex);
         
+        if (me->req_scroll_x!=-1){
+          /* direct request */
+          if (me->req_scroll_x!=me->scroll_x){
+            int move_sz = ((me->req_scroll_x-me->scroll_x)*64)>>8;
+            if (abs(move_sz)<2){
+              if (move_sz<0){
+                move_sz=-1;
+              }
+              else{
+                move_sz=1;
+              }
+            }
+            int target_sz = me->scroll_x+move_sz;
+            if (target_sz==me->req_scroll_x){
+              target_sz=me->req_scroll_x;
+              me->req_scroll_x=-1;
+            }
+            me->scroll_x=target_sz;
+            is_draw=1;
+            /* onscroll controller message */
+            if (me->controller){
+              if ((me->controller->pager==ctl)&&
+                (me->controller->controller)) {
+                if (me->controller->handler){
+                  if (me->controller->handler->onscroll){
+                    me->controller->handler->onscroll(
+                      me->controller->controller,
+                      me->controller->pager,
+                      me->scroll_x,
+                      me->win->w,
+                      ctl->w,
+                      me->page_position
+                    );
+                  }
+                }
+              }
+            }
+          }
+          else{
+            me->req_scroll_x=-1;
+          }
+        }
+        
         /* fling */
         if (me->scroll_target_start>0){
+          me->req_scroll_x=-1;
           int xt = me->page_position * ctl->w;
           int dxt= (xt - me->scroll_target_from_x);
           float state = libaroma_control_state(
@@ -607,11 +652,12 @@ dword _libaroma_ctl_pager_msg(
           if (me->pretouched!=NULL){
             if (me->pretouched->handler->message){
               if (me->max_scroll_x>0){
-                me->client_touch_start=libaroma_tick();
+                me->client_touch_start=msg->sent; /*libaroma_tick();*/
               }
               else{
-                me->client_touch_start=libaroma_tick()-
+                me->client_touch_start=msg->sent-
                   _LIBAROMA_CTL_PAGER_TOUCH_CLIENT_WAIT;
+                /*libaroma_tick()-_LIBAROMA_CTL_PAGER_TOUCH_CLIENT_WAIT;*/
               }
             }
             else{
@@ -648,6 +694,7 @@ dword _libaroma_ctl_pager_msg(
         else{
           if (msg->state==LIBAROMA_HID_EV_STATE_MOVE){
             if (me->max_scroll_x>0){
+              byte is_first_scroll=0;
               if (me->allow_scroll==2){
                 int move_sz = me->touch_x - x;
                 int move_sz_y = me->touch_y - y;
@@ -681,6 +728,7 @@ dword _libaroma_ctl_pager_msg(
                   libaroma_mutex_unlock(me->mutex);
                 }
                 else if (abs(move_sz)>=scrdp){
+                  is_first_scroll=1;
                   me->allow_scroll=1;
                   me->client_touch_start=0;
                   libaroma_mutex_lock(me->mutex);
@@ -693,34 +741,49 @@ dword _libaroma_ctl_pager_msg(
                 if (me->max_scroll_x>0){
                   _libaroma_ctl_pager_direct_canvas(ctl, 0);
                   int move_sz = me->touch_x - x;
-                  int scroll_x = me->scroll_x + move_sz;
-                  if (scroll_x<0){
-                    scroll_x=0;
+                  if ((is_first_scroll)||(me->req_scroll_x!=-1)){
+                    if (me->req_scroll_x==-1){
+                      me->req_scroll_x=me->scroll_x;
+                    }
+                    int scroll_x = me->req_scroll_x + move_sz;
+                    if (scroll_x<0){
+                      scroll_x=0;
+                    }
+                    if (scroll_x>me->max_scroll_x){
+                      scroll_x=me->max_scroll_x;
+                    }
+                    me->req_scroll_x=scroll_x;
                   }
-                  if (scroll_x>me->max_scroll_x){
-                    scroll_x=me->max_scroll_x;
-                  }
-                  if (scroll_x!=me->scroll_x){
-                    me->scroll_x=scroll_x;
-                    /* onscroll controller message */
-                    if (me->controller){
-                      if ((me->controller->pager==ctl)&&
-                        (me->controller->controller)) {
-                        if (me->controller->handler){
-                          if (me->controller->handler->onscroll){
-                            me->controller->handler->onscroll(
-                              me->controller->controller,
-                              me->controller->pager,
-                              scroll_x,
-                              me->win->w,
-                              ctl->w,
-                              me->page_position
-                            );
+                  else{
+                    int scroll_x = me->scroll_x + move_sz;
+                    if (scroll_x<0){
+                      scroll_x=0;
+                    }
+                    if (scroll_x>me->max_scroll_x){
+                      scroll_x=me->max_scroll_x;
+                    }
+                    if (scroll_x!=me->scroll_x){
+                      me->scroll_x=scroll_x;
+                      /* onscroll controller message */
+                      if (me->controller){
+                        if ((me->controller->pager==ctl)&&
+                          (me->controller->controller)) {
+                          if (me->controller->handler){
+                            if (me->controller->handler->onscroll){
+                              me->controller->handler->onscroll(
+                                me->controller->controller,
+                                me->controller->pager,
+                                scroll_x,
+                                me->win->w,
+                                ctl->w,
+                                me->page_position
+                              );
+                            }
                           }
                         }
                       }
+                      me->redraw=1;
                     }
-                    me->redraw=1;
                   }
                   
                   me->touch_x=x;
@@ -913,6 +976,7 @@ LIBAROMA_CONTROLP libaroma_ctl_pager(
     return NULL;
   }
   me->pagen=pager_number;
+  me->req_scroll_x=-1;
   me->win = (LIBAROMA_WINDOWP) calloc(sizeof(LIBAROMA_WINDOW),1);
   if (!me->win){
     ALOGW("libaroma_ctl_pager alloc window data failed");

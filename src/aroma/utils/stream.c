@@ -212,7 +212,7 @@ LIBAROMA_STREAMP libaroma_stream_mzip(
   ret->size     = mem_sz;
   ret->ismmap   = 0;
   snprintf(ret->uri, LIBAROMA_STREAM_URI_LENGTH,
-      "memzip://[%x]#%s", (int) zip, zpath);
+      "memzip://[zip_resource]#%s", zpath);
   return ret;
 } /* End of libaroma_stream_mzip */
 

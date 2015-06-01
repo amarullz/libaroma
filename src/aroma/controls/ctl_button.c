@@ -392,6 +392,9 @@ dword _libaroma_ctl_button_msg(
           if (!((x>=0)&&(y>=0)&&(x<ctl->w)&&(y<ctl->h))) {
             libaroma_ripple_cancel(&me->ripple);
           }
+          else{
+            libaroma_ripple_move(&me->ripple, x, y);
+          }
         }
       }
       break;

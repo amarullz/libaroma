@@ -838,6 +838,9 @@ dword _libaroma_ctl_list_scroll_message(
               x, cy
             );
           }
+          if (mi->touched->state){
+            libaroma_ripple_move(&mi->touched->state->ripple,x,y);
+          }
           if (mres&LIBAROMA_CTL_LIST_ITEM_MSGRET_NEED_DRAW){
             if (_libaroma_ctl_list_dodraw_item(ctl,mi->touched)){
               retval=LIBAROMA_CTL_SCROLL_MSG_NEED_DRAW;
