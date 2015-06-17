@@ -168,50 +168,60 @@ int libaroma_fling_up(LIBAROMA_FLINGP p, int pos){
  */
 byte libaroma_ripple_thread(LIBAROMA_RIPPLEP me, long wait_ms){
   byte ret = 0;
-  if (me->touch_start){
-    long touch_start = me->touch_start + wait_ms;
-    if ((libaroma_tick()>=touch_start)||(wait_ms==0)){
-      if ((touch_start)&&(me->touch_state<1)){
-        float nowstate=libaroma_duration_state(touch_start, 1200);
-        if (me->touch_state!=nowstate){
-          ret |= LIBAROMA_RIPPLE_REDRAW;
-          me->touch_state=nowstate;
+  int i;
+  long nowtick=libaroma_tick();
+  for (i=0;i<LIBAROMA_RIPPLE_MAX;i++){
+    if (me->touch_start[i]){
+      long touch_start = me->touch_start[i] + wait_ms;
+      if ((nowtick>=touch_start)||(wait_ms==0)){
+        if ((touch_start)&&(me->touch_state[i]<1)){
+          float nowstate=libaroma_duration_state(touch_start, 1600);
+          if (me->touch_state[i]!=nowstate){
+            ret |= LIBAROMA_RIPPLE_REDRAW;
+            me->touch_state[i]=nowstate;
+          }
+        }
+        if ((me->touched==1)&&(i==me->p)){
+          if ((me->touch_state[i]>=0.7)&&(!me->holded)){
+            me->holded=1;
+            ret |= LIBAROMA_RIPPLE_HOLDED;
+          }
+        }
+        else if ((me->touched==2)||(i!=me->p)){
+          if (me->touch_state[i]>=0.12){
+            if (i==me->p){
+              me->touched=0;
+            }
+            me->touch_start[i]=0;
+            me->release_start[i]=nowtick;
+            me->release_state[i]=0.0;
+          }
         }
       }
-      if (me->touched==1){
-        if ((me->touch_state>=0.7)&&(!me->holded)){
-          me->holded=1;
-          ret |= LIBAROMA_RIPPLE_HOLDED;
-        }
-      }
-      else if (me->touched==2){
-        if (me->touch_state>=0.1){
+      else if ((me->touched==2)||(i!=me->p)) {
+        me->touch_start[i]=0;
+        me->touch_state[i]=0;
+        if (i==me->p){
           me->touched=0;
-          me->touch_start=0;
-          me->release_start=libaroma_tick();
-          me->release_state=0.0;
         }
       }
     }
-    else if (me->touched==2){
-      me->touch_start=0;
-      me->touch_state=0;
+    else if ((me->touched==2)&&(i==me->p)) {
       me->touched=0;
     }
-  }
-  else if (me->touched==2){
-    me->touched=0;
-  }
-  if (!me->touched&&me->release_start){
-    float nowstate=libaroma_duration_state(me->release_start, 250);
-    if (me->release_state!=nowstate){
-      ret |= LIBAROMA_RIPPLE_REDRAW;
-      me->release_state=nowstate;
-    }
-    if (me->release_state>=1){
-      me->release_start=0;
-      me->touch_start=0;
-      ret |= LIBAROMA_RIPPLE_RELEASED;
+    if ((!me->touched||(i!=me->p))&&me->release_start[i]) {
+      float nowstate=libaroma_duration_state(me->release_start[i], 375);
+      if (me->release_state[i]!=nowstate){
+        ret |= LIBAROMA_RIPPLE_REDRAW;
+        me->release_state[i]=nowstate;
+      }
+      if (me->release_state[i]>=1){
+        me->release_start[i]=0;
+        me->touch_start[i]=0;
+        if (i==me->p){
+          ret |= LIBAROMA_RIPPLE_RELEASED;
+        }
+      }
     }
   }
   return ret;
@@ -223,12 +233,16 @@ byte libaroma_ripple_thread(LIBAROMA_RIPPLEP me, long wait_ms){
  * Descriptions: ripple down handler
  */
 void libaroma_ripple_down(LIBAROMA_RIPPLEP me, int x, int y){
-  me->x=x;
-  me->y=y;
-  me->touch_start=libaroma_tick();
-  me->touch_state=0.0;
-  me->release_state=0.0;
-  me->release_start=0;
+  me->p++;
+  if (me->p>=LIBAROMA_RIPPLE_MAX){
+    me->p=0;
+  }
+  me->x[me->p]=x;
+  me->y[me->p]=y;
+  me->touch_start[me->p]=libaroma_tick();
+  me->touch_state[me->p]=0.0;
+  me->release_state[me->p]=0.0;
+  me->release_start[me->p]=0;
   me->holded=0;
   me->touched=1;
 } /* End of libaroma_ripple_down */
@@ -239,8 +253,8 @@ void libaroma_ripple_down(LIBAROMA_RIPPLEP me, int x, int y){
  * Descriptions: ripple move handler
  */
 void libaroma_ripple_move(LIBAROMA_RIPPLEP me, int x, int y){
-  me->x=x;
-  me->y=y;
+  me->x[me->p]=x;
+  me->y[me->p]=y;
 } /* End of libaroma_ripple_down */
 
 /*
@@ -257,8 +271,9 @@ byte libaroma_ripple_up(LIBAROMA_RIPPLEP me, long wait_ms){
     }
     me->touched=2;
     if (wait_ms>0){
-      if (me->touch_start+wait_ms>libaroma_tick()){
-        me->touch_start=libaroma_tick()-wait_ms;
+      long nowtick=libaroma_tick();
+      if (me->touch_start[me->p]+wait_ms>nowtick){
+        me->touch_start[me->p]=nowtick-wait_ms;
       }
     }
   }
@@ -277,6 +292,26 @@ void libaroma_ripple_cancel(LIBAROMA_RIPPLEP me){
 } /* End of libaroma_ripple_cancel */
 
 /*
+ * Function    : libaroma_ripple_calculation_loop
+ * Return Value: byte
+ * Descriptions: ripple drawing loop
+ */
+byte libaroma_ripple_loop(LIBAROMA_RIPPLEP me, int * ipos, int * pos){
+  if (!ipos||!pos){
+    return 0;
+  }
+  if ((*ipos>=LIBAROMA_RIPPLE_MAX)||(*ipos<0)){
+    return 0;
+  }
+  *pos=(*ipos+(me->p+1))%LIBAROMA_RIPPLE_MAX;
+  if (*pos>=LIBAROMA_RIPPLE_MAX){
+    *pos-=LIBAROMA_RIPPLE_MAX;
+  }
+  ipos[0]++;
+  return 1;
+}
+
+/*
  * Function    : libaroma_ripple_calculation
  * Return Value: byte
  * Descriptions: ripple drawing calculation
@@ -286,15 +321,19 @@ byte libaroma_ripple_calculation(
   int w, int h,
   bytep push_opacity,
   bytep ripple_opacity,
-  int * x, int *y, int * size
+  int * x, int *y, int * size,
+  int pos
 ){
-  if (libaroma_ripple_isactive(me)) {
-    float cbz_state = me->touch_state;
-    float tstate    = cbz_state*7.5;
+  if ((pos>=LIBAROMA_RIPPLE_MAX)||(pos<0)){
+    return 0;
+  }
+  if (libaroma_ripple_isactive_pos(me,pos)) {
+    float cbz_state = me->touch_state[pos];
+    float tstate    = cbz_state*6;
     float ropa      = 1.0;
-    if (me->release_state>0){
-      cbz_state += (1.0-cbz_state) * me->release_state;
-      ropa-= (me->release_state<1)?(MAX(0,me->release_state-0.4)*1.6):1;
+    if (me->release_state[pos]>0){
+      cbz_state += (1.0-cbz_state) * me->release_state[pos];
+      ropa-= (me->release_state[pos]<1)?(MAX(0,me->release_state[pos]-0.2)*1.25):1;
     }
     cbz_state=(cbz_state<1)?libaroma_motion_decelerate(cbz_state):1;
     tstate=(tstate<1)?libaroma_motion_accelerate(tstate):1;
@@ -310,8 +349,8 @@ byte libaroma_ripple_calculation(
       if (rsize<end_size/8){
         opa = (opa * rsize) / (end_size/8);
       }
-      int mx = me->x-*x;
-      int my = me->y-*y;
+      int mx = me->x[pos]-*x;
+      int my = me->y[pos]-*y;
       int tx = (halfWidth-mx)*cbz_state;
       int ty = (halfHeight-my)*cbz_state;
       *ripple_opacity = opa;
@@ -324,10 +363,5 @@ byte libaroma_ripple_calculation(
   }
   return 0;
 } /* End of libaroma_ripple_calculation */
-
-
-
-
-
 
 #endif /* __libaroma_motions_c__ */

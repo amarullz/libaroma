@@ -98,21 +98,21 @@ void common_test(){
     snprintf(main_text,256,"Item id#%i",itm);
     byte add_flags=0;
     if (itm%3==1){
-      add_flags=LIBAROMA_LISTITEM_OPTION_SWITCH;
+      add_flags=LIBAROMA_LISTITEM_CHECK_SWITCH;
       snprintf(extra_text,256,
         "Secondary text for list item %i is three line list item text",itm);
     }
     else if (itm%3==2){
       snprintf(extra_text,256,"Secondary text %i",itm);
     }
-    libaroma_listitem_option(
+    libaroma_listitem_check(
       list_test, itm, 0,
       main_text,
       (itm%3!=0)?extra_text:NULL,
       list_icon,
-      LIBAROMA_LISTITEM_OPTION_INDENT_NOICON|
+      LIBAROMA_LISTITEM_CHECK_INDENT_NOICON|
       LIBAROMA_LISTITEM_WITH_SEPARATOR|
-      LIBAROMA_LISTITEM_OPTION_SHARED_ICON|
+      LIBAROMA_LISTITEM_CHECK_SHARED_ICON|
       add_flags,
       -1
     );
@@ -155,13 +155,13 @@ void common_test(){
         else if (id==2){
           snprintf(main_text,256,"New Item id#%i",itm);
           snprintf(extra_text,256,"<u>This</u> is <b>just extra text</b> for item %i NEW!",itm);
-          libaroma_listitem_option(
+          libaroma_listitem_check(
             list_test, itm, 0,
             main_text,
             extra_text,
             list_icon,
-            LIBAROMA_LISTITEM_OPTION_INDENT_NOICON|
-            LIBAROMA_LISTITEM_OPTION_SHARED_ICON|
+            LIBAROMA_LISTITEM_CHECK_INDENT_NOICON|
+            LIBAROMA_LISTITEM_CHECK_SHARED_ICON|
             LIBAROMA_LISTITEM_WITH_SEPARATOR,
             -1
           );

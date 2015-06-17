@@ -100,10 +100,10 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
   else{
     me->isdark = libaroma_color_isdark(libaroma_wm_get_color("window"));
   }
-  word push_color = me->isdark?RGB(eeeeee):RGB(222222);
+  word push_color = me->isdark?RGB(ffffff):RGB(000000);
   word text_color = me->isdark?0xffff:0;
   word rest_text_color = text_color;
-  byte push_opa   = me->isdark?80:98;
+  byte push_opa   = me->isdark?128:98;
   
   /* buttons */
   LIBAROMA_CANVASP btnmask = libaroma_canvas_ex(iw,ih,1);
@@ -268,28 +268,32 @@ void _libaroma_ctl_button_draw(
   }
   me->forcedraw = 0;
   
-  int x=0;
-  int y=0;
-  int size=0;
-  byte push_opacity=0;
-  byte ripple_opacity=0;
+  
   
   libaroma_control_erasebg(ctl,c);
   if (me->style&LIBAROMA_CTL_BUTTON_DISABLED){
     libaroma_draw(c, me->rest_canvas, 0, 0, 0);
   }
-  else if (libaroma_ripple_calculation(
-      &me->ripple, ctl->w, ctl->h, &push_opacity, &ripple_opacity,
-      &x, &y, &size
-    )){
-      libaroma_draw(c, me->rest_canvas, 0, 0, 0);
-      libaroma_draw_mask_circle(
-        c, me->push_canvas, x, y, x, y, size, ripple_opacity
-      );
-      libaroma_draw_opacity(c,me->push_canvas,0,0,0,push_opacity);
-  }
   else{
+    int ripple_i = 0;
+    int ripple_p = 0;
     libaroma_draw(c, me->rest_canvas, 0, 0, 0);
+    while(libaroma_ripple_loop(&me->ripple,&ripple_i,&ripple_p)){
+      int x=0;
+      int y=0;
+      int size=0;
+      byte push_opacity=0;
+      byte ripple_opacity=0;
+      if (libaroma_ripple_calculation(
+        &me->ripple, ctl->w, ctl->h, &push_opacity, &ripple_opacity,
+        &x, &y, &size,ripple_p
+        )){
+          libaroma_draw_mask_circle(
+            c, me->push_canvas, x, y, x, y, size, ripple_opacity
+          );
+          libaroma_draw_opacity(c,me->push_canvas,0,0,0,push_opacity);
+      }
+    }
   }
   libaroma_mutex_unlock(me->mutex);
 } /* End of _libaroma_ctl_button_draw */

@@ -839,17 +839,20 @@ void _libaroma_ctl_bar_draw(
     
     if (me->touched_state){
       if (me->touched_switch){
-        if ((me->ripple.touch_state>0)&&(me->ripple.release_state<1)) {
+        if ((libaroma_ripple_current(&me->ripple,touch_state)>0)&&
+            (libaroma_ripple_current(&me->ripple,release_state)<1)) {
           int switch_id = me->touched_state-10;
           if (switch_id>=0){
             if (me->tools){
               if (switch_id<me->tools->n){
                 float outstate = 1.0-libaroma_cubic_bezier_swiftout(
-                  MIN(MAX(0,(me->ripple.release_state-0.5)*2),1)
+                  MIN(MAX(0,(
+                    libaroma_ripple_current(&me->ripple,release_state)-0.5)
+                    *2),1)
                 );
                 if (me->touched_switch>=2){
                   float xstate = libaroma_cubic_bezier_swiftout(
-                    MIN(me->ripple.release_state*2,1)
+                    MIN(libaroma_ripple_current(&me->ripple,release_state)*2,1)
                   );
                   _libaroma_ctl_bar_draw_switch(
                     ctl, c, switch_id, 1, xstate, 0xff * outstate
@@ -872,47 +875,51 @@ void _libaroma_ctl_bar_draw(
         }
       }
       else{
-        int x=me->touch_bound_x;
-        int y=0;
-        int size=0;
-        byte push_opacity=0;
-        byte ripple_opacity=0x80;
-        int bound_w = me->touch_bound_w+libaroma_dp(16);
-        if (libaroma_ripple_calculation(
-          &me->ripple, bound_w, ctl->h, &push_opacity, &ripple_opacity,
-          &x, &y, &size
-        )){
-          x-=libaroma_dp(8);
-          int center_x = me->touch_bound_x+(me->touch_bound_w>>1);
-          int center_y = c->h>>1;
-          int copy_l = center_x - bound_w;
-          int copy_r = center_x + bound_w;
-          if (copy_l<0){
-            copy_l = 0;
-          }
-          if (copy_r>c->w){
-            copy_r = c->w;
-          }
-          libaroma_draw_circle(
-            c, me->selcolor, center_x, center_y, bound_w, push_opacity
-          );
-          int copy_w = copy_r - copy_l;
-          LIBAROMA_CANVASP rdc = NULL;
-          if (copy_w>0){
-            rdc = libaroma_canvas(copy_w,c->h);
-            if (rdc){
-              libaroma_draw_ex(rdc,c,0,0,copy_l,0,rdc->w, rdc->h, 0, 0xff);
-              libaroma_draw_circle(
-                rdc, me->selcolor, center_x-copy_l, center_y,
-                bound_w, ripple_opacity
-              );
+        int ripple_i = 0;
+        int ripple_p = 0;
+        while(libaroma_ripple_loop(&me->ripple,&ripple_i,&ripple_p)){
+          int x=me->touch_bound_x;
+          int y=0;
+          int size=0;
+          byte push_opacity=0;
+          byte ripple_opacity=0x80;
+          int bound_w = me->touch_bound_w+libaroma_dp(16);
+          if (libaroma_ripple_calculation(
+            &me->ripple, bound_w, ctl->h, &push_opacity, &ripple_opacity,
+            &x, &y, &size, ripple_p
+          )){
+            x-=libaroma_dp(8);
+            int center_x = me->touch_bound_x+(me->touch_bound_w>>1);
+            int center_y = c->h>>1;
+            int copy_l = center_x - bound_w;
+            int copy_r = center_x + bound_w;
+            if (copy_l<0){
+              copy_l = 0;
             }
-          }
-          if (rdc){
-            libaroma_draw_mask_circle(c, rdc, 
-              me->touch_bound_x+x, y, 
-              me->touch_bound_x+x-copy_l, y, size, 0xff);
-            libaroma_canvas_free(rdc);
+            if (copy_r>c->w){
+              copy_r = c->w;
+            }
+            libaroma_draw_circle(
+              c, me->selcolor, center_x, center_y, bound_w, push_opacity
+            );
+            int copy_w = copy_r - copy_l;
+            LIBAROMA_CANVASP rdc = NULL;
+            if (copy_w>0){
+              rdc = libaroma_canvas(copy_w,c->h);
+              if (rdc){
+                libaroma_draw_ex(rdc,c,0,0,copy_l,0,rdc->w, rdc->h, 0, 0xff);
+                libaroma_draw_circle(
+                  rdc, me->selcolor, center_x-copy_l, center_y,
+                  bound_w, ripple_opacity
+                );
+              }
+            }
+            if (rdc){
+              libaroma_draw_mask_circle(c, rdc, 
+                me->touch_bound_x+x, y, 
+                me->touch_bound_x+x-copy_l, y, size, 0xff);
+              libaroma_canvas_free(rdc);
+            }
           }
         }
       }

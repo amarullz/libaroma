@@ -337,77 +337,34 @@ void _libaroma_ctl_list_draw_item(
   /* normal animation handler */
   if (item->state){
     if (item->state->normal_handler){
-      int x=0;
-      int y=(item->y+libaroma_dp(1));
-      int size=0;
-      byte push_opacity=0;
-      byte ripple_opacity=0;
-      if (libaroma_ripple_calculation(
-        &item->state->ripple, canvas->w, canvas->h,
-        &push_opacity, &ripple_opacity,
-        &x, &y, &size
-      )){
-        libaroma_draw(canvas, item->state->cache_rest, 0, 0, 0);
-        libaroma_draw_opacity(canvas, 
-          item->state->cache_push, 0, 0, 2, 
-          (byte) push_opacity
-        );
-        libaroma_draw_mask_circle(
-            canvas, 
-            item->state->cache_push, 
-            x, y,
-            x, y,
-            size,
-            ripple_opacity
-          );
-      }
-      
-      /*
-      if ((item->state->touch_state>0)&&(item->state->release_state<1)) {
-        float ripplestate = item->state->touch_state;
-        float pst_state = MIN(item->state->touch_state*15,1);
-        float cbz_state;
-        if (item->state->release_state>0){
-          ripplestate +=
-            (1.0-item->state->touch_state)*item->state->release_state;
-        }
-        cbz_state = libaroma_cubic_bezier_easein(ripplestate);
-        float ropa  = (item->state->touched==1)?1:1-item->state->release_state;
-        byte opa    = (0xff * pst_state) * ropa;
-        
-        LIBAROMA_CTL_LIST_TOUCHPOSP pos = libaroma_ctl_list_getpos(ctl);
-        if (pos){
-          int start_x = pos->start_x;
-          int start_y = pos->start_y - (item->y+libaroma_dp(1));
-          int msize = MAX(MIN(canvas->w,canvas->h)>>1,libaroma_dp(5));
-          int psize = MAX(canvas->w,canvas->h);
-          psize+=(abs(start_x-canvas->w/2)+abs(start_y-canvas->h/2)) * 2.5;
-          libaroma_draw(canvas, item->state->cache_rest, 0, 0, 0);
+      libaroma_draw(canvas, item->state->cache_rest, 0, 0, 0);
+      int ripple_i = 0;
+      int ripple_p = 0;
+      while(libaroma_ripple_loop(&item->state->ripple,&ripple_i,&ripple_p)){
+        int x=0;
+        int y=(item->y+libaroma_dp(1));
+        int size=0;
+        byte push_opacity=0;
+        byte ripple_opacity=0;
+        if (libaroma_ripple_calculation(
+          &item->state->ripple, canvas->w, canvas->h,
+          &push_opacity, &ripple_opacity,
+          &x, &y, &size, ripple_p
+        )){
           libaroma_draw_opacity(canvas, 
             item->state->cache_push, 0, 0, 2, 
-            (byte) (opa*0.75)
+            (byte) push_opacity
           );
-          
-          int rsize=psize * cbz_state;
-          if (rsize<msize){
-            opa = (opa * rsize) / msize;
-          }
-          rsize+=msize;
           libaroma_draw_mask_circle(
               canvas, 
               item->state->cache_push, 
-              start_x, start_y, 
-              start_x, start_y, 
-              rsize,
-              opa
+              x, y,
+              x, y,
+              size,
+              ripple_opacity
             );
         }
       }
-      */
-      else{
-        libaroma_draw(canvas, item->state->cache_rest, 0, 0, 0);
-      }
-      
       if (item->state->normal_handler==2){
         _libaroma_ctl_list_draw_item_fresh(
           ctl, item,canvas,bgcolor,mi->hpad,

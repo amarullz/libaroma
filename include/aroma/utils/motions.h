@@ -121,6 +121,8 @@ int libaroma_fling_up(LIBAROMA_FLINGP p, int pos);
 #define LIBAROMA_RIPPLE_TOUCHED   0x2
 #define LIBAROMA_RIPPLE_HOLDED    0x4
 #define LIBAROMA_RIPPLE_RELEASED  0x8
+#define LIBAROMA_RIPPLE_MAX       6
+
 /*
  * Struct      : LIBAROMA_RIPPLE
  * Descriptions: ripple motions structure
@@ -128,13 +130,16 @@ int libaroma_fling_up(LIBAROMA_FLINGP p, int pos);
 typedef struct{
   byte  holded;
   byte  touched;
-  float touch_state;
-  long  touch_start;
-  float release_state;
-  long  release_start;
-  int   x;
-  int   y;
+  float touch_state[LIBAROMA_RIPPLE_MAX];
+  long  touch_start[LIBAROMA_RIPPLE_MAX];
+  float release_state[LIBAROMA_RIPPLE_MAX];
+  long  release_start[LIBAROMA_RIPPLE_MAX];
+  int   x[LIBAROMA_RIPPLE_MAX];
+  int   y[LIBAROMA_RIPPLE_MAX];
+  int   p;
 } LIBAROMA_RIPPLE, *LIBAROMA_RIPPLEP;
+
+#define libaroma_ripple_current(me,item) ((me)->item[(me)->p])
 
 /*
  * Function    : libaroma_ripple_thread
@@ -165,12 +170,18 @@ byte libaroma_ripple_up(LIBAROMA_RIPPLEP me, long wait_ms);
 void libaroma_ripple_move(LIBAROMA_RIPPLEP me, int x, int y);
 
 /*
- * Function    : libaroma_ripple_calculation
+ * Function    : libaroma_ripple_isactive
  * Return Value: byte
- * Descriptions: ripple drawing calculation
+ * Descriptions: check active ripple
  */
 static inline byte libaroma_ripple_isactive(LIBAROMA_RIPPLEP me){
-  return ((me->touch_state>0)&&(me->release_state<1))?1:0;
+  return ((me->touch_state[me->p]>0)&&(me->release_state[me->p]<1))?1:0;
+}
+static inline byte libaroma_ripple_isactive_pos(LIBAROMA_RIPPLEP me, int p){
+  if ((p>=LIBAROMA_RIPPLE_MAX)||(p<0)){
+    return 0;
+  }
+  return ((me->touch_state[p]>0)&&(me->release_state[p]<1))?1:0;
 }
 
 /*
@@ -183,6 +194,13 @@ static inline byte libaroma_ripple_istouched(LIBAROMA_RIPPLEP me){
 }
 
 /*
+ * Function    : libaroma_ripple_calculation_loop
+ * Return Value: byte
+ * Descriptions: ripple drawing loop
+ */
+byte libaroma_ripple_loop(LIBAROMA_RIPPLEP me, int * i, int * pos);
+
+/*
  * Function    : libaroma_ripple_calculation
  * Return Value: byte
  * Descriptions: ripple drawing calculation
@@ -192,7 +210,8 @@ byte libaroma_ripple_calculation(
   int w, int h,
   bytep push_opacity,
   bytep ripple_opacity,
-  int * x, int *y, int * size
+  int * x, int *y, int * size,
+  int pos
 );
 
 /*

@@ -68,11 +68,22 @@ void bar_test(){
   LIBAROMA_CONTROLP list = libaroma_ctl_list(
     win2, 7, /* win, id */
     0, 0, pw, LIBAROMA_SIZE_FULL, /* x,y,w,h */
-    0, 8, /* horiz, vert padding */
+    0, 0 /*8*/, /* horiz, vert padding */
     RGB(ffffff), /* bgcolor */
     LIBAROMA_CTL_SCROLL_WITH_SHADOW
-    /* |LIBAROMA_CTL_SCROLL_WITH_HANDLE */
+    |LIBAROMA_CTL_SCROLL_WITH_HANDLE
   );
+  
+  libaroma_listitem_image(
+    list,1,
+    libaroma_image_uri("file:///sdcard/sso.jpg"),
+    120,
+    LIBAROMA_LISTITEM_IMAGE_FREE|LIBAROMA_LISTITEM_WITH_SEPARATOR|
+    LIBAROMA_LISTITEM_IMAGE_FILL|LIBAROMA_LISTITEM_IMAGE_PROPORTIONAL|
+    LIBAROMA_CTL_LIST_ITEM_RECEIVE_TOUCH,
+    -1);
+  
+  
   LIBAROMA_CANVASP list_icon =
     libaroma_image_uri("file:///sdcard/ic_settings_data_usage.png");
   char main_text[256];
@@ -82,21 +93,21 @@ void bar_test(){
     snprintf(main_text,256,"Item id#%i",itm);
     byte add_flags=0;
     if (itm%3==1){
-      add_flags=LIBAROMA_LISTITEM_OPTION_SWITCH;
+      add_flags=LIBAROMA_LISTITEM_CHECK_SWITCH;
       snprintf(extra_text,256,
         "Secondary text for list item %i is three line list item text",itm);
     }
     else if (itm%3==2){
       snprintf(extra_text,256,"Secondary text %i",itm);
     }
-    libaroma_listitem_option(
-      list, itm, 0,
+    libaroma_listitem_check(
+      list, itm+10, 0,
       main_text,
       (itm%3!=0)?extra_text:NULL,
       list_icon,
-      LIBAROMA_LISTITEM_OPTION_INDENT_NOICON|
+      LIBAROMA_LISTITEM_CHECK_INDENT_NOICON|
       LIBAROMA_LISTITEM_WITH_SEPARATOR|
-      LIBAROMA_LISTITEM_OPTION_SHARED_ICON|
+      LIBAROMA_LISTITEM_CHECK_SHARED_ICON|
       add_flags,
       -1
     );
@@ -122,14 +133,50 @@ void bar_test(){
     libaroma_window_sidebar(win,0);
   if (sidebar){
     printf("SIDEBAR INITIALIZED\n");
+    
+    /* list */
+    LIBAROMA_CONTROLP sblist = libaroma_ctl_list(
+      sidebar, 88, /* win, id */
+      0, 0, LIBAROMA_SIZE_FULL, LIBAROMA_SIZE_FULL, /* x,y,w,h */
+      0, 0 /*8*/, /* horiz, vert padding */
+      RGB(ffffff), /* bgcolor */
+      LIBAROMA_CTL_SCROLL_WITH_SHADOW
+    );
+    
+    libaroma_listitem_image(
+      sblist,2,
+      libaroma_image_uri("file:///sdcard/sso.jpg"),
+      120,
+      LIBAROMA_LISTITEM_IMAGE_FREE|LIBAROMA_LISTITEM_WITH_SEPARATOR|
+      LIBAROMA_LISTITEM_IMAGE_FILL|LIBAROMA_LISTITEM_IMAGE_PROPORTIONAL|
+      LIBAROMA_CTL_LIST_ITEM_RECEIVE_TOUCH,
+      -1);
+    int r;
+    char xtext[256];
+    for (r=0;r<20;r++){
+      snprintf(xtext,256,"Sidebar Menu #%i",r);
+      libaroma_listitem_check(
+        sblist, r+100, 0,
+        xtext, NULL,
+        list_icon,
+        LIBAROMA_LISTITEM_CHECK_INDENT_NOICON|
+        LIBAROMA_LISTITEM_WITH_SEPARATOR|
+        LIBAROMA_LISTITEM_CHECK_SHARED_ICON|
+        0,
+        -1
+      );
+    }
+    
   }
   else{
     printf("SIDEBAR FAILED\n");
   }
+  /*
   LIBAROMA_CONTROLP buttonsidebar = libaroma_ctl_button(
     sidebar, 88, 0, 0, LIBAROMA_SIZE_FULL, 60,
     "Side Button", LIBAROMA_CTL_BUTTON_COLORED, RGB(008800)
   );
+  */
   // libaroma_window_layer_init(win);
   
   libaroma_window_anishow(win, LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_LEFT, 400);

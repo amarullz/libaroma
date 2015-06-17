@@ -472,39 +472,41 @@ void _libaroma_ctl_tabs_draw(
     int touched_x = _libaroma_ctl_tabs_indicator_x(ctl,me->touched_id);
     if (touched_x>=0){
       int touched_w = me->textw[me->touched_id]+libaroma_dp(24);
-      int x=touched_x;
-      int y=0;
-      int size=0;
-      byte push_opacity=0;
-      byte ripple_opacity=180;
-      if (libaroma_ripple_calculation(
-        &me->ripple, touched_w, c->h, &push_opacity, &ripple_opacity,
-        &x, &y, &size
-      )){
-        LIBAROMA_CANVASP cc = libaroma_canvas_area(
-          (me->active_page==me->touched_id)?me->push_canvas:me->rest_canvas,
-            touched_x, 0, touched_w, c->h
-        );
-        LIBAROMA_CANVASP tc = libaroma_canvas(touched_w, cc->h);
-        libaroma_draw(tc, cc, 0, 0, 0);
-        libaroma_draw_rect(
-          tc,0,0,cc->w,cc->h,
-          me->selcolor, push_opacity
-        );
-        
-        libaroma_draw_circle(
-          tc,me->selcolor,x,y,size,MAX(0,ripple_opacity-(ripple_opacity*0.5))
-        );
-        libaroma_draw_ex(
-          c,tc,
-          touched_x-me->draw_x,0,
-          0,0,
-          tc->w,tc->h,
-          0,0xff);
-        
-        libaroma_canvas_free(cc);
-        libaroma_canvas_free(tc);
+      LIBAROMA_CANVASP cc = libaroma_canvas_area(
+        (me->active_page==me->touched_id)?me->push_canvas:me->rest_canvas,
+          touched_x, 0, touched_w, c->h
+      );
+      LIBAROMA_CANVASP tc = libaroma_canvas(touched_w, cc->h);
+      libaroma_draw(tc, cc, 0, 0, 0);
+      int ripple_i = 0;
+      int ripple_p = 0;
+      while(libaroma_ripple_loop(&me->ripple,&ripple_i,&ripple_p)){
+        int x=touched_x;
+        int y=0;
+        int size=0;
+        byte push_opacity=0;
+        byte ripple_opacity=180;
+        if (libaroma_ripple_calculation(
+          &me->ripple, touched_w, c->h, &push_opacity, &ripple_opacity,
+          &x, &y, &size, ripple_p
+        )){
+          libaroma_draw_rect(
+            tc,0,0,cc->w,cc->h,
+            me->selcolor, push_opacity
+          );
+          libaroma_draw_circle(
+            tc,me->selcolor,x,y,size,MAX(0,ripple_opacity-(ripple_opacity*0.5))
+          );
+          libaroma_draw_ex(
+            c,tc,
+            touched_x-me->draw_x,0,
+            0,0,
+            tc->w,tc->h,
+            0,0xff);
+        }
       }
+      libaroma_canvas_free(cc);
+      libaroma_canvas_free(tc);
     }
   }
   
