@@ -75,7 +75,7 @@ byte _libaroma_listitem_check_message(
       break;
     case LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_DOWN:
       {
-        printf("list item #%i -> down\n",item->id);
+        //printf("list item #%i -> down\n",item->id);
         mi->onchangeani=0;
         return LIBAROMA_CTL_LIST_ITEM_MSGRET_HAVE_ADDONS_DRAW;
       }
@@ -83,7 +83,7 @@ byte _libaroma_listitem_check_message(
     case LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_HOLDED:
       {
         mi->onchangeani=0;
-        printf("list item #%i -> holded\n",item->id);
+        //printf("list item #%i -> holded\n",item->id);
       }
       break;
     case LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_UP:
@@ -97,17 +97,17 @@ byte _libaroma_listitem_check_message(
           else{
             mi->selected=1;
           }
-          printf("list item #%i -> up/change state: %i\n",item->id,mi->selected);
+          //printf("list item #%i -> up/change state: %i\n",item->id,mi->selected);
         }
         else{
-          printf("list item #%i -> up - already holded\n",item->id);
+          //printf("list item #%i -> up - already holded\n",item->id);
         }
         return 0;
       }
       break;
     case LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_CANCEL:
       {
-        printf("list item #%i -> touch canceled by scroll\n",item->id);
+        //printf("list item #%i -> touch canceled by scroll\n",item->id);
         mi->onchangeani=0;
         return 0;
       }
@@ -142,7 +142,7 @@ void _libaroma_listitem_check_draw(
     byte small_icon = (flags&LIBAROMA_LISTITEM_CHECK_SMALL_ICON)?1:0;
     
     if (state&LIBAROMA_CTL_LIST_ITEM_DRAW_PUSHED){
-      word selcolor = is_dark?RGB(335577):RGB(aaacad);
+      word selcolor = is_dark?RGB(444444):RGB(bbbbbb);
       libaroma_draw_rect(
         cv,
         0,0,
@@ -308,9 +308,9 @@ void _libaroma_listitem_check_draw(
     int ypos = cv->h>>1;
     if (is_switch){
       word h_color_rest   = RGB(ECECEC);
-      word h_color_active = RGB(009385);
+      word h_color_active = libaroma_colorget(ctl,NULL)->primary;
       word b_color_rest   = RGB(B2B2B2);
-      word b_color_active = RGB(B2DFDB);
+      word b_color_active = libaroma_colorget(ctl,NULL)->primary_light;
       
       word bc0=mi->selected?b_color_rest:b_color_active;
       word bc1=mi->selected?b_color_active:b_color_rest;
@@ -387,6 +387,10 @@ void _libaroma_listitem_check_draw(
       );
     }
     else{
+      word cprimary=is_dark?
+      libaroma_colorget(ctl,NULL)->primary_light:
+      libaroma_colorget(ctl,NULL)->primary;
+      word dprimary=libaroma_colorget(ctl,NULL)->control_secondary_text;
       int rsz  = libaroma_dp(18);
       
       /* init cache */
@@ -405,7 +409,7 @@ void _libaroma_listitem_check_draw(
           memset(checkcache->alpha,0,rsz*rsz);
   
           libaroma_gradient_ex1(checkcache,
-            0,0,rsz,rsz,RGB(009587),RGB(009587),libaroma_dp(2),0x1111,
+            0,0,rsz,rsz,cprimary,cprimary,libaroma_dp(2),0x1111,
             0xff,0xff,2);
           
           /* tick */
@@ -436,7 +440,7 @@ void _libaroma_listitem_check_draw(
             ypos-(hal_sz>>1),
             hal_sz,
             hal_sz,
-            RGB(aaaaaa),RGB(aaaaaa),
+            dprimary,dprimary,
             libaroma_dp(2),0x1111,
             0xff,0xff,
             0
@@ -478,7 +482,7 @@ void _libaroma_listitem_check_draw(
           ypos-(rsz>>1),
           rsz,
           rsz,
-          RGB(aaaaaa),RGB(aaaaaa),
+          dprimary,dprimary,
           libaroma_dp(2),0x1111,
           0xff,0xff,
           0

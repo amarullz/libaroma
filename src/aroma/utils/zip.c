@@ -23,8 +23,8 @@
  */
 #ifndef __libaroma_zip_c__
 #define __libaroma_zip_c__
-#include <aroma_internal.h>
 #include <zlib.h>
+#include <aroma_internal.h>
 #include <Zip.h>
 
 /*

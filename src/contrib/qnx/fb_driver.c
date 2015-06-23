@@ -255,6 +255,7 @@ byte QNXGF_sync(LIBAROMA_FBP me, wordp src, int x, int y, int w, int h) {
   gf_draw_flush(mi->context);
   gf_draw_end(mi->context);
   
+  usleep(16000);
   return 1;
 }
 

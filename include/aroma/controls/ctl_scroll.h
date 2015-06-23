@@ -155,6 +155,13 @@ LIBAROMA_CONTROLP libaroma_ctl_scroll(
 );
 
 /*
+ * Function    : libaroma_ctl_scroll_get_scroll
+ * Return Value: int
+ * Descriptions: get scroll position
+ */
+int libaroma_ctl_scroll_get_scroll(LIBAROMA_CONTROLP ctl, int * scroll_h);
+
+/*
  * Function    : libaroma_ctl_scroll_isactive
  * Return Value: byte
  * Descriptions: check if control is active

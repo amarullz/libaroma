@@ -34,7 +34,11 @@
 #ifdef __ARM_HAVE_NEON
   #define __LIBAROMA_CMSG_NEON "YES"
 #else
-  #define __LIBAROMA_CMSG_NEON "NO"
+  #ifdef __SSSE3__
+    #define __LIBAROMA_CMSG_NEON "YES - SSE Emulated"
+  #else
+    #define __LIBAROMA_CMSG_NEON "NO"
+  #endif
 #endif
 
 /* openmp */

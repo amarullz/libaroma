@@ -986,8 +986,9 @@ byte _libaroma_window_sidebar_ui_thread(LIBAROMA_WINDOWP win) {
       LIBAROMA_CONTROLP c=win->childs[i];
       if (c->handler->thread!=NULL){
         if (c->handler->thread(c)){
-          libaroma_control_draw(c,0);
-          need_sync=1;
+          if(libaroma_control_draw(c,0)){
+            need_sync=1;
+          }
         }
       }
     }

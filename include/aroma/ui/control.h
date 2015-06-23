@@ -44,6 +44,7 @@ struct _LIBAROMA_CONTROL{
   word id;
   voidp internal;
   LIBAROMA_WINDOWP window;
+  LIBAROMA_COLORSETP colorset;
   
   /* px measured */
   int x;

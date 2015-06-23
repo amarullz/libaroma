@@ -304,7 +304,7 @@ byte _libaroma_ctl_pager_window_updatebg(LIBAROMA_WINDOWP win){
   win->bg = libaroma_canvas(w,h);
   libaroma_canvas_setcolor(
     win->bg,
-    libaroma_wm_get_color("window"),
+    libaroma_colorget(ctl,NULL)->window_bg,
     0xff
   );
   
@@ -502,8 +502,9 @@ byte _libaroma_ctl_pager_thread(LIBAROMA_CONTROLP ctl) {
           LIBAROMA_CONTROLP c=me->win->childs[i];
           if (c->handler->thread!=NULL){
             if (c->handler->thread(c)){
-              libaroma_control_draw(c,0);
-              is_draw=1;
+              if (libaroma_control_draw(c,0)){
+                is_draw=1;
+              }
             }
           }
         }

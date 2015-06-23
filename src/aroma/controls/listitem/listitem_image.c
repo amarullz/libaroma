@@ -44,6 +44,8 @@ static LIBAROMA_CTL_LIST_ITEM_HANDLER _libaroma_listitem_image_handler =
 typedef struct{
   LIBAROMA_CANVASP image;
   LIBAROMA_CANVASP ready_image;
+  int paralax_last_y;
+  int paralax_y;
 } _LIBAROMA_LISTITEM_IMAGE, * _LIBAROMA_LISTITEM_IMAGEP;
 
 /*
@@ -61,31 +63,47 @@ byte _libaroma_listitem_image_message(
   if (item->handler!=&_libaroma_listitem_image_handler){
     return 0;
   }
-  /*
   _LIBAROMA_LISTITEM_IMAGEP mi = 
     (_LIBAROMA_LISTITEM_IMAGEP) item->internal;
-  */
+  
   switch (msg){
+    case LIBAROMA_CTL_LIST_ITEM_MSG_THREAD:
+      {
+        if (item->flags&LIBAROMA_CTL_LIST_ITEM_REGISTER_THREAD){
+          int ysc=libaroma_ctl_scroll_get_scroll(ctl,NULL);
+          if (mi->paralax_last_y!=ysc){
+            mi->paralax_last_y = ysc;
+            int ysch=ysc+ctl->h;
+            if ((ysch>=item->y)&&(ysc<item->y+item->h)){
+              ysch-=item->y;
+              mi->paralax_y=((item->h * ysch) / ctl->h);
+              return LIBAROMA_CTL_LIST_ITEM_MSGRET_NEED_DRAW;
+            }
+          }
+        }
+      }
+      break;
+    
     case LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_DOWN:
       {
-        printf("list image #%i -> down\n",item->id);
+        //printf("list image #%i -> down\n",item->id);
       }
       break;
     case LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_HOLDED:
       {
-        printf("list image #%i -> holded\n",item->id);
+        //printf("list image #%i -> holded\n",item->id);
       }
       break;
     case LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_UP:
       {
         if (param!=LIBAROMA_CTL_LIST_ITEM_MSGPARAM_HOLDED){
-          printf("list image #%i -> touched\n",item->id);
+          //printf("list image #%i -> touched\n",item->id);
         }
       }
       break;
     case LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_CANCEL:
       {
-        printf("list image #%i -> touch canceled by scroll\n",item->id);
+        //printf("list image #%i -> touch canceled by scroll\n",item->id);
       }
       break;
   }
@@ -113,14 +131,29 @@ void _libaroma_listitem_image_draw(
     byte flags=item->flags;
     
     if (mi->ready_image){
-      if ((mi->ready_image->w!=cv->w)||(mi->ready_image->h!=cv->h)){
-        libaroma_canvas_free(mi->ready_image);
-        mi->ready_image=NULL;
+      if (flags&LIBAROMA_LISTITEM_IMAGE_PARALAX){
+        if ((mi->ready_image->w!=cv->w)||(mi->ready_image->h!=cv->h*2)){
+          libaroma_canvas_free(mi->ready_image);
+          mi->ready_image=NULL;
+        }
+      }
+      else{
+        if ((mi->ready_image->w!=cv->w)||(mi->ready_image->h!=cv->h)){
+          libaroma_canvas_free(mi->ready_image);
+          mi->ready_image=NULL;
+        }
       }
     }
     
     if (mi->ready_image==NULL){
-      mi->ready_image=libaroma_canvas(cv->w,cv->h);
+      if (flags&LIBAROMA_LISTITEM_IMAGE_PARALAX){
+        mi->ready_image=libaroma_canvas(cv->w,cv->h*2);
+        _libaroma_listitem_image_message(
+          ctl, item, LIBAROMA_CTL_LIST_ITEM_MSG_THREAD,0,0,0);
+      }
+      else{
+        mi->ready_image=libaroma_canvas(cv->w,cv->h);
+      }
       libaroma_draw_rect(
         mi->ready_image,0,0,
         mi->ready_image->w,mi->ready_image->h,bgcolor,0xff
@@ -183,7 +216,18 @@ void _libaroma_listitem_image_draw(
       }
     }
     if (mi->ready_image){
-      libaroma_draw(cv,mi->ready_image,0,0,0);
+      if (flags&LIBAROMA_LISTITEM_IMAGE_PARALAX){
+        libaroma_draw_ex(
+          cv,mi->ready_image,
+          0,0,
+          0,item->h-mi->paralax_y,
+          cv->w,cv->h,
+          0,0xff
+        );
+      }
+      else{
+        libaroma_draw(cv,mi->ready_image,0,0,0);
+      }
     }
     int min_pushed=0;
     word selcolor = is_dark?RGB(ffffff):RGB(000000);
@@ -281,6 +325,12 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_listitem_image(
   else{
     h=libaroma_window_measure_point(h);
   }
+  if (flags&LIBAROMA_LISTITEM_IMAGE_PARALAX){
+    flags|=LIBAROMA_LISTITEM_IMAGE_PROPORTIONAL;
+    flags|=LIBAROMA_LISTITEM_IMAGE_FILL;
+    flags|=LIBAROMA_CTL_LIST_ITEM_REGISTER_THREAD;
+  }
+  
   LIBAROMA_CTL_LIST_ITEMP item = libaroma_ctl_list_add_item_internal(
     ctl, id, h,
     flags,

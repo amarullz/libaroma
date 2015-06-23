@@ -478,69 +478,6 @@ byte _libaroma_ctl_list_thread(
               _libaroma_ctl_list_free_state(item);
               unreg_me=1;
             }
-            /*
-            if ((item->state->touch_start)&&(item->state->touch_state<1)){
-              float nowstate=libaroma_control_state(
-                item->state->touch_start, 1500
-              );
-              if (item->state->touch_state!=nowstate){
-                is_draw = 1;
-                item->state->touch_state=nowstate;
-              }
-            }
-            if (item->state->touched==1){
-              if ((item->state->touch_state>=0.6)&&(!item->state->holded)){
-                item->state->holded=1;
-                if (item->handler->message){
-                  int cx = 0; int cy=0;
-                  LIBAROMA_CTL_LIST_TOUCHPOSP pos =
-                    libaroma_ctl_list_getpos(ctl);
-                  if (pos){
-                    cy = pos->last_y - item->y;
-                    cx = pos->last_x;
-                  }
-                  byte msgret=item->handler->message(
-                    ctl,
-                    item,
-                    LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_HOLDED,
-                    LIBAROMA_CTL_LIST_ITEM_MSGPARAM_HOLDED,
-                    cx, cy
-                  );
-                  if (msgret&LIBAROMA_CTL_LIST_ITEM_MSGRET_NEED_DRAW){
-                    is_draw=1;
-                  }
-                  if (msgret&LIBAROMA_CTL_LIST_ITEM_MSGRET_UNREG_THREAD){
-                    unreg_me=1;
-                  }
-                }
-              }
-            }
-            else if (item->state->touched==2){
-              if (item->state->touch_state>=0.1){
-                item->state->touched=0;
-                item->state->touch_start=0;
-                item->state->release_start=libaroma_tick();
-                item->state->release_state=0.0;
-              }
-            }
-            
-            if (!item->state->touched&&item->state->release_start){
-              float nowstate=libaroma_control_state(
-                item->state->release_start, 300
-              );
-              if (item->state->release_state!=nowstate){
-                is_draw = 1;
-                item->state->release_state=nowstate;
-              }
-              if (item->state->release_state>=1){
-                item->state->release_start=0;
-                item->state->touch_start=0;
-                item->state->touched=0;
-                _libaroma_ctl_list_free_state(item);
-                unreg_me=1;
-              }
-            }
-            */
           }
         }
         if (item->handler->message){
@@ -576,7 +513,9 @@ byte _libaroma_ctl_list_thread(
     for (i=0;i<num_thread;i++){
       LIBAROMA_CTL_LIST_ITEMP item = threads[i];
       if (item!=NULL){
-        __libaroma_ctl_list_item_unreg_thread(ctl, item);
+        if (!(item->flags&LIBAROMA_CTL_LIST_ITEM_REGISTER_THREAD)){
+          __libaroma_ctl_list_item_unreg_thread(ctl, item);
+        }
       }
     }
     free(threads);
@@ -1267,6 +1206,11 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_ctl_list_add_item_internal(
     }
   }
   mi->itemn++;
+  
+  if (flags&LIBAROMA_CTL_LIST_ITEM_REGISTER_THREAD){
+    __libaroma_ctl_list_item_reg_thread(ctl,item);
+  }
+  
   libaroma_mutex_unlock(mi->mutex);
   libaroma_mutex_unlock(mi->imutex);
   

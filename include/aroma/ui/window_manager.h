@@ -59,6 +59,8 @@ typedef void (*LIBAROMA_WMCB_RESET_HANDLER) \
  * Descriptions: window manager structure
  */
 struct _LIBAROMA_WM{
+  LIBAROMA_COLORSET colorset; /* default colorset */
+  
   LIBAROMA_SARRAYP theme; /* themeset */
   LIBAROMA_SARRAYP color; /* colorset */
   
@@ -71,6 +73,13 @@ struct _LIBAROMA_WM{
   int y;
   int w;
   int h;
+  
+  /* window sync */
+  byte sync_all;
+  int sync_x;
+  int sync_y;
+  int sync_w;
+  int sync_h;
   
   /* message state */
   LIBAROMA_STACKP queue;
@@ -99,6 +108,20 @@ struct _LIBAROMA_WM_THEME{
  * Descriptions: get window manager instance
  */
 LIBAROMA_WMP libaroma_wm();
+
+/*
+ * Function    : libaroma_wm_updatesync
+ * Return Value: void
+ * Descriptions: update sync location
+ */
+void libaroma_wm_updatesync(int x, int y, int w, int h, byte all);
+
+/*
+ * Function    : libaroma_wm_resetsync
+ * Return Value: void
+ * Descriptions: reset sync
+ */
+void libaroma_wm_resetsync();
 
 /*
  * Function    : libaroma_wm_compose

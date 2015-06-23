@@ -81,6 +81,7 @@ byte QCOMFB_init(LIBAROMA_FBP me){
   
   mi->fb_sz = mi->line * me->h * mi->pixsz * (mi->qcom->dbuf?2:1);
   mi->stride= (mi->line - me->w) * mi->pixsz;
+  mi->line = mi->line * mi->pixsz;
   
   ALOGV("QCOMFB_init info (l:%i, s:%i, sz:%i, d:%i, p:%i)",
     mi->line,
@@ -323,7 +324,7 @@ int QCOMFB_overlay(LIBAROMA_FBP me, LINUXFBDR_INTERNALP mi,
           ovrl.src.format = MDP_RGBX_8888;
         }
       }
-      ovrl.src.width  = mi->line;
+      ovrl.src.width  = me->w;
       ovrl.src.height = me->h;// * (mi->qcom->dbuf?2:1);
       ovrl.src_rect.x = sl;
       ovrl.src_rect.y = 0;
@@ -361,7 +362,7 @@ int QCOMFB_overlay(LIBAROMA_FBP me, LINUXFBDR_INTERNALP mi,
           ovrl.src.format = MDP_RGBX_8888;
         }
       }
-      ovrl.src.width  = mi->line;
+      ovrl.src.width  = me->w;
       ovrl.src.height = me->h;// * (mi->qcom->dbuf?2:1);
       ovrl.src_rect.x = sl;
       ovrl.src_rect.y = 0;
@@ -441,19 +442,47 @@ byte QCOMFB_sync(
   libaroma_mutex_lock(mi->mutex);
   // LINUXFBDR_wait_vsync(mi);
   
-  if (mi->pixsz==2){
-    memcpy(mi->current_buffer, src, me->sz*2);
+  if ((w > 0) && (h > 0) && (!mi->qcom->dbuf)){
+    if (mi->pixsz==2){
+      int copy_stride = me->w-w;
+      wordp copy_dst =
+        (wordp)  (((bytep) mi->current_buffer) + (mi->line * y) + (x * mi->pixsz));
+      wordp copy_src =
+        (wordp) (src + (me->w * y) + x);
+      libaroma_blt_align16(copy_dst, copy_src, w, h,
+        mi->stride + (copy_stride * mi->pixsz),
+        copy_stride * 2
+      );
+    }
+    else{
+      int copy_stride = me->w - w;
+      dwordp copy_dst =
+        (dwordp) (((bytep) mi->current_buffer) + (mi->line * y) + (x * mi->pixsz));
+      wordp copy_src =
+        (wordp) (src + (me->w * y) + x);
+      libaroma_blt_align_to32_pos(
+        copy_dst, copy_src,
+        w, h,
+        mi->stride + (copy_stride * mi->pixsz), copy_stride * 2,
+        mi->rgb_pos
+      );
+    }
   }
   else{
-    libaroma_blt_align_to32_pos(
-      (dwordp) mi->current_buffer, src,
-      me->w, me->h, mi->stride, 0,
-      mi->rgb_pos);
+    if (mi->pixsz==2){
+      memcpy(mi->current_buffer, src, me->sz*2);
+    }
+    else{
+      libaroma_blt_align_to32_pos(
+        (dwordp) mi->current_buffer, src,
+        me->w, me->h, mi->stride, 0,
+        mi->rgb_pos);
+    }
   }
   
   /* display frame */
   if (mi->qcom->dbuf){
-    int doffset = mi->qcom->yoffset*mi->line*mi->pixsz;
+    int doffset = mi->qcom->yoffset*mi->line;
     mi->qcom->overlay.data.offset = doffset;
     mi->qcom->overlay.id = mi->qcom->overlay_lid;
     ioctl(mi->fb, MSMFB_OVERLAY_PLAY, &mi->qcom->overlay);
@@ -494,7 +523,7 @@ void QCOMFB_swap_buffer(LIBAROMA_FBP me){
       mi->qcom->yoffset=0;
     }
     mi->current_buffer =
-      mi->buffer + (mi->qcom->yoffset * mi->line * mi->pixsz);
+      mi->buffer + (mi->qcom->yoffset * mi->line);
   }
   else{
     mi->qcom->yoffset=0;
@@ -510,14 +539,7 @@ void QCOMFB_swap_buffer(LIBAROMA_FBP me){
 void QCOMFB_flush(LIBAROMA_FBP me){
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
   QCOMFB_swap_buffer(me);
-  /*
-  if (mi->last_vsync==0){
-    mi->qcom->commiter.wait_for_finish = 0;
-  }
-  else{
-    mi->qcom->commiter.wait_for_finish = 1;
-  }
-  */
+
   int res=0;
   if (mi->qcom->commit_type==1){
     res=ioctl(mi->fb, MSMFB_DISPLAY_COMMIT_44, &mi->qcom->commiter);
@@ -560,6 +582,7 @@ void QCOMFB_flush(LIBAROMA_FBP me){
       ALOGV("QCOMFB commit type old msm_mdp v44");
     }
   }
+  
   if (res){
     // printf("%i",res); fflush(stdout);
   }

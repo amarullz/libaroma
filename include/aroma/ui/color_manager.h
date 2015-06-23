@@ -14,8 +14,8 @@
  * limitations under the License.
  *______________________________________________________________________________
  *
- * Filename    : listitem_image.h
- * Description : image list item
+ * Filename    : color_manager.h
+ * Description : color manager
  *
  * + This is part of libaroma, an embedded ui toolkit.
  * + 17/06/15 - Author(s): Ahmad Amarullah
@@ -24,27 +24,24 @@
 #ifndef __libaroma_aroma_h__
   #error "Include <aroma.h> instead."
 #endif
-#ifndef __libaroma_listitem_image_h__
-#define __libaroma_listitem_image_h__
+#ifndef __libaroma_color_manager_h__
+#define __libaroma_color_manager_h__
 
-/* option signature */
-#define LIBAROMA_LISTITEM_IMAGE_SHARED        0x20
-#define LIBAROMA_LISTITEM_IMAGE_FREE          0x40
-#define LIBAROMA_LISTITEM_IMAGE_FILL          0x80
-#define LIBAROMA_LISTITEM_IMAGE_PROPORTIONAL  0x10
-#define LIBAROMA_LISTITEM_IMAGE_PARALAX       0x08
+typedef struct {
+  word primary;
+  word primary_text;
+  word primary_icon;
+  word primary_light;
+  word accent;
+  word window_bg;
+  word window_text;
+  word control_bg;
+  word control_primary_text;
+  word control_secondary_text;
+  word divider;
+} LIBAROMA_COLORSET, * LIBAROMA_COLORSETP;
+byte libaroma_colorset(LIBAROMA_COLORSETP colorset, byte type);
+LIBAROMA_COLORSETP libaroma_colorget(
+  LIBAROMA_CONTROLP ctl, LIBAROMA_WINDOWP win);
 
-/*
- * Function    : libaroma_listitem_image
- * Return Value: LIBAROMA_CTL_LIST_ITEMP
- * Descriptions: create option item
- */
-LIBAROMA_CTL_LIST_ITEMP libaroma_listitem_image(
-    LIBAROMA_CONTROLP ctl,
-    int id,
-    LIBAROMA_CANVASP image,
-    int h,
-    byte flags,
-    int at_index);
-
-#endif /* __libaroma_listitem_image_h__ */
+#endif /* __libaroma_color_manager_h__ */

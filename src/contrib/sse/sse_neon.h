@@ -23,6 +23,8 @@
  */
 #ifndef __libaroma_sse_neon_h__
 #define __libaroma_sse_neon_h__
+#ifdef __SSE3__
+#ifdef __SSSE3__
 
 #include "neon2sse.h" /* neon to sse header */
 
@@ -51,7 +53,7 @@
 #define __engine_have_libaroma_alpha_mono 1
 #define __engine_have_libaroma_alpha_multi_line 1
 
-
-
+#endif
+#endif
 #endif /* __libaroma_sse_neon_h__ */
 

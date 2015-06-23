@@ -34,7 +34,8 @@
 
 /* item flags */
 #define LIBAROMA_CTL_LIST_ITEM_RECEIVE_TOUCH            0x1
-#define LIBAROMA_LISTITEM_WITH_SEPARATOR                0x2
+#define LIBAROMA_CTL_LIST_ITEM_REGISTER_THREAD          0x2
+#define LIBAROMA_LISTITEM_WITH_SEPARATOR                0x4
 
 /* item message */
 #define LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_DOWN           0x1

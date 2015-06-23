@@ -213,8 +213,16 @@ byte _libaroma_window_ui_thread(LIBAROMA_WINDOWP win) {
       LIBAROMA_CONTROLP c=win->childs[i];
       if (c->handler->thread!=NULL){
         if (c->handler->thread(c)){
-          libaroma_control_draw(c,0);
-          need_sync=1;
+          if (libaroma_control_draw(c,0)){
+            libaroma_wm_updatesync(
+              c->x+win->x,
+              c->y+win->y,
+              c->w,
+              c->h,
+              0
+            );
+            need_sync=1;
+          }
         }
       }
     }
@@ -346,7 +354,7 @@ byte _libaroma_window_updatebg(LIBAROMA_WINDOWP win){
   win->bg = libaroma_canvas(w,h);
   libaroma_canvas_setcolor(
     win->bg,
-    libaroma_wm_get_color("window"),
+    libaroma_colorget(NULL,win)->window_bg,
     0xff
   );
   return 1;

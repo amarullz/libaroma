@@ -23,8 +23,8 @@
  */
 #ifndef __libaroma_strings_c__
 #define __libaroma_strings_c__
-#include <aroma_internal.h>
 #include <zlib.h>
+#include <aroma_internal.h>
 
 /*
  * Variable    : _libaroma_language

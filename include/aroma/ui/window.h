@@ -109,6 +109,8 @@ typedef struct _LIBAROMA_WINDOW_HANDLER{
  * Descriptions: window structure
  */
 struct _LIBAROMA_WINDOW{
+  LIBAROMA_COLORSETP colorset;
+  
   /* px measured */
   int x;
   int y;

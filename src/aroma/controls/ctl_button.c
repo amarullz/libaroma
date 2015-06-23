@@ -98,7 +98,7 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
     me->isdark = libaroma_color_isdark(me->color);
   }
   else{
-    me->isdark = libaroma_color_isdark(libaroma_wm_get_color("window"));
+    me->isdark = libaroma_color_isdark(libaroma_colorget(ctl,NULL)->window_bg);
   }
   word push_color = me->isdark?RGB(ffffff):RGB(000000);
   word text_color = me->isdark?0xffff:0;
@@ -121,7 +121,7 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
     int raised_sz;
     LIBAROMA_CANVASP raised_canvas;
     
-    raised_sz = libaroma_dp(3);
+    raised_sz = libaroma_dp(2);
     raised_canvas = libaroma_blur_ex(btnmask,
       raised_sz,1,RGB(000000)
     );
@@ -129,7 +129,7 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
       rest_canvas,raised_canvas,
       ix-raised_sz,
       iy-raised_sz+libaroma_dp(1),
-      1,0x30
+      1,40
     );
     libaroma_canvas_free(raised_canvas);
     
@@ -141,8 +141,8 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
       libaroma_draw_opacity(
         push_canvas,raised_canvas,
         ix-raised_sz,
-        iy-raised_sz+libaroma_dp(4),
-        1,0x50
+        iy-raised_sz+libaroma_dp(3),
+        1,50
       );
       libaroma_canvas_free(raised_canvas);
     }

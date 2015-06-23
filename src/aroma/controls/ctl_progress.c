@@ -214,7 +214,7 @@ void _libaroma_ctl_progress_draw(
       c->w>>1,c->h>>1,
       sz, sz, width,
       from, from+length,
-      libaroma_wm_get_color("highlight"),
+      libaroma_colorget(ctl,NULL)->primary,
       0xff,0,0.5
     );
   }
@@ -225,7 +225,7 @@ void _libaroma_ctl_progress_draw(
     int ih = ctl->h-iy*2;
     libaroma_draw_rect(c,
       ix, iy, iw, ih,
-      libaroma_wm_get_color("control"),
+      libaroma_colorget(ctl,NULL)->control_bg,
       0xcc
     );
     
@@ -233,7 +233,7 @@ void _libaroma_ctl_progress_draw(
       int val_w = (iw * me->curval) / me->max;
       libaroma_draw_rect(c,
         me->currx+ix,iy,val_w,ih,
-        libaroma_wm_get_color("highlight"),
+        libaroma_colorget(ctl,NULL)->primary,
         0xcc
       );
     }
@@ -277,7 +277,7 @@ void _libaroma_ctl_progress_draw(
         if (w>0){
           libaroma_draw_rect(c,
             l1+ix,iy,w,ih,
-            libaroma_wm_get_color("highlight"),
+            libaroma_colorget(ctl,NULL)->primary,
             0xcc
           );
         }
@@ -287,7 +287,7 @@ void _libaroma_ctl_progress_draw(
         if (w>0){
           libaroma_draw_rect(c,
             l2+ix,iy,w,ih,
-            libaroma_wm_get_color("highlight"),
+            libaroma_colorget(ctl,NULL)->primary,
             0xcc
           );
         }

@@ -54,7 +54,7 @@ void bar_test(){
     win2, 8, pw*2, 0, pw, 60,
     "Second Button", LIBAROMA_CTL_BUTTON_COLORED|LIBAROMA_CTL_BUTTON_RAISED, RGB(008800)
   );
-  /*
+  
   LIBAROMA_CONTROLP progress2 = libaroma_ctl_progress(
     win2, 51,
     (pw*3.5)-24, 48, 48, 48,
@@ -62,7 +62,6 @@ void bar_test(){
     100,
     0
   );
-  */
   
   /* list */
   LIBAROMA_CONTROLP list = libaroma_ctl_list(
@@ -90,6 +89,17 @@ void bar_test(){
   char extra_text[256];
   int itm=0;
   for (itm=0;itm<50;itm++){
+    if (itm==10){
+      libaroma_listitem_image(
+        list,1,
+        libaroma_image_uri("file:///sdcard/sso.jpg"),
+        150,
+        LIBAROMA_LISTITEM_IMAGE_FREE|LIBAROMA_LISTITEM_WITH_SEPARATOR|
+        LIBAROMA_LISTITEM_IMAGE_FILL|LIBAROMA_LISTITEM_IMAGE_PROPORTIONAL|
+        LIBAROMA_CTL_LIST_ITEM_RECEIVE_TOUCH|LIBAROMA_LISTITEM_IMAGE_PARALAX,
+      -1);
+    }
+    
     snprintf(main_text,256,"Item id#%i",itm);
     byte add_flags=0;
     if (itm%3==1){
@@ -129,8 +139,7 @@ void bar_test(){
   );
 
   
-  LIBAROMA_WINDOWP sidebar=
-    libaroma_window_sidebar(win,0);
+  LIBAROMA_WINDOWP sidebar=libaroma_window_sidebar(win,0);
   if (sidebar){
     printf("SIDEBAR INITIALIZED\n");
     
@@ -147,20 +156,29 @@ void bar_test(){
       sblist,2,
       libaroma_image_uri("file:///sdcard/sso.jpg"),
       120,
-      LIBAROMA_LISTITEM_IMAGE_FREE|LIBAROMA_LISTITEM_WITH_SEPARATOR|
+      LIBAROMA_LISTITEM_IMAGE_FREE|
       LIBAROMA_LISTITEM_IMAGE_FILL|LIBAROMA_LISTITEM_IMAGE_PROPORTIONAL|
       LIBAROMA_CTL_LIST_ITEM_RECEIVE_TOUCH,
       -1);
     int r;
     char xtext[256];
     for (r=0;r<20;r++){
+      if (r==7){
+        libaroma_listitem_image(
+          sblist,1,
+          libaroma_image_uri("file:///sdcard/sso.jpg"),
+          150,
+          LIBAROMA_LISTITEM_IMAGE_FREE|LIBAROMA_LISTITEM_WITH_SEPARATOR|
+          LIBAROMA_LISTITEM_IMAGE_FILL|LIBAROMA_LISTITEM_IMAGE_PROPORTIONAL|
+          LIBAROMA_CTL_LIST_ITEM_RECEIVE_TOUCH|LIBAROMA_LISTITEM_IMAGE_PARALAX,
+        -1);
+      }
       snprintf(xtext,256,"Sidebar Menu #%i",r);
       libaroma_listitem_check(
         sblist, r+100, 0,
         xtext, NULL,
         list_icon,
         LIBAROMA_LISTITEM_CHECK_INDENT_NOICON|
-        LIBAROMA_LISTITEM_WITH_SEPARATOR|
         LIBAROMA_LISTITEM_CHECK_SHARED_ICON|
         0,
         -1

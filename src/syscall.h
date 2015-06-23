@@ -32,6 +32,10 @@
   #include "contrib/linux/linux_syscall.h"
 #endif
 
+#ifdef __ISQNX__
+  #include "contrib/qnx/qnx_syscall.h"
+#endif
+
 /* for android */
 #if ANDROID
   #include "contrib/android/android.h"

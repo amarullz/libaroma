@@ -132,6 +132,8 @@ byte libaroma_msg_init() {
   /* Init Input Thread */
   libaroma_thread_create(
     &_libaroma_msgqueue->input_thread,_libaroma_msgqueue_hid_thread, NULL);
+    
+  /*libaroma_thread_set_hiprio(_libaroma_msgqueue->input_thread);*/
   /* OK */
   return 1;
 } /* End of libaroma_msg_init */

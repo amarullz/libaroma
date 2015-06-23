@@ -40,7 +40,9 @@ typedef uint32_t dword;
 typedef byte * bytep;
 typedef word * wordp;
 typedef dword * dwordp;
+#ifndef ZLIB_H
 typedef void * voidp;
+#endif
 
 /* unicode char */
 typedef uint32_t uchar;

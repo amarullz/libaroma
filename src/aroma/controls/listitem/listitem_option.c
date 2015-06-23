@@ -75,7 +75,7 @@ byte _libaroma_listitem_option_message(
       break;
     case LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_DOWN:
       {
-        printf("list item #%i -> down\n",item->id);
+        //printf("list item #%i -> down\n",item->id);
         mi->onchangeani=0;
         return LIBAROMA_CTL_LIST_ITEM_MSGRET_HAVE_ADDONS_DRAW;
       }
@@ -83,7 +83,7 @@ byte _libaroma_listitem_option_message(
     case LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_HOLDED:
       {
         mi->onchangeani=0;
-        printf("list item #%i -> holded\n",item->id);
+        //printf("list item #%i -> holded\n",item->id);
       }
       break;
     case LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_UP:
@@ -97,17 +97,17 @@ byte _libaroma_listitem_option_message(
           else{
             mi->selected=1;
           }
-          printf("list item #%i -> up/change state: %i\n",item->id,mi->selected);
+          //printf("list item #%i -> up/change state: %i\n",item->id,mi->selected);
         }
         else{
-          printf("list item #%i -> up - already holded\n",item->id);
+          //printf("list item #%i -> up - already holded\n",item->id);
         }
         return 0;
       }
       break;
     case LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_CANCEL:
       {
-        printf("list item #%i -> touch canceled by scroll\n",item->id);
+        //printf("list item #%i -> touch canceled by scroll\n",item->id);
         mi->onchangeani=0;
         return 0;
       }

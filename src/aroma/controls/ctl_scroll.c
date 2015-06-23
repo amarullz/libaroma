@@ -44,7 +44,7 @@ static LIBAROMA_CONTROL_HANDLER _libaroma_ctl_scroll_handler={
  *
  */
 /* max cache height size */
-#define _LIBAROMA_CTL_SCROLL_MAX_CACHE          (libaroma_fb()->h * 6)
+#define _LIBAROMA_CTL_SCROLL_MAX_CACHE          (libaroma_fb()->h * 10)
 /* size of touch handle */
 #define _LIBAROMA_CTL_SCROLL_HANDLE_DP                  36
 /* wait ms before it send down event to client */
@@ -748,7 +748,7 @@ void _libaroma_ctl_scroll_draw(
         
         if (bvel!=0){
           int y_i = (int) bvel>>8;
-          libaroma_draw(tc,c,0,-y_i,0);
+          libaroma_draw_ex(tc,c,0,0,0,y_i,tc->w,tc->h,0,0xff);
           libaroma_canvas_free(c);
           c=tc;
         }
@@ -789,7 +789,7 @@ void _libaroma_ctl_scroll_draw(
                   );
                   if (me->handle_touched){
                     handle_opa=0xff;
-                    indicator_color=RGB(6699dd);
+                    indicator_color=libaroma_colorget(ctl,NULL)->primary;
                   }
                   else{
                     handle_opa=220;
@@ -861,8 +861,15 @@ void _libaroma_ctl_scroll_draw(
           if (overshoot_sz>1){
             LIBAROMA_CANVASP ovshot = libaroma_canvas_ex(
               c->w, overshoot_sz, 1);
-            libaroma_canvas_setcolor(ovshot,RGB(009587),0);
+            libaroma_canvas_setcolor(ovshot,
+              libaroma_colorget(ctl,NULL)->primary,0);
             int vw = c->w>>2;
+            if (me->ovs_x<0){
+              me->ovs_x=0;
+            }
+            else if (me->ovs_x>ctl->w){
+              me->ovs_x=ctl->w;
+            }
             int vx = me->ovs_x>>2;
             int ovw= overshoot_sz>>1;
             int x1 = 0-(vw-vx);
@@ -1297,6 +1304,21 @@ byte libaroma_ctl_scroll_request_height(LIBAROMA_CONTROLP ctl, int h){
 } /* End of libaroma_ctl_scroll_request_height */
 
 /*
+ * Function    : libaroma_ctl_scroll_get_scroll
+ * Return Value: int
+ * Descriptions: get scroll position
+ */
+int libaroma_ctl_scroll_get_scroll(LIBAROMA_CONTROLP ctl, int * scroll_h){
+  _LIBAROMA_CTL_CHECK(
+    _libaroma_ctl_scroll_handler, _LIBAROMA_CTL_SCROLLP, 0
+  );
+  if (scroll_h!=NULL){
+    *scroll_h=me->max_scroll_y;
+  }
+  return me->scroll_y;
+} /* End of libaroma_ctl_scroll_get_scroll */
+
+/*
  * Function    : libaroma_ctl_scroll_set_height
  * Return Value: byte
  * Descriptions: set scroll height
@@ -1577,110 +1599,5 @@ byte libaroma_ctl_scroll_blit(
   return 0;
 } /* End of libaroma_ctl_scroll_blit */
 
-
-
-
-
-
-
-
-
-/*
- *
- * WILL BE DELETED
- *
- */
-
-/* TEST SCROLL HANDLER */
-void _libaroma_ctl_testscroll_draw(
-  LIBAROMA_CONTROLP, LIBAROMA_CTL_SCROLL_CLIENTP, LIBAROMA_CANVASP,
-  int, int, int, int);
-static LIBAROMA_CTL_SCROLL_CLIENT_HANDLER _libaroma_ctl_testscroll_draw_handler={
-  message:NULL,
-  draw:_libaroma_ctl_testscroll_draw,
-  destroy:NULL,
-  thread:NULL
-};
-byte ______draw_n = 0;
-
-/* TEST SCROLL CONTROL */
-void _libaroma_ctl_testscroll_draw(
-    LIBAROMA_CONTROLP ctl,
-    LIBAROMA_CTL_SCROLL_CLIENTP client,
-    LIBAROMA_CANVASP cv,
-    int x, int y, int w, int h){
-  int pos = floor(y/80);
-  int cnt = ceil(h/80.0 + ceil(y/80.0) - pos);
-  int i;
-  ______draw_n=______draw_n?0:1;
-#ifdef LIBAROMA_CONFIG_OPENMP
-  #pragma omp parallel for
-#endif
-  for (i=0;i<cnt;i++){
-    int item_y = (i+pos) * 80;
-    int ddy=item_y-y;
-    if (ddy>=cv->h){
-      continue;
-    }
-    char text[128];
-    snprintf(text,128,"Scrolling Test %i", i+pos);
-    LIBAROMA_CANVASP item_cv = libaroma_canvas(w,80);
-    libaroma_canvas_setcolor(item_cv,
-      /*(______draw_n?RGB(ffcccc):RGB(ccffcc))*/
-      RGB(ffffff)
-    ,255);
-
-    libaroma_draw_text(
-      item_cv,
-      text,
-      20,
-      5,
-      RGB(557799),
-      w-40,
-      LIBAROMA_FONT(0,4)|
-      LIBAROMA_TEXT_SINGLELINE|
-      LIBAROMA_TEXT_CENTER|
-      LIBAROMA_TEXT_FIXED_INDENT|
-      LIBAROMA_TEXT_FIXED_COLOR|
-      LIBAROMA_TEXT_NOHR,
-      120);
-
-    if (ddy<0){
-      if (ddy+item_cv->h>0){
-        libaroma_draw_ex(cv,
-          item_cv,
-          0,0,
-          0,abs(ddy),
-          item_cv->w,
-          item_cv->h+ddy,0,0xff);
-      }
-    }
-    else if (ddy<cv->h){
-      libaroma_draw_ex(cv,item_cv,
-        0,ddy,
-        0,0,
-        item_cv->w,
-        item_cv->h,
-        0,0xff);
-    }
-    libaroma_canvas_free(item_cv);
-  }
-}
-
-LIBAROMA_CONTROLP libaroma_ctl_testscroll(
-    LIBAROMA_WINDOWP win, word id,
-    int x, int y, int w, int h,
-    word bg_color, byte flags
-){
-  LIBAROMA_CONTROLP ctl = libaroma_ctl_scroll(
-    win, id, x, y, w, h, bg_color, flags
-  );
-  libaroma_ctl_scroll_set_client(
-    ctl, NULL, 
-    &_libaroma_ctl_testscroll_draw_handler
-  );
-  libaroma_ctl_scroll_set_height(ctl, 10000);
-  return ctl;
-}
 
 #endif /* __libaroma_ctl_scroll_c__ */
