@@ -643,10 +643,13 @@ void _libaroma_ctl_bar_draw(
     }
   }
   if (me->dc){
+    
     if ((me->change_state<1)&&(me->change_state>0)&&(me->tdc)){
       float xstate = libaroma_cubic_bezier_swiftout(me->change_state);
       libaroma_draw(c, me->dc, 0, 0, 0);
-      
+      int h = (c->h * xstate);
+      int y = (c->h>>1) - (h>>1);
+        
       if (me->change_flags&_LIBAROMA_CTL_BAR_CHANGE_COLOR){
         /* find switch */
         if (me->tools!=NULL){
@@ -668,8 +671,6 @@ void _libaroma_ctl_bar_draw(
         );
       }
       else{
-        int h = (c->h * xstate);
-        int y = (c->h>>1) - (h>>1);
         if (me->change_flags&_LIBAROMA_CTL_BAR_CHANGE_TITLE){
           libaroma_draw_scale_nearest(
             c, me->tdc,
@@ -694,78 +695,6 @@ void _libaroma_ctl_bar_draw(
             me->tools_x, 0, tools_w, me->tdc->h
           );
         }
-        if (me->change_flags&_LIBAROMA_CTL_BAR_CHANGE_ICON){
-          if (me->icon){
-            int icon_w = libaroma_dp(me->text_gap);
-            libaroma_draw_scale_nearest(
-              c, me->tdc,
-              0, y, icon_w, h,
-              0, 0, icon_w, me->tdc->h
-            );
-          }
-          else if (me->icon_flags){
-            if (me->icon_flags==LIBAROMA_CTL_BAR_ICON_DRAWER_TO_ARROW){
-              libaroma_draw_rect(
-                c,
-                libaroma_dp(16), libaroma_dp(16),
-                libaroma_dp(24),libaroma_dp(24),
-                me->bgcolor, 0xff
-              );
-              libaroma_art_arrowdrawer(
-                c,xstate,0,
-                libaroma_dp(16),
-                libaroma_dp(16),
-                libaroma_dp(24),
-                me->itemcolor,
-                0xff, 0, 0.5
-              );
-            }
-            else if (me->icon_flags==LIBAROMA_CTL_BAR_ICON_ARROW_TO_DRAWER){
-              libaroma_draw_rect(
-                c,
-                libaroma_dp(16), libaroma_dp(16),
-                libaroma_dp(24),libaroma_dp(24),
-                me->bgcolor, 0xff
-              );
-              libaroma_art_arrowdrawer(
-                c,xstate,1,
-                libaroma_dp(16),
-                libaroma_dp(16),
-                libaroma_dp(24),
-                me->itemcolor,
-                0xff, 0, 0.5
-              );
-            }
-            else {
-              int icon_w = libaroma_dp(me->text_gap);
-              LIBAROMA_CANVASP crc = libaroma_canvas(
-                icon_w, c->h);
-              if (crc){
-                libaroma_canvas_setcolor(crc,me->bgcolor,0);
-                if (me->icon_flags==LIBAROMA_CTL_BAR_ICON_DRAWER){
-                  libaroma_art_arrowdrawer(
-                    crc,1,1,libaroma_dp(16),libaroma_dp(16),libaroma_dp(24),
-                    me->itemcolor,
-                    0xff, 0, 0.5
-                  );
-                }
-                else if (me->icon_flags==LIBAROMA_CTL_BAR_ICON_ARROW){
-                  libaroma_art_arrowdrawer(
-                    crc,1,0,libaroma_dp(16),libaroma_dp(16),libaroma_dp(24),
-                    me->itemcolor,
-                    0xff, 0, 0.5
-                  );
-                }
-                libaroma_draw_scale_nearest(
-                  c, crc,
-                  0, y, icon_w, h,
-                  0, 0, icon_w, crc->h
-                );
-                libaroma_canvas_free(crc);
-              }
-            }
-          }
-        }
         /* find switch */
         if (me->tools!=NULL){
           int i;
@@ -777,6 +706,82 @@ void _libaroma_ctl_bar_draw(
                   ctl, c,i, 1, xstate, 0
                 );
               }
+            }
+          }
+        }
+        if (me->change_flags&_LIBAROMA_CTL_BAR_CHANGE_ICON){
+          if (me->icon){
+            int icon_w = libaroma_dp(me->text_gap);
+            libaroma_draw_scale_nearest(
+              c, me->tdc,
+              0, y, icon_w, h,
+              0, 0, icon_w, me->tdc->h
+            );
+          }
+        }
+      }
+      if (me->change_flags&_LIBAROMA_CTL_BAR_CHANGE_ICON){
+        if (me->icon){
+        }
+        else if (me->icon_flags){
+          if (me->icon_flags==LIBAROMA_CTL_BAR_ICON_DRAWER_TO_ARROW){
+            libaroma_draw_rect(
+              c,
+              libaroma_dp(16), libaroma_dp(16),
+              libaroma_dp(24),libaroma_dp(24),
+              c->data[0], 0xff
+            );
+            libaroma_art_arrowdrawer(
+              c,xstate,0,
+              libaroma_dp(16),
+              libaroma_dp(16),
+              libaroma_dp(24),
+              me->itemcolor,
+              0xff, 0, 0.5
+            );
+          }
+          else if (me->icon_flags==LIBAROMA_CTL_BAR_ICON_ARROW_TO_DRAWER){
+            libaroma_draw_rect(
+              c,
+              libaroma_dp(16), libaroma_dp(16),
+              libaroma_dp(24),libaroma_dp(24),
+              c->data[0], 0xff
+            );
+            libaroma_art_arrowdrawer(
+              c,xstate,1,
+              libaroma_dp(16),
+              libaroma_dp(16),
+              libaroma_dp(24),
+              me->itemcolor,
+              0xff, 0, 0.5
+            );
+          }
+          else {
+            int icon_w = libaroma_dp(me->text_gap);
+            LIBAROMA_CANVASP crc = libaroma_canvas(
+              icon_w, c->h);
+            if (crc){
+              libaroma_canvas_setcolor(crc,c->data[0],0);
+              if (me->icon_flags==LIBAROMA_CTL_BAR_ICON_DRAWER){
+                libaroma_art_arrowdrawer(
+                  crc,1,1,libaroma_dp(16),libaroma_dp(16),libaroma_dp(24),
+                  me->itemcolor,
+                  0xff, 0, 0.5
+                );
+              }
+              else if (me->icon_flags==LIBAROMA_CTL_BAR_ICON_ARROW){
+                libaroma_art_arrowdrawer(
+                  crc,1,0,libaroma_dp(16),libaroma_dp(16),libaroma_dp(24),
+                  me->itemcolor,
+                  0xff, 0, 0.5
+                );
+              }
+              libaroma_draw_scale_nearest(
+                c, crc,
+                0, y, icon_w, h,
+                0, 0, icon_w, crc->h
+              );
+              libaroma_canvas_free(crc);
             }
           }
         }
@@ -945,7 +950,7 @@ byte _libaroma_ctl_bar_thread(LIBAROMA_CONTROLP ctl) {
   
   /* changed */
   if (me->change_start>0){
-    float nowstate=libaroma_control_state(me->change_start, 180);
+    float nowstate=libaroma_control_state(me->change_start, 200);
     if (nowstate>=1){
       is_draw = 1;
       me->change_state=1;
@@ -972,9 +977,9 @@ byte _libaroma_ctl_bar_thread(LIBAROMA_CONTROLP ctl) {
         int tools_id = me->touched_state-10;
         byte sstate=(me->tools->tools[tools_id].icon_flags&
               LIBAROMA_CTL_BAR_TOOL_SWITCH_CHECKED)?1:0;
-        libaroma_window_post_command(
-          LIBAROMA_CMD_SET(LIBAROMA_CMD_HOLD,sstate,
-          me->tools->tools[tools_id].id)
+        libaroma_window_post_command_ex(
+          LIBAROMA_CMD_SET(LIBAROMA_CMD_HOLD,me->touched_state,ctl->id),
+          sstate, me->tools->tools[tools_id].id, tools_id, NULL
         );
       }
     }
@@ -1126,9 +1131,9 @@ dword _libaroma_ctl_bar_msg(
               int tools_id = me->touched_state-10;
               byte sstate=(me->tools->tools[tools_id].icon_flags&
                     LIBAROMA_CTL_BAR_TOOL_SWITCH_CHECKED)?1:0;
-              libaroma_window_post_command(
-                LIBAROMA_CMD_SET(LIBAROMA_CMD_CLICK,sstate,
-                me->tools->tools[tools_id].id)
+              libaroma_window_post_command_ex(
+                LIBAROMA_CMD_SET(LIBAROMA_CMD_CLICK,me->touched_state,ctl->id),
+                sstate, me->tools->tools[tools_id].id, tools_id, NULL
               );
             }
           }

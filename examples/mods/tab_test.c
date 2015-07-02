@@ -93,7 +93,7 @@ void tab_test(){
   int itm=0;
   for (itm=0;itm<50;itm++){
     snprintf(main_text,256,"Item id#%i",itm);
-    byte add_flags=0;
+    word add_flags=0;
     if (itm%3==1){
       add_flags=LIBAROMA_LISTITEM_CHECK_SWITCH;
       snprintf(extra_text,256,

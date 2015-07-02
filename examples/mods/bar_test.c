@@ -75,7 +75,7 @@ void bar_test(){
   
   libaroma_listitem_image(
     list,1,
-    libaroma_image_uri("file:///sdcard/sso.jpg"),
+    libaroma_image_uri("file:///sdcard/wall2.jpg"),
     120,
     LIBAROMA_LISTITEM_IMAGE_FREE|LIBAROMA_LISTITEM_WITH_SEPARATOR|
     LIBAROMA_LISTITEM_IMAGE_FILL|LIBAROMA_LISTITEM_IMAGE_PROPORTIONAL|
@@ -84,15 +84,26 @@ void bar_test(){
   
   
   LIBAROMA_CANVASP list_icon =
-    libaroma_image_uri("file:///sdcard/ic_settings_data_usage.png");
+    libaroma_image_uri("file:///sdcard/card.png");
+  LIBAROMA_CANVASP list_icon2 =
+    libaroma_image_uri("file:///sdcard/gesture.png");
+  LIBAROMA_CANVASP list_icon3 =
+    libaroma_image_uri("file:///sdcard/inbox.png");
+  
+  /* fill color */
+  libaroma_canvas_fillcolor(list_icon,libaroma_colorget(NULL,NULL)->primary);
+  libaroma_canvas_fillcolor(list_icon2,libaroma_colorget(NULL,NULL)->primary);
+  libaroma_canvas_fillcolor(list_icon3,libaroma_colorget(NULL,NULL)->primary);
+    
   char main_text[256];
   char extra_text[256];
   int itm=0;
+  int kdv=0;
   for (itm=0;itm<50;itm++){
     if (itm==10){
       libaroma_listitem_image(
         list,1,
-        libaroma_image_uri("file:///sdcard/sso.jpg"),
+        libaroma_image_uri("file:///sdcard/wall1.jpg"),
         150,
         LIBAROMA_LISTITEM_IMAGE_FREE|LIBAROMA_LISTITEM_WITH_SEPARATOR|
         LIBAROMA_LISTITEM_IMAGE_FILL|LIBAROMA_LISTITEM_IMAGE_PROPORTIONAL|
@@ -100,8 +111,20 @@ void bar_test(){
       -1);
     }
     
+    if (itm%6==4){
+      libaroma_listitem_divider(
+        list, 1, (((kdv++)%2)==0)?LIBAROMA_LISTITEM_DIVIDER_SUBSCREEN:
+          LIBAROMA_LISTITEM_DIVIDER_TEXTALIGNED, -1);
+    }
+    
+    if (itm%15==0){
+      snprintf(main_text,256,"List Caption %i",itm);
+      libaroma_listitem_caption(
+        list, 200, main_text, -1);
+    }
+    
     snprintf(main_text,256,"Item id#%i",itm);
-    byte add_flags=0;
+    word add_flags=0;
     if (itm%3==1){
       add_flags=LIBAROMA_LISTITEM_CHECK_SWITCH;
       snprintf(extra_text,256,
@@ -110,17 +133,31 @@ void bar_test(){
     else if (itm%3==2){
       snprintf(extra_text,256,"Secondary text %i",itm);
     }
-    libaroma_listitem_check(
-      list, itm+10, 0,
-      main_text,
-      (itm%3!=0)?extra_text:NULL,
-      list_icon,
-      LIBAROMA_LISTITEM_CHECK_INDENT_NOICON|
-      LIBAROMA_LISTITEM_WITH_SEPARATOR|
-      LIBAROMA_LISTITEM_CHECK_SHARED_ICON|
-      add_flags,
-      -1
-    );
+    if (itm%5==0){
+      libaroma_listitem_check(
+        list, itm+10, 0,
+        main_text,
+        (itm%3!=0)?extra_text:NULL,
+        NULL,
+        LIBAROMA_LISTITEM_WITH_SEPARATOR|
+        LIBAROMA_LISTITEM_CHECK_LEFT_CONTROL|
+        add_flags,
+        -1
+      );
+    }
+    else{
+      libaroma_listitem_check(
+        list, itm+10, 0,
+        main_text,
+        (itm%3!=0)?extra_text:NULL,
+        ((itm%3==1)?list_icon:(itm%3==2)?list_icon2:list_icon3),
+        LIBAROMA_LISTITEM_CHECK_INDENT_NOICON|
+        LIBAROMA_LISTITEM_WITH_SEPARATOR|
+        LIBAROMA_LISTITEM_CHECK_SHARED_ICON|
+        add_flags,
+        -1
+      );
+    }
   }
   
   /* set bar tools */
@@ -153,33 +190,37 @@ void bar_test(){
     );
     
     libaroma_listitem_image(
-      sblist,2,
-      libaroma_image_uri("file:///sdcard/sso.jpg"),
-      120,
-      LIBAROMA_LISTITEM_IMAGE_FREE|
+      sblist,1,
+      libaroma_image_uri("file:///sdcard/wall2.jpg"),
+      150,
+      LIBAROMA_LISTITEM_IMAGE_FREE|LIBAROMA_LISTITEM_WITH_SEPARATOR|
       LIBAROMA_LISTITEM_IMAGE_FILL|LIBAROMA_LISTITEM_IMAGE_PROPORTIONAL|
-      LIBAROMA_CTL_LIST_ITEM_RECEIVE_TOUCH,
-      -1);
+      LIBAROMA_CTL_LIST_ITEM_RECEIVE_TOUCH|LIBAROMA_LISTITEM_IMAGE_PARALAX,
+    -1);
     int r;
     char xtext[256];
     for (r=0;r<20;r++){
-      if (r==7){
-        libaroma_listitem_image(
-          sblist,1,
-          libaroma_image_uri("file:///sdcard/sso.jpg"),
-          150,
-          LIBAROMA_LISTITEM_IMAGE_FREE|LIBAROMA_LISTITEM_WITH_SEPARATOR|
-          LIBAROMA_LISTITEM_IMAGE_FILL|LIBAROMA_LISTITEM_IMAGE_PROPORTIONAL|
-          LIBAROMA_CTL_LIST_ITEM_RECEIVE_TOUCH|LIBAROMA_LISTITEM_IMAGE_PARALAX,
-        -1);
+      if (r%5==0){
+        snprintf(xtext,256,"SIDEBAR CAPTION %i",itm);
+        libaroma_listitem_caption_color(
+          sblist, 200, xtext, RGB(888888), -1);
       }
+      
+      if (r%3==0){
+        libaroma_listitem_divider(
+          sblist, 1, (((kdv++)%2)==0)?LIBAROMA_LISTITEM_DIVIDER_SUBSCREEN:
+            LIBAROMA_LISTITEM_DIVIDER_TEXTALIGNED,
+            -1);
+      }
+    
       snprintf(xtext,256,"Sidebar Menu #%i",r);
-      libaroma_listitem_check(
-        sblist, r+100, 0,
+      libaroma_listitem_menu(
+        sblist, r+100,
         xtext, NULL,
-        list_icon,
+        ((r%3==1)?list_icon:(r%3==2)?list_icon2:list_icon3),
         LIBAROMA_LISTITEM_CHECK_INDENT_NOICON|
         LIBAROMA_LISTITEM_CHECK_SHARED_ICON|
+        LIBAROMA_LISTITEM_CHECK_SMALL_ICON|
         0,
         -1
       );
@@ -376,9 +417,9 @@ void bar_test(){
   
   libaroma_ctl_bar_tools_free(bar_tools);
   
-  if (list_icon){
-    libaroma_canvas_free(list_icon);
-  }
+  libaroma_canvas_free(list_icon);
+  libaroma_canvas_free(list_icon2);
+  libaroma_canvas_free(list_icon3);
   
   printf("Free Window\n");
   libaroma_window_free(win);

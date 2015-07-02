@@ -51,6 +51,7 @@ byte QCOMFB_init(LIBAROMA_FBP me){
   mi->qcom->id = isqcom;
   
   mi->qcom->dbuf=1;
+  me->double_buffer=1;
   ALOGV("QCOMFB_init got qcom. #%i - %i", mi->qcom->id, mi->qcom->dbuf);
   
   /* open ion device */
@@ -424,62 +425,29 @@ byte QCOMFB_allocate_overlays(LIBAROMA_FBP me){
 } /* End of QCOMFB_allocate_overlays */
 
 /*
- * Function    : QCOMFB_sync
+ * Function    : QCOMFB_start_post
  * Return Value: byte
- * Descriptions: sync callback for qcom overlay
+ * Descriptions: start post
  */
-byte QCOMFB_sync(
-    LIBAROMA_FBP me,
-    wordp __restrict src,
-    int x,
-    int y,
-    int w,
-    int h) {
+byte QCOMFB_start_post(LIBAROMA_FBP me){
   if (me == NULL) {
     return 0;
   }
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
   libaroma_mutex_lock(mi->mutex);
-  // LINUXFBDR_wait_vsync(mi);
-  
-  if ((w > 0) && (h > 0) && (!mi->qcom->dbuf)){
-    if (mi->pixsz==2){
-      int copy_stride = me->w-w;
-      wordp copy_dst =
-        (wordp)  (((bytep) mi->current_buffer) + (mi->line * y) + (x * mi->pixsz));
-      wordp copy_src =
-        (wordp) (src + (me->w * y) + x);
-      libaroma_blt_align16(copy_dst, copy_src, w, h,
-        mi->stride + (copy_stride * mi->pixsz),
-        copy_stride * 2
-      );
-    }
-    else{
-      int copy_stride = me->w - w;
-      dwordp copy_dst =
-        (dwordp) (((bytep) mi->current_buffer) + (mi->line * y) + (x * mi->pixsz));
-      wordp copy_src =
-        (wordp) (src + (me->w * y) + x);
-      libaroma_blt_align_to32_pos(
-        copy_dst, copy_src,
-        w, h,
-        mi->stride + (copy_stride * mi->pixsz), copy_stride * 2,
-        mi->rgb_pos
-      );
-    }
+  return 1;
+}
+
+/*
+ * Function    : QCOMFB_end_post
+ * Return Value: byte
+ * Descriptions: end post
+ */
+byte QCOMFB_end_post(LIBAROMA_FBP me){
+  if (me == NULL) {
+    return 0;
   }
-  else{
-    if (mi->pixsz==2){
-      memcpy(mi->current_buffer, src, me->sz*2);
-    }
-    else{
-      libaroma_blt_align_to32_pos(
-        (dwordp) mi->current_buffer, src,
-        me->w, me->h, mi->stride, 0,
-        mi->rgb_pos);
-    }
-  }
-  
+  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
   /* display frame */
   if (mi->qcom->dbuf){
     int doffset = mi->qcom->yoffset*mi->line;
@@ -502,11 +470,51 @@ byte QCOMFB_sync(
       ioctl(mi->fb, MSMFB_OVERLAY_PLAY, &mi->qcom->overlay);
     }
   }
-  
   QCOMFB_flush(me);
   libaroma_mutex_unlock(mi->mutex);
   return 1;
-} /* End of QCOMFB_sync */
+}
+
+/*
+ * Function    : QCOMFB_post
+ * Return Value: byte
+ * Descriptions: post
+ */
+byte QCOMFB_post(
+  LIBAROMA_FBP me, wordp __restrict src,
+  int dx, int dy, int dw, int dh,
+  int sx, int sy, int sw, int sh
+  ){
+  if (me == NULL) {
+    return 0;
+  }
+  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
+  
+  int sstride = (sw - dw) * 2;
+  int dstride = (me->w - dw) * mi->pixsz;
+  wordp copy_src = (wordp) (src + (sw * sy) + sx);
+  bytep dst_addr = (((bytep) mi->current_buffer)+(mi->line*dy)+(dx*mi->pixsz));
+  if (mi->pixsz==2){
+    libaroma_blt_align16(
+      (wordp) dst_addr,
+      copy_src,
+      dw, dh,
+      dstride,
+      sstride
+    );
+  }
+  else{
+    libaroma_blt_align_to32_pos(
+      (dwordp) dst_addr,
+      copy_src,
+      dw, dh,
+      dstride, 
+      sstride,
+      mi->rgb_pos
+    );
+  }
+  return 1;
+}
 
 /*
  * Function    : QCOMFB_swap_buffer

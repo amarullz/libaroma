@@ -61,7 +61,7 @@ struct _LIBAROMA_SHMEM{
  * Typedef     : LIBAROMA_STREAM_URI_CB
  * Descriptions: Stream URI Callback
  */
-typedef LIBAROMA_STREAMP (*LIBAROMA_STREAM_URI_CB)(const char *);
+typedef LIBAROMA_STREAMP (*LIBAROMA_STREAM_URI_CB)(char *);
 
 /*
  * Function    : libaroma_stream_set_uri_callback

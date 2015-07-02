@@ -33,6 +33,24 @@ byte LIBAROMA_FB_INIT_FUNCTION(
  * Descriptions: framebuffer instance storage
  */
 static LIBAROMA_FBP _libaroma_fb=NULL;
+static LIBAROMA_FB_INITIALIZER _libaroma_fb_initializer=NULL;
+
+/*
+ * Function    : libaroma_fb_set_initializer
+ * Return Value: byte
+ * Descriptions: Set framebuffer initializer callback
+ */
+byte libaroma_fb_set_initializer(LIBAROMA_FB_INITIALIZER cb){
+  if (_libaroma_fb != NULL) {
+    ALOGE("libaroma_fb_set_initializer framebuffer already initialized");
+    return 0;
+  }
+  _libaroma_fb_initializer = cb;
+  if (cb){
+    return 1;
+  }
+  return 0;
+} /* end of libaroma_fb_set_initializer */
 
 /*
  * Function    : libaroma_fb
@@ -63,19 +81,31 @@ byte libaroma_fb_init() {
     return 0;
   }
   
-  /* init driver */
-  ALOGV("Init framebuffer driver");
-  if (LIBAROMA_FB_INIT_FUNCTION(_libaroma_fb) == 0) {
-    free(_libaroma_fb);
-    _libaroma_fb = NULL;
-    ALOGE("libaroma_fb_init driver error");
-    return 0;
+  if (_libaroma_fb_initializer!=NULL){
+    ALOGV("Init framebuffer driver - runtime");
+    if (_libaroma_fb_initializer(_libaroma_fb) == 0){
+      free(_libaroma_fb);
+      _libaroma_fb = NULL;
+      ALOGE("libaroma_fb_init driver error");
+      return 0;
+    }
+  }
+  else{
+    ALOGV("Init framebuffer driver - default");
+    if (LIBAROMA_FB_INIT_FUNCTION(_libaroma_fb) == 0) {
+      free(_libaroma_fb);
+      _libaroma_fb = NULL;
+      ALOGE("libaroma_fb_init driver error");
+      return 0;
+    }
   }
   
   /* check callbacks */
   if (
     (_libaroma_fb->release == NULL) ||
-    (_libaroma_fb->sync == NULL)
+    (_libaroma_fb->start_post == NULL) ||
+    (_libaroma_fb->end_post == NULL) ||
+    (_libaroma_fb->post == NULL)
   ) {
     free(_libaroma_fb);
     _libaroma_fb = NULL;
@@ -111,10 +141,11 @@ byte libaroma_fb_init() {
     );
 
   /* Show Information */
-  ALOGI("Framebuffer Initialized (%ix%ipx - %i dpi)",
+  ALOGI("Framebuffer Initialized (%ix%ipx - %i dpi - %s)",
     _libaroma_fb->w,
     _libaroma_fb->h,
-    _libaroma_fb->dpi
+    _libaroma_fb->dpi,
+    _libaroma_fb->double_buffer?"Double Buffer":"Single Buffer"
   );
   
   /* Copy Current Framebuffer Into Display Canvas */
@@ -125,8 +156,102 @@ byte libaroma_fb_init() {
     }
   }
   
+  _libaroma_fb->onpost = 0;
+  
   return 1;
 } /* End of libaroma_fb_init */
+
+/*
+ * Function    : libaroma_fb_start_post
+ * Return Value: byte
+ * Descriptions: start post
+ */
+byte libaroma_fb_start_post(){
+  if (_libaroma_fb == NULL) {
+    ALOGW("libaroma_fb_start_post framebuffer uninitialized");
+    return 0;
+  }
+  if (_libaroma_fb->onpost){
+    return 2;
+  }
+  if (_libaroma_fb->start_post(_libaroma_fb)){
+    _libaroma_fb->onpost=1;
+  }
+  return _libaroma_fb->onpost;
+} /* End of libaroma_fb_start_post */
+
+/*
+ * Function    : libaroma_fb_end_post
+ * Return Value: byte
+ * Descriptions: end post
+ */
+byte libaroma_fb_end_post(){
+  if (_libaroma_fb == NULL) {
+    ALOGW("libaroma_fb_end_post framebuffer uninitialized");
+    return 0;
+  }
+  if (!_libaroma_fb->onpost){
+    ALOGW("libaroma_fb_end_post start_post not called");
+    return 0;
+  }
+  _libaroma_fb->end_post(_libaroma_fb);
+  _libaroma_fb->onpost=0;
+  return 1;
+} /* End of libaroma_fb_end_post */
+
+/*
+ * Function    : libaroma_fb_post
+ * Return Value: byte
+ * Descriptions: post canvas into display directly
+ */
+byte libaroma_fb_post(
+  LIBAROMA_CANVASP canvas,
+  int dx, int dy,
+  int sx, int sy,
+  int w,  int h
+){
+  if (_libaroma_fb == NULL) {
+    ALOGW("libaroma_fb_post framebuffer uninitialized");
+    return 0;
+  }
+  if (!_libaroma_fb->onpost){
+    ALOGW("libaroma_fb_post start_post not called");
+    return 0;
+  }
+  
+  /* check x position */
+  if ((sx>canvas->w)||(sy>canvas->h)||
+      (dx>_libaroma_fb->w)||(dy>_libaroma_fb->h)||
+      (sx<0)||(sy<0)||(dx<0)||(dy<0)){
+    ALOGW("libaroma_fb_post x,y position is invalid");
+    return 0;
+  }
+  if (sx+w>canvas->w){
+    w = canvas->w-sx;
+  }
+  if (sy+h>canvas->h){
+    h = canvas->h-sy;
+  }
+  if (dx+w>_libaroma_fb->w){
+    w = _libaroma_fb->w-dx;
+  }
+  if (dy+h>_libaroma_fb->h){
+    h = _libaroma_fb->h-dy;
+  }
+  if ((w<1)||(h<1)){
+    /* no need to post */
+    return 1;
+  }
+  return
+    _libaroma_fb->post(
+      _libaroma_fb, 
+      canvas->data,
+      dx, dy, w, h,
+      sx, sy, canvas->l, canvas->h
+    );
+} /* End of libaroma_fb_post */
+
+
 
 /*
  * Function    : libaroma_fb_release
@@ -170,14 +295,16 @@ byte libaroma_fb_sync() {
     return 0;
   }
   
-  /* sync */
-  return _libaroma_fb->sync(
-    _libaroma_fb,
-    _libaroma_fb->canvas->data,
-    0,
-    0,
-    0,
-    0);
+  byte ret=0;
+  if (libaroma_fb_start_post()){
+    if (_libaroma_fb->post(_libaroma_fb, _libaroma_fb->canvas->data,
+        0, 0, _libaroma_fb->w, _libaroma_fb->h,
+        0, 0, _libaroma_fb->w, _libaroma_fb->h)){
+      ret = 1;
+    }
+    libaroma_fb_end_post();
+  }
+  return ret;
 } /* End of libaroma_fb_sync */
 
 /*
@@ -194,6 +321,11 @@ byte libaroma_fb_sync_area(
     ALOGW("libaroma_fb_sync_area framebuffer uninitialized");
     return 0;
   }
+  if (_libaroma_fb->double_buffer){
+    /* should copy whole data */
+    return libaroma_fb_sync();
+  }
+  
   if (x < 0) {
     w -= x;
     x = 0;
@@ -213,14 +345,16 @@ byte libaroma_fb_sync_area(
     return 0;
   }
   
-  /* sync */
-  return _libaroma_fb->sync(
-    _libaroma_fb,
-    _libaroma_fb->canvas->data,
-    x,
-    y,
-    w,
-    h);
+  byte ret=0;
+  if (libaroma_fb_start_post()){
+    if (_libaroma_fb->post(_libaroma_fb, _libaroma_fb->canvas->data,
+        x, y, w, h,
+        x, y, _libaroma_fb->w, _libaroma_fb->h)){
+      ret = 1;
+    }
+    libaroma_fb_end_post();
+  }
+  return ret;
 } /* End of libaroma_fb_sync_area */
 
 /*

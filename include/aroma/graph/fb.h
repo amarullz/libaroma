@@ -41,26 +41,48 @@ typedef struct _LIBAROMA_FB LIBAROMA_FB;
 typedef struct _LIBAROMA_FB * LIBAROMA_FBP;
 
 /*
+ * Typedef     : LIBAROMA_FB_INITIALIZER
+ * Descriptions: Runtime HID Initializer Callback
+ */
+typedef byte (*LIBAROMA_FB_INITIALIZER)(LIBAROMA_FBP);
+
+/*
+ * Function    : libaroma_fb_set_initializer
+ * Return Value: byte
+ * Descriptions: Set framebuffer initializer callback
+ */
+byte libaroma_fb_set_initializer(LIBAROMA_FB_INITIALIZER cb);
+
+/*
  * Structure   : _LIBAROMA_FB
  * Typedef     : LIBAROMA_FB, * LIBAROMA_FBP
  * Descriptions: Framebuffer Structure
  */
 struct _LIBAROMA_FB{
   /* main info */
-  int w;            /* width */
-  int h;            /* height */
-  int sz;           /* width x height */
-  voidp internal;   /* driver internal data */
+  int w;              /* width */
+  int h;              /* height */
+  int sz;             /* width x height */
+  byte double_buffer; /* is double buffer driver */
+  voidp internal;     /* driver internal data */
   
   /* callbacks */
   void (*release)(LIBAROMA_FBP);
-  byte (*sync)(LIBAROMA_FBP, wordp __restrict, int, int, int, int);
   byte (*snapshoot)(LIBAROMA_FBP, wordp);
   byte (*config)(LIBAROMA_FBP, const char *, const char *, dword);
+  
+  /* post callbacks */
+  byte (*start_post)(LIBAROMA_FBP);
+  byte (*post)(LIBAROMA_FBP, wordp __restrict,
+    int, int, int, int, int, int, int, int);
+  byte (*end_post)(LIBAROMA_FBP);
   
   /* Optional - DPI */
   int dpi;
   byte bigscreen;
+  
+  /* post flag */
+  byte onpost;
   
   /* AROMA CORE Runtime Data */
   LIBAROMA_CANVASP canvas;
@@ -151,6 +173,32 @@ byte libaroma_fb_snapshoot();
  * Descriptions: copy display into canvas
  */
 LIBAROMA_CANVASP libaroma_fb_snapshoot_canvas();
+
+/*
+ * Function    : libaroma_fb_start_post
+ * Return Value: byte
+ * Descriptions: start post
+ */
+byte libaroma_fb_start_post();
+
+/*
+ * Function    : libaroma_fb_end_post
+ * Return Value: byte
+ * Descriptions: end post
+ */
+byte libaroma_fb_end_post();
+
+/*
+ * Function    : libaroma_fb_post
+ * Return Value: byte
+ * Descriptions: post canvas into display directly
+ */
+byte libaroma_fb_post(
+  LIBAROMA_CANVASP canvas,
+  int dx, int dy,
+  int sx, int sy,
+  int w,  int h
+);
 
 /* sync & refresh aliases */
 #define libaroma_sync() \

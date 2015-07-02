@@ -50,10 +50,14 @@ typedef struct _LIBAROMA_CONTROL * LIBAROMA_CONTROLP;
 #include "controls/ctl_tabs.h"
 #include "controls/ctl_scroll.h"
 #include "controls/ctl_list.h"
+#include "controls/ctl_fragment.h"
 
 /* list items */
 #include "controls/listitem/listitem_check.h"
+#include "controls/listitem/listitem_menu.h"
+#include "controls/listitem/listitem_caption.h"
 #include "controls/listitem/listitem_option.h"
 #include "controls/listitem/listitem_image.h"
+#include "controls/listitem/listitem_divider.h"
 
 #endif /* __libaroma_ui_h__ */

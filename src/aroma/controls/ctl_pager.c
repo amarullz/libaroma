@@ -596,6 +596,8 @@ dword _libaroma_ctl_pager_msg(
         libaroma_mutex_lock(me->mutex);
         win->x = 0;
         win->y = 0;
+        win->ax=ctl->x;
+        win->ay=ctl->y;
         win->w = ctl->w*me->pagen;
         win->h = ctl->h;
         me->max_scroll_x = win->w-ctl->w;
@@ -802,14 +804,15 @@ dword _libaroma_ctl_pager_msg(
                 if (me->page_position*ctl->w<me->scroll_x){
                   if (vel>0){
                     target_x++;
+                    velocity = ((float) vel) / 800.0;
                   }
                 }
                 else if (me->page_position*ctl->w>me->scroll_x){
                   if (vel<0){
                     target_x--;
+                    velocity = ((float) vel) / 800.0;
                   }
                 }
-                velocity = ((float) vel) / 800.0;
               }
               libaroma_ctl_pager_set_active_page(
                 ctl, target_x, velocity

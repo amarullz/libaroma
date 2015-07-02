@@ -92,6 +92,16 @@ void libaroma_window_calculate_pos(
 );
 
 /*
+ * Function    : libaroma_window_calculate_pos_abs
+ * Return Value: void
+ * Descriptions: calculate absolute screen position to top window position
+ */
+void libaroma_window_calculate_pos_abs(
+  LIBAROMA_WINDOWP win, LIBAROMA_CONTROLP ctl,
+  int * x, int * y
+);
+
+/*
  * Function    : libaroma_control_draw_flush
  * Return Value: byte
  * Descriptions: draw control into window

@@ -27,6 +27,13 @@
 #ifndef __libaroma_draw_h__
 #define __libaroma_draw_h__
 
+typedef struct{
+  int x;
+  int y;
+  int w;
+  int h;
+} LIBAROMA_RECT, * LIBAROMA_RECTP;
+
 /*
  * Typedef     : LIBAROMA_DRAW_FILTER
  * Descriptions: Filter Callback
@@ -350,5 +357,14 @@ byte libaroma_path_draw(
   byte is_mask,
   float aliasing);
 
+/*
+ * Function    : libaroma_draw_zshadow
+ * Return Value: byte
+ * Descriptions: draw zshadow
+ */
+byte libaroma_draw_zshadow(
+  LIBAROMA_CANVASP dst,
+  LIBAROMA_CANVASP mask,
+  int x, int y, byte zindex);
 
 #endif /* __libaroma_draw_h__ */

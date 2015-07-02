@@ -25,62 +25,39 @@
 #define __libaroma_linux_fb16bit_driver_c__
 
 /*
- * function : init framebuffer colorspace
+ * Function    : LINUXFBDR_post_16bit
+ * Return Value: byte
+ * Descriptions: post data
  */
-void LINUXFBDR_init_16bit(LIBAROMA_FBP me) {
-  if (me == NULL) {
-    return;
-  }
-  ALOGS("LINUXFBDR Init 16bit Colorspace");
-  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
-  
-  /* fix not standard 16bit framebuffer */
-  if (mi->line / 4 == me->w) {
-    mi->line = mi->line / 2;
-  }
-  mi->stride = mi->line - (me->w * 2); /* calculate stride size */
-}
-
-/*
- * function : save display canvas into framebuffer
- */
-byte LINUXFBDR_sync_16bit(
-    LIBAROMA_FBP me,
-    wordp __restrict src,
-    int x,
-    int y,
-    int w,
-    int h) {
+byte LINUXFBDR_post_16bit(
+  LIBAROMA_FBP me, wordp __restrict src,
+  int dx, int dy, int dw, int dh,
+  int sx, int sy, int sw, int sh
+  ){
   if (me == NULL) {
     return 0;
   }
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
-  libaroma_mutex_lock(mi->mutex);
-  LINUXFBDR_wait_vsync(mi);
-  if ((w > 0) && (h > 0) && (!mi->double_buffering)) {
-    int copy_stride = me->w-w;
-    wordp copy_dst =
-      (wordp)  (((bytep) mi->current_buffer) + (mi->line * y) + (x * mi->pixsz));
-    wordp copy_src =
-      (wordp) (src + (me->w * y) + x);
-    libaroma_blt_align16(copy_dst, copy_src, w, h,
-      mi->stride + (copy_stride * mi->pixsz),
-      copy_stride * 2
-    );
-  }
-  else {
-    libaroma_blt_align16((wordp) mi->current_buffer,
-      (wordp) src,
-      me->w, me->h, mi->stride, 0
-    );
-  }
-  LINUXFBDR_flush(me);
-  libaroma_mutex_unlock(mi->mutex);
+  int sstride = (sw - dw) * 2;
+  int dstride = (me->w - dw) * mi->pixsz;
+  wordp copy_dst =
+    (wordp) (((bytep) mi->current_buffer)+(mi->line * dy)+(dx * mi->pixsz));
+  wordp copy_src = 
+    (wordp) (src + (sw * sy) + sx);
+  libaroma_blt_align16(
+    copy_dst,
+    copy_src,
+    dw, dh,
+    dstride,
+    sstride
+  );
   return 1;
 }
 
 /*
- * function : save framebuffer into display canvas
+ * Function    : LINUXFBDR_snapshoot_16bit
+ * Return Value: byte
+ * Descriptions: get snapshoot
  */
 byte LINUXFBDR_snapshoot_16bit(LIBAROMA_FBP me, wordp dst) {
   if (me == NULL) {
@@ -92,4 +69,27 @@ byte LINUXFBDR_snapshoot_16bit(LIBAROMA_FBP me, wordp dst) {
   return 1;
 }
 
+/*
+ * Function    : LINUXFBDR_init_16bit
+ * Return Value: void
+ * Descriptions: init 16bit colorspace
+ */
+void LINUXFBDR_init_16bit(LIBAROMA_FBP me) {
+  if (me == NULL) {
+    return;
+  }
+  ALOGS("LINUXFBDR Init 16bit Colorspace");
+  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
+  /* fix not standard 16bit framebuffer */
+  if (mi->line / 4 == me->w) {
+    mi->line = mi->line / 2;
+  }
+  mi->stride = mi->line - (me->w * 2); /* calculate stride size */
+  
+  /* set sync callbacks */
+  me->start_post  = &LINUXFBDR_start_post;
+  me->end_post    = &LINUXFBDR_end_post;
+  me->post        = &LINUXFBDR_post_16bit;
+  me->snapshoot   = &LINUXFBDR_snapshoot_16bit;
+}
 #endif /* __libaroma_linux_fb16bit_driver_c__ */

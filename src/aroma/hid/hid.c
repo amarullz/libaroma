@@ -33,6 +33,24 @@ byte LIBAROMA_HID_INIT_FUNCTION(
  * Descriptions: hid instance storage
  */
 static LIBAROMA_HIDP _libaroma_hid=NULL;
+static LIBAROMA_HID_INITIALIZER _libaroma_hid_initializer=NULL;
+
+/*
+ * Function    : libaroma_hid_set_initializer
+ * Return Value: byte
+ * Descriptions: Set hid initializer callback
+ */
+byte libaroma_hid_set_initializer(LIBAROMA_HID_INITIALIZER cb){
+  if (_libaroma_hid != NULL) {
+    ALOGE("libaroma_hid_set_initializer hid already initialized");
+    return 0;
+  }
+  _libaroma_hid_initializer = cb;
+  if (cb){
+    return 1;
+  }
+  return 0;
+} /* end of libaroma_hid_set_initializer */
 
 /*
  * Function    : libaroma_hid_init
@@ -71,9 +89,19 @@ byte libaroma_hid_init() {
   /* init driver */
   ALOGV("init hid driver");
   
-  if (!LIBAROMA_HID_INIT_FUNCTION(_libaroma_hid)) {
-    ALOGE("init hid driver failed");
-    goto return_error_clean;
+  if (_libaroma_hid_initializer){
+    ALOGV("Init hid driver - runtime");
+    if (!_libaroma_hid_initializer(_libaroma_hid)) {
+      ALOGE("init hid driver failed");
+      goto return_error_clean;
+    }
+  }
+  else{
+    ALOGV("Init hid driver - default");
+    if (!LIBAROMA_HID_INIT_FUNCTION(_libaroma_hid)) {
+      ALOGE("init hid driver failed");
+      goto return_error_clean;
+    }
   }
   
   /* Check Callbacks */

@@ -56,13 +56,14 @@
 /*
  * Window Show Animation
  */
-#define LIBAROMA_WINDOW_SHOW_ANIMATION_NONE 0
-#define LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_LEFT 1
-#define LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_RIGHT 2
-#define LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_LEFT 3
-#define LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_RIGHT 4
-#define LIBAROMA_WINDOW_SHOW_ANIMATION_STACKIN 5
-#define LIBAROMA_WINDOW_SHOW_ANIMATION_STACKOUT 6
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_NONE         0
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_LEFT    1
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_RIGHT   2
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_LEFT   3
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_RIGHT  4
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_STACKIN      5
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_STACKOUT     6
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_FADE         7
 
 /*
  * Special Size & Position
@@ -76,6 +77,16 @@
 #define LIBAROMA_POS_2P3      -6
 #define LIBAROMA_POS_1P4      -7
 #define LIBAROMA_POS_3P4      -8
+
+/* transition callback */
+typedef void (*LIBAROMA_TRANSITION_CB)(
+  LIBAROMA_CANVASP,
+  LIBAROMA_CANVASP,
+  LIBAROMA_CANVASP,
+  float,
+  LIBAROMA_RECTP,
+  LIBAROMA_RECTP
+);
 
 /* client window handler */
 typedef struct _LIBAROMA_WINDOW_HANDLER{
@@ -112,6 +123,8 @@ struct _LIBAROMA_WINDOW{
   LIBAROMA_COLORSETP colorset;
   
   /* px measured */
+  int ax;
+  int ay;
   int x;
   int y;
   int w;
@@ -257,6 +270,14 @@ byte libaroma_window_anishow(
 byte libaroma_window_post_command(dword cmd);
 
 /*
+ * Function    : libaroma_window_post_command_ex
+ * Return Value: byte
+ * Descriptions: post direct command extended
+ */
+byte libaroma_window_post_command_ex(dword cmd,
+  byte state, int key, int y, voidp d);
+
+/*
  * Function    : libaroma_window_pool
  * Return Value: dword
  * Descriptions: poll window messages
@@ -295,5 +316,17 @@ LIBAROMA_WINDOWP libaroma_window_sidebar(LIBAROMA_WINDOWP win, int width);
  * Descriptions: show/hide sidebar
  */
 byte libaroma_window_sidebar_show(LIBAROMA_WINDOWP win, byte show);
+
+/* slide sidebar callback */
+typedef void (*LIBAROMA_WINDOW_SIDEBAR_SLIDE_CB)(
+  LIBAROMA_WINDOWP,int,int);
+
+/*
+ * Function    : libaroma_window_sidebar_onslide
+ * Return Value: byte
+ * Descriptions: set sidebar slide position callback
+ */
+byte libaroma_window_sidebar_onslide(
+  LIBAROMA_WINDOWP win, LIBAROMA_WINDOW_SIDEBAR_SLIDE_CB cb);
 
 #endif /* __libaroma_window_h__ */

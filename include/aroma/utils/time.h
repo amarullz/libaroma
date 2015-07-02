@@ -27,4 +27,11 @@
 #ifndef __libaroma_time_h__
 #define __libaroma_time_h__
 
+#ifndef __libaroma_aroma_internal_h__
+long libaroma_extern_tick();
+void libaroma_extern_sleep(long n);
+#define libaroma_tick() libaroma_extern_tick()
+#define libaroma_sleep(x) libaroma_extern_sleep(x)
+#endif
+
 #endif /* __libaroma_time_h__ */

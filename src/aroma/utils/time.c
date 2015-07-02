@@ -52,4 +52,13 @@ byte libaroma_timer_release() {
   return 1;
 } /* End of libaroma_timer_release */
 
+/* alias libaroma_tick for public */
+long libaroma_extern_tick(){
+  return libaroma_tick();
+}
+/* alias libaroma_sleep for public */
+void libaroma_extern_sleep(long n){
+  libaroma_sleep(n);
+}
+
 #endif /* __libaroma_time_c__ */

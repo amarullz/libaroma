@@ -28,11 +28,11 @@
 #define __libaroma_listitem_option_h__
 
 /* option signature */
-#define LIBAROMA_LISTITEM_OPTION_INDENT_NOICON      0x08
-#define LIBAROMA_LISTITEM_OPTION_SMALL_ICON         0x10
-#define LIBAROMA_LISTITEM_OPTION_SHARED_ICON        0x20
-#define LIBAROMA_LISTITEM_OPTION_FREE_ICON          0x40
-#define LIBAROMA_LISTITEM_OPTION_SWITCH             0x80
+#define LIBAROMA_LISTITEM_OPTION_INDENT_NOICON      0x0100
+#define LIBAROMA_LISTITEM_OPTION_SMALL_ICON         0x0200
+#define LIBAROMA_LISTITEM_OPTION_SHARED_ICON        0x0400
+#define LIBAROMA_LISTITEM_OPTION_FREE_ICON          0x0800
+#define LIBAROMA_LISTITEM_OPTION_SWITCH             0x1000
 
 /*
  * Function    : libaroma_listitem_option
@@ -46,7 +46,7 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_listitem_option(
     const char * main_text,
     const char * extra_text,
     LIBAROMA_CANVASP icon,
-    byte flags,
+    word flags,
     int at_index);
 
 #endif /* __libaroma_listitem_option_h__ */

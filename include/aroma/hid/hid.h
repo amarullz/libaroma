@@ -63,6 +63,19 @@ typedef struct _LIBAROMA_HID LIBAROMA_HID;
 typedef struct _LIBAROMA_HID * LIBAROMA_HIDP;
 
 /*
+ * Typedef     : LIBAROMA_HID_INITIALIZER
+ * Descriptions: Runtime HID Initializer Callback
+ */
+typedef byte (*LIBAROMA_HID_INITIALIZER)(LIBAROMA_HIDP);
+
+/*
+ * Function    : libaroma_hid_set_initializer
+ * Return Value: byte
+ * Descriptions: Set hid initializer callback
+ */
+byte libaroma_hid_set_initializer(LIBAROMA_HID_INITIALIZER cb);
+
+/*
  * Typedef     : LIBAROMA_HID_EVENT
  * Descriptions: hid event type structure
  */

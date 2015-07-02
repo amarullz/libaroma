@@ -53,7 +53,7 @@ typedef struct{
   LIBAROMA_MSG pretouched_msg;
   LIBAROMA_CONTROLP pretouched;
   
-  
+  LIBAROMA_WINDOW_SIDEBAR_SLIDE_CB slide_cb;
   LIBAROMA_FLING fling;
 } _LIBAROMA_WINDOW_LAYER, *_LIBAROMA_WINDOW_LAYERP;
 
@@ -349,6 +349,9 @@ byte _libaroma_window_layer_set_sidebar_pos(LIBAROMA_WINDOWP win, int x){
       me->redraw=1;
     }
     me->sidebar_xpos=0;
+  }
+  if (me->slide_cb){
+    me->slide_cb(me->sidebar, me->sidebar_xpos, me->sidebar->w);
   }
   libaroma_mutex_unlock(me->mutex);
   return 1;
@@ -908,6 +911,8 @@ byte _libaroma_window_sidebar_message_hooker(
           target_w=max_target_w;
         }
         win->x=win->y=win->rx=win->ry=win->left=win->top=0;
+        win->ax=win->x;
+        win->ay=win->y;
         win->w  = target_w;
         win->h  = win->parent->h;
         if (libaroma_window_usedp(2)){
@@ -1032,6 +1037,23 @@ LIBAROMA_WINDOWP libaroma_window_sidebar(LIBAROMA_WINDOWP win, int width){
 } /* End of libaroma_window_sidebar */
 
 
+/*
+ * Function    : libaroma_window_sidebar_onslide
+ * Return Value: byte
+ * Descriptions: set sidebar slide position callback
+ */
+byte libaroma_window_sidebar_onslide(
+  LIBAROMA_WINDOWP win, LIBAROMA_WINDOW_SIDEBAR_SLIDE_CB cb){
+  _LIBAROMA_WINDOW_LAYERP me = _libaroma_window_layer_check(win->parent);
+  if (!me){
+    return 0;
+  }
+  libaroma_mutex_lock(me->mutex);
+  me->slide_cb = cb;
+  ALOGI("Init sidebar slide callback");
+  libaroma_mutex_unlock(me->mutex);
+  return 1;
+} /* End of libaroma_window_sidebar_onslide */
 
 
 #endif /* __libaroma_window_layer_c__ */

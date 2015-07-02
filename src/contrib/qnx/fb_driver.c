@@ -50,6 +50,7 @@ typedef struct {
   gf_layer_t          layer;            /* Layer */
   gf_surface_t        surface;          /* Surface */
   gf_context_t        context;          /* Context */
+  long                lastpost;         /* last post tick */
 } QNXGF_INTERNAL, *QNXGF_INTERNALP;
 
 /*
@@ -58,7 +59,13 @@ typedef struct {
  */
 void QNXGF_release(LIBAROMA_FBP me);
 void QNXGF_dump(QNXGF_INTERNALP mi);
-byte QNXGF_sync(LIBAROMA_FBP me, wordp src, int x, int y, int w, int h);
+byte QNXGF_start_post(LIBAROMA_FBP me);
+byte QNXGF_post(
+  LIBAROMA_FBP me, wordp __restrict src,
+  int dx, int dy, int dw, int dh,
+  int sx, int sy, int sw, int sh);
+byte QNXGF_end_post(LIBAROMA_FBP me);
+
 
 /*
  * Function : Framebuffer Driver Initializer
@@ -67,26 +74,19 @@ byte QNXGF_sync(LIBAROMA_FBP me, wordp src, int x, int y, int w, int h);
 byte QNXGF_init(LIBAROMA_FBP me) {
   /* Allocating Internal Data */
   ALOGV("QNXGF Initialized Internal Data");
-  QNXGF_INTERNALP mi = (QNXGF_INTERNALP) malloc(sizeof(QNXGF_INTERNAL));
+  QNXGF_INTERNALP mi = (QNXGF_INTERNALP) calloc(sizeof(QNXGF_INTERNAL),1);
   
   if (!mi) {
     ALOGE("QNXGF malloc internal data - Memory Error");
     return 0;
   }
   
-  /* Cleanup */
-  memset(mi, 0, sizeof(QNXGF_INTERNAL));
   /* Set Internal Address */
-  me->internal = (voidp) mi;
-  /* Set Release and Refresh Callback */
-  me->release = &QNXGF_release;
+  me->internal      = (voidp) mi;
+  me->release       = &QNXGF_release;
+  me->double_buffer = 0;
   
-  /*****************************************************************************
-   *
-   * Init QNX GF
-   *
-   **/
-  
+  /************************* Init of Init QNX GF ******************************/
   /* Device Attach */
   if (gf_dev_attach(
         &mi->gdev, GF_DEVICE_INDEX(0), &mi->gdev_info
@@ -94,7 +94,6 @@ byte QNXGF_init(LIBAROMA_FBP me) {
     ALOGE("QNXGF gf_dev_attach failed");
     goto error;
   }
-  
   /* Display Attach */
   if (gf_display_attach(
         &mi->display, mi->gdev, 0, &mi->display_info
@@ -103,7 +102,6 @@ byte QNXGF_init(LIBAROMA_FBP me) {
     gf_dev_detach(mi->gdev);
     goto error;
   }
-  
   /* Layer Attach */
   if (gf_layer_attach(
         &mi->layer, mi->display, 0, 0
@@ -113,7 +111,6 @@ byte QNXGF_init(LIBAROMA_FBP me) {
     gf_dev_detach(mi->gdev);
     goto error;
   }
-  
   /* Create Surface */
   if (gf_surface_create_layer(
         &mi->surface, &mi->layer, 1, 0,
@@ -128,10 +125,8 @@ byte QNXGF_init(LIBAROMA_FBP me) {
     gf_dev_detach(mi->gdev);
     goto error;
   }
-  
   /* Set Surface */
   gf_layer_set_surfaces(mi->layer, &mi->surface, 1);
-  
   /* Create Context */
   if (gf_context_create(&mi->context) != GF_ERR_OK) {
     ALOGE("QNXGF gf_context_create failed");
@@ -141,7 +136,6 @@ byte QNXGF_init(LIBAROMA_FBP me) {
     gf_dev_detach(mi->gdev);
     goto error;
   }
-  
   /* Context Set Layer */
   if (gf_context_set_surface(mi->context, mi->surface) != GF_ERR_OK) {
     ALOGE("QNXGF gf_context_set_surface failed");
@@ -152,18 +146,19 @@ byte QNXGF_init(LIBAROMA_FBP me) {
     gf_dev_detach(mi->gdev);
     goto error;
   }
+  /************************* End of Init QNX GF *******************************/
   
-  /*
-   * End of Init QNX GF
-   *
-   ****************************************************************************/
   /* Set AROMA Core Framebuffer Instance Values */
   me->w       = mi->display_info.xres;            /* Width */
   me->h       = mi->display_info.yres;            /* Height */
   me->sz      = me->w * me->h;                    /* Width x Height */
-  /* Set Sync Callbacks */
-  me->sync      = &QNXGF_sync;
-  me->snapshoot = NULL;
+  
+  /* Set Callbacks */
+  me->start_post  = &QNXGF_start_post;
+  me->post        = &QNXGF_post;
+  me->end_post    = &QNXGF_end_post;
+  me->snapshoot   = NULL;
+  
   /* DUMP INFO */
   QNXGF_dump(mi);
   /* Fixed DPI */
@@ -214,21 +209,68 @@ void QNXGF_dump(QNXGF_INTERNALP mi) {
 }
 
 /*
+ * Function    : QNXGF_start_post
+ * Return Value: byte
+ * Descriptions: start post
+ */
+byte QNXGF_start_post(LIBAROMA_FBP me){
+  if (me == NULL) {
+    return 0;
+  }
+  QNXGF_INTERNALP mi = (QNXGF_INTERNALP) me->internal;
+  gf_draw_begin(mi->context);
+  return 1;
+}
+
+/*
+ * Function    : QNXGF_end_post
+ * Return Value: byte
+ * Descriptions: end post
+ */
+byte QNXGF_end_post(LIBAROMA_FBP me){
+  if (me == NULL) {
+    return 0;
+  }
+  QNXGF_INTERNALP mi = (QNXGF_INTERNALP) me->internal;
+  gf_draw_flush(mi->context);
+  gf_draw_end(mi->context);
+  
+  /* virtual vsync */
+  long nowtick = libaroma_tick();
+  long diftick = nowtick - mi->lastpost;
+  if (diftick<16){
+    usleep((16-diftick)*1000);
+  }
+  mi->lastpost = nowtick;
+  return 1;
+}
+
+/*
  * Function : Save display canvas into framebuffer
  *
  */
-byte QNXGF_sync(LIBAROMA_FBP me, wordp src, int x, int y, int w, int h) {
-  /* Is Framebuffer Initialized ? */
+byte QNXGF_post(
+  LIBAROMA_FBP me, wordp __restrict src,
+  int dx, int dy, int dw, int dh,
+  int sx, int sy, int sw, int sh) {
   if (me == NULL) {
     return 0;
   }
   
-  /* Get Internal Data */
   QNXGF_INTERNALP mi = (QNXGF_INTERNALP) me->internal;
-  
-  /* BLIT */
+  wordp copy_src = (wordp) (src + ((sw * sy) + sx));
+  gf_draw_image(
+    mi->context,
+    (const uint8_t *) copy_src,
+    GF_FORMAT_PKLE_RGB565,
+    sw * 2,
+    dx, dy,
+    dw, dh,
+    0
+  );
+    
+  /*
   gf_draw_begin(mi->context);
-  /* Defined Area Only */
   if ((w > 0) && (h > 0)) {
     wordp copy_src = (wordp) (src + (me->w * y) + x);
     gf_draw_image(
@@ -254,8 +296,9 @@ byte QNXGF_sync(LIBAROMA_FBP me, wordp src, int x, int y, int w, int h) {
   }
   gf_draw_flush(mi->context);
   gf_draw_end(mi->context);
-  
   usleep(16000);
+  */
+  
   return 1;
 }
 

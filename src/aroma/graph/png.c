@@ -132,7 +132,17 @@ LIBAROMA_CANVASP libaroma_png_ex(
   int bit_depth  = png_get_bit_depth(png_ptr, info_ptr);
   int color_type = png_get_color_type(png_ptr, info_ptr);
   int channels   = png_get_channels(png_ptr, info_ptr);
-  if (!((bit_depth == 8 && (
+  
+  if ((color_type == PNG_COLOR_TYPE_GRAY)||
+      (color_type == PNG_COLOR_TYPE_GRAY_ALPHA)){
+    png_set_gray_to_rgb(png_ptr);
+    png_read_update_info(png_ptr, info_ptr);
+  }
+  else if (color_type == PNG_COLOR_TYPE_PALETTE) {
+    png_set_palette_to_rgb(png_ptr);
+    png_read_update_info(png_ptr, info_ptr);
+  }
+  else if (!((bit_depth == 8 && (
            (channels == 3 && color_type == PNG_COLOR_TYPE_RGB) ||
            (channels == 4 && color_type == PNG_COLOR_TYPE_RGBA)
          )) ||
@@ -141,12 +151,6 @@ LIBAROMA_CANVASP libaroma_png_ex(
     ALOGW("libaroma_png_ex mode not supported (c:%i, t:%i, d:%i)",
           channels, color_type, bit_depth);
     goto exit;
-  }
-  
-  /* convert palette to rgb(a) */
-  if (color_type == PNG_COLOR_TYPE_PALETTE) {
-    png_set_palette_to_rgb(png_ptr);
-    png_read_update_info(png_ptr, info_ptr);
   }
   
   /* init main info */

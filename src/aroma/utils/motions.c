@@ -329,7 +329,7 @@ byte libaroma_ripple_calculation(
   }
   if (libaroma_ripple_isactive_pos(me,pos)) {
     float cbz_state = me->touch_state[pos];
-    float tstate    = cbz_state*6;
+    float tstate    = cbz_state*7.5;
     float ropa      = 1.0;
     if (me->release_state[pos]>0){
       cbz_state += (1.0-cbz_state) * me->release_state[pos];

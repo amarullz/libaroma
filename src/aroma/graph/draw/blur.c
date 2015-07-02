@@ -74,9 +74,22 @@ LIBAROMA_CANVASP libaroma_blur_ex(
   int nwidth = width + radius2;
   int nheight = height + radius2;
   LIBAROMA_CANVASP t1 = libaroma_canvas_ex(nwidth, nheight, usealpha);
+  if (!t1){
+    return NULL;
+  }
   LIBAROMA_CANVASP t2 = libaroma_canvas_ex(nwidth, nheight, usealpha);
+  if (!t2){
+    libaroma_canvas_free(t1);
+    return NULL;
+  }
   libaroma_canvas_setcolor(t1,0,0);
-  libaroma_canvas_setcolor(t2,0,0);
+  if (isMask){
+    libaroma_canvas_setcolor(t2,maskColor,0);
+  }
+  else{
+    libaroma_canvas_setcolor(t2,0,0);
+  }
+  
   int sz = nwidth * nheight;
   if (usealpha) {
     memset(t1->alpha, 0, sz);
@@ -155,7 +168,6 @@ LIBAROMA_CANVASP libaroma_blur_ex(
       else {
         a = MAX(MIN(a, 0xff), 0);
         t2->alpha[dpos] = a;
-        t2->data[dpos] = maskColor;
       }
     }
   }

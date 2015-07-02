@@ -41,6 +41,7 @@
 #define LIBAROMA_CONFIG_HICOLOR_BIT       0
 */
 
+#define LIBAROMA_CONFIG_NOFONT_SUBPIXEL   1
 
 /* Process config - Don't change this line      */
 /* ============================================ */

@@ -53,7 +53,7 @@ byte libaroma_colorset(LIBAROMA_COLORSETP colorset, byte type){
   colorset->primary_text=RGB(FFFFFF);
   colorset->primary_icon=RGB(FFFFFF);
   colorset->primary_light=RGB(BBDEFB);
-  colorset->accent=RGB(03A9F4);
+  colorset->accent=RGB(2E7D32);
   colorset->window_bg=RGB(E0E0E0);
   colorset->window_text=RGB(212121);
   colorset->control_bg=RGB(FFFFFF);

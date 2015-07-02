@@ -52,7 +52,8 @@ typedef byte (*LIBAROMA_WMCB_MESSAGE_HANDLER) \
   (LIBAROMA_WMP, LIBAROMA_MSGP);
 typedef void (*LIBAROMA_WMCB_RESET_HANDLER) \
   (LIBAROMA_WMP, byte flags);
-
+typedef byte (*LIBAROMA_WMCB_UI_THREAD)();
+  
 /*
  * Structure   : _LIBAROMA_WM
  * Typedef     : LIBAROMA_WM, * LIBAROMA_WMP
@@ -67,7 +68,8 @@ struct _LIBAROMA_WM{
   /* hooker callbacks */
   LIBAROMA_WMCB_MESSAGE_HANDLER message_handler;
   LIBAROMA_WMCB_RESET_HANDLER reset_handler;
-  
+  LIBAROMA_WMCB_UI_THREAD ui_thread;
+
   /* canvas location */
   int x;
   int y;
@@ -171,6 +173,14 @@ byte libaroma_wm_set_message_handler(
  */
 byte libaroma_wm_set_reset_handler(
     LIBAROMA_WMCB_RESET_HANDLER callback);
+
+/*
+ * Function    : libaroma_wm_set_ui_thread
+ * Return Value: byte
+ * Descriptions: set theme reset handler
+ */
+byte libaroma_wm_set_ui_thread(
+    LIBAROMA_WMCB_UI_THREAD callback);
 
 /*
  * Function    : libaroma_wm_sync

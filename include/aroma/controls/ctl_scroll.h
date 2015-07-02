@@ -168,12 +168,15 @@ int libaroma_ctl_scroll_get_scroll(LIBAROMA_CONTROLP ctl, int * scroll_h);
  */
 byte libaroma_ctl_scroll_isactive(LIBAROMA_CONTROLP ctl);
 
-/* test */
-LIBAROMA_CONTROLP libaroma_ctl_testscroll(
-    LIBAROMA_WINDOWP win, word id,
-    int x, int y, int w, int h,
-    word bg_color, byte flags
+typedef void (*LIBAROMA_CTL_SCROLL_MINSCROLL_HANDLER)(
+  LIBAROMA_CONTROLP,LIBAROMA_CANVASP,int);
+/*
+ * Function    : libaroma_ctl_scroll_set_min_scroll
+ * Return Value: byte
+ * Descriptions: set minimal scroll y
+ */
+byte libaroma_ctl_scroll_set_min_scroll(
+   LIBAROMA_CONTROLP ctl, LIBAROMA_CTL_SCROLL_MINSCROLL_HANDLER cb, int y
 );
-
 
 #endif /* __libaroma_ctl_scroll_h__ */

@@ -28,14 +28,15 @@
 #define __libaroma_ctl_list_h__
 
 /* flag aliases */
-#define LIBAROMA_CTL_LIST_NO_INDICATOR LIBAROMA_CTL_SCROLL_NO_INDICATOR
-#define LIBAROMA_CTL_LIST_WITH_SHADOW LIBAROMA_CTL_SCROLL_WITH_SHADOW
-#define LIBAROMA_CTL_LIST_WITH_HANDLE LIBAROMA_CTL_SCROLL_WITH_HANDLE
+#define LIBAROMA_CTL_LIST_NO_INDICATOR  LIBAROMA_CTL_SCROLL_NO_INDICATOR
+#define LIBAROMA_CTL_LIST_WITH_SHADOW   LIBAROMA_CTL_SCROLL_WITH_SHADOW
+#define LIBAROMA_CTL_LIST_WITH_HANDLE   LIBAROMA_CTL_SCROLL_WITH_HANDLE
 
 /* item flags */
-#define LIBAROMA_CTL_LIST_ITEM_RECEIVE_TOUCH            0x1
-#define LIBAROMA_CTL_LIST_ITEM_REGISTER_THREAD          0x2
-#define LIBAROMA_LISTITEM_WITH_SEPARATOR                0x4
+#define LIBAROMA_CTL_LIST_ITEM_RECEIVE_TOUCH            0x0001
+#define LIBAROMA_CTL_LIST_ITEM_REGISTER_THREAD          0x0002
+#define LIBAROMA_LISTITEM_WITH_SEPARATOR                0x0004
+#define LIBAROMA_LISTITEM_SEPARATOR_TEXTALIGN           0x0008
 
 /* item message */
 #define LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_DOWN           0x1
@@ -89,17 +90,7 @@ typedef struct{
 /* item state */
 typedef struct{
   byte normal_handler;
-  
-  /*
-  byte touched;
-  byte holded;
-  long touch_start;
-  float touch_state;
-  float release_state;
-  long release_start;
-  */
   LIBAROMA_RIPPLE ripple;
-  
   LIBAROMA_CANVASP cache_rest;
   LIBAROMA_CANVASP cache_push;
   LIBAROMA_CANVASP cache_client;
@@ -112,7 +103,7 @@ struct _LIBAROMA_CTL_LIST_ITEM{
   int h;
   int id;
   voidp internal;
-  byte flags;
+  word flags;
   LIBAROMA_CTL_LIST_ITEM_HANDLERP handler;
   LIBAROMA_CTL_LIST_ITEM_STATEP state;
   LIBAROMA_CTL_LIST_ITEMP next;
@@ -190,11 +181,27 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_ctl_list_add_item_internal(
     LIBAROMA_CONTROLP ctl,
     int id,
     int height,
-    byte flags,
+    word flags,
     voidp internal,
     LIBAROMA_CTL_LIST_ITEM_HANDLERP handler,
     int at_index);
 
 #define libaroma_ctl_list_isactive(ctl) libaroma_ctl_scroll_isactive(ctl)
+
+/*
+ * Function    : libaroma_listitem_nonitem
+ * Return Value: byte
+ * Descriptions: is non item
+ */
+byte libaroma_listitem_nonitem(LIBAROMA_CTL_LIST_ITEMP item);
+
+/*
+ * Function    : libaroma_ctl_list_item_position
+ * Return Value: byte
+ * Descriptions: get item position
+ */
+byte libaroma_ctl_list_item_position(
+    LIBAROMA_CONTROLP ctl,LIBAROMA_CTL_LIST_ITEMP item,
+    LIBAROMA_RECTP rect, byte absolute);
 
 #endif /* __libaroma_ctl_list_h__ */

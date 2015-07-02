@@ -59,7 +59,7 @@ typedef struct {
   LIBAROMA_MUTEX mutex;
   LIBAROMA_MUTEX imutex;
   LIBAROMA_CTL_LIST_TOUCHPOS pos;
-} LIBAROMA_CTL_SCROLL, * LIBAROMA_CTL_SCROLLP;
+} LIBAROMA_CTL_LIST, * LIBAROMA_CTL_LISTP;
 
 
 /*
@@ -83,7 +83,7 @@ byte __libaroma_ctl_list_item_reg_thread(
   }
   */
   
-  LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
+  LIBAROMA_CTL_LISTP mi = (LIBAROMA_CTL_LISTP) client->internal;
   if (mi->threadn==0){
     mi->threads = (LIBAROMA_CTL_LIST_ITEMP *)
       malloc(sizeof(LIBAROMA_CTL_LIST_ITEMP));
@@ -131,7 +131,7 @@ byte __libaroma_ctl_list_item_unreg_thread(
   if (client->handler!=&_libaroma_ctl_list_handler){
     return 0;
   }
-  LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
+  LIBAROMA_CTL_LISTP mi = (LIBAROMA_CTL_LISTP) client->internal;
   if (mi->threadn<1){
     return 0;
   }
@@ -284,7 +284,7 @@ byte _libaroma_ctl_list_init_state_cache(
   if (client->handler!=&_libaroma_ctl_list_handler){
     return 0;
   }
-  LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
+  LIBAROMA_CTL_LISTP mi = (LIBAROMA_CTL_LISTP) client->internal;
   
   if (item->state){
     if (!item->state->cache_rest){
@@ -332,7 +332,7 @@ void _libaroma_ctl_list_draw_item(
   if (client->handler!=&_libaroma_ctl_list_handler){
     return;
   }
-  LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
+  LIBAROMA_CTL_LISTP mi = (LIBAROMA_CTL_LISTP) client->internal;
   
   /* normal animation handler */
   if (item->state){
@@ -423,7 +423,7 @@ byte _libaroma_ctl_list_thread(
   if (client->handler!=&_libaroma_ctl_list_handler){
     return 0;
   }
-  LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
+  LIBAROMA_CTL_LISTP mi = (LIBAROMA_CTL_LISTP) client->internal;
   
   byte need_redraw=0;
   int i;
@@ -537,7 +537,7 @@ LIBAROMA_CTL_LIST_ITEMP _libaroma_ctl_list_item_by_y(
   if (client->handler!=&_libaroma_ctl_list_handler){
     return NULL;
   }
-  LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
+  LIBAROMA_CTL_LISTP mi = (LIBAROMA_CTL_LISTP) client->internal;
   
   /* find first item */
   LIBAROMA_CTL_LIST_ITEMP f = mi->first;
@@ -563,7 +563,7 @@ void _libaroma_ctl_list_draw(
   if (client->handler!=&_libaroma_ctl_list_handler){
     return;
   }
-  LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
+  LIBAROMA_CTL_LISTP mi = (LIBAROMA_CTL_LISTP) client->internal;
   if (y<mi->vpad){
     libaroma_draw_rect(
       cv, 0, 0, w, mi->vpad-y,
@@ -634,7 +634,7 @@ void _libaroma_ctl_list_draw(
 dword _libaroma_ctl_list_scroll_message(
     LIBAROMA_CONTROLP ctl,
     LIBAROMA_CTL_SCROLL_CLIENTP client,
-    LIBAROMA_CTL_SCROLLP mi,
+    LIBAROMA_CTL_LISTP mi,
     int msg,
     int param,
     int x,
@@ -691,15 +691,6 @@ dword _libaroma_ctl_list_scroll_message(
               }
               libaroma_mutex_lock(mi->mutex);
               libaroma_ripple_down(&mi->touched->state->ripple, x, y);
-              /*
-              mi->touched->state->touch_start=libaroma_tick();
-              mi->touched->state->touch_state=0;
-              mi->touched->state->release_state=0.0;
-              mi->touched->state->release_start=0;
-              mi->touched->state->holded=0;
-              mi->touched->state->touched=1;
-              */
-              
               __libaroma_ctl_list_item_reg_thread(ctl, mi->touched);
               libaroma_mutex_unlock(mi->mutex);
             }
@@ -807,7 +798,7 @@ dword _libaroma_ctl_list_message(
   if (client->handler!=&_libaroma_ctl_list_handler){
     return 0;
   }
-  LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
+  LIBAROMA_CTL_LISTP mi = (LIBAROMA_CTL_LISTP) client->internal;
   
   dword res=0;
   
@@ -835,7 +826,7 @@ void _libaroma_ctl_list_destroy(
   if (client->handler!=&_libaroma_ctl_list_handler){
     return;
   }
-  LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
+  LIBAROMA_CTL_LISTP mi = (LIBAROMA_CTL_LISTP) client->internal;
   
   /* cleanup items */
   LIBAROMA_CTL_LIST_ITEMP f = mi->first;
@@ -876,8 +867,8 @@ LIBAROMA_CONTROLP libaroma_ctl_list(
     word bg_color, byte flags
 ){
   /* allocating internal data */
-  LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP)
-      calloc(sizeof(LIBAROMA_CTL_SCROLL),1);
+  LIBAROMA_CTL_LISTP mi = (LIBAROMA_CTL_LISTP)
+      calloc(sizeof(LIBAROMA_CTL_LIST),1);
   if (!mi){
     ALOGW("libaroma_ctl_list cannot allocating memory for list control");
     return NULL;
@@ -935,7 +926,7 @@ LIBAROMA_CTL_LIST_TOUCHPOSP libaroma_ctl_list_getpos(LIBAROMA_CONTROLP ctl){
   if (client->handler!=&_libaroma_ctl_list_handler){
     return NULL;
   }
-  LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
+  LIBAROMA_CTL_LISTP mi = (LIBAROMA_CTL_LISTP) client->internal;
   return &mi->pos;
 } /* End of libaroma_ctl_list_getpos */
 
@@ -954,7 +945,7 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_ctl_list_get_item_internal(
   if (client->handler!=&_libaroma_ctl_list_handler){
     return NULL;
   }
-  LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
+  LIBAROMA_CTL_LISTP mi = (LIBAROMA_CTL_LISTP) client->internal;
   if (!find_id){
     if (index==-1){
       return mi->last;
@@ -996,7 +987,7 @@ byte libaroma_ctl_list_del_itemp_internal(
   if (client->handler!=&_libaroma_ctl_list_handler){
     return 0;
   }
-  LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
+  LIBAROMA_CTL_LISTP mi = (LIBAROMA_CTL_LISTP) client->internal;
   libaroma_mutex_lock(mi->imutex);
   libaroma_mutex_lock(mi->mutex);
   if (f){
@@ -1095,7 +1086,7 @@ byte libaroma_ctl_list_item_setheight(
   if (client->handler!=&_libaroma_ctl_list_handler){
     return 0;
   }
-  LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
+  LIBAROMA_CTL_LISTP mi = (LIBAROMA_CTL_LISTP) client->internal;
   if (item->h!=h){
     mi->h-=item->h;
     item->h=h;
@@ -1108,6 +1099,45 @@ byte libaroma_ctl_list_item_setheight(
 } /* End of libaroma_ctl_list_item_setheight */
 
 /*
+ * Function    : libaroma_ctl_list_item_position
+ * Return Value: byte
+ * Descriptions: get item position
+ */
+byte libaroma_ctl_list_item_position(
+    LIBAROMA_CONTROLP ctl,LIBAROMA_CTL_LIST_ITEMP item,
+    LIBAROMA_RECTP rect, byte absolute){
+  if (!rect){
+    return 0;
+  }
+  if (!item){
+    return 0;
+  }
+  LIBAROMA_CTL_SCROLL_CLIENTP client = libaroma_ctl_scroll_get_client(ctl);
+  if (!client){
+    return 0;
+  }
+  if (client->handler!=&_libaroma_ctl_list_handler){
+    return 0;
+  }
+  LIBAROMA_CTL_LISTP mi = (LIBAROMA_CTL_LISTP) client->internal;
+  
+  int x=0;
+  int y=0;
+  if (absolute){
+    libaroma_window_calculate_pos_abs(NULL,ctl,&x,&y);
+  }
+  else{
+    libaroma_window_calculate_pos(NULL,ctl,&x,&y);
+  }
+  int ctl_y = libaroma_ctl_scroll_get_scroll(ctl,NULL);
+  rect->x=x;
+  rect->y=item->y-(y+ctl_y+mi->vpad);
+  rect->w=ctl->w-(mi->hpad*2);
+  rect->h=item->h;
+  return 1;
+} /* End of libaroma_ctl_list_item_position */
+
+/*
  * Function    : libaroma_ctl_list_add_item_internal
  * Return Value: LIBAROMA_CTL_LIST_ITEMP
  * Descriptions: add item internally
@@ -1116,7 +1146,7 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_ctl_list_add_item_internal(
     LIBAROMA_CONTROLP ctl,
     int id,
     int height,
-    byte flags,
+    word flags,
     voidp internal,
     LIBAROMA_CTL_LIST_ITEM_HANDLERP handler,
     int at_index){
@@ -1130,7 +1160,7 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_ctl_list_add_item_internal(
   if (client->handler!=&_libaroma_ctl_list_handler){
     return NULL;
   }
-  LIBAROMA_CTL_SCROLLP mi = (LIBAROMA_CTL_SCROLLP) client->internal;
+  LIBAROMA_CTL_LISTP mi = (LIBAROMA_CTL_LISTP) client->internal;
   
   LIBAROMA_CTL_LIST_ITEMP item = (LIBAROMA_CTL_LIST_ITEMP)
       calloc(sizeof(LIBAROMA_CTL_LIST_ITEM),1);
@@ -1218,5 +1248,20 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_ctl_list_add_item_internal(
   libaroma_ctl_scroll_request_height(ctl, mi->h);
   return item;
 } /* End of libaroma_ctl_list_add_item_internal */
+
+/*
+ * Function    : libaroma_listitem_nonitem
+ * Return Value: byte
+ * Descriptions: is non item
+ */
+byte libaroma_listitem_nonitem(LIBAROMA_CTL_LIST_ITEMP item){
+  if (!item){
+    return 1;
+  }
+  if (libaroma_listitem_isdivider(item)){
+    return 1;
+  }
+  return libaroma_listitem_iscaption(item);
+} /* End of libaroma_listitem_nonitem */
 
 #endif /* __libaroma_ctl_list_c__ */

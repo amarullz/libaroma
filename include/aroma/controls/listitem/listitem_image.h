@@ -28,11 +28,11 @@
 #define __libaroma_listitem_image_h__
 
 /* option signature */
-#define LIBAROMA_LISTITEM_IMAGE_SHARED        0x20
-#define LIBAROMA_LISTITEM_IMAGE_FREE          0x40
-#define LIBAROMA_LISTITEM_IMAGE_FILL          0x80
-#define LIBAROMA_LISTITEM_IMAGE_PROPORTIONAL  0x10
-#define LIBAROMA_LISTITEM_IMAGE_PARALAX       0x08
+#define LIBAROMA_LISTITEM_IMAGE_FILL          0x0100
+#define LIBAROMA_LISTITEM_IMAGE_PROPORTIONAL  0x0200
+#define LIBAROMA_LISTITEM_IMAGE_SHARED        0x0400
+#define LIBAROMA_LISTITEM_IMAGE_FREE          0x0800
+#define LIBAROMA_LISTITEM_IMAGE_PARALAX       0x1000
 
 /*
  * Function    : libaroma_listitem_image
@@ -44,7 +44,7 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_listitem_image(
     int id,
     LIBAROMA_CANVASP image,
     int h,
-    byte flags,
+    word flags,
     int at_index);
 
 #endif /* __libaroma_listitem_image_h__ */

@@ -167,6 +167,8 @@ byte libaroma_window_measure_size(LIBAROMA_WINDOWP win){
       win->w = win->rw;
       win->h = win->rh;
     }
+    win->ax=win->x;
+    win->ay=win->y;
     
     win->x=libaroma_window_measure_calculate(
       win->x, win->rx, libaroma_wm()->w, 0, 0
@@ -863,6 +865,15 @@ byte libaroma_window_anishow(
         break;
       }
       switch (animation){
+        case LIBAROMA_WINDOW_SHOW_ANIMATION_FADE:
+          {
+            float swift_out_state = libaroma_cubic_bezier_swiftout(state);
+            libaroma_draw_opacity(
+              wmc, win->dc,0,0,0,((byte) (255 * swift_out_state))
+            );
+            libaroma_window_sync(win, 0, 0, win->w, win->h);
+          }
+          break;
         case LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_LEFT:
         case LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_LEFT:
           {
@@ -950,14 +961,13 @@ byte libaroma_window_anishow(
   if (retval){
     win->active=1;
     libaroma_window_sync(win, 0, 0, win->w, win->h);
+    
+    /* send activate */
+    LIBAROMA_MSG _msg;
+    libaroma_window_process_event(win,libaroma_wm_compose(
+      &_msg, LIBAROMA_MSG_WIN_ACTIVE, NULL, 10, 0)
+    );
   }
-  
-  /* send activate */
-  LIBAROMA_MSG _msg;
-  libaroma_window_process_event(win,libaroma_wm_compose(
-    &_msg, LIBAROMA_MSG_WIN_ACTIVE, NULL, 10, 0)
-  );
-  
   return retval;
 } /* End of libaroma_window_show */
 
@@ -982,7 +992,32 @@ void libaroma_window_calculate_pos(
     *x-=ctl->x;
     *y-=ctl->y;
   }
+  /*
+  *x-=libaroma_wm()->x;
+  *y-=libaroma_wm()->y;
+  */
 } /* End of libaroma_window_calculate_pos */
+
+/*
+ * Function    : libaroma_window_calculate_pos_abs
+ * Return Value: void
+ * Descriptions: calculate absolute screen position to top window position
+ */
+void libaroma_window_calculate_pos_abs(
+  LIBAROMA_WINDOWP win, LIBAROMA_CONTROLP ctl,
+  int * x, int * y
+){
+  if (ctl!=NULL){
+    *x-=ctl->x;
+    *y-=ctl->y;
+    win=ctl->window;
+  }
+  while (win!=NULL){
+    *x-=win->ax;
+    *y-=win->ay;
+    win=win->parent;
+  }
+} /* End of libaroma_window_calculate_pos_abs */
 
 /*
  * Function    : _libaroma_window_is_inside
@@ -1018,6 +1053,24 @@ byte libaroma_window_post_command(dword cmd){
 } /* End of libaroma_window_post_command */
 
 /*
+ * Function    : libaroma_window_post_command_ex
+ * Return Value: byte
+ * Descriptions: post direct command extended
+ */
+byte libaroma_window_post_command_ex(dword cmd,
+  byte state, int key, int y, voidp d){
+  return 
+    libaroma_msg_post(
+      LIBAROMA_MSG_WIN_DIRECTMSG,
+      state,
+      key,
+      (int) cmd,
+      y,
+      d
+    );
+} /* End of libaroma_window_post_command */
+
+/*
  * Function    : libaroma_window_process_event
  * Return Value: dword
  * Descriptions: process message
@@ -1043,7 +1096,9 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
   switch (msg->msg){
     case LIBAROMA_MSG_WIN_ACTIVE:
       {
-          /* set current window size */
+        /* set current window size */
+        win->focused=NULL;
+        win->touched=NULL;
         if (msg->x!=10){
           _libaroma_window_ready(win);
         }
@@ -1051,7 +1106,6 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
           if ((!win->active)||(msg->x==10)){
             int i;
             win->active=1;
-            
             /* signal child */
             for (i=0;i<win->childn;i++){
               if (win->childs[i]->handler->message){
@@ -1086,6 +1140,8 @@ dword libaroma_window_process_event(LIBAROMA_WINDOWP win, LIBAROMA_MSGP msg){
               win->childs[i]->handler->message(win->childs[i], msg);
             }
           }
+          win->focused=NULL;
+          win->touched=NULL;
         }
       }
       break;

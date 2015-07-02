@@ -91,13 +91,19 @@ byte _libaroma_listitem_image_message(
       break;
     case LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_HOLDED:
       {
-        //printf("list image #%i -> holded\n",item->id);
+        libaroma_window_post_command_ex(
+          LIBAROMA_CMD_SET(LIBAROMA_CMD_HOLD, 0, ctl->id),
+          0, item->id, 0, (voidp) item
+        );
       }
       break;
     case LIBAROMA_CTL_LIST_ITEM_MSG_TOUCH_UP:
       {
         if (param!=LIBAROMA_CTL_LIST_ITEM_MSGPARAM_HOLDED){
-          //printf("list image #%i -> touched\n",item->id);
+          libaroma_window_post_command_ex(
+            LIBAROMA_CMD_SET(LIBAROMA_CMD_CLICK, 0, ctl->id),
+            0, item->id, 0, (voidp) item
+          );
         }
       }
       break;
@@ -128,7 +134,7 @@ void _libaroma_listitem_image_draw(
     _LIBAROMA_LISTITEM_IMAGEP mi = (_LIBAROMA_LISTITEM_IMAGEP) item->internal;
     
     byte is_dark=libaroma_color_isdark(bgcolor);
-    byte flags=item->flags;
+    word flags=item->flags;
     
     if (mi->ready_image){
       if (flags&LIBAROMA_LISTITEM_IMAGE_PARALAX){
@@ -148,6 +154,7 @@ void _libaroma_listitem_image_draw(
     if (mi->ready_image==NULL){
       if (flags&LIBAROMA_LISTITEM_IMAGE_PARALAX){
         mi->ready_image=libaroma_canvas(cv->w,cv->h*2);
+        mi->paralax_last_y=-1;
         _libaroma_listitem_image_message(
           ctl, item, LIBAROMA_CTL_LIST_ITEM_MSG_THREAD,0,0,0);
       }
@@ -232,16 +239,18 @@ void _libaroma_listitem_image_draw(
     int min_pushed=0;
     word selcolor = is_dark?RGB(ffffff):RGB(000000);
     if ((item->next)&&(flags&LIBAROMA_LISTITEM_WITH_SEPARATOR)){
-      min_pushed=1;
-      libaroma_draw_rect(
-        cv,
-        0,
-        cv->h-libaroma_dp(1),
-        cv->w,
-        libaroma_dp(1),
-        is_dark?RGB(555555):RGB(dddddd),
-        0xcc
-      );
+      if (!libaroma_listitem_nonitem(item->next)){
+        min_pushed=1;
+        libaroma_draw_rect(
+          cv,
+          0,
+          cv->h-libaroma_dp(1),
+          cv->w,
+          libaroma_dp(1),
+          is_dark?RGB(555555):RGB(dddddd),
+          0xcc
+        );
+      }
     }
     if (state&LIBAROMA_CTL_LIST_ITEM_DRAW_PUSHED){
       libaroma_draw_rect(
@@ -261,7 +270,7 @@ void _libaroma_listitem_image_draw(
  * Descriptions: release internal data
  */
 void _libaroma_listitem_image_release_internal(_LIBAROMA_LISTITEM_IMAGEP mi,
-  byte flags){
+  word flags){
   if (mi->image){
     if ((flags&LIBAROMA_LISTITEM_IMAGE_FREE)||
       (!(flags&LIBAROMA_LISTITEM_IMAGE_SHARED))){
@@ -300,7 +309,7 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_listitem_image(
     int id,
     LIBAROMA_CANVASP image,
     int h,
-    byte flags,
+    word flags,
     int at_index){
   /* check valid list control */
   if (!libaroma_ctl_list_is_valid(ctl)){

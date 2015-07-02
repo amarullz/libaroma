@@ -103,7 +103,7 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
   word push_color = me->isdark?RGB(ffffff):RGB(000000);
   word text_color = me->isdark?0xffff:0;
   word rest_text_color = text_color;
-  byte push_opa   = me->isdark?128:98;
+  byte push_opa   = me->isdark?50:30;
   
   /* buttons */
   LIBAROMA_CANVASP btnmask = libaroma_canvas_ex(iw,ih,1);
@@ -118,33 +118,16 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
   
   /* raised shadow */
   if (me->style&LIBAROMA_CTL_BUTTON_RAISED){
-    int raised_sz;
-    LIBAROMA_CANVASP raised_canvas;
     
-    raised_sz = libaroma_dp(2);
-    raised_canvas = libaroma_blur_ex(btnmask,
-      raised_sz,1,RGB(000000)
+    libaroma_draw_zshadow(
+      rest_canvas, btnmask, ix, iy, (me->style&LIBAROMA_CTL_BUTTON_COLORED)?2:1
     );
-    libaroma_draw_opacity(
-      rest_canvas,raised_canvas,
-      ix-raised_sz,
-      iy-raised_sz+libaroma_dp(1),
-      1,40
-    );
-    libaroma_canvas_free(raised_canvas);
     
     if (!is_disabled){
-      raised_sz = libaroma_dp(4);
-      raised_canvas = libaroma_blur_ex(btnmask,
-        raised_sz,1,RGB(000000)
+      libaroma_draw_zshadow(
+        push_canvas, btnmask, ix, iy,
+        3
       );
-      libaroma_draw_opacity(
-        push_canvas,raised_canvas,
-        ix-raised_sz,
-        iy-raised_sz+libaroma_dp(3),
-        1,50
-      );
-      libaroma_canvas_free(raised_canvas);
     }
   }
   
@@ -171,6 +154,11 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
   else{
     if (me->style&LIBAROMA_CTL_BUTTON_RAISED){
       libaroma_draw_ex(btnmask,bg,0,0,ix,iy,btnmask->w,btnmask->h,0,0xff);
+      if (!is_disabled){
+        libaroma_draw_rect(btnmask,0,0,btnmask->w,btnmask->h,0xffff,
+          me->isdark?20:49
+        );
+      }
       libaroma_draw(rest_canvas, btnmask, ix, iy, 1);
     }
     if (!is_disabled){
@@ -288,10 +276,29 @@ void _libaroma_ctl_button_draw(
         &me->ripple, ctl->w, ctl->h, &push_opacity, &ripple_opacity,
         &x, &y, &size,ripple_p
         )){
+          /*
           libaroma_draw_mask_circle(
             c, me->push_canvas, x, y, x, y, size, ripple_opacity
           );
-          libaroma_draw_opacity(c,me->push_canvas,0,0,0,push_opacity);
+          */
+          libaroma_draw_opacity(c,me->push_canvas,0,0,0,push_opacity*2);
+          LIBAROMA_CANVASP ca=libaroma_canvas_area(
+            c,
+            libaroma_dp(4),
+            libaroma_dp(6),
+            c->w-libaroma_dp(8),
+            c->h-libaroma_dp(12)
+          );
+          if (ca){
+            byte push_opa = (byte) (
+              (((int) ripple_opacity) * (me->isdark?64:30)) >> 8
+            );
+            word dcolor   = me->isdark?RGB(ffffff):0;
+            libaroma_draw_circle(
+              ca,dcolor,x,y,size,push_opa
+            );
+            libaroma_canvas_free(ca);
+          }
       }
     }
   }

@@ -110,5 +110,11 @@ void LINUXFBDR_dump(LINUXFBDR_INTERNALP mi);
 /* swap back buffer */
 void LINUXFBDR_swap_buffer(LINUXFBDR_INTERNALP mi);
 
+/* start post */
+byte LINUXFBDR_start_post(LIBAROMA_FBP me);
+
+/* end post */
+byte LINUXFBDR_end_post(LIBAROMA_FBP me);
+
 
 #endif /* __libaroma_linux_fb_driver_h__ */

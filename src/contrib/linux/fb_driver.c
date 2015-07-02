@@ -31,6 +31,36 @@
 #include "fb_qcom/fb_qcom.c" /* qcom overlay */
 
 /*
+ * Function    : LINUXFBDR_start_post
+ * Return Value: byte
+ * Descriptions: start post
+ */
+byte LINUXFBDR_start_post(LIBAROMA_FBP me){
+  if (me == NULL) {
+    return 0;
+  }
+  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
+  libaroma_mutex_lock(mi->mutex);
+  LINUXFBDR_wait_vsync(mi);
+  return 1;
+}
+
+/*
+ * Function    : LINUXFBDR_end_post
+ * Return Value: byte
+ * Descriptions: end post
+ */
+byte LINUXFBDR_end_post(LIBAROMA_FBP me){
+  if (me == NULL) {
+    return 0;
+  }
+  LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
+  LINUXFBDR_flush(me);
+  libaroma_mutex_unlock(mi->mutex);
+  return 1;
+}
+
+/*
  * Function    : LINUXFBDR_config
  * Return Value: byte
  * Descriptions: config framebuffer
@@ -108,8 +138,10 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
   
   if (QCOMFB_init(me)){
     /* qcom fb */
-    me->sync = &QCOMFB_sync;
-    me->snapshoot=NULL;
+    me->start_post  = &QCOMFB_start_post;
+    me->end_post    = &QCOMFB_end_post;
+    me->post        = &QCOMFB_post;
+    me->snapshoot   = NULL;
     ALOGI("using qcom framebuffer driver");
   }
   else{
@@ -137,7 +169,6 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
       ALOGE("LINUXFBDR smem_len(%i) < fb_sz(%i)", mi->fix.smem_len, mi->fb_sz);
       goto error;
     }
-    
     /* map buffer */
     ALOGV("LINUXFBDR mmap Framebuffer Memory");
     mi->buffer  = (voidp) mmap(
@@ -159,25 +190,19 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
       mi->is32 = 0;
       /* init colorspace */
       LINUXFBDR_init_16bit(me);
-      /* set sync callbacks */
-      me->sync     = &LINUXFBDR_sync_16bit;
-      me->snapshoot = &LINUXFBDR_snapshoot_16bit;
     }
     else {
       mi->is32 = 1;
       /* init colorspace */
       LINUXFBDR_init_32bit(me);
-      /* set sync callbacks */
-      me->sync     = &LINUXFBDR_sync_32bit;
-      me->snapshoot = &LINUXFBDR_snapshoot_32bit;
     }
   }
   
-  /* set dpi */
-  LINUXFBDP_set_dpi(me);
-  
   /* set config */
   me->config = &LINUXFBDR_config;
+  
+  /* set dpi */
+  LINUXFBDP_set_dpi(me);
   
   /* ok */
   goto ok;
@@ -322,6 +347,7 @@ void LINUXFBDR_init_features(LIBAROMA_FBP me) {
   else{
     mi->double_buffering=1;
   }
+  me->double_buffer=mi->double_buffering;
   ALOGV("LINUXFBDR Double Buffering = %s",mi->double_buffering?"yes":"no");
   
   /* activate vsync - universal */

@@ -131,6 +131,35 @@ void libaroma_canvas_setcolor(
 } /* End of libaroma_canvas_setcolor */
 
 /*
+ * Function    : libaroma_canvas_fillcolor
+ * Return Value: void
+ * Descriptions: set canvas color data
+ */
+void libaroma_canvas_fillcolor(
+    LIBAROMA_CANVASP c,
+    word color) {
+  if (!c) {
+    ALOGW("libaroma_canvas_setcolor canvas is not valid");
+    return;
+  }
+  if (c->l == c->w) {
+    libaroma_color_set(c->data, color, c->s);
+    if (c->hicolor != NULL) {
+      memset(c->hicolor, 0, c->s);
+    }
+  }
+  else {
+    int y = 0;
+    for (y = 0; y < c->h; y++) {
+      libaroma_color_set(c->data + (c->l * y), color, c->w);
+      if (c->hicolor != NULL) {
+        memset(c->hicolor + (c->l * y), 0, c->w);
+      }
+    }
+  }
+} /* End of libaroma_canvas_fillcolor */
+
+/*
  * Function    : libaroma_canvas_new_ex
  * Return Value: LIBAROMA_CANVASP
  * Descriptions: create new canvas - extended

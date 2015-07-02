@@ -64,6 +64,15 @@ void libaroma_canvas_setcolor(
     byte alpha);
 
 /*
+ * Function    : libaroma_canvas_fillcolor
+ * Return Value: void
+ * Descriptions: set canvas color data
+ */
+void libaroma_canvas_fillcolor(
+    LIBAROMA_CANVASP c,
+    word color);
+    
+/*
  * Function    : libaroma_canvas_new_ex
  * Return Value: LIBAROMA_CANVASP
  * Descriptions: create new canvas - extended

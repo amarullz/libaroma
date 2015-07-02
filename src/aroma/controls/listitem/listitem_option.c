@@ -134,7 +134,7 @@ void _libaroma_listitem_option_draw(
   
   byte is_dark=libaroma_color_isdark(bgcolor);
   word textcolor, graycolor;
-  byte flags=item->flags;
+  word flags=item->flags;
   
   if (!(state&LIBAROMA_CTL_LIST_ITEM_DRAW_ADDONS)){
     int vpad = 8;
@@ -159,15 +159,21 @@ void _libaroma_listitem_option_draw(
     }
     
     if ((item->next)&&(flags&LIBAROMA_LISTITEM_WITH_SEPARATOR)){
-      libaroma_draw_rect(
-        cv,
-        0,
-        cv->h-libaroma_dp(1),
-        cv->w,
-        libaroma_dp(1),
-        is_dark?RGB(555555):RGB(dddddd),
-        0xff
-      );
+      if (!libaroma_listitem_nonitem(item->next)){
+        int sepxp=0;
+        if (flags&LIBAROMA_LISTITEM_SEPARATOR_TEXTALIGN){
+          sepxp=libaroma_dp(72);
+        }
+        libaroma_draw_rect(
+          cv,
+          sepxp,
+          cv->h-libaroma_dp(1),
+          cv->w-sepxp,
+          libaroma_dp(1),
+          is_dark?RGB(555555):RGB(dddddd),
+          0xff
+        );
+      }
     }
     
     int icoh=libaroma_dp(vpad*2+seph);
@@ -528,7 +534,7 @@ void _libaroma_listitem_option_draw(
  * Descriptions: release internal data
  */
 void _libaroma_listitem_option_release_internal(_LIBAROMA_LISTITEM_OPTIONP mi,
-  byte flags){
+  word flags){
   if (mi->main_text){
     free(mi->main_text);
   }
@@ -572,7 +578,7 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_listitem_option(
     const char * main_text,
     const char * extra_text,
     LIBAROMA_CANVASP icon,
-    byte flags,
+    word flags,
     int at_index){
   /* check valid list control */
   if (!libaroma_ctl_list_is_valid(ctl)){

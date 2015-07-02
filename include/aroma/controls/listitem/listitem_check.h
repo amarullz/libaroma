@@ -28,11 +28,12 @@
 #define __libaroma_listitem_check_h__
 
 /* check signature */
-#define LIBAROMA_LISTITEM_CHECK_INDENT_NOICON      0x08
-#define LIBAROMA_LISTITEM_CHECK_SMALL_ICON         0x10
-#define LIBAROMA_LISTITEM_CHECK_SHARED_ICON        0x20
-#define LIBAROMA_LISTITEM_CHECK_FREE_ICON          0x40
-#define LIBAROMA_LISTITEM_CHECK_SWITCH             0x80
+#define LIBAROMA_LISTITEM_CHECK_INDENT_NOICON      0x0100
+#define LIBAROMA_LISTITEM_CHECK_SMALL_ICON         0x0200
+#define LIBAROMA_LISTITEM_CHECK_SHARED_ICON        0x0400
+#define LIBAROMA_LISTITEM_CHECK_FREE_ICON          0x0800
+#define LIBAROMA_LISTITEM_CHECK_SWITCH             0x1000
+#define LIBAROMA_LISTITEM_CHECK_LEFT_CONTROL       0x2000
 
 /*
  * Function    : libaroma_listitem_check
@@ -46,7 +47,7 @@ LIBAROMA_CTL_LIST_ITEMP libaroma_listitem_check(
     const char * main_text,
     const char * extra_text,
     LIBAROMA_CANVASP icon,
-    byte flags,
+    word flags,
     int at_index);
 
 #endif /* __libaroma_listitem_check_h__ */

@@ -543,7 +543,7 @@ byte _libaroma_ctl_tabs_thread(LIBAROMA_CONTROLP ctl) {
   libaroma_mutex_lock(me->mutex);
   
   if (me->change_start>1){
-    float nowstate=libaroma_control_state(me->change_start, 180);
+    float nowstate=libaroma_control_state(me->change_start, 200);
     if (nowstate>=1){
       is_draw = 1;
       me->change_state=0;
@@ -727,7 +727,8 @@ dword _libaroma_ctl_tabs_msg(
         }
         else if (msg->state==LIBAROMA_HID_EV_STATE_UP){
           if (me->allow_scroll==1){
-            me->velocity = libaroma_fling_up(&me->fling, x);
+            /*me->velocity = libaroma_fling_up(&me->fling, x);*/
+            me->velocity=(libaroma_fling_up(&me->fling, x)*libaroma_px(18))/libaroma_dp(4);
             if (me->velocity){
               me->request_x=-1;
             }
