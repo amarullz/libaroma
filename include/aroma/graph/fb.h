@@ -86,6 +86,7 @@ struct _LIBAROMA_FB{
   
   /* AROMA CORE Runtime Data */
   LIBAROMA_CANVASP canvas;
+  byte internal_canvas;
 };
   
 /*

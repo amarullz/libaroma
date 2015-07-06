@@ -131,14 +131,17 @@ byte libaroma_fb_init() {
   _libaroma_fb->bigscreen = (dpMinWH >= 600); 
   
   /* create framebuffer canvas */
-  _libaroma_fb->canvas  =
-    libaroma_canvas_shmem(
-      _libaroma_fb->w,
-      _libaroma_fb->h,
-      0,
-      (libaroma_config()->fb_shm_name[0]!=0)?
-        libaroma_config()->fb_shm_name:NULL
-    );
+  if ((!_libaroma_fb->internal_canvas)||(!_libaroma_fb->canvas)){
+    _libaroma_fb->internal_canvas=0;
+    _libaroma_fb->canvas  =
+      libaroma_canvas_shmem(
+        _libaroma_fb->w,
+        _libaroma_fb->h,
+        0,
+        (libaroma_config()->fb_shm_name[0]!=0)?
+          libaroma_config()->fb_shm_name:NULL
+      );
+  }
 
   /* Show Information */
   ALOGI("Framebuffer Initialized (%ix%ipx - %i dpi - %s)",
@@ -265,8 +268,10 @@ byte libaroma_fb_release() {
   }
   
   /* Free display canvas */
-  ALOGV("Releasing Canvas");
-  libaroma_canvas_delete(_libaroma_fb->canvas);
+  if (!_libaroma_fb->internal_canvas){
+    ALOGV("Releasing Canvas");
+    libaroma_canvas_delete(_libaroma_fb->canvas);
+  }
   
   /* Release Framebuffer Driver */
   ALOGV("Releasing Framebuffer Driver");

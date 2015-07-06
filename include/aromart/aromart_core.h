@@ -14,24 +14,27 @@
  * limitations under the License.
  *______________________________________________________________________________
  *
- * Filename    : android.h
- * Description : Android config
+ * Filename    : aromart_core.h
+ * Description : AROMA Runtime core headers
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 06/04/15 - Author(s): Ahmad Amarullah
+ * + 19/01/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_android_h__
-#define __libaroma_android_h__
-
-#if ANDROID
-  #ifdef LIBAROMA_CONFIG_SHMEM_PREFIX
-    #undef LIBAROMA_CONFIG_SHMEM_PREFIX
-  #endif
-  /* android wrapper for shm_* */
-  #define LIBAROMA_CONFIG_SHMEM_PREFIX "/tmp/.libaromashm-"
-  #define shm_open open
-  #define shm_unlink unlink
+#ifndef __libaromart_h__
+  #error "Include <aromart.h> instead."
 #endif
+#ifndef __libaromart_core_h__
+#define __libaromart_core_h__
 
-#endif /* __libaroma_android_h__ */
+/* start application handler */
+typedef int (*LART_APP_RUN_HANDLER)(char *, char *);
+typedef int (*LART_SYSTEM_UI_HANDLER)();
+
+/* start aroma runtime */
+int lart_start(
+  LART_APP_RUN_HANDLER run_handler,
+  LART_SYSTEM_UI_HANDLER  sysui_handler
+);
+
+#endif /* __libaromart_core_h__ */
