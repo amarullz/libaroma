@@ -26,6 +26,17 @@
 #include <aroma.h>
 #include <aromart.h>
 
+#include <pthread.h>    /* pthread_ */
+#include <signal.h>     /* pthread_kill */
+#include <time.h>       /* clock_gettime */
+#include <sys/param.h>  /* MIN,MAX */
+#include <sys/mman.h>   /* mmap, munmap */
+#include <unistd.h>     /* open, close, unlink, usleep */
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <string.h>
+
 /******************************** MACROS **************************************/
 
 /* error log */

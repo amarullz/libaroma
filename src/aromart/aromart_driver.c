@@ -41,7 +41,7 @@ static int _lart_hid_wfd   =0;
 static int _lart_hid_active=0;
 
 /* Framebuffer Driver */
-byte lart_fb_release(LIBAROMA_FBP me){ return 1; }
+void lart_fb_release(LIBAROMA_FBP me){ }
 byte lart_fb_start_post(LIBAROMA_FBP me){ return 1; }
 byte lart_fb_post(
   LIBAROMA_FBP me, wordp __restrict src,
@@ -129,6 +129,26 @@ byte lart_hid_init(LIBAROMA_HIDP me){
   _lart_hid_active = 1;
   return 1;
 }
+
+/* init & release function */
+byte libaroma_hid_init();
+void libaroma_hid_release();
+byte libaroma_fb_init();
+byte libaroma_fb_release();
+byte libaroma_msg_init();
+void libaroma_msg_release();
+byte libaroma_wm_init();
+byte libaroma_wm_release();
+void libaroma_runtime_init();
+void libaroma_runtime_activate_cores(int num_cores);
+void libaroma_runtime_mute_parent();
+void libaroma_runtime_rollback_cores();
+byte libaroma_lang_init();
+byte libaroma_lang_release();
+byte libaroma_timer_init();
+byte libaroma_timer_release();
+byte libaroma_font_init();
+byte libaroma_font_release();
 
 /* libaroma app scope start & end function */
 byte lart_libaroma_start(){

@@ -84,7 +84,7 @@ int _lart_sysui_makefifo(char * path, byte iswrite){
 
 /* free app structure */
 byte lart_sysui_app_free(LARTAPP_SYSUI * app){
-  if (!apps){
+  if (!app){
     return 0;
   }
   char stmp[256];
@@ -168,8 +168,8 @@ static void * _lart_sysui_appthread(void * cookie) {
           if (isfg){
             int x = (int) param;
             if (len==sizeof(int)){
-              int w = ((int) data)[0];
-              _lart_sysui->sb_force_update = 1;
+              int w = ((int *) data)[0];
+              _lart_sysui->sb_forceupdate = 1;
               _lart_sysui->sb_side_w = x;
               int xs = (x*165)/w;
               if (xs<0){
@@ -187,13 +187,14 @@ static void * _lart_sysui_appthread(void * cookie) {
               }
               if (!_lart_sysui->sb_overlay_canvas){
                 _lart_sysui->sb_overlay_canvas=libaroma_canvas(
-                  w, _lart_sysui->sb_h;
+                  w, _lart_sysui->sb_h
                 );
                 if (_lart_sysui->sb_overlay_canvas){
                   libaroma_draw_ex(
                     _lart_sysui->sb_overlay_canvas,
                     app_data->csb,
-                    0, 0, 0, 0, w, _lart_sysui->sb_h
+                    0, 0, 0, 0, w, _lart_sysui->sb_h,
+                    0, 0xff
                   );
                 }
               }
@@ -273,16 +274,16 @@ pid_t lart_sysui_req_new_app(
   snprintf(stmp,256,LART_NAMED_PIPE_APP_EVENT,app.aid);
   efd = _lart_sysui_makefifo(stmp, 1);
   /* init canvases */
-  snprintf(stmp,256,LART_SHMCANVAS_FB,appid);
+  snprintf(stmp,256,LART_SHMCANVAS_FB,app.aid);
   cfb = libaroma_canvas_shmem(
-        _libaroma_fb->w,
-        _libaroma_fb->h-_lart_sysui->sb_h,
+        libaroma_fb()->w,
+        libaroma_fb()->h-_lart_sysui->sb_h,
         0,
         stmp
       );
-  snprintf(stmp,256,LART_SHMCANVAS_SB,appid);
+  snprintf(stmp,256,LART_SHMCANVAS_SB,app.aid);
   csb = libaroma_canvas_shmem(
-    _libaroma_fb->w,
+    libaroma_fb()->w,
     _lart_sysui->sb_h,
     0,
     stmp
@@ -291,15 +292,15 @@ pid_t lart_sysui_req_new_app(
     is_pipes=1;
   }
   if (is_pipes){
-    dword param = 0;
+    dword paramn = 0;
     voidp data  = NULL;
     size_t len  = 0;
     byte status = lart_rcommand(
       LART_ROOT_MSG_CREATE_APP,0,&app, sizeof(LART_NEW_APP_DATA),
-      &param, data, &len
+      &paramn, data, &len
     );
     if (status==LART_ROOT_MSG_CREATE_APP_RES){
-      if ((len==sizeof(LART_NEW_APP_RES_DATA))&&(param==1)){
+      if ((len==sizeof(LART_NEW_APP_RES_DATA))&&(paramn==1)){
         /* succesed */
         LART_NEW_APP_RES_DATA * newapp = (LART_NEW_APP_RES_DATA *) data;
         if (newapp->pid>0){
@@ -333,8 +334,8 @@ pid_t lart_sysui_req_new_app(
               _lart_sysui->apps = napps;
               is_ok = 1;
               ret_pid = newapp->pid;
-              libaroma_thread_create(
-                &app_data->appth,
+              pthread_create(
+                &app_data->appth,NULL,
                 _lart_sysui_appthread,
                 (void *) app_data
               );

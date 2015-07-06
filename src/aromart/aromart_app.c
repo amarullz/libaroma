@@ -152,7 +152,7 @@ pid_t lart_app_create(
     /* exit log */
     LARTLOGV(
       "APPLICATION EXITED (id:%i,pid:%i,path:%s)",
-      _lart_app->aid, _lart_app->pid, _lart_app->program
+      _lart_app->aid, _lart_app->pid, program
     );
     
     /* free application instance */
@@ -168,7 +168,7 @@ int lart_app_manager(
   LART_APP_RUN_HANDLER run_handler
 ){
   byte running = 1;
-  int res=0;
+  int retval=0;
   _lart_app_run_cb = run_handler;
   LARTLOGI("Starting application manager");
   
@@ -186,9 +186,9 @@ int lart_app_manager(
           res.pid = -1;
           if ((len==sizeof(LART_NEW_APP_DATA))&&(data)){
             LART_NEW_APP_DATA * reqapp = (LART_NEW_APP_DATA *) data;
-            res.aid = reqapp->appid;
+            res.aid = reqapp->aid;
             res.pid = lart_app_create(
-              reqapp->appid,
+              reqapp->aid,
               reqapp->program,
               reqapp->param,
               reqapp->dpi
@@ -210,7 +210,7 @@ int lart_app_manager(
         {
           /* terminate runtime */
           running = 0;
-          res = (int) param;
+          retval = (int) param;
         }
         break;
     }
@@ -222,8 +222,8 @@ int lart_app_manager(
     }
   }
   
-  LARTLOGI("Application manager stopped: %i",res);
-  return res;
+  LARTLOGI("Application manager stopped: %i",retval);
+  return retval;
 }
 
 #endif /* __libaromart_app_c__ */

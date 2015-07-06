@@ -41,17 +41,17 @@ byte lart_send(
   size_t data_len
 ){
   LART_MSG req;
-  req.cmd       = cmd;
+  req.status    = cmd;
   req.param     = param;
-  req.data_len  = data?data_len:0;
+  req.len  = data?data_len:0;
   if (write(fd,&req,sizeof(LART_MSG))==sizeof(LART_MSG)){
-    if (req.data_len>0){
-      if (write(fd,data,req.data_len)==req.data_len){
+    if (req.len>0){
+      if (write(fd,data,req.len)==(ssize_t)req.len){
         return LART_RES_OK;
       }
     }
   }
-  return AVM_RES_ERR;
+  return LART_RES_ERR;
 }
 
 /* receive event */
@@ -65,7 +65,7 @@ byte lart_recv(
   if (read(fd,&res,sizeof(LART_MSG))==sizeof(LART_MSG)){
     if (res.len>0){
       voidp rd = calloc(res.len,1);
-      if (read(lart_app()->rfd,rd,res.len)!=res.len){
+      if (read(lart_app()->rfd,rd,res.len)!=(ssize_t)res.len){
         free(rd);
         rd=NULL;
         res.len=0;
@@ -86,7 +86,7 @@ byte lart_recv(
     }
     return res.status;
   }
-  return AVM_RES_ERR;
+  return LART_RES_ERR;
 }
 
 /* send command & retrive result */
@@ -104,7 +104,7 @@ byte lart_command(
   if (lart_send(wfd, cmd, param, data, data_len)){
     return lart_recv(rfd,res_param,res_data,res_data_len);
   }
-  return AVM_RES_ERR;
+  return LART_RES_ERR;
 }
 
 #endif /* __libaromart_messaging_c__ */
