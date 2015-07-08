@@ -129,12 +129,59 @@ int sysui_handler(){
 void statusbar_ondraw(LIBAROMA_CANVASP cv,word fgcolor){
 }
 
+/************** TEST SQUIRREL ******************/
+#include "libaroma_squirrel.h"
+
+
+void printfunc(HSQUIRRELVM v,const SQChar *format, ...)
+{
+	va_list args;
+  va_start(args, format);
+  vprintf(format, args);
+  va_end(args);
+}
+
+void test_squirrel(){
+  HSQUIRRELVM v = sq_open(1024);
+	sq_setprintfunc(v, printfunc,printfunc);
+
+	sq_pushroottable(v);
+	lasq_register(v);
+	
+	/* call script */
+	const SQChar *program = 
+	  "::print(\"Hi....\\n\");\n"
+	  "local ar = Application();\n"
+	  "ar.test(\"test string\");"
+	  ;
+  if (SQ_FAILED(sq_compilebuffer(v, program,
+                                 sizeof(SQChar) * strlen(program), 
+                                 "program", 
+                                 SQFalse))) {
+    goto endit;
+  }
+	
+	sq_pushroottable(v);
+	
+	sq_call(v, 1, SQFalse, SQFalse);
+	
+endit:
+	sq_pop(v,1);
+	sq_close(v); 
+	
+	
+	sleep(10);
+}
+
+
+
 /*
  * Function    : main
  * Return Value: int
  * Descriptions: main executable function
  */
 int main(int argc, char **argv){
+  /*
   return
     lart_start(
       argv,
@@ -142,6 +189,11 @@ int main(int argc, char **argv){
       sysui_handler,
       statusbar_ondraw
     );
+  */
+  
+  test_squirrel();
+  
+  return 0;
 } /* End of main */
 
 #endif /* __libaroma_rt_test_c__ */
