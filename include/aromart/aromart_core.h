@@ -30,11 +30,33 @@
 /* start application handler */
 typedef int (*LART_APP_RUN_HANDLER)(char *, char *);
 typedef int (*LART_SYSTEM_UI_HANDLER)();
+typedef void (*LART_SYSTEM_UI_STATUSBAR_DRAW)(LIBAROMA_CANVASP,word);
+typedef byte (*LART_SYSTEM_UI_THREAD)();
+typedef byte (*LART_SYSTEM_UI_MESSAGE)(LIBAROMA_MSGP);
 
 /* start aroma runtime */
 int lart_start(
+  char **argv,
   LART_APP_RUN_HANDLER run_handler,
-  LART_SYSTEM_UI_HANDLER  sysui_handler
+  LART_SYSTEM_UI_HANDLER  sysui_handler,
+  LART_SYSTEM_UI_STATUSBAR_DRAW sysui_sb_draw
 );
+
+/* start application - return application id */
+int lart_application_start(char * program, char * param);
+
+/* application api */
+byte lart_application_is_run();
+byte lart_application_set_foreground();
+byte lart_application_set_primary_color(word color);
+byte lart_application_set_drawer_overlay(int x, int w);
+void lart_application_set_resource_zip(LIBAROMA_ZIP zip);
+void lart_application_set_process_name(char * name);
+
+/* sysui api */
+byte lart_sysui_isactive();
+void lart_sysui_set_ui_thread(LART_SYSTEM_UI_THREAD cb);
+void lart_sysui_set_message_handler(LART_SYSTEM_UI_MESSAGE cb);
+void lart_sysui_print_running_apps();
 
 #endif /* __libaromart_core_h__ */

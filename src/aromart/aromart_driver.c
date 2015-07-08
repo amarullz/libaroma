@@ -98,6 +98,10 @@ void lart_hid_release(LIBAROMA_HIDP me){
   }
 }
 byte lart_hid_getinput(LIBAROMA_HIDP me, LIBAROMA_HID_EVENTP dest_ev){
+  if (!lart_application_is_run()){
+    usleep(10000);
+    return LIBAROMA_HID_EV_RET_EXIT;
+  }
   LART_HID_EVENT ev;
   while(_lart_hid_active){
     if (read(_lart_hid_rfd,&ev,sizeof(LART_HID_EVENT))==sizeof(LART_HID_EVENT)){

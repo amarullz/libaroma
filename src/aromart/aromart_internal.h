@@ -36,6 +36,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <sys/prctl.h>
+#include <sys/wait.h>
 
 /******************************** MACROS **************************************/
 
@@ -53,9 +55,13 @@
 #define LART_SHMCANVAS_FB             "@aromart-fb-%i"
 #define LART_SHMCANVAS_SB             "@aromart-sb-%i"
 
+/* sysui assets */
 #define LART_SYSUI_ZIP_PATH           "/sdcard/recovery.zip"
 #define LART_SYSUI_MAINFONT_URI       "res:///fonts/Roboto-Regular.ttf"
 #define LART_SYSUI_STATUSBAR_HEIGHT   24
+
+/* app assets */
+#define LART_APP_MAINFONT_URI         "sys:///fonts/Roboto-Regular.ttf"
 
 /* root command */
 #define LART_ROOT_MSG_CREATE_APP      0x01
@@ -69,6 +75,7 @@
 #define LART_REQ_CMD_READY             0x04  /* app is ready to show */
 #define LART_REQ_CMD_SETNAME           0x05  /* set application name */
 #define LART_REQ_CMD_EXIT              0xcc  /* app is exited */
+#define LART_REQ_CMD_NEW_APP           0x10  /* new application request */
 
 /* event message */
 #define LART_EV_NEEDSYNC               0x01  /* should sync in next thread */
@@ -123,6 +130,7 @@ typedef struct{
  * runtime
  */
 LART * lart();
+void lart_set_process_name(char * new_name);
 
 /*
  * messaging
@@ -182,7 +190,8 @@ int lart_app_manager(
  * sysui
  */
 int lart_sysui(
-  LART_SYSTEM_UI_HANDLER sysui_handler
+  LART_SYSTEM_UI_HANDLER sysui_handler,
+  LART_SYSTEM_UI_STATUSBAR_DRAW sysui_sb_draw
 );
 
 /*

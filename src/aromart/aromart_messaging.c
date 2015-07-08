@@ -44,14 +44,11 @@ byte lart_send(
   req.status    = cmd;
   req.param     = param;
   req.len  = data?data_len:0;
-  if (write(fd,&req,sizeof(LART_MSG))==sizeof(LART_MSG)){
-    if (req.len>0){
-      if (write(fd,data,req.len)==(ssize_t)req.len){
-        return LART_RES_OK;
-      }
-    }
+  write(fd,&req,sizeof(LART_MSG));
+  if (req.len>0){
+    write(fd,data,req.len);
   }
-  return LART_RES_ERR;
+  return LART_RES_OK;
 }
 
 /* receive event */
@@ -65,17 +62,22 @@ byte lart_recv(
   if (read(fd,&res,sizeof(LART_MSG))==sizeof(LART_MSG)){
     if (res.len>0){
       voidp rd = calloc(res.len,1);
-      if (read(lart_app()->rfd,rd,res.len)!=(ssize_t)res.len){
+      if (read(fd,rd,res.len)==(ssize_t)res.len){
+        if (res_data!=NULL){
+          *res_data = rd;
+        }
+        else{
+          free(rd);
+          rd=NULL;
+        }
+      }
+      else{
         free(rd);
         rd=NULL;
         res.len=0;
-      }
-      if (res_data!=NULL){
-        *res_data = rd;
-      }
-      else if (rd){
-        free(rd);
-        rd=NULL;
+        if (res_data!=NULL){
+          *res_data = NULL;
+        }
       }
     }
     if (res_data_len != NULL){
@@ -101,10 +103,8 @@ byte lart_command(
   voidp  *  res_data,
   size_t *  res_data_len
 ){
-  if (lart_send(wfd, cmd, param, data, data_len)){
-    return lart_recv(rfd,res_param,res_data,res_data_len);
-  }
-  return LART_RES_ERR;
+  lart_send(wfd, cmd, param, data, data_len);
+  return lart_recv(rfd,res_param,res_data,res_data_len);
 }
 
 #endif /* __libaromart_messaging_c__ */

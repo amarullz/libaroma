@@ -34,6 +34,10 @@ LART * lart(){
 
 /* init runtime */
 byte lart_init_runtime(){
+  
+  system("rm /tmp/.libaromashm*");
+  system("rm /tmp/.aromart*");
+  
   int host_pipes[2];
   int remote_pipes[2];
   pipe(host_pipes);
@@ -61,24 +65,41 @@ byte lart_init_runtime(){
   return 0; /* failed */
 }
 
+static char ** _lart_process_argv = NULL;
+
 /* start runtime */
 int lart_start(
+    char ** argv,
     LART_APP_RUN_HANDLER run_handler,
-    LART_SYSTEM_UI_HANDLER sysui_handler
+    LART_SYSTEM_UI_HANDLER sysui_handler,
+    LART_SYSTEM_UI_STATUSBAR_DRAW sysui_sb_draw
   ){
+  _lart_process_argv = argv;
   byte process_type = lart_init_runtime();
   if (process_type==2){
     /* sys ui */
-    int ret=lart_sysui(sysui_handler);
+    lart_set_process_name("aroma.runtime.systemui");
+    int ret=lart_sysui(sysui_handler, sysui_sb_draw);
     exit(ret);
     return 0;
   }
   else if (process_type==1){
     /* app manager */
+    lart_set_process_name("aroma.runtime.manager");
     return lart_app_manager(run_handler);
   }
   return 0;
 }
 
+/* set process name */
+void lart_set_process_name(char * new_name){
+  if (new_name == NULL){
+    return;
+  }
+  if (_lart_process_argv!=NULL){
+    snprintf(_lart_process_argv[0],255,"%s",new_name);
+    prctl(PR_SET_NAME, (unsigned long) _lart_process_argv[0], 0, 0, 0);
+  }
+}
 
 #endif /* __libaromart_core_c__ */

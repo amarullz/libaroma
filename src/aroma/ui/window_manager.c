@@ -630,6 +630,8 @@ static void * _libaroma_wm_ui_thread(void * cookie) {
   ALOGV("starting wm ui thread");
   byte need_sync = 0;
   while(_libaroma_wm->client_started){
+    need_sync=0;
+    
     /* run child thread process */
     if ((_libaroma_wm->client_started)&&(!_libaroma_wm_onprocessing)){
       libaroma_mutex_lock(_libaroma_wm_ui_mutex);

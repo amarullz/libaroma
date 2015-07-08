@@ -102,6 +102,15 @@ static void * _libaroma_msgqueue_hid_thread(
             e.y
           );
           break;
+        case LIBAROMA_HID_EV_RET_EXIT:
+          libaroma_msg_post_hid(
+            LIBAROMA_MSG_EXIT,
+            0,
+            0,
+            0,
+            0
+          );
+          break;
       }
     }
   }
