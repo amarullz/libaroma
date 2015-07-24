@@ -97,7 +97,10 @@ include_directories(
 add_library(aroma STATIC ${AROMA_SRCS})
 set_target_properties(aroma PROPERTIES COMPILE_FLAGS ${AROMA_CFLAGS})
 add_dependencies(aroma zlib freetype harfbuzz hbucdn minzip png jpeg squirrel)
-target_link_libraries(aroma zlib freetype harfbuzz hbucdn minzip png jpeg squirrel pthread)
+target_link_libraries(aroma zlib freetype harfbuzz hbucdn minzip png jpeg squirrel)
+if (NOT ANDROID)
+	target_link_libraries(aroma pthread)
+endif()
 
 # subdirs
 add_subdirectory(libs/zlib)

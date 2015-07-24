@@ -36,6 +36,54 @@
 #define ABS_MT_POSITION 0x2a
 #endif
 
+#ifndef ABS_MT_TOUCH_MAJOR
+#define ABS_MT_TOUCH_MAJOR     0x30    /* Major axis of touching ellipse */
+#endif
+
+#ifndef ABS_MT_TOUCH_MINOR
+#define ABS_MT_TOUCH_MINOR     0x31    /* Minor axis (omit if circular) */
+#endif
+
+#ifndef ABS_MT_WIDTH_MAJOR
+#define ABS_MT_WIDTH_MAJOR     0x32    /* Major axis of approaching ellipse */
+#endif
+
+#ifndef ABS_MT_WIDTH_MINOR
+#define ABS_MT_WIDTH_MINOR     0x33    /* Minor axis (omit if circular) */
+#endif
+
+#ifndef ABS_MT_ORIENTATION
+#define ABS_MT_ORIENTATION     0x34    /* Ellipse orientation */
+#endif
+
+#ifndef ABS_MT_POSITION_X
+#define ABS_MT_POSITION_X      0x35    /* Center X ellipse position */
+#endif
+
+#ifndef ABS_MT_POSITION_Y
+#define ABS_MT_POSITION_Y      0x36    /* Center Y ellipse position */
+#endif
+
+#ifndef ABS_MT_TOOL_TYPE
+#define ABS_MT_TOOL_TYPE       0x37    /* Type of touching device */
+#endif
+
+#ifndef ABS_MT_BLOB_ID
+#define ABS_MT_BLOB_ID         0x38    /* Group a set of packets as a blob */
+#endif
+
+#ifndef ABS_MT_PRESSURE
+#define ABS_MT_PRESSURE                0x3a    /* Pressure on contact area */
+#endif
+
+#ifndef ABS_MT_TRACKING_ID
+#define ABS_MT_TRACKING_ID     0x39    /* Unique ID of initiated contact */
+#endif
+
+#ifndef SYN_MT_REPORT
+#define SYN_MT_REPORT          2
+#endif
+
 /*
  * function : calculate touch event with calibration data
  */
