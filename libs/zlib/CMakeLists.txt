@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 project(zlib)
 
 # zlib
-add_library(zlib STATIC 
+add_library(z ${CMAKE_LINK_TYPE} 
 	src/adler32.c
 	src/compress.c
 	src/crc32.c
@@ -22,7 +22,7 @@ add_library(zlib STATIC
 )
 
 # cflags
-set_target_properties(zlib PROPERTIES COMPILE_FLAGS "\
+set_target_properties(z PROPERTIES COMPILE_FLAGS "\
 	-save-temps \
 	-fdata-sections -ffunction-sections -Wl,--gc-sections \
 	-D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG \

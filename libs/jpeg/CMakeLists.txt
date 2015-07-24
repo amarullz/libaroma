@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 project(jpeg)
 
 # jpeg
-add_library(jpeg STATIC 
+add_library(jpeg ${CMAKE_LINK_TYPE} 
 	jcapimin.c
 	jcapistd.c
 	jccoefct.c

@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 project(squirrel)
 
 # png
-add_library(squirrel STATIC 
+add_library(squirrel ${CMAKE_LINK_TYPE} 
 	squirrel/sqapi.cpp
 	squirrel/sqbaselib.cpp
 	squirrel/sqclass.cpp

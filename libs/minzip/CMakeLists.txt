@@ -20,5 +20,5 @@ set_target_properties(minzip PROPERTIES COMPILE_FLAGS "\
 ")
 
 # dependencies
-add_dependencies(minzip zlib)
-target_link_libraries(minzip zlib)
+add_dependencies(minzip z)
+target_link_libraries(minzip z)

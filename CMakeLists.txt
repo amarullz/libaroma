@@ -4,10 +4,16 @@ cmake_minimum_required(VERSION 2.8)
 project(libaroma)
 set(CMAKE_BUILD_TYPE Release)
 
+if(NOT CMAKE_LINK_TYPE)
+	set(CMAKE_LINK_TYPE STATIC)
+endif()
+
 # force static compilation
-set(CMAKE_SKIP_RPATH YES)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static")
+if("${CMAKE_LINK_TYPE}" STREQUAL "STATIC")
+	set(CMAKE_SKIP_RPATH YES)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static")
+endif()
 
 # release&debug flags
 set(CMAKE_C_FLAGS_RELEASE "-O3 -ftree-vectorize -fprefetch-loop-arrays -funsafe-math-optimizations")
@@ -94,10 +100,10 @@ include_directories(
 )
 
 # aroma
-add_library(aroma STATIC ${AROMA_SRCS})
+add_library(aroma ${CMAKE_LINK_TYPE} ${AROMA_SRCS})
 set_target_properties(aroma PROPERTIES COMPILE_FLAGS ${AROMA_CFLAGS})
-add_dependencies(aroma zlib freetype harfbuzz hbucdn minzip png jpeg squirrel)
-target_link_libraries(aroma zlib freetype harfbuzz hbucdn minzip png jpeg squirrel)
+add_dependencies(aroma z freetype harfbuzz hbucdn minzip png jpeg squirrel)
+target_link_libraries(aroma z freetype harfbuzz hbucdn minzip png jpeg squirrel)
 if (NOT ANDROID)
 	target_link_libraries(aroma pthread)
 endif()

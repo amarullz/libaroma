@@ -46,5 +46,5 @@ set_target_properties(freetype PROPERTIES COMPILE_FLAGS "\
 ")
 
 # dependencies
-add_dependencies(freetype zlib)
-target_link_libraries(freetype zlib harfbuzz)
+add_dependencies(freetype z)
+target_link_libraries(freetype z harfbuzz)

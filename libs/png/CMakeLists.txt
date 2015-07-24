@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 project(png)
 
 # png
-add_library(png STATIC 
+add_library(png ${CMAKE_LINK_TYPE}
 	png.c
 	pngerror.c
 	pngget.c
@@ -34,5 +34,5 @@ set_target_properties(png PROPERTIES COMPILE_FLAGS "\
 ")
 
 # dependencies
-add_dependencies(png zlib)
-target_link_libraries(png zlib)
+add_dependencies(png z)
+target_link_libraries(png z m)
