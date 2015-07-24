@@ -9,6 +9,12 @@ set(CMAKE_SKIP_RPATH YES)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static")
 
+# release&debug flags
+set(CMAKE_C_FLAGS_RELEASE "-O3 -ftree-vectorize -fprefetch-loop-arrays -funsafe-math-optimizations")
+set(CMAKE_C_FLAGS_DEBUG "-ggdb")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+
 # get architecture
 execute_process( COMMAND ${CMAKE_C_COMPILER} -dumpmachine COMMAND cut -d- -f1 COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE )
 
@@ -31,16 +37,6 @@ set(AROMA_CFLAGS "${AROMA_CFLAGS} -DLIBAROMA_CONFIG_DEBUG_TRACE=0")
 
 # openmp cflags
 #set(AROMA_CFLAGS "${AROMA_CFLAGS} -fopenmp -DLIBAROMA_CONFIG_OPENMP=1")
-
-# release cflags
-if (CMAKE_BUILD_TYPE EQUAL "RELEASE")
-	set(AROMA_CFLAGS "${AROMA_CFLAGS} -O3 -ftree-vectorize -fprefetch-loop-arrays -funsafe-math-optimizations")
-endif()
-
-# debug cflags
-if (CMAKE_BUILD_TYPE EQUAL "DEBUG")
-	set(AROMA_CFLAGS "${AROMA_CFLAGS} -ggdb")
-endif()
 
 # AROMA cflags
 set(AROMA_CFLAGS "${AROMA_CFLAGS} -DLIBAROMA_CONFIG_DEBUG=${LIBAROMA_CONFIG_DEBUG}")
