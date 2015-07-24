@@ -798,7 +798,7 @@ bool mzReadZipEntry(const ZipArchive * pArchive, const ZipEntry * pEntry,
 
 static bool writeProcessFunction(const unsigned char * data, int dataLen,
                                  void * fd) {
-  ssize_t n = write((int)fd, data, dataLen);
+  ssize_t n = write((int)(intptr_t)fd, data, dataLen);
   
   if (n != dataLen) {
     LOGE("Can't write %d bytes (only %d) from zip file: %s\n",
@@ -815,7 +815,7 @@ static bool writeProcessFunction(const unsigned char * data, int dataLen,
 bool mzExtractZipEntryToFile(const ZipArchive * pArchive,
                              const ZipEntry * pEntry, int fd) {
   bool ret = mzProcessZipEntryContents(pArchive, pEntry, writeProcessFunction,
-                                       (void *)fd);
+                                       (void *)(intptr_t)fd);
                                        
   if (!ret) {
     LOGE("Can't extract entry to file.\n");
