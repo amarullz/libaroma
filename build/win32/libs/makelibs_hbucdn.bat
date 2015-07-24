@@ -10,7 +10,7 @@ echo Compiling HB-UCDN
  ^
   ../../../libs/harfbuzz-ng/src/hb-ucdn/ucdn.c ^
  ^
-  -I../../../libs/harfbuzz-ng/src/hb-ucdn
+  -I../../../libs/harfbuzz-ng/src/hb-ucdn %LIBAROMA_CINCLUDES%
 
 cd ..\libs
 

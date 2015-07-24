@@ -44,7 +44,7 @@ echo Compiling Harfbuzz-ng
   -I../../../libs/freetype/builds ^
   -I../../../libs/freetype/include ^
   -I../../../libs/harfbuzz-ng/src ^
-  -I../../../libs/harfbuzz-ng/src/hb-ucdn
+  -I../../../libs/harfbuzz-ng/src/hb-ucdn %LIBAROMA_CINCLUDES%
 
 cd ..\libs
 

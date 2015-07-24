@@ -31,7 +31,7 @@ echo Compiling PNG
 		../../../libs/png/arm/filter_neon_intrinsics.c ^
   ^
   -I../../../libs/png ^
-  -I../../../libs/zlib
+  -I../../../libs/zlib %LIBAROMA_CINCLUDES%
 
 cd ..\libs
 

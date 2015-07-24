@@ -18,7 +18,7 @@ echo Compiling TEST
   ^
   -I../../../include ^
   -I../../../src ^
-  -I../../../examples/recovery ^
+  -I../../../examples/recovery %LIBAROMA_CINCLUDES% ^
   -o ../bin/libaroma_test ^
   ^
   -lm -lpthread -lstdc++ -lrt

@@ -66,7 +66,7 @@ echo Compiling JPEG
   ../../../libs/jpeg/jmem-android.c ^
   ^
   ^
-  -I../../../libs/jpeg
+  -I../../../libs/jpeg %LIBAROMA_CINCLUDES%
 
 REM  ../../../libs/jpeg/jmemansi.c ^
 REM  ../../../libs/jpeg/armv6_idct.S ^

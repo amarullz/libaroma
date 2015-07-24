@@ -14,7 +14,7 @@ echo Compiling MinZip
     ../../../libs/minzip/Inlines.c ^
     ../../../libs/minzip/Zip.c ^
   ^
-    -I../../../libs/zlib
+    -I../../../libs/zlib %LIBAROMA_CINCLUDES%
 
 cd ..\libs
 

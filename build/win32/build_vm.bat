@@ -22,7 +22,7 @@ echo Compiling AROMA VM
   ^
   -I../../../include ^
   -I../../../src ^
-  -I../../../examples/aromavm ^
+  -I../../../examples/aromavm %LIBAROMA_CINCLUDES% ^
   -o ../bin/libaroma_test ^
   ^
   -lm -lpthread -lstdc++ -lrt

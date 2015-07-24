@@ -25,7 +25,7 @@ echo Compiling ZLIB
   	../../../libs/zlib/trees.c ^
   	../../../libs/zlib/uncompr.c ^
   	../../../libs/zlib/zutil.c ^
-  -I../../../libs/zlib
+  -I../../../libs/zlib %LIBAROMA_CINCLUDES%
 
 cd ..\libs
 

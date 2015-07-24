@@ -37,13 +37,22 @@ LARTAPP * lart_app(){
 }
 
 /* app mutex */
-pthread_mutex_t _lart_app_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t _lart_app_mutex = PTHREAD_MUTEX_INITIALIZER;
 #define _APPLOCK()    pthread_mutex_lock(&_lart_app_mutex)
 #define _APPUNLOCK()  pthread_mutex_unlock(&_lart_app_mutex)
+static byte _lart_app_needsync=0;
+static byte _lart_app_isrun=0;
+static pthread_t _lart_app_eventthread_t;
 
 /* PUBLIC FUNCTIONS */
+byte lart_application_syncfb(){
+  _lart_app_needsync=1;
+  return 1;
+}
 byte lart_application_set_foreground(){
-  return lart_app_command(LART_REQ_CMD_READY,0,NULL,0,NULL,NULL,NULL);
+  byte res=lart_app_command(LART_REQ_CMD_READY,0,NULL,0,NULL,NULL,NULL);
+  lart_application_syncfb();
+  return res;
 }
 byte lart_application_set_primary_color(word color){
   return lart_app_command(LART_REQ_CMD_SET_PRIMARY_COLOR,
@@ -110,9 +119,6 @@ LIBAROMA_STREAMP _lart_app_stream_uri_cb(char * uri){
 }
 
 /* event thread */
-static byte _lart_app_needsync=0;
-static byte _lart_app_isrun=0;
-static pthread_t _lart_app_eventthread_t;
 static void * _lart_app_eventthread(void * cookie) {
   LARTLOGS("Starting _lart_app_eventthread");
   while (_lart_app_isrun){

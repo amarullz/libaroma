@@ -12,6 +12,7 @@ REM
 REM PRODUCTION CFLAGS
 REM
 setx LIBAROMA_CFLAGS "-O3 -ftree-vectorize -mvectorize-with-neon-quad -fprefetch-loop-arrays -funsafe-math-optimizations -fopenmp -mfloat-abi=hard -mfpu=neon -D__ARM_HAVE_NEON -DLIBAROMA_CONFIG_OPENMP=1 -DLIBAROMA_CONFIG_DEBUG_TRACE=0"
+setx LIBAROMA_CINCLUDES ""
 
 REM
 REM DEBUG CFLAGS

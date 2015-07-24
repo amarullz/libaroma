@@ -26,7 +26,53 @@
 #include <aroma.h>
 #include <aromart.h>
 
+#include "libaroma_squirrel.h"
+void printfunc(HSQUIRRELVM v,const SQChar *format, ...){
+	va_list args;
+  va_start(args, format);
+  vprintf(format, args);
+  va_end(args);
+}
+
 int app_run(char * program, char * param){
+  int retval = -1;
+  HSQUIRRELVM v = sq_open(1024);
+	sq_setprintfunc(v, printfunc,printfunc);
+	sq_pushroottable(v);
+	lasq_register(v);
+	
+	/* call script */
+	char nut_path[256];
+	snprintf(nut_path,256,"file:///sdcard/%s.nut",program);
+	
+	printf("APP PATH: %s\n",nut_path);
+	
+	char * program_str = libaroma_stream_to_string(libaroma_stream(nut_path),1);
+	if (!program_str){
+	  goto endit;
+	}
+	
+	printf("CODE:\n%s\n",program_str);
+	
+  if (SQ_FAILED(sq_compilebuffer(v, _SC(program_str),
+       sizeof(SQChar) * strlen(program_str), 
+       "program", 
+       SQFalse))) {
+    goto endit;
+  }
+  printf("Compiled\n");
+	free(program_str);
+	
+	sq_pushroottable(v);
+	sq_call(v, 1, SQFalse, SQFalse);
+	printf("Called\n");
+endit:
+	sq_pop(v,1);
+	sq_close(v); 
+	return retval;
+	
+	/*
+  
   LIBAROMA_WINDOWP win = libaroma_window(
     NULL, 0, 0, LIBAROMA_SIZE_FULL, LIBAROMA_SIZE_FULL);
   word primary_color = RGB(009385);
@@ -112,12 +158,12 @@ int app_run(char * program, char * param){
     }
   }while(onpool&&lart_application_is_run());
   
-  return 1;
+  return 1;*/
 }
 
 int sysui_handler(){
   printf("STARTING SYSUI HANDLER\n");
-  int newapp=lart_application_start("Test1","");
+  int newapp=lart_application_start("main","");
   printf("New app id: %i\n",newapp);
   while(lart_sysui_isactive()){
     sleep(5);
@@ -129,51 +175,6 @@ int sysui_handler(){
 void statusbar_ondraw(LIBAROMA_CANVASP cv,word fgcolor){
 }
 
-/************** TEST SQUIRREL ******************/
-#include "libaroma_squirrel.h"
-
-
-void printfunc(HSQUIRRELVM v,const SQChar *format, ...)
-{
-	va_list args;
-  va_start(args, format);
-  vprintf(format, args);
-  va_end(args);
-}
-
-void test_squirrel(){
-  HSQUIRRELVM v = sq_open(1024);
-	sq_setprintfunc(v, printfunc,printfunc);
-
-	sq_pushroottable(v);
-	lasq_register(v);
-	
-	/* call script */
-	const SQChar *program = 
-	  "::print(\"Hi....\\n\");\n"
-	  "local ar = Application();\n"
-	  "ar.test(\"test string\");"
-	  ;
-  if (SQ_FAILED(sq_compilebuffer(v, program,
-                                 sizeof(SQChar) * strlen(program), 
-                                 "program", 
-                                 SQFalse))) {
-    goto endit;
-  }
-	
-	sq_pushroottable(v);
-	
-	sq_call(v, 1, SQFalse, SQFalse);
-	
-endit:
-	sq_pop(v,1);
-	sq_close(v); 
-	
-	
-	sleep(10);
-}
-
-
 
 /*
  * Function    : main
@@ -181,7 +182,6 @@ endit:
  * Descriptions: main executable function
  */
 int main(int argc, char **argv){
-  /*
   return
     lart_start(
       argv,
@@ -189,10 +189,6 @@ int main(int argc, char **argv){
       sysui_handler,
       statusbar_ondraw
     );
-  */
-  
-  test_squirrel();
-  
   return 0;
 } /* End of main */
 

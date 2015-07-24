@@ -45,7 +45,7 @@ echo Compiling Freetype
   -I../../../libs/zlib ^
   -I../../../libs/freetype/builds ^
   -I../../../libs/harfbuzz-ng/src ^
-  -I../../../libs/freetype/include
+  -I../../../libs/freetype/include %LIBAROMA_CINCLUDES%
 
 cd ..\libs
 

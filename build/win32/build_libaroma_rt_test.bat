@@ -17,7 +17,7 @@ echo Compiling Runtime Test
   -I../../../include ^
   -I../../../src ^
   -I../../../libs/squirrel/include ^
-  -I../../../examples/rt_test ^
+  -I../../../examples/rt_test %LIBAROMA_CINCLUDES% ^
   -o ../bin/libaroma_test ^
   ^
   -lm -lpthread -lstdc++ -lrt

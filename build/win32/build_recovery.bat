@@ -21,7 +21,7 @@ echo Compiling TEST
     ../../../examples/recovery/*.c ^
   ^
   -I../../../include ^
-  -I../../../src ^
+  -I../../../src %LIBAROMA_CINCLUDES% ^
   -I../../../examples/recovery ^
   -o ../bin/libaroma_test ^
   ^

@@ -52,6 +52,7 @@ byte lart_application_set_primary_color(word color);
 byte lart_application_set_drawer_overlay(int x, int w);
 void lart_application_set_resource_zip(LIBAROMA_ZIP zip);
 void lart_application_set_process_name(char * name);
+byte lart_application_syncfb();
 
 /* sysui api */
 byte lart_sysui_isactive();

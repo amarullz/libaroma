@@ -70,7 +70,7 @@ LOCAL_CPP_EXTENSION := .cc
 
 ## includes
 LOCAL_C_INCLUDES += \
-  $(LOCAL_PATH)/src \
+  $(LOCAL_PATH)/src
   $(LOCAL_PATH)/src/hb-ucdn
 
 ## cflags

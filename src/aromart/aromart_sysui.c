@@ -246,6 +246,7 @@ static void * _lart_sysui_appthread(void * cookie) {
           else{
             lart_send(app_data->wfd,LART_RES_ERR,0,NULL,0);
           }
+          lart_send(app_data->efd,LART_EV_NEEDSYNC,0,NULL,0);
         }
         break;
       case LART_REQ_CMD_FB_SYNC:

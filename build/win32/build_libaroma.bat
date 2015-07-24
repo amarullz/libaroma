@@ -43,7 +43,7 @@ echo Compiling Libaroma
   -I../../../libs/png ^
   -I../../../libs/jpeg ^
   -I../../../libs/harfbuzz-ng/src ^
-  -I../../../libs/harfbuzz-ng/src/hb-ucdn
+  -I../../../libs/harfbuzz-ng/src/hb-ucdn %LIBAROMA_CINCLUDES%
 
 cd ..
 

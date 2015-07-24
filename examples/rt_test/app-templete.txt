@@ -1,0 +1,163 @@
+/* <aromaembed.h> */
+
+#include <string.h>
+
+#define TYPE_BOOL     'b'
+#define TYPE_INT      'i'
+#define TYPE_STRING   's'
+#define TYPE_FLOAT    'f'
+#define TYPE_DOUBLE   'd'
+#define TYPE_POINTER  'p'
+
+#define RET_BOOL_TRUE  1
+#define RET_BOOL_FALSE 0
+
+/* dynamic variable structure */
+typedef struct{
+  void * data;  /* data pointer */
+  char   type;  /* data type */
+  size_t sz;    /* data size */
+} APP_VAR;
+
+/* function argument structure */
+typedef struct{
+  APP_VAR * argv;     /* function arguments */
+  int       argn;     /* number of arguments */
+  APP_VAR   retval;   /* return value */
+} APP_ARG;
+
+/* function */
+typedef int (*APP_FN)(APP_ARG *);
+
+/* register function */
+typedef struct{
+  APP_FN fn;          /* callback */
+  const char *  name; /* function name */
+} APP_FN_REG;
+
+inline int app_return_string(APP_ARG * v, char * str){
+  if (v&&str){
+    int len = strlen(str);
+    char * out = (char *) malloc(len+1);
+    snprintf(out,len+1,"%s",str);
+    v->retval.data = (void *) out;
+    v->retval.type = TYPE_STRING;
+    v->retval.sz   = len;
+    return 1;
+  }
+  return 0;
+}
+
+inline int app_return_int(APP_ARG * v, int value){
+  if (v){
+    int * out = (int *) malloc(sizeof(int));
+    out[0]=value;
+    v->retval.data = (void *) out;
+    v->retval.type = TYPE_INT;
+    v->retval.sz   = sizeof(int);
+    return 1;
+  }
+  return 0;
+}
+
+inline int app_return_bool(APP_ARG * v, char value){
+  if (v){
+    char * out = (char *) malloc(sizeof(char));
+    out[0]=value?1:0;
+    v->retval.data = (void *) out;
+    v->retval.type = TYPE_BOOL;
+    v->retval.sz   = sizeof(char);
+    return 1;
+  }
+  return 0;
+}
+
+inline int app_return_float(APP_ARG * v, float value){
+  if (v){
+    float * out = (float *) malloc(sizeof(float));
+    out[0]=value;
+    v->retval.data = (void *) out;
+    v->retval.type = TYPE_DOUBLE;
+    v->retval.sz   = sizeof(float);
+    return 1;
+  }
+  return 0;
+}
+
+inline int app_return_double(APP_ARG * v, double value){
+  if (v){
+    double * out = (double *) malloc(sizeof(double));
+    out[0]=value;
+    v->retval.data = (void *) out;
+    v->retval.type = TYPE_FLOAT;
+    v->retval.sz   = sizeof(double);
+    return 1;
+  }
+  return 0;
+}
+
+-------------------------------------------------------------------------------------------
+/* EXAMPLE OF LIBRARY SOURCE */
+<aromaembed.h>
+
+int print_something(APP_ARG * v){
+  if (v->argn==1){
+    if (v->argv[0].type==TYPE_STRING){
+      /* string */
+      char * text = (char *) v->argv[0].data;
+      printf("print_something with argument: %s",text);
+    }
+  }
+  return 0; /* no return */
+}
+
+int get_ok(APP_ARG * v){
+  return app_return_string(v, "OK");
+}
+
+
+int app_start(){
+  return 1; /* have register */
+}
+
+static APP_FN_REG _app_func[]={
+  { print_something, "print" },
+  { get_ok, "get_ok" },
+  { 0, 0 } /* end of app regs */
+};
+
+APP_FN_REG * app_reg(){
+  return _app_func;
+}
+
+-------------------------------------------------------------------------------------------
+/* nut/squirrel test */
+if (Application.LoadLibrary("main.so","MainClass")){
+  MainClass::print("Hello World");
+  local retget = MainClass::get_ok();
+  MainClass::print(retget);
+}
+
+
+
+int alloc_data(APP_ARG * v){
+  TEST_STRUCT * data_return = (TEST_STRUCT *) malloc(sizeof(TEST_STRUCT));
+  return app_return_pointer(v, data_return);
+}
+
+int free_data(APP_ARG * v){
+  if (v->argn==1){
+    if (v->argv[0].type==TYPE_POINTER){
+      /* TEST_STRUCT ( argv[0]->sz is 0 ) */
+      TEST_STRUCT * data = (TEST_STRUCT *) v->argv[0].data;
+      free(data);
+    }
+  }
+}
+
+
+if (Application.LoadLibrary("memory.so","MallocTest")){
+  local data_pointer=MallocTest.alloc_data();
+  ... do something ...
+  MallocTest.free_data(data_pointer);
+}
