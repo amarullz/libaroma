@@ -68,7 +68,6 @@
 #define LIBAROMA_PLATFORM_HAS_SHMEM  1
 #define LIBAROMA_PLATFORM_HAS_MMAP   1
 #define LIBAROMA_PLATFORM_HAS_FD     1
-#define LIBAROMA_CONFIG_OS "linux/gnu"
 
 /*
  * common platform wrapper
