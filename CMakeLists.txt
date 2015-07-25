@@ -57,7 +57,8 @@ set(AROMA_CFLAGS "${AROMA_CFLAGS} -DANDROID=1 -D__ANDROID__")
 # ARM cflags
 if("${ARCHITECTURE}" STREQUAL "arm")
 	# NEON
-	set(AROMA_CFLAGS "${AROMA_CFLAGS} -mvectorize-with-neon-quad -mfloat-abi=hard -mfpu=neon -D__ARM_HAVE_NEON")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mvectorize-with-neon-quad -mfloat-abi=softfp -mfpu=neon -D__ARM_HAVE_NEON")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mvectorize-with-neon-quad -mfloat-abi=softfp -mfpu=neon -D__ARM_HAVE_NEON")
 endif()
 
 # sources

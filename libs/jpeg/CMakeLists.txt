@@ -1,9 +1,9 @@
 # project config
 cmake_minimum_required(VERSION 2.8)
-project(jpeg)
+project(jpeg C ASM)
 
-# jpeg
-add_library(jpeg ${CMAKE_LINK_TYPE} 
+# sources
+set(JPEG_SRCS
 	jcapimin.c
 	jcapistd.c
 	jccoefct.c
@@ -49,21 +49,34 @@ add_library(jpeg ${CMAKE_LINK_TYPE}
 	jquant2.c
 	jutils.c
 	jmemmgr.c
-	 
-	 
-	jsimd_arm_neon.S
-	jsimd_neon.c
 	jmem-android.c
 )
 
 # cflags
-set_target_properties(jpeg PROPERTIES COMPILE_FLAGS "\
+set(JPEG_CFLAGS "\
 	-save-temps \
 	-fdata-sections -ffunction-sections -Wl,--gc-sections \
 	-D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG \
 	-fPIC -DPIC -Wl,-s -Werror \
 \
 	-DAVOID_TABLES \
-	-DNV_ARM_NEON \
 	-DANDROID_TILE_BASED_DECODE \
 ")
+
+# ARM
+if("${ARCHITECTURE}" STREQUAL "arm")
+set(JPEG_SRCS ${JPEG_SRCS}
+	jsimd_arm_neon.S
+	jsimd_neon.c
+)
+
+set(JPEG_CFLAGS "${JPEG_CFLAGS} \
+	-DNV_ARM_NEON \
+")
+endif()
+
+# jpeg
+add_library(jpeg ${CMAKE_LINK_TYPE} ${JPEG_SRCS})
+
+# cflags
+set_target_properties(jpeg PROPERTIES COMPILE_FLAGS "${JPEG_CFLAGS}")

@@ -1,9 +1,9 @@
 # project config
 cmake_minimum_required(VERSION 2.8)
-project(png)
+project(png C ASM)
 
-# png
-add_library(png ${CMAKE_LINK_TYPE}
+# sources
+set(PNG_SRCS
 	png.c
 	pngerror.c
 	pngget.c
@@ -19,19 +19,34 @@ add_library(png ${CMAKE_LINK_TYPE}
 	pngwrite.c
 	pngwtran.c
 	pngwutil.c
-
-	arm/arm_init.c
-	arm/filter_neon.S
-	arm/filter_neon_intrinsics.c
 )
 
 # cflags
-set_target_properties(png PROPERTIES COMPILE_FLAGS "\
+set(PNG_CFLAGS "\
 	-save-temps \
 	-fdata-sections -ffunction-sections -Wl,--gc-sections \
 	-D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG \
 	-fPIC -DPIC -Wl,-s -Werror \
 ")
+
+# ARM
+if("${ARCHITECTURE}" STREQUAL "arm")
+set(PNG_SRCS ${PNG_SRCS}
+	arm/arm_init.c
+	arm/filter_neon.S
+	arm/filter_neon_intrinsics.c
+)
+
+set(PNG_CFLAGS "${PNG_CFLAGS} \
+	-DPNG_ARM_NEON_OPT=2 \
+")
+endif()
+
+# png
+add_library(png ${CMAKE_LINK_TYPE} ${PNG_SRCS})
+
+# cflags
+set_target_properties(png PROPERTIES COMPILE_FLAGS "${PNG_CFLAGS}")
 
 # dependencies
 add_dependencies(png z)
