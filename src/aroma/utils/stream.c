@@ -49,7 +49,7 @@ void libaroma_stream_set_uri_callback(
  */
 LIBAROMA_STREAMP libaroma_stream_file(
     char * path) {
-#ifdef LIBAROMA_SYSCAL_HAVE_MMAP
+#ifdef LIBAROMA_PLATFORM_HAS_MMAP
   if (!path) {
     ALOGW("libaroma_stream_file path is invalid");
     return NULL;
@@ -133,7 +133,7 @@ done:
  */
 LIBAROMA_STREAMP libaroma_stream_shmem(
     char * memname) {
-#ifdef LIBAROMA_SYSCAL_HAVE_SHMEM
+#ifdef LIBAROMA_PLATFORM_HAS_SHMEM
   if (!memname) {
     ALOGW("libaroma_stream_shmem memname is invalid");
     return 0;
@@ -314,7 +314,7 @@ byte libaroma_stream_close(
     return 0;
   }
   if (a->ismmap) {
-#ifdef LIBAROMA_SYSCAL_HAVE_MMAP
+#ifdef LIBAROMA_PLATFORM_HAS_MMAP
     /* File */
     munmap(a->data, a->size);
 #endif
@@ -355,7 +355,7 @@ char * libaroma_stream_to_string(
 LIBAROMA_SHMEMP libaroma_shmem(
     const char * name,
     int sz) {
-#ifdef LIBAROMA_SYSCAL_HAVE_SHMEM
+#ifdef LIBAROMA_PLATFORM_HAS_SHMEM
   /* Copy Name */
   char nm[LIBAROMA_STREAM_URI_LENGTH];
   if (name[0]=='@'){
@@ -430,7 +430,7 @@ LIBAROMA_SHMEMP libaroma_shmem(
 byte libaroma_shmem_close(
     LIBAROMA_SHMEMP a,
     byte del) {
-#ifdef LIBAROMA_SYSCAL_HAVE_SHMEM
+#ifdef LIBAROMA_PLATFORM_HAS_SHMEM
   if (!a) {
     ALOGW("libaroma_shmem_close LIBAROMA_SHMEMP not valid");
     return 0;

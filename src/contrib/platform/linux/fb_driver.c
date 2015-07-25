@@ -476,12 +476,12 @@ void LINUXFBDR_dump(LINUXFBDR_INTERNALP mi) {
 } /* End of LINUXFBDR_dump */
 
 /*
- * Function    : __linux_fb_driver_init
+ * Function    : libaroma_fb_driver_init
  * Return Value: byte
  * Descriptions: init function for libaroma fb
  */
-byte __linux_fb_driver_init(LIBAROMA_FBP me) {
+byte libaroma_fb_driver_init(LIBAROMA_FBP me) {
   return LINUXFBDR_init(me);
-} /* End of __linux_fb_driver_init */
+} /* End of libaroma_fb_driver_init */
 
 #endif /* __libaroma_linux_fb_driver_c__ */

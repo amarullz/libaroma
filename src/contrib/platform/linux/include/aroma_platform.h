@@ -14,8 +14,8 @@
  * limitations under the License.
  *______________________________________________________________________________
  *
- * Filename    : linux_syscall.h
- * Description : linux syscall headers
+ * Filename    : aroma_platform.h
+ * Description : platform header
  *
  * + This is part of libaroma, an embedded ui toolkit.
  * + 06/04/15 - Author(s): Ahmad Amarullah
@@ -24,8 +24,8 @@
 #ifndef __libaroma_aroma_internal_h__
   #error "Include <aroma_internal.h> instead."
 #endif
-#ifndef __libaroma_linux_syscall_h__
-#define __libaroma_linux_syscall_h__
+#ifndef __libaroma_platform_h__
+#define __libaroma_platform_h__
 
 #include <pthread.h>    /* pthread_ */
 #include <signal.h>     /* pthread_kill */
@@ -35,15 +35,43 @@
 #include <unistd.h>     /* open, close, unlink, usleep */
 #include <fcntl.h>
 
-/*
- * syscall flags
- */
-#define LIBAROMA_SYSCAL_HAVE_SHMEM  1
-#define LIBAROMA_SYSCAL_HAVE_MMAP   1
-#define LIBAROMA_SYSCAL_HAVE_FD     1
+/* arm neon engine */
+#ifdef __ARM_HAVE_NEON
+  #include "contrib/arm_neon/arm_neon.h"
+#endif
+
+/* X86 32bit */
+#if defined(__i386) || defined(_M_IX86)
+  #include "contrib/x86/i386.h"
+  #include "contrib/sse/sse_neon.h"
+#endif
+
+/* Android */
+#if ANDROID
+  #ifdef LIBAROMA_CONFIG_SHMEM_PREFIX
+    #undef LIBAROMA_CONFIG_SHMEM_PREFIX
+  #endif
+  /* android wrapper for shm_* */
+  #define LIBAROMA_CONFIG_SHMEM_PREFIX "/tmp/.libaromashm-"
+  #define shm_open open
+  #define shm_unlink unlink
+
+#define LIBAROMA_CONFIG_OS "linux/android"
+#else
+
+#define LIBAROMA_CONFIG_OS "linux/gnu"
+#endif
 
 /*
- * common syscall wrapper
+ * platform flags
+ */
+#define LIBAROMA_PLATFORM_HAS_SHMEM  1
+#define LIBAROMA_PLATFORM_HAS_MMAP   1
+#define LIBAROMA_PLATFORM_HAS_FD     1
+#define LIBAROMA_CONFIG_OS "linux/gnu"
+
+/*
+ * common platform wrapper
  */
 #define libaroma_unlink(filename) unlink(filename)
 #define libaroma_sleep(ms) usleep(ms*1000)
@@ -114,5 +142,5 @@ int libaroma_filesize(const char * filename);
 int libaroma_filesize_fd(int fd);
 byte libaroma_file_exists(const char * filename);
 
-#endif /* __libaroma_linux_syscall_h__ */
+#endif /* __libaroma_platform_h__ */
 

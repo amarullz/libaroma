@@ -305,7 +305,7 @@ byte QNXGF_post(
 /*
  * Function : libaroma init fb driver
  */
-byte qnx_fb_driver_init(LIBAROMA_FBP me) {
+byte libaroma_fb_driver_init(LIBAROMA_FBP me) {
   return QNXGF_init(me);
 }
 

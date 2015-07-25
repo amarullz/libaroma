@@ -40,61 +40,8 @@
 #define LIBAROMA_CONFIG_YEAR          "2011-2015"
 #define LIBAROMA_CONFIG_AUTHOR        "Ahmad Amarullah"
 
-/*
- * Driver for QNX/NTO - Graphic Frameworks
- */
-#if defined(__QNXNTO__)
-  #ifndef __ISQNX__
-    #define __ISQNX__ 1
-  #endif
-#endif /* defined(__QNXNTO__) */
-#ifdef __ISQNX__
-  #ifndef LIBAROMA_FB_INIT_FUNCTION
-    #define LIBAROMA_FB_INIT_FUNCTION \
-      qnx_fb_driver_init
-  #endif /* LIBAROMA_FB_INIT_FUNCTION */
-  #ifndef LIBAROMA_HID_INIT_FUNCTION
-    #define LIBAROMA_HID_INIT_FUNCTION \
-      qnx_hid_driver_init
-  #endif /* LIBAROMA_HID_INIT_FUNCTION */
-  #ifndef LIBAROMA_CONFIG_OS
-    #define LIBAROMA_CONFIG_OS "qnx/nto"
-  #endif /* LIBAROMA_CONFIG_OS */
-#endif /* __ISQNX__ */
-
-/*
- * Driver for Linux
- */
-#ifdef __linux__
-  /* Driver for Raspberry PI */
-  #ifdef __ISRPI__
-    #ifndef LIBAROMA_FB_INIT_FUNCTION
-      #define LIBAROMA_FB_INIT_FUNCTION \
-        __linuxrpi_fb_driver_init
-    #endif /* LIBAROMA_FB_INIT_FUNCTION */
-    #ifndef LIBAROMA_CONFIG_OS
-      #define LIBAROMA_CONFIG_OS "linux/rpi"
-    #endif /* LIBAROMA_CONFIG_OS */
-  #endif /* __ISRPI__ */
-  
-  #ifndef LIBAROMA_FB_INIT_FUNCTION
-    #define LIBAROMA_FB_INIT_FUNCTION \
-      __linux_fb_driver_init
-  #endif /* LIBAROMA_FB_INIT_FUNCTION */
-  
-  #ifndef LIBAROMA_HID_INIT_FUNCTION
-    #define LIBAROMA_HID_INIT_FUNCTION \
-      __linux_hid_driver_init
-  #endif /* LIBAROMA_HID_INIT_FUNCTION */
-  
-  #ifndef LIBAROMA_CONFIG_OS
-    #ifdef __ANDROID__
-      #define LIBAROMA_CONFIG_OS "linux/android"
-    #else
-      #define LIBAROMA_CONFIG_OS "linux/gnu"
-    #endif /* __ANDROID__ */
-  #endif /* LIBAROMA_CONFIG_OS */
-#endif /* __linux__ */
+#define LIBAROMA_FB_INIT_FUNCTION libaroma_fb_driver_init
+#define LIBAROMA_HID_INIT_FUNCTION libaroma_hid_driver_init
 
 
 #endif /* __libaroma_config_h__ */

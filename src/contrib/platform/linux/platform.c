@@ -14,15 +14,15 @@
  * limitations under the License.
  *______________________________________________________________________________
  *
- * Filename    : linux_syscall.c
+ * Filename    : platform.c
  * Description : linux system specific source
  *
  * + This is part of libaroma, an embedded ui toolkit.
  * + 06/04/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_syscall_c__
-#define __libaroma_syscall_c__
+#ifndef __libaroma_platform_c__
+#define __libaroma_platform
 #include <aroma_internal.h>
 
 #include <sys/stat.h>
@@ -71,5 +71,5 @@ byte libaroma_file_exists(const char * filename){
   return 1;
 }
 
-#endif /* __libaroma_syscall_c__ */
+#endif /* __libaroma_platform */
 

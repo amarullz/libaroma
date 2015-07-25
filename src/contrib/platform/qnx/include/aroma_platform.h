@@ -14,8 +14,8 @@
  * limitations under the License.
  *______________________________________________________________________________
  *
- * Filename    : linux_syscall.h
- * Description : linux syscall headers
+ * Filename    : aroma_platform.h
+ * Description : qnx platform headers
  *
  * + This is part of libaroma, an embedded ui toolkit.
  * + 06/04/15 - Author(s): Ahmad Amarullah
@@ -24,8 +24,8 @@
 #ifndef __libaroma_aroma_internal_h__
   #error "Include <aroma_internal.h> instead."
 #endif
-#ifndef __libaroma_linux_syscall_h__
-#define __libaroma_linux_syscall_h__
+#ifndef __libaroma_platform_h__
+#define __libaroma_platform_h__
 
 #include <pthread.h>    /* pthread_ */
 #include <signal.h>     /* pthread_kill */
@@ -35,15 +35,21 @@
 #include <unistd.h>     /* open, close, unlink, usleep */
 #include <fcntl.h>
 
-/*
- * syscall flags
- */
-#define LIBAROMA_SYSCAL_HAVE_SHMEM  1
-#define LIBAROMA_SYSCAL_HAVE_MMAP   1
-#define LIBAROMA_SYSCAL_HAVE_FD     1
+#if defined(__QNXNTO__)
+  #ifndef __ISQNX__
+    #define __ISQNX__ 1
+  #endif
+#endif /* defined(__QNXNTO__) */
 
 /*
- * common syscall wrapper
+ * platform flags
+ */
+#define LIBAROMA_PLATFORM_HAS_SHMEM  1
+#define LIBAROMA_PLATFORM_HAS_MMAP   1
+#define LIBAROMA_PLATFORM_HAS_FD     1
+
+/*
+ * common platform wrapper
  */
 #define libaroma_unlink(filename) unlink(filename)
 #define libaroma_sleep(ms) usleep(ms*1000)
@@ -114,5 +120,5 @@ int libaroma_filesize(const char * filename);
 int libaroma_filesize_fd(int fd);
 byte libaroma_file_exists(const char * filename);
 
-#endif /* __libaroma_linux_syscall_h__ */
+#endif /* __libaroma_platform_h__ */
 

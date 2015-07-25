@@ -63,7 +63,7 @@ byte libaroma_zip_extract(
     LIBAROMA_ZIP zip,
     const char * zpath,
     const char * dest) {
-#ifdef LIBAROMA_SYSCAL_HAVE_FD
+#ifdef LIBAROMA_PLATFORM_HAS_FD
   const ZipEntry * zdata = mzFindZipEntry((ZipArchive *) zip, zpath);
   if (zdata == NULL) {
     ALOGW("libaroma_zip_extract zdata=NULL (%s)", zpath);

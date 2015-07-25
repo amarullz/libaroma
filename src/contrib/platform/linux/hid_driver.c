@@ -581,7 +581,7 @@ byte LINUXHIDRV_getinput(
 /*
  * function : libaroma init hid driver
  */
-byte __linux_hid_driver_init(LIBAROMA_HIDP me) {
+byte libaroma_hid_driver_init(LIBAROMA_HIDP me) {
   return LINUXHIDRV_init(me);
 }
 

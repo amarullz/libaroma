@@ -172,7 +172,7 @@ LIBAROMA_CANVASP libaroma_canvas_new_ex(
     const char * shmemname){
   LIBAROMA_CANVASP c;
 
-#ifdef LIBAROMA_SYSCAL_HAVE_SHMEM
+#ifdef LIBAROMA_PLATFORM_HAS_SHMEM
   if (shmemname != NULL) {
     /* vars */
     char nm[LIBAROMA_STREAM_URI_LENGTH];
@@ -491,7 +491,7 @@ void libaroma_canvas_free_ex1(
     goto freec;
   }
   else if (cv->flags & LIBAROMA_CANVAS_SHARED) {
-#ifdef LIBAROMA_SYSCAL_HAVE_SHMEM
+#ifdef LIBAROMA_PLATFORM_HAS_SHMEM
     LIBAROMA_CANVAS_SHMEMP csh_mem = 
       (LIBAROMA_CANVAS_SHMEMP) (((bytep) cv) + sizeof(LIBAROMA_CANVAS));
     munmap(csh_mem->mmap, csh_mem->sz);

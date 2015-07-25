@@ -139,7 +139,7 @@ byte qnxhid_init(LIBAROMA_HIDP me) {
 }
 
 /* driver init */
-byte qnx_hid_driver_init(LIBAROMA_HIDP me) {
+byte libaroma_hid_driver_init(LIBAROMA_HIDP me) {
   return qnxhid_init(me);
 }
 
