@@ -13,6 +13,9 @@ if("${CMAKE_LINK_TYPE}" STREQUAL "STATIC")
 	set(CMAKE_SKIP_RPATH YES)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static")
+else()
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 endif()
 
 # release&debug flags
