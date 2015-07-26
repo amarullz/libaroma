@@ -4,13 +4,20 @@ cmake_minimum_required(VERSION 2.8)
 project(libaroma)
 set(CMAKE_BUILD_TYPE Release)
 
+# determine architecture
+execute_process( COMMAND ${CMAKE_C_COMPILER} -dumpmachine COMMAND cut -d- -f1 COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE )
+message("Architecture:\t ${ARCHITECTURE}")
+
 # default values
 if(NOT DEFINED CMAKE_LINK_TYPE)
 	set(CMAKE_LINK_TYPE STATIC)
 endif()
+
 if(NOT DEFINED LIBAROMA_PLATFORM_NAME)
 	set(LIBAROMA_PLATFORM_NAME "linux")
 endif()
+message("Platform:\t ${LIBAROMA_PLATFORM_NAME}")
+
 if("${ARCHITECTURE}" STREQUAL "arm")
 	if(NOT DEFINED NEON)
 		set(NEON true)
@@ -39,11 +46,6 @@ set(CMAKE_C_FLAGS_RELEASE "-O3 -ftree-vectorize -fprefetch-loop-arrays -funsafe-
 set(CMAKE_C_FLAGS_DEBUG "-ggdb")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
-
-# get architecture
-execute_process( COMMAND ${CMAKE_C_COMPILER} -dumpmachine COMMAND cut -d- -f1 COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE )
-message("Architecture:\t ${ARCHITECTURE}")
-message("Platform:\t ${LIBAROMA_PLATFORM_NAME}")
 
 # detect NDK
 if(ANDROID_NDK)
