@@ -42,7 +42,6 @@
 
 /* X86 32bit */
 #if defined(__i386) || defined(_M_IX86)
-  #include "contrib/x86/i386.h"
   #include "contrib/sse/sse_neon.h"
 #endif
 
