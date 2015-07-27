@@ -26,7 +26,6 @@
 
 /* include fb_driver.h */
 #include "fb_driver.h"
-#include "fb_colorspace/fb_32bit.c" /* 32 bit */
 
 /*
  * Function    : SDLFBDR_start_post
@@ -54,6 +53,37 @@ byte SDLFBDR_end_post(LIBAROMA_FBP me){
   SDLFBDR_INTERNALP mi = (SDLFBDR_INTERNALP) me->internal;
   SDLFBDR_flush(me);
   libaroma_mutex_unlock(mi->mutex);
+  return 1;
+}
+
+/*
+ * Function    : SDLFBDR_post
+ * Return Value: byte
+ * Descriptions: post data
+ */
+byte SDLFBDR_post(
+  LIBAROMA_FBP me, wordp __restrict src,
+  int dx, int dy, int dw, int dh,
+  int sx, int sy, int sw, int sh
+  ){
+  if (me == NULL) {
+    return 0;
+  }
+  SDLFBDR_INTERNALP mi = (SDLFBDR_INTERNALP) me->internal;
+  
+  int sstride = (sw - dw) * 2;
+  int dstride = (mi->line - (dw * mi->pixsz));
+  wordp copy_dst =
+    (wordp) (((bytep) mi->buffer)+(mi->line * dy)+(dx * mi->pixsz));
+  wordp copy_src = 
+    (wordp) (src + (sw * sy) + sx);
+  libaroma_blt_align16(
+    copy_dst,
+    copy_src,
+    dw, dh,
+    dstride,
+    sstride
+  );
   return 1;
 }
 
@@ -87,9 +117,9 @@ byte SDLFBDR_init(LIBAROMA_FBP me) {
   /* init mutex & cond */
   libaroma_mutex_init(mi->mutex);
 
-  mi->window = SDL_SetVideoMode(300, 600, 32, SDL_HWSURFACE);
+  mi->window = SDL_SetVideoMode(360, 600, 16, SDL_HWSURFACE);
   if(!mi->window)
-    mi->window = SDL_SetVideoMode (300, 600, 32, SDL_SWSURFACE);
+    mi->window = SDL_SetVideoMode (360, 600, 16, SDL_SWSURFACE);
   if(!mi->window) {
     ALOGE("SDLFBDR could not create SDL surface");
     goto error;
@@ -110,8 +140,11 @@ byte SDLFBDR_init(LIBAROMA_FBP me) {
   /* swap buffer now */
   SDLFBDR_flush(me);
  
-  /* init colorspace */
-  SDLFBDR_init_32bit(me);
+  mi->stride = mi->line - (me->w * mi->pixsz);
+  me->start_post  = &SDLFBDR_start_post;
+  me->end_post    = &SDLFBDR_end_post;
+  me->post        = &SDLFBDR_post;
+  me->snapshoot   = NULL;
   
   /* ok */
   goto ok;

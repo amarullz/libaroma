@@ -82,7 +82,7 @@ if(NOT DEFINED CMAKE_LINK_TYPE)
 endif()
 
 set( CMAKE_LINK_TYPE "${CMAKE_LINK_TYPE}" CACHE STRING "Link Type" FORCE )
-set_property( CACHE CMAKE_LINK_TYPE PROPERTY STRINGS "STATIC;DYNAMIC" )
+set_property( CACHE CMAKE_LINK_TYPE PROPERTY STRINGS "STATIC;SHARED" )
 
 if("${ARCHITECTURE}" STREQUAL "arm")
 	if(NOT DEFINED NEON)
@@ -236,19 +236,13 @@ if("${LIBAROMA_PLATFORM_NAME}" STREQUAL "sdl")
 endif()
 
 if(AROMA_OPENMP)
-	# we don't have a static version of this
-	if(NOT DEFINED ANDROID_NDK)
-	  target_link_libraries(aroma rt)
-	endif()
-
-	# if("${ARCHITECTURE}" STREQUAL "x86_64")
-		target_link_libraries(aroma gomp)
-	# endif()
+  target_link_libraries(aroma gomp)
 endif()
 
 if(NOT DEFINED ANDROID_NDK)
 	# NDK uses a integrated pthreads API
 	target_link_libraries(aroma pthread)
+	target_link_libraries(aroma rt)
 endif()
 
 # subdirs

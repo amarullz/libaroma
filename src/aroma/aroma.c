@@ -70,12 +70,13 @@ static char _libaroma_debug_tag[256]="LIBAROMA()";
  * Descriptions: set default runtime configuration
  */
 void _libaroma_config_default() {
+  /*
   if (LIBAROMA_FB_SHMEM_NAME){
     snprintf(_libaroma_config.fb_shm_name,256,"%s",LIBAROMA_FB_SHMEM_NAME);
   }
-  else{
+  else{*/
     _libaroma_config.fb_shm_name[0]=0;
-  }
+  /*}*/
   _libaroma_debug_fp=stdout;
   _libaroma_config.multicore_init_num = 8; /* activate core */
   _libaroma_config.snapshoot_fb = 0; /* snapshoot after graph init */

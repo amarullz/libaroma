@@ -94,14 +94,12 @@ void LINUXHIDRV_release(
   if (me == NULL) {
     return;
   }
-  /* get internal data */
-  LINUXHIDRV_INTERNALP mi = (LINUXHIDRV_INTERNALP)
-                      me->internal;
-  
   /* free internal data */
   free(me->internal);
   me->internal = NULL;
 }
+
+static byte __sdl_mouse_down = 0;
 
 /*
  * function : get input callback
@@ -110,7 +108,7 @@ byte LINUXHIDRV_getinput(
     LIBAROMA_HIDP me,
     LIBAROMA_HID_EVENTP dest_ev) {
   /* get internal data */
-  LINUXHIDRV_INTERNALP mi = (LINUXHIDRV_INTERNALP) me->internal;
+  // LINUXHIDRV_INTERNALP mi = (LINUXHIDRV_INTERNALP) me->internal;
   SDL_Event event;
 
   /* polling loop */
@@ -129,15 +127,18 @@ byte LINUXHIDRV_getinput(
           dest_ev->y      = event.button.y;
           dest_ev->state  = (event.type==SDL_MOUSEBUTTONDOWN?
             LIBAROMA_HID_EV_STATE_DOWN:LIBAROMA_HID_EV_STATE_UP);
+          __sdl_mouse_down = dest_ev->state;
           return LIBAROMA_HID_EV_RET_TOUCH;
 
         case SDL_MOUSEMOTION:
-          dest_ev->type   = LIBAROMA_HID_EV_TYPE_TOUCH;
-          dest_ev->key    = 0;
-          dest_ev->x      = event.motion.x;
-          dest_ev->y      = event.motion.y;
-          dest_ev->state  = LIBAROMA_HID_EV_STATE_MOVE;
-          return LIBAROMA_HID_EV_RET_TOUCH;
+          if (__sdl_mouse_down==LIBAROMA_HID_EV_STATE_DOWN){
+            dest_ev->type   = LIBAROMA_HID_EV_TYPE_TOUCH;
+            dest_ev->key    = 0;
+            dest_ev->x      = event.motion.x;
+            dest_ev->y      = event.motion.y;
+            dest_ev->state  = LIBAROMA_HID_EV_STATE_MOVE;
+            return LIBAROMA_HID_EV_RET_TOUCH;
+          }
       }
     }
   }
