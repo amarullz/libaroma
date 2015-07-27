@@ -204,10 +204,15 @@ add_subdirectory(libs/png)
 add_subdirectory(libs/jpeg)
 add_subdirectory(libs/squirrel)
 
-# example
-file(GLOB RECOVERY_SRCS examples/recovery/*.c)
-add_executable(recovery ${RECOVERY_SRCS})
-include_directories(
-	${PROJECT_SOURCE_DIR}/examples/recovery
-)
-target_link_libraries(recovery aroma)
+# aromart
+file(GLOB AROMART_SRCS src/aromart/*.c)
+add_library(aromart ${CMAKE_LINK_TYPE} ${AROMART_SRCS})
+target_link_libraries(aromart aroma)
+
+# aromart_test
+file(GLOB AROMART_TEST_SRCS examples/rt_test/*.c)
+add_executable(aromart_test ${AROMART_TEST_SRCS})
+target_link_libraries(aromart_test aromart)
+
+message("CFLAGS:\t\t ${CMAKE_C_FLAGS}")
+message("CXXFLAGS:\t ${CMAKE_CXX_FLAGS}")
