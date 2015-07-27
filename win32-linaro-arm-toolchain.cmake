@@ -9,7 +9,6 @@ SET(CMAKE_INSTALL_PREFIX D:/Project/___libaroma_cmake/out)
 SET(CMAKE_C_COMPILER   D:/DevelTools/linaronew/bin/arm-linux-gnueabihf-gcc.exe)
 SET(CMAKE_CXX_COMPILER D:/DevelTools/linaronew/bin/arm-linux-gnueabihf-g++.exe)
 # SET(ARCHITECTURE arm)
-SET(WITH_OPENMP true)
 SET(ANDROID true)
 
 # where is the target environment 
