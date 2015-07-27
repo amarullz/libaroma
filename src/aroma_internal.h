@@ -36,9 +36,9 @@
 #include <limits.h>
 #include <ctype.h>
 
-/* debug, syscall & fallback header */
+/* debug, platform & fallback header */
 #include "aroma/debug/debug.h"
-#include "syscall.h"
+#include <aroma_platform.h>
 #include "fallbacks.h"
 #include "aroma/graph/engine/engine_internal.h"
 
