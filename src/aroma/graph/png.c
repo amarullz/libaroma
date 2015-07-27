@@ -88,7 +88,7 @@ LIBAROMA_CANVASP libaroma_png_ex(
   /* png structures */
   png_structp png_ptr = NULL;
   png_infop info_ptr  = NULL;
-  LIBAROMA_CANVASP cv = NULL;
+  volatile LIBAROMA_CANVASP cv = NULL;
   byte header[8];
   
   /* headers */
@@ -482,10 +482,10 @@ byte libaroma_png_save(
     c = libaroma_fb()->canvas;
   }
   
-  int result = 0;
+  volatile int result = 0;
   png_structp png_ptr = NULL;
   volatile png_infop info_ptr = NULL;
-  png_bytep row = NULL;
+  volatile png_bytep row = NULL;
   
   /* new file */
   FILE * fp = fopen(filename, "wb");

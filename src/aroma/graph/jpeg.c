@@ -140,7 +140,7 @@ LIBAROMA_CANVASP libaroma_jpeg_ex(
     byte freeStream,
     byte hicolor) {
 
-  LIBAROMA_CANVASP cv = NULL;
+  volatile LIBAROMA_CANVASP cv = NULL;
 
   if (!stream) {
     return NULL;

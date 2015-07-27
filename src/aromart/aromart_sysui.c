@@ -265,8 +265,9 @@ static void * _lart_sysui_appthread(void * cookie) {
               0, _lart_sysui->sb_canvas->h, 0, 0, 
               app_data->cfb->w, app_data->cfb->h
             );
-            libaroma_fb_end_post();
+            /* don't wait for vsync to send respond message */
             lart_send(app_data->wfd,LART_RES_OK,1,NULL,0);
+            libaroma_fb_end_post();
           }
           else{
             lart_send(app_data->wfd,LART_RES_ERR,0,NULL,0);

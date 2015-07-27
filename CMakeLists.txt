@@ -1,22 +1,29 @@
 cmake_minimum_required(VERSION 2.8)
 
-# project config
+# Project Config
 project(libaroma)
 set(CMAKE_BUILD_TYPE Release)
 
-# determine architecture
-execute_process( COMMAND ${CMAKE_C_COMPILER} -dumpmachine COMMAND cut -d- -f1 COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE )
-message("Architecture:\t ${ARCHITECTURE}")
+execute_process( COMMAND ${CMAKE_C_COMPILER} -dumpmachine OUTPUT_VARIABLE DUMP_MACHINE OUTPUT_STRIP_TRAILING_WHITESPACE)
+message("Dump Machine       : ${DUMP_MACHINE}")
 
-# default values
+# Check Architecture
+if(NOT DEFINED ARCHITECTURE)
+  string(FIND ${DUMP_MACHINE} "-" DUMP_MACHINE_STRIP)
+  string(SUBSTRING ${DUMP_MACHINE} 0 ${DUMP_MACHINE_STRIP} ARCHITECTURE)
+endif()
+message("Architecture       : ${ARCHITECTURE}")
+
+# Check Platform
+if(NOT DEFINED LIBAROMA_PLATFORM_NAME)  
+	set(LIBAROMA_PLATFORM_NAME "linux")
+endif()
+message("Platform           : ${LIBAROMA_PLATFORM_NAME}")
+
+# Default link values
 if(NOT DEFINED CMAKE_LINK_TYPE)
 	set(CMAKE_LINK_TYPE STATIC)
 endif()
-
-if(NOT DEFINED LIBAROMA_PLATFORM_NAME)
-	set(LIBAROMA_PLATFORM_NAME "linux")
-endif()
-message("Platform:\t ${LIBAROMA_PLATFORM_NAME}")
 
 if("${ARCHITECTURE}" STREQUAL "arm")
 	if(NOT DEFINED NEON)
@@ -25,18 +32,18 @@ if("${ARCHITECTURE}" STREQUAL "arm")
 	if(NOT DEFINED VFPV3)
 		set(VFPV3 true)
 	endif()
-	message("NEON:\t\t ${NEON}")
-	message("VFPV3:\t\t ${VFPV3}")
+  message("NEON               : ${NEON}")
+  message("VFPV3              : ${VFPV3}")
 endif()
 
 # linkage
 if("${CMAKE_LINK_TYPE}" STREQUAL "STATIC")
-	message("Linkage:\t static")
+  message("Linkage            : STATIC")
 	set(CMAKE_SKIP_RPATH YES)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static")
 else()
-	message("Linkage:\t shared")
+	message("Linkage            : SHARED")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 endif()
@@ -49,13 +56,13 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
 
 # detect NDK
 if(ANDROID_NDK)
-	message("Toolchain:\t ${ANDROID_NDK}")
+  message("Toolchain          : ${ANDROID_NDK}")
 else()
-	message("Toolchain:\t ${CMAKE_C_COMPILER}")
+  message("Toolchain          : ${CMAKE_C_COMPILER}")
 endif()
 
 # TMP
-set(LIBAROMA_CONFIG_DEBUG "3")
+set(LIBAROMA_CONFIG_DEBUG "5")
 set(LIBAROMA_CONFIG_DEBUG_FILE "0")
 set(LIBAROMA_CONFIG_DEBUG_MEMORY "0")
 set(LIBAROMA_CONFIG_COMPILER_MESSAGE "1")
@@ -74,19 +81,17 @@ set(AROMA_CFLAGS "${AROMA_CFLAGS} -DLIBAROMA_CONFIG_DEBUG_TRACE=0")
 
 # openmp cflags
 # TODO: use custom NDK with (static) openmp support
-if((NOT DEFINED ANDROID_NDK) AND ("${CMAKE_LINK_TYPE}" STREQUAL SHARED))
-	message("OpenMP:\t\t enabled")
+if (((NOT DEFINED ANDROID_NDK) AND ("${CMAKE_LINK_TYPE}" STREQUAL SHARED)) OR (DEFINED WITH_OPENMP))
+	message("OpenMP Support     : ENABLED")
 	set(AROMA_CFLAGS "${AROMA_CFLAGS} -DLIBAROMA_CONFIG_OPENMP=1")
-
 	if("${ARCHITECTURE}" STREQUAL "arm")
 		set(AROMA_CFLAGS "${AROMA_CFLAGS} -fopenmp")
 	elseif("${ARCHITECTURE}" STREQUAL "x86_64")
 		set(AROMA_CFLAGS "${AROMA_CFLAGS} -openmp")
 	endif()
-
 	set(AROMA_OPENMP true)
 else()
-	message("OpenMP:\t\t disabled")
+	message("OpenMP Support     : DISABLED")
 	set(AROMA_OPENMP false)
 endif()
 
@@ -100,19 +105,18 @@ set(AROMA_CFLAGS "${AROMA_CFLAGS} -DLIBAROMA_CONFIG_SHMEM_PREFIX=\\\"${LIBAROMA_
 
 # android
 if(DEFINED ANDROID)
-	message("Android:\t enabled")
-
+	message("Android Target     : ENABLED")
 	# if we don't use the NDK these flags are not defined by default
 	set(AROMA_CFLAGS "${AROMA_CFLAGS} -DANDROID=1 -D__ANDROID__")
 else()
-	message("Android:\t disabled")
+  message("Android Target     : DISABLED")
 endif()
 
 # ARM cflags
 if("${ARCHITECTURE}" STREQUAL "arm")
 	if(NEON OR VFPV3)
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mvectorize-with-neon-quad -D__ARM_HAVE_NEON")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mvectorize-with-neon-quad -D__ARM_HAVE_NEON")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mvectorize-with-neon-quad")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mvectorize-with-neon-quad")
 	endif()
 
 	# NDK has set these flags already
@@ -133,9 +137,6 @@ file(GLOB AROMA_SRCS
 	${PROJECT_SOURCE_DIR}/src/contrib/platform/${LIBAROMA_PLATFORM_NAME}/*.c
 	src/aroma/aroma.c
 	src/aroma/version.c
-
-	src/aroma/aroma.c
-	src/aroma/version.c
 	src/aroma/utils/*.c
 	src/aroma/debug/*.c
 	src/aroma/graph/*.c
@@ -152,8 +153,7 @@ include_directories(
 	${PROJECT_SOURCE_DIR}/include
 	${PROJECT_SOURCE_DIR}/src
 	${PROJECT_SOURCE_DIR}/src/contrib/platform/${LIBAROMA_PLATFORM_NAME}/include
-	${PROJECT_SOURCE_DIR}/libs/zlib
-	${CMAKE_BINARY_DIR}/libs/zlib
+	${PROJECT_SOURCE_DIR}/libs/zlib/src
 	${PROJECT_SOURCE_DIR}/libs/freetype/builds
 	${PROJECT_SOURCE_DIR}/libs/freetype/include
 	${PROJECT_SOURCE_DIR}/libs/minzip
@@ -182,11 +182,13 @@ endif()
 
 if(AROMA_OPENMP)
 	# we don't have a static version of this
-	target_link_libraries(aroma rt)
-
-	if("${ARCHITECTURE}" STREQUAL "x86_64")
-		target_link_libraries(aroma gomp)
+	if(NOT DEFINED ANDROID_NDK)
+	  target_link_libraries(aroma rt)
 	endif()
+
+	# if("${ARCHITECTURE}" STREQUAL "x86_64")
+		target_link_libraries(aroma gomp)
+	# endif()
 endif()
 
 if(NOT DEFINED ANDROID_NDK)
@@ -214,5 +216,5 @@ file(GLOB AROMART_TEST_SRCS examples/rt_test/*.c)
 add_executable(aromart_test ${AROMART_TEST_SRCS})
 target_link_libraries(aromart_test aromart)
 
-message("CFLAGS:\t\t ${CMAKE_C_FLAGS}")
-message("CXXFLAGS:\t ${CMAKE_CXX_FLAGS}")
+message("CFLAGS             : ${CMAKE_C_FLAGS}")
+message("CXXFLAGS           : ${CMAKE_CXX_FLAGS}")

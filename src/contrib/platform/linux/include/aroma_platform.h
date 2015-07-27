@@ -36,7 +36,7 @@
 #include <fcntl.h>
 
 /* arm neon engine */
-#ifdef __ARM_HAVE_NEON
+#ifdef __ARM_NEON__
   #include "contrib/arm_neon/arm_neon.h"
 #endif
 

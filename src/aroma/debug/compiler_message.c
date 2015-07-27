@@ -31,7 +31,7 @@
 #define __LIBAROMA_STR(macro) __LIBAROMA_STRINGFY(macro)
 
 /* arm neon */
-#ifdef __ARM_HAVE_NEON
+#ifdef __ARM_NEON__
   #define __LIBAROMA_CMSG_NEON "YES"
 #else
   #ifdef __SSSE3__

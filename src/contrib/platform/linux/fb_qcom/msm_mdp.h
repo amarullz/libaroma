@@ -1,5 +1,5 @@
-#ifndef _UAPI_MSM_MDP_H_
-#define _UAPI_MSM_MDP_H_
+#ifndef _UAPI_MSM_MDP_QCOM_H_
+#define _UAPI_MSM_MDP_QCOM_H_
 #include <linux/types.h>
 #include <linux/fb.h>
 #define MSMFB_IOCTL_MAGIC 'm'
@@ -971,4 +971,4 @@ enum {
 	MDP_WRITEBACK_MIRROR_PAUSE,
 	MDP_WRITEBACK_MIRROR_RESUME,
 };
-#endif /*_UAPI_MSM_MDP_H_*/
+#endif /*_UAPI_MSM_MDP_QCOM_H_*/

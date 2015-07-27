@@ -24,9 +24,7 @@
 #ifndef __libaroma_linux_fb_qcom_driver_c__
 #define __libaroma_linux_fb_qcom_driver_c__
 
-#ifndef O_DSYNC
-#define O_DSYNC                040000  /* used to be O_SYNC, see below */
-#endif
+#include <errno.h>
 
 /*
  * Function    : QCOMFB_init
@@ -59,9 +57,13 @@ byte QCOMFB_init(LIBAROMA_FBP me){
   ALOGV("QCOMFB_init got qcom. #%i - %i", mi->qcom->id, mi->qcom->dbuf);
   
   /* open ion device */
-  mi->qcom->ionfd = open("/dev/ion", O_RDWR|O_DSYNC);
+  mi->qcom->ionfd = open("/dev/ion", O_RDWR|O_SYNC);
   if (mi->qcom->ionfd<0) {
     ALOGV("QCOMFB_init cannot open /dev/ion");
+    
+    ALOGV("Error no is : %d\n", errno);
+    ALOGV("Error description is : %s\n",strerror(errno));
+    
     free(mi->qcom);
     mi->qcom=NULL;
     return 0;

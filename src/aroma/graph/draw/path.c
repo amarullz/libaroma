@@ -357,7 +357,7 @@ byte libaroma_path_draw(
               }
               bytep cline=line+linex;
               int left=linew;
-#ifdef __ARM_HAVE_NEON
+#ifdef __ARM_NEON__
               left=linew%8;
               if (linew>=8){
                 uint8x8_t ro = vmov_n_u8(alphaaa);

@@ -58,7 +58,7 @@ byte LINUXFBDR_post_32bit(
   }
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
   int sstride = (sw - dw) * 2;
-  int dstride = (me->w - dw) * mi->pixsz;
+  int dstride = (mi->line - (dw * mi->pixsz));
   dwordp copy_dst =
     (dwordp) (((bytep) mi->current_buffer)+(mi->line * dy)+(dx * mi->pixsz));
   wordp copy_src = 
