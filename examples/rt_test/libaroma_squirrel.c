@@ -36,6 +36,7 @@ void lasq_register(HSQUIRRELVM v){
 	
 	/* libaroma api wrapper */
   LASQ_REG_FN(app)(v); /* Application */
+  LASQ_REG_FN(libaroma)(v); /* Application */
 }
 
 #endif /* __libaroma_libaroma_squirrel_c__ */

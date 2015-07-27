@@ -97,6 +97,14 @@ void lart_set_process_name(char * new_name){
     return;
   }
   if (_lart_process_argv!=NULL){
+    char tagname[256];
+    snprintf(tagname,
+      256,
+      "%s(%i)",
+      new_name,
+      getpid()
+    );
+    libaroma_debug_set_tag(tagname);
     snprintf(_lart_process_argv[0],255,"%s",new_name);
     prctl(PR_SET_NAME, (unsigned long) _lart_process_argv[0], 0, 0, 0);
   }

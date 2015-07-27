@@ -114,7 +114,7 @@ void bar_test(){
     if (itm%6==4){
       libaroma_listitem_divider(
         list, 1, (((kdv++)%2)==0)?LIBAROMA_LISTITEM_DIVIDER_SUBSCREEN:
-          LIBAROMA_LISTITEM_DIVIDER_TEXTALIGNED, -1);
+          LIBAROMA_LISTITEM_SEPARATOR_TEXTALIGN, -1);
     }
     
     if (itm%15==0){
@@ -209,7 +209,7 @@ void bar_test(){
       if (r%3==0){
         libaroma_listitem_divider(
           sblist, 1, (((kdv++)%2)==0)?LIBAROMA_LISTITEM_DIVIDER_SUBSCREEN:
-            LIBAROMA_LISTITEM_DIVIDER_TEXTALIGNED,
+            LIBAROMA_LISTITEM_SEPARATOR_TEXTALIGN,
             -1);
       }
     

@@ -64,8 +64,21 @@ int app_run(char * program, char * param){
 	free(program_str);
 	
 	sq_pushroottable(v);
+	if (SQ_FAILED(sq_call(v, 1, SQFalse, SQFalse))) {
+	  const SQChar *error;
+    sq_getlasterror(v);
+    if (SQ_SUCCEEDED(sq_getstring(v, -1, &error))) {
+      printf("sqvm error: %s\n", error);
+    }
+  }
+  else{
+    printf("Called\n");
+  }
+	
+	/*
 	sq_call(v, 1, SQFalse, SQFalse);
-	printf("Called\n");
+	*/
+	
 endit:
 	sq_pop(v,1);
 	sq_close(v); 
@@ -182,6 +195,15 @@ void statusbar_ondraw(LIBAROMA_CANVASP cv,word fgcolor){
  * Descriptions: main executable function
  */
 int main(int argc, char **argv){
+  FILE * fd = fopen("/dev/kmsg","a+");
+  if (fd){
+    printf("FD OK\n");
+    libaroma_debug_set_output(fd);
+  }
+  else{
+    printf("FD FAILED\n");
+  }
+  
   return
     lart_start(
       argv,

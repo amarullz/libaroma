@@ -206,3 +206,31 @@ Layout can also directly pass json/table variable like this:
     }
   ]
 }
+
+/*
+  format:
+  -------
+  [ CONTROL_TYPE, ATTRIBUTE_OBJECT, CONTENTS ]
+*/
+
+[
+  "button",
+  {
+    id:"Button1",
+    x:"0dp",
+    y:"0dp",
+    w:"50%",
+    h:"36dp",
+    text:"<~btn1-text>"
+  }
+],
+[
+  "list",
+  {
+    id:"List1",
+    pos:["0dp","36dp","100%","100%"], /* x,y,w,h */
+    scrollbar:"handle"
+  },
+  [
+  ]
+}

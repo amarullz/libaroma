@@ -1,4 +1,5 @@
 @ECHO OFF
+mkdir ..\obj.squirrel
 cd ..\obj.squirrel
 
 echo Compiling Squirrel

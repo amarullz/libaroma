@@ -246,7 +246,7 @@ static void * _lart_app_manager_waitforpid_thread(void * cookie) {
   pid_t pid = pidt[0];
   free(pidt);
   waitpid(pid, NULL, 0);
-  LARTLOGV("[**] WAITPID(%i) Returned",pid);
+  LARTLOGV("** WAITPID(%i) Returned",pid);
   return NULL;
 }
 void _lart_app_manager_waitforpid(pid_t pid){
@@ -284,23 +284,18 @@ pid_t lart_app_create(
       char stmp[256];
       snprintf(stmp,256,LART_NAMED_PIPE_APP_WRITE,appid);
       _lart_app->wfd=open(stmp,O_WRONLY|O_NOCTTY|O_SYNC);
-      printf("--> APP OPEN WFD: %s -> %i\n",stmp,_lart_app->wfd);
       
       snprintf(stmp,256,LART_NAMED_PIPE_APP_READ,appid);
       _lart_app->rfd=open(stmp,O_RDONLY|O_NOCTTY|O_SYNC);
-      printf("--> APP OPEN RFD: %s -> %i\n",stmp,_lart_app->rfd);
       
       snprintf(stmp,256,LART_NAMED_PIPE_APP_EVENT,appid);
       _lart_app->efd=open(stmp,O_RDONLY|O_NOCTTY|O_SYNC);
-      printf("--> APP OPEN EFD: %s -> %i\n",stmp,_lart_app->efd);
       
       /* init canvases */
       snprintf(stmp,256,LART_SHMCANVAS_FB,appid);
-      printf("--> APP CANVAS FB: %s\n",stmp);
       _lart_app->cfb = libaroma_canvas_shmem_open(stmp);
       
       snprintf(stmp,256,LART_SHMCANVAS_SB,appid);
-      printf("--> APP CANVAS SB: %s\n",stmp);
       _lart_app->csb = libaroma_canvas_shmem_open(stmp);
       
       /* set process name */

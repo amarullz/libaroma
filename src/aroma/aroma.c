@@ -60,6 +60,9 @@ byte libaroma_font_release();
  */
 static LIBAROMA_CONFIG _libaroma_config;
 static byte _libaroma_config_ready=0;
+static FILE * _libaroma_debug_fp=NULL;
+static char _libaroma_debug_tag[256]="LIBAROMA()";
+
 
 /*
  * Function    : _libaroma_config_default
@@ -68,12 +71,12 @@ static byte _libaroma_config_ready=0;
  */
 void _libaroma_config_default() {
   if (LIBAROMA_FB_SHMEM_NAME){
-    snprintf(_libaroma_config.fb_shm_name,64,"%s",LIBAROMA_FB_SHMEM_NAME);
+    snprintf(_libaroma_config.fb_shm_name,256,"%s",LIBAROMA_FB_SHMEM_NAME);
   }
   else{
     _libaroma_config.fb_shm_name[0]=0;
   }
-  _libaroma_config.debug_fp=stdout;
+  _libaroma_debug_fp=stdout;
   _libaroma_config.multicore_init_num = 8; /* activate core */
   _libaroma_config.snapshoot_fb = 0; /* snapshoot after graph init */
   _libaroma_config.runtime_monitor = LIBAROMA_START_UNSAFE;
@@ -86,11 +89,31 @@ void _libaroma_config_default() {
  * Descriptions: get debug output fd
  */
 FILE * libaroma_debug_output(){
-  if (!_libaroma_config.debug_fp){
-    _libaroma_config.debug_fp=stdout;
+  if (!_libaroma_debug_fp){
+    _libaroma_debug_fp=stdout;
   }
-  return _libaroma_config.debug_fp;
+  return _libaroma_debug_fp;
 } /* End of libaroma_debug_output */
+
+/*
+ * Function    : libaroma_debug_tag
+ * Return Value: char *
+ * Descriptions: get debug tag
+ */
+char * libaroma_debug_tag(){
+  return _libaroma_debug_tag;
+} /* End of libaroma_debug_tag */
+
+/*
+ * Function    : libaroma_debug_set_tag
+ * Return Value: void
+ * Descriptions: set debug tag
+ */
+void libaroma_debug_set_tag(char * tag){
+  if (tag){
+    snprintf(_libaroma_debug_tag,256,"%s",tag);
+  }
+} /* End of libaroma_debug_set_tag */
 
 /*
  * Function    : libaroma_debug_set_output
@@ -98,9 +121,9 @@ FILE * libaroma_debug_output(){
  * Descriptions: set debug output fd
  */
 void libaroma_debug_set_output(FILE * fd){
-  _libaroma_config.debug_fp = fd;
-  if (!_libaroma_config.debug_fp){
-    _libaroma_config.debug_fp=stdout;
+  _libaroma_debug_fp = fd;
+  if (!_libaroma_debug_fp){
+    _libaroma_debug_fp=stdout;
   }
 } /* End of libaroma_debug_set_output */
 

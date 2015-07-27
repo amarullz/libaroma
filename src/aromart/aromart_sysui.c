@@ -76,6 +76,7 @@ inline int lart_sysui_req_new_app(
   char * param);
 
 void lart_sysui_print_running_apps(){
+  /*
   _MLOCK();
   int i;
   printf("\n\n[*] CURRENT RUNNING APPS: %i\n",_lart_sysui->appn);
@@ -88,6 +89,7 @@ void lart_sysui_print_running_apps(){
   }
   printf("\n");
   _MUNLOCK();
+  */
 }
 
 /* killing apps */

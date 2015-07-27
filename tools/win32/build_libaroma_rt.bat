@@ -1,4 +1,5 @@
 @ECHO OFF
+mkdir libaroma_rt
 cd libaroma_rt
 del /F /Q *
 

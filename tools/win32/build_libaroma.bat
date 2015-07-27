@@ -1,4 +1,5 @@
 @ECHO OFF
+mkdir libaroma
 cd libaroma
 del /F /Q *
 
@@ -18,9 +19,9 @@ echo Compiling Libaroma
   -DLIBAROMA_CONFIG_SHMEMFB=%LIBAROMA_CONFIG_SHMEMFB% ^
   -DANDROID=1 -D__ANDROID__ ^
  ^
-  ../../../src/contrib/linux/fb_driver.c ^
-  ../../../src/contrib/linux/hid_driver.c ^
-  ../../../src/contrib/linux/linux_syscall.c ^
+  ../../../src/contrib/platform/linux/fb_driver.c ^
+  ../../../src/contrib/platform/linux/hid_driver.c ^
+  ../../../src/contrib/platform/linux/platform.c ^
  ^
   ../../../src/aroma/aroma.c ^
   ../../../src/aroma/version.c ^
@@ -35,8 +36,9 @@ echo Compiling Libaroma
   ../../../src/aroma/controls/listitem/*.c ^
  ^
   -I../../../include ^
+  -I../../../src/contrib/platform/linux/include ^
   -I../../../src ^
-  -I../../../libs/zlib ^
+  -I../../../libs/zlib/src ^
   -I../../../libs/freetype/builds ^
   -I../../../libs/freetype/include ^
   -I../../../libs/minzip ^

@@ -61,7 +61,6 @@ typedef struct{
   byte snapshoot_fb;
   byte multicore_init_num;
   byte runtime_monitor;
-  FILE * debug_fp;
 } LIBAROMA_CONFIG, * LIBAROMA_CONFIGP;
 
 /*
@@ -84,6 +83,13 @@ char * libaroma_info(int type);
  * Descriptions: set debug output fd
  */
 void libaroma_debug_set_output(FILE * fd);
+
+/*
+ * Function    : libaroma_debug_set_tag
+ * Return Value: void
+ * Descriptions: set debug tag
+ */
+void libaroma_debug_set_tag(char * tag);
 
 /*
  * Function    : libaroma_start

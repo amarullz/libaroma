@@ -45,7 +45,6 @@ typedef struct{
 static SQInteger LASQ_CFUNC_NAME(destroy)(SQUserPointer p, SQInteger size)
 {
 	LASQ_APP_INSTANCE * app = ((LASQ_APP_INSTANCE *)p);
-	printf("=====[APP] Destroy\n");
 	if (app){
 	  app->onloop = 0;
 	  libaroma_window_free(app->win);
@@ -55,9 +54,6 @@ static SQInteger LASQ_CFUNC_NAME(destroy)(SQUserPointer p, SQInteger size)
 }
 LASQ_FUNC(constructor){
   LASQ_APP_INSTANCE * app = calloc(sizeof(LASQ_APP_INSTANCE),1);
-  
-  printf("=====[APP] Constructor\n");
-  
   /* create window */
   app->win = libaroma_window(
     NULL, 0, 0, LIBAROMA_SIZE_FULL, LIBAROMA_SIZE_FULL);
@@ -155,7 +151,6 @@ LASQ_FUNC(setPrimaryColor){
     sq_pushbool(v, SQFalse);
     return 1;
   }
-  printf("=====[APP] setPrimaryColor\n");
   const SQChar * str = NULL;
   sq_getstring(v, 2, &str);
   app->primary_color = libaroma_rgb_from_string((const char *) str);
@@ -170,7 +165,6 @@ LASQ_FUNC(setTitle){
     sq_pushbool(v, SQFalse);
     return 1;
   }
-  printf("=====[APP] setTitle\n");
   const SQChar * str = NULL;
   sq_getstring(v, 2, &str);
   snprintf(app->apptitle,256,"%s",str);
@@ -233,7 +227,6 @@ LASQ_FUNC(start){
     sq_pushbool(v, SQFalse);
     return 1;
   }
-  printf("=====[APP] Start\n");
   app->onloop=2;
   update_app_title(app);
   update_app_color(app);
@@ -242,7 +235,6 @@ LASQ_FUNC(start){
   lart_application_set_primary_color(app->primary_color);
   libaroma_ctl_bar_update(app->bar);
   app->onloop=3;
-  printf("=====[APP] Started\n");
 	sq_pushbool(v, SQTrue);
 	return 1;
 }

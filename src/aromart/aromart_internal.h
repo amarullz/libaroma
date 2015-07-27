@@ -39,14 +39,36 @@
 #include <sys/prctl.h>
 #include <sys/wait.h>
 
-/******************************** MACROS **************************************/
+/******************************* ERROR LOGS ***********************************/
+FILE * libaroma_debug_output();
+char * libaroma_debug_tag();
 
-/* error log */
-#define LARTLOGTAG "AROMLART"
-#define LARTLOGE(...) printf(LARTLOGTAG "[E] " __VA_ARGS__); printf("\n");
-#define LARTLOGI(...) printf(LARTLOGTAG "[I] " __VA_ARGS__); printf("\n");
-#define LARTLOGS(...) printf(LARTLOGTAG "[S] " __VA_ARGS__); printf("\n");
-#define LARTLOGV(...) printf(LARTLOGTAG "[S] " __VA_ARGS__); printf("\n");
+#define LARTTAG "RUNTIME"
+
+#define LARTLOGE(...) \
+  fprintf(libaroma_debug_output(), "E/%s: " LARTTAG ": ",libaroma_debug_tag());\
+  fprintf(libaroma_debug_output(), __VA_ARGS__); \
+  fprintf(libaroma_debug_output(), "\n");
+
+#define LARTLOGI(...) \
+  fprintf(libaroma_debug_output(), "I/%s: " LARTTAG ": ",libaroma_debug_tag());\
+  fprintf(libaroma_debug_output(), __VA_ARGS__); \
+  fprintf(libaroma_debug_output(), "\n");
+
+#define LARTLOGS(...) \
+  fprintf(libaroma_debug_output(), "N/%s: " LARTTAG ": ",libaroma_debug_tag());\
+  fprintf(libaroma_debug_output(), __VA_ARGS__); \
+  fprintf(libaroma_debug_output(), "\n");
+
+#define LARTLOGN LARTLOGS
+
+#define LARTLOGV(...) \
+  fprintf(libaroma_debug_output(), "D/%s: " LARTTAG ": ",libaroma_debug_tag());\
+  fprintf(libaroma_debug_output(), __VA_ARGS__); \
+  fprintf(libaroma_debug_output(), "\n");
+#define LARTLOGD LARTLOGV
+
+/******************************** MACROS **************************************/
 
 /* named pipes */
 #define LART_NAMED_PIPE_APP_READ      "/tmp/.aromart-rfd-%i"

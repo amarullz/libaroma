@@ -41,6 +41,29 @@
   #endif
 #endif /* defined(__QNXNTO__) */
 
+#ifdef __ISQNX__
+  #ifndef LIBAROMA_FB_INIT_FUNCTION
+    #define LIBAROMA_FB_INIT_FUNCTION \
+      qnx_fb_driver_init
+  #endif /* LIBAROMA_FB_INIT_FUNCTION */
+  #ifndef LIBAROMA_HID_INIT_FUNCTION
+    #define LIBAROMA_HID_INIT_FUNCTION \
+      qnx_hid_driver_init
+  #endif /* LIBAROMA_HID_INIT_FUNCTION */
+  #ifndef LIBAROMA_CONFIG_OS
+    #define LIBAROMA_CONFIG_OS "qnx/nto"
+  #endif /* LIBAROMA_CONFIG_OS */
+  
+  #ifdef LIBAROMA_CONFIG_SHMEM_PREFIX
+    #undef LIBAROMA_CONFIG_SHMEM_PREFIX
+  #endif
+  /* android wrapper for shm_* */
+  #define LIBAROMA_CONFIG_SHMEM_PREFIX "/tmp/.libaromashm-"
+  #define shm_open open
+  #define shm_unlink unlink
+#endif /* __ISQNX__ */
+
+
 /*
  * platform flags
  */

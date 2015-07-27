@@ -75,5 +75,6 @@
 
 /************************ REGISTER CLASS FUNCTIONS ****************************/
 LASQ_REGISTER_HEADER(app); /* Application */
+LASQ_REGISTER_HEADER(libaroma); /* Libaroma */
 
 #endif /* __libaroma_libaroma_squirrel_internal_h__ */

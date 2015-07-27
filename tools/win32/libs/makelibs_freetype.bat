@@ -42,7 +42,7 @@ echo Compiling Freetype
   ../../../libs/freetype/src/gzip/ftgzip.c ^
   ../../../libs/freetype/src/lzw/ftlzw.c ^
  ^
-  -I../../../libs/zlib ^
+  -I../../../libs/zlib/src ^
   -I../../../libs/freetype/builds ^
   -I../../../libs/harfbuzz-ng/src ^
   -I../../../libs/freetype/include %LIBAROMA_CINCLUDES%
