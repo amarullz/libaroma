@@ -211,3 +211,6 @@ include_directories(
 	${PROJECT_SOURCE_DIR}/examples/recovery
 )
 target_link_libraries(recovery aroma)
+
+message("CFLAGS:\t\t ${CMAKE_C_FLAGS}")
+message("CXXFLAGS:\t ${CMAKE_CXX_FLAGS}")
