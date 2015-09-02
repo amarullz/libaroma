@@ -52,15 +52,14 @@ void qnxhid_push_event(QNXHID_EVENT * ev){
 void qnxhid_send_event(byte id, int x, int y){
   pthread_mutex_lock(&qnxhid_mutex);
   byte send=1;
-  if ((id>=QNXHID_EV_TOUCH_UP)&&(id<=QNXHID_EV_TOUCH_MOVE)){
-    qnxhid_touchlastev=libaroma_tick();
-    if ((id==QNXHID_EV_TOUCH_UP)&&(qnxhid_touchlastid==QNXHID_EV_TOUCH_UP)){
-      send=0;
-    }
-    qnxhid_touchlastid=id;
-    qnxhid_touchlast_x=x;
-    qnxhid_touchlast_y=y;
+  if ((id==QNXHID_EV_TOUCH_UP)&&(qnxhid_touchlastid==QNXHID_EV_TOUCH_UP)){
+    send=0;
   }
+  qnxhid_touchlastev=libaroma_tick();
+  qnxhid_touchlastid=id;
+  qnxhid_touchlast_x=x;
+  qnxhid_touchlast_y=y;
+  
   if (send){
     QNXHID_EVENT ev;
     ev.id=id;
@@ -79,21 +78,22 @@ byte qnxhid_getinput(LIBAROMA_HIDP me, LIBAROMA_HID_EVENTP dest_ev);
 void qnxhid_release(LIBAROMA_HIDP me);
 
 static void * qnxhid_monitoring(void * cookie){
+	qnx_hiddi_connect();
   while(qnxhid_active){
-    if (qnxhid_touchlastid>QNXHID_EV_TOUCH_UP){
-      if (qnxhid_touchlastev<libaroma_tick()-2000){
-        pthread_mutex_lock(&qnxhid_mutex);
-        qnxhid_touchlastev=libaroma_tick();
-        qnxhid_touchlastid=QNXHID_EV_TOUCH_UP;
+    if (qnxhid_touchlastev<libaroma_tick()-8000){
+      pthread_mutex_lock(&qnxhid_mutex);
+      qnxhid_touchlastev=libaroma_tick();
+      qnxhid_touchlastid=QNXHID_EV_TOUCH_UP;
+      if (qnxhid_touchlastid>QNXHID_EV_TOUCH_UP){
         QNXHID_EVENT ev;
         ev.id=QNXHID_EV_TOUCH_UP;
         ev.x=qnxhid_touchlast_x;
         ev.y=qnxhid_touchlast_y;
         qnxhid_push_event(&ev);
-        pthread_mutex_unlock(&qnxhid_mutex);
-        qnx_hiddi_disconnect();
-        qnx_hiddi_connect();
       }
+      pthread_mutex_unlock(&qnxhid_mutex);
+      qnx_hiddi_disconnect();
+      qnx_hiddi_connect();
     }
     usleep(50000);
   }
@@ -108,6 +108,9 @@ byte qnxhid_init(LIBAROMA_HIDP me) {
   }
   /* set screen size */
   pipe(qnxhid_pipe);
+  fcntl(qnxhid_pipe[0], F_SETFL, O_RDONLY|O_SYNC|O_NOCTTY);
+  fcntl(qnxhid_pipe[1], F_SETFL, O_WRONLY|O_SYNC|O_NOCTTY);
+  
   qnx_hiddi_screen_w = me->screen_width;
   qnx_hiddi_screen_h = me->screen_height;
   
@@ -127,12 +130,18 @@ byte qnxhid_init(LIBAROMA_HIDP me) {
   me->release   = &qnxhid_release;
   me->getinput  = &qnxhid_getinput;
   qnxhid_active = 1;
-  qnx_hiddi_connect();
   
   /* stuck monitoring */
   LIBAROMA_THREAD monitoring_thread;
   libaroma_thread_create(&monitoring_thread,qnxhid_monitoring, NULL);
+  
+  struct sched_param params;
+  params.sched_priority = sched_get_priority_max(SCHED_FIFO);
+  pthread_setschedparam(monitoring_thread, SCHED_FIFO, &params);
+  
   libaroma_thread_detach(monitoring_thread);
+  
+  
   
   ALOGI("qnxhid_init: successed");
   return 1;

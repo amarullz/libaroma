@@ -23,6 +23,8 @@
  */
 #ifndef __libaroma_font_hb_c__
 #define __libaroma_font_hb_c__
+#ifndef LIBAROMA_CONFIG_TEXT_NOHARFBUZZ
+
 /*
  * Function    : _libaroma_font_hb_load_glyph
  * Return Value: static void
@@ -446,5 +448,5 @@ hb_font_t * _libaroma_font_hb_init(
 } /* End of _libaroma_font_hb_init */
 
 
-
+#endif /* LIBAROMA_CONFIG_TEXT_NOHARFBUZZ */
 #endif /* __libaroma_font_hb_c__ */

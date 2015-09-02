@@ -46,6 +46,76 @@ _LIBAROMA_TEXTSHAPEDP libaroma_text_shaper(
   
   /* init harfbuzz font */
   _LIBAROMA_FONT_FACEP afont = libaroma_font_get_face(span->fontid);
+
+	/* calculating */
+  dword i = 0;
+  int   sizer_x = 0;
+  int   sizer_y = 0;
+  int   max_x   = INT_MIN;
+  int   min_x   = INT_MAX;
+  int   max_y   = INT_MIN;
+  int   min_y   = INT_MAX;
+  int   x       = 0;
+  int   y       = 0;
+  int   u 			= 0;
+  
+#ifdef LIBAROMA_CONFIG_TEXT_NOHARFBUZZ
+	_LIBAROMA_TEXTSHAPEDP shaped =
+  (_LIBAROMA_TEXTSHAPEDP) malloc(sizeof(_LIBAROMA_TEXTSHAPED));
+	shaped->coln = span->len;
+	shaped->cols = (_LIBAROMA_TEXTCOLUMNP)
+	  malloc(sizeof(_LIBAROMA_TEXTCOLUMN) * shaped->coln);
+	shaped->rtl = chunk->rtl;
+	shaped->font = _LIBAROMA_TEXT_FONT(span->fontid, fontsize);
+	shaped->next = NULL;
+	FT_Bool use_kerning = FT_HAS_KERNING(afont->face);
+	int previous=0;
+	dword ii;
+	for (ii=0;ii<shaped->coln;ii++) {
+		if (shaped->rtl){
+			i=(shaped->coln-1)-ii;
+		}
+		else{
+			i=ii;
+		}
+		u=FT_Get_Char_Index(afont->face, span->text[i]);
+		_LIBAROMA_FONT_SLOT_CACHEP glp=(_LIBAROMA_FONT_SLOT_CACHEP)
+			libaroma_font_glyph(u,span->fontid,fontsize);
+	  int xa = glp->metrics.horiAdvance>>6;
+	  int xo = 0;
+	  if (use_kerning&&previous&&u){
+	    FT_Vector  delta;
+	    if (shaped->rtl){
+	    	FT_Get_Kerning(afont->face, u, previous,FT_KERNING_DEFAULT, &delta );
+	    }
+	    else{
+	    	FT_Get_Kerning(afont->face, previous, u,FT_KERNING_DEFAULT, &delta );
+	    }
+	    xo = delta.x>>6;
+	  }
+	  int gx = sizer_x + xo;
+	  if (min_x > gx) {
+	    min_x = gx;
+	  }
+	  if (max_x < gx) {
+	    max_x = gx;
+	  }
+	  if (min_y > sizer_y) {
+	    min_y = sizer_y;
+	  }
+	  if (max_y < sizer_y) {
+	    max_y = sizer_y;
+	  }
+	  shaped->cols[i].id  = u;
+	  shaped->cols[i].x   = x + xo;
+	  shaped->cols[i].y   = y;
+	  shaped->cols[i].w   = xa;
+	  xa+=xo;
+	  sizer_x += xa;
+	  x += xa;
+	  previous = u;
+	}
+#else
   hb_font_t * hb_font       = afont->hb_font;
   
   /* create harfbuzz buffer */
@@ -89,18 +159,6 @@ _LIBAROMA_TEXTSHAPEDP libaroma_text_shaper(
   shaped->font = _LIBAROMA_TEXT_FONT(span->fontid, fontsize);
   shaped->next = NULL;
   
-  /* calculating */
-  dword i = 0;
-  int   sizer_x = 0;
-  int   sizer_y = 0;
-  int   max_x   = INT_MIN;
-  int   min_x   = INT_MAX;
-  int   max_y   = INT_MIN;
-  int   min_y   = INT_MAX;
-  int   x       = 0;
-  int   y       = 0;
-  int   u = 0;
-  
   for (i = 0; i < glyph_count; i++) {
     /* offsets and advances */
     int xo = glyph_pos[i].x_offset  >> 6;
@@ -136,6 +194,9 @@ _LIBAROMA_TEXTSHAPEDP libaroma_text_shaper(
     x += xa;
     y -= ya;
   }
+  hb_buffer_destroy(buf);
+
+#endif
   
   /* still have to take into account last glyph's advance. or not? */
   if (min_x > sizer_x) {

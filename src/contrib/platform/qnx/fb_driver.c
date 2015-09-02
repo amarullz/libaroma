@@ -53,6 +53,8 @@ typedef struct {
   long                lastpost;         /* last post tick */
 } QNXGF_INTERNAL, *QNXGF_INTERNALP;
 
+LIBAROMA_MUTEX ___qnxfbmutex;
+
 /*
  * Forward Functions
  *
@@ -81,10 +83,12 @@ byte QNXGF_init(LIBAROMA_FBP me) {
     return 0;
   }
   
+  libaroma_mutex_init(___qnxfbmutex);
+
   /* Set Internal Address */
   me->internal      = (voidp) mi;
   me->release       = &QNXGF_release;
-  me->double_buffer = 0;
+  me->double_buffer = 1;
   
   /************************* Init of Init QNX GF ******************************/
   /* Device Attach */
@@ -94,6 +98,8 @@ byte QNXGF_init(LIBAROMA_FBP me) {
     ALOGE("QNXGF gf_dev_attach failed");
     goto error;
   }
+  
+  
   /* Display Attach */
   if (gf_display_attach(
         &mi->display, mi->gdev, 0, &mi->display_info
@@ -146,6 +152,14 @@ byte QNXGF_init(LIBAROMA_FBP me) {
     gf_dev_detach(mi->gdev);
     goto error;
   }
+  /*
+  if (gf_display_set_dpms(mi->display,GF_DPMS_ON) != GF_ERR_OK) {
+  	ALOGI("QNXGF gf_display_set_dpms failed");
+  }
+  else{
+  	ALOGI("QNXGF gf_display_set_dpms OK");
+  }
+  */
   /************************* End of Init QNX GF *******************************/
   
   /* Set AROMA Core Framebuffer Instance Values */
@@ -195,6 +209,8 @@ void QNXGF_release(LIBAROMA_FBP me) {
   /* Free Internal Data */
   ALOGV("QNXGF free internal data");
   free(me->internal);
+  
+  libaroma_mutex_free(___qnxfbmutex);
 }
 
 /*
@@ -217,8 +233,11 @@ byte QNXGF_start_post(LIBAROMA_FBP me){
   if (me == NULL) {
     return 0;
   }
+  /*
   QNXGF_INTERNALP mi = (QNXGF_INTERNALP) me->internal;
+  
   gf_draw_begin(mi->context);
+  */
   return 1;
 }
 
@@ -232,16 +251,20 @@ byte QNXGF_end_post(LIBAROMA_FBP me){
     return 0;
   }
   QNXGF_INTERNALP mi = (QNXGF_INTERNALP) me->internal;
+  /*
   gf_draw_flush(mi->context);
   gf_draw_end(mi->context);
-  
+  */
   /* virtual vsync */
+  // usleep(16000);
+  
   long nowtick = libaroma_tick();
   long diftick = nowtick - mi->lastpost;
   if (diftick<16){
     usleep((16-diftick)*1000);
   }
   mi->lastpost = nowtick;
+  
   return 1;
 }
 
@@ -257,8 +280,11 @@ byte QNXGF_post(
     return 0;
   }
   
+  libaroma_mutex_lock(___qnxfbmutex);
   QNXGF_INTERNALP mi = (QNXGF_INTERNALP) me->internal;
   wordp copy_src = (wordp) (src + ((sw * sy) + sx));
+  
+  gf_draw_begin(mi->context);
   gf_draw_image(
     mi->context,
     (const uint8_t *) copy_src,
@@ -268,7 +294,10 @@ byte QNXGF_post(
     dw, dh,
     0
   );
-    
+  
+  gf_draw_flush(mi->context);
+  gf_draw_end(mi->context);
+  libaroma_mutex_unlock(___qnxfbmutex);
   /*
   gf_draw_begin(mi->context);
   if ((w > 0) && (h > 0)) {

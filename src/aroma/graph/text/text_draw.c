@@ -320,10 +320,11 @@ void libaroma_textline_draw(
           int img_y = imgspan->y + draw_y;
           /* x-position for center, left, right */
           int left_add = 1;
-          if (imgspan->s == 1) {
+          byte iscenter = imgspan->s&4;
+          if ((imgspan->s&3) == 1) {
             left_add = 0;
           }
-          else if (imgspan->s == 2) {
+          else if ((imgspan->s&3) == 2) {
             left_add = 2;
           }
           else {
@@ -332,6 +333,10 @@ void libaroma_textline_draw(
               (draw_y + line->y + (line->lineheight>>1)) - (imgspan->h>>1);
             */
             img_y = imgspan->y + draw_y + line->lineheight - imgspan->h;
+          }
+          if (iscenter){
+          	img_y = (line->y + ypos + draw_y) -
+          		((line->h>>1)+(imgspan->h>>1)-((line->lineheight-line->h)>>2));
           }
           libaroma_draw_scale_smooth(
             canvas, imgspan->canvas,

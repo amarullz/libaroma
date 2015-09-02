@@ -219,8 +219,8 @@ byte libaroma_wm_release(){
     ALOGW("window manager uninitialized");
     return 0;
   }
-  _libaroma_wm_onprocessing=1;
   libaroma_mutex_lock(_libaroma_wm_ui_mutex);
+  _libaroma_wm_onprocessing=1;
   if (_libaroma_wm->client_started){
     libaroma_wm_client_stop();
   }
@@ -230,8 +230,8 @@ byte libaroma_wm_release(){
   if (_libaroma_wm->workspace_bg){
     libaroma_canvas_free(_libaroma_wm->workspace_bg);
   }
-  libaroma_mutex_unlock(_libaroma_wm_ui_mutex);
   _libaroma_wm_onprocessing=0;
+  libaroma_mutex_unlock(_libaroma_wm_ui_mutex);
   libaroma_mutex_free(_libaroma_wm_sync_mutex);
   libaroma_mutex_free(_libaroma_wm_ui_mutex);
   libaroma_cond_free(&_libaroma_wm_cond, &_libaroma_wm_mutex);
@@ -314,6 +314,7 @@ void libaroma_wm_syncarea(){
     libaroma_sync();
     return;
   }
+  
   libaroma_mutex_lock(_libaroma_wm_sync_mutex);
   if (_libaroma_wm->sync_all){
     libaroma_sync();
@@ -633,25 +634,24 @@ static void * _libaroma_wm_ui_thread(void * cookie) {
     need_sync=0;
     
     /* run child thread process */
-    if ((_libaroma_wm->client_started)&&(!_libaroma_wm_onprocessing)){
+    if (_libaroma_wm->client_started){
       libaroma_mutex_lock(_libaroma_wm_ui_mutex);
-
-      if (_libaroma_wm->active_window!=NULL){
-        if (_libaroma_wm->active_window->ui_thread!=NULL){
-          if (_libaroma_wm->active_window->ui_thread(
-            _libaroma_wm->active_window
-          )){
-            need_sync=1;
-          }
-        }
-      }
-      
-      if (_libaroma_wm->ui_thread!=NULL){
-        if (_libaroma_wm->ui_thread()){
-          need_sync=1;
-        }
-      }
-      
+      if (!_libaroma_wm_onprocessing){
+	      if (_libaroma_wm->active_window!=NULL){
+	        if (_libaroma_wm->active_window->ui_thread!=NULL){
+	          if (_libaroma_wm->active_window->ui_thread(
+	            _libaroma_wm->active_window
+	          )){
+	            need_sync=1;
+	          }
+	        }
+	      }
+	      if (_libaroma_wm->ui_thread!=NULL){
+	        if (_libaroma_wm->ui_thread()){
+	          need_sync=1;
+	        }
+	      }
+	    }
       libaroma_mutex_unlock(_libaroma_wm_ui_mutex);
       if (need_sync){
         libaroma_wm_syncarea();
@@ -1010,11 +1010,11 @@ byte libaroma_wm_set_active_window(LIBAROMA_WINDOWP win){
     return 0;
   }
   
-  _libaroma_wm_onprocessing=1;
   libaroma_mutex_lock(_libaroma_wm_ui_mutex);
+  _libaroma_wm_onprocessing=1;
   if (_libaroma_wm->active_window==win){
+  	_libaroma_wm_onprocessing=0;
     libaroma_mutex_unlock(_libaroma_wm_ui_mutex);
-    _libaroma_wm_onprocessing=0;
     return 1;
   }
   
@@ -1055,8 +1055,8 @@ byte libaroma_wm_set_active_window(LIBAROMA_WINDOWP win){
       libaroma_wm_client_stop();
     }
   }
-  libaroma_mutex_unlock(_libaroma_wm_ui_mutex);
   _libaroma_wm_onprocessing=0;
+  libaroma_mutex_unlock(_libaroma_wm_ui_mutex);
   return 1;
 } /* End of libaroma_wm_set_active_window */
 

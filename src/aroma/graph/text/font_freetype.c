@@ -46,7 +46,9 @@ byte libaroma_font_set_size(
   }
   if (FT_Set_Pixel_Sizes(_libaroma_font_faces[fontid].face, 0, size) == 0) {
     _libaroma_font_faces[fontid].size = size;
+#ifndef LIBAROMA_CONFIG_TEXT_NOHARFBUZZ
     _libaroma_font_hb_update_scale(fontid);
+#endif
     if (lock) {
       _libaroma_font_lock(0);
     }
@@ -128,6 +130,11 @@ short libaroma_font_size_px(byte size) {
   }
   else if (size < 1) {
     size = 1;
+  }
+  /* more than size 8 */
+  if (size>8){
+  	size-=8;
+  	return libaroma_dp(8 + 16 + (size * 4));
   }
   return libaroma_dp(8 + size * 2);
 } /* End of libaroma_font_size_px */
@@ -324,7 +331,9 @@ byte libaroma_font(
       libaroma_font_set_ucs2(_libaroma_font_faces[fontid].face);
       
       /* init harfbuzz */
+#ifndef LIBAROMA_CONFIG_TEXT_NOHARFBUZZ
       _libaroma_font_hb_init(fontid);
+#endif
       
       /* unlock */
       _libaroma_font_lock(0);
@@ -357,11 +366,14 @@ byte libaroma_font_free(
     return 0;
   }
   _libaroma_font_lock(1);
+#ifndef LIBAROMA_CONFIG_TEXT_NOHARFBUZZ
   /* Free Harfbuzz Font */
   if (_libaroma_font_faces[fontid].hb_font != NULL) {
     _libaroma_font_hb_free(fontid);
     _libaroma_font_faces[fontid].hb_font = NULL;
   }
+#endif
+
   /* Free Freetype Font Face */
   if (_libaroma_font_faces[fontid].face != NULL) {
     FT_Done_Face(_libaroma_font_faces[fontid].face);
@@ -602,7 +614,9 @@ byte libaroma_font_release() {
   }
   
   /* release harfbuzz callback functions */
+#ifndef LIBAROMA_CONFIG_TEXT_NOHARFBUZZ
   _libaroma_font_hb_free_functions();
+#endif
   
   /* release font face */
   int i;

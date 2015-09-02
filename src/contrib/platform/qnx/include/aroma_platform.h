@@ -35,6 +35,16 @@
 #include <unistd.h>     /* open, close, unlink, usleep */
 #include <fcntl.h>
 
+#ifndef LIBAROMA_CONFIG_TEXT_GLOBAL_LOCK
+	#define LIBAROMA_CONFIG_TEXT_GLOBAL_LOCK 1
+#endif
+#ifndef LIBAROMA_CONFIG_TEXT_NOHARFBUZZ
+	#define LIBAROMA_CONFIG_TEXT_NOHARFBUZZ		1
+#endif
+
+// #include "contrib/sse/sse_neon.h"
+
+
 #if defined(__QNXNTO__)
   #ifndef __ISQNX__
     #define __ISQNX__ 1
@@ -49,10 +59,7 @@
   #ifdef LIBAROMA_CONFIG_SHMEM_PREFIX
     #undef LIBAROMA_CONFIG_SHMEM_PREFIX
   #endif
-  /* android wrapper for shm_* */
-  #define LIBAROMA_CONFIG_SHMEM_PREFIX "/tmp/.libaromashm-"
-  #define shm_open open
-  #define shm_unlink unlink
+  #define LIBAROMA_CONFIG_SHMEM_PREFIX "/.libaromashm-"
 #endif /* __ISQNX__ */
 
 
@@ -110,9 +117,11 @@ typedef pthread_t LIBAROMA_THREAD;
 #define libaroma_thread_detach(th) pthread_detach(th)
 #define libaroma_thread_kill(th) pthread_kill(th,0)
 static inline void libaroma_thread_set_hiprio(LIBAROMA_THREAD t){
+	/*
   struct sched_param params;
   params.sched_priority = sched_get_priority_max(SCHED_FIFO);
   pthread_setschedparam(t, SCHED_FIFO, &params);
+  */
 }
 
 /*

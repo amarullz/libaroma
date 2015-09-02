@@ -37,13 +37,7 @@ add_library(freetype STATIC
 )
 
 # cflags
-set_target_properties(freetype PROPERTIES COMPILE_FLAGS "\
-	-DFT2_BUILD_LIBRARY -DDARWIN_NO_CARBON \
-	-save-temps \
-	-fdata-sections -ffunction-sections -Wl,--gc-sections \
-	-D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG \
-	-fPIC -DPIC -Wl,-s -Werror \
-")
+set_target_properties(freetype PROPERTIES COMPILE_FLAGS "-DFT2_BUILD_LIBRARY -DDARWIN_NO_CARBON -save-temps -fdata-sections -ffunction-sections -Wl,--gc-sections -D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG -fPIC -DPIC -Wl,-s -Werror")
 
 # dependencies
 add_dependencies(freetype z)

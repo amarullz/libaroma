@@ -22,12 +22,7 @@ set(PNG_SRCS
 )
 
 # cflags
-set(PNG_CFLAGS "\
-	-save-temps \
-	-fdata-sections -ffunction-sections -Wl,--gc-sections \
-	-D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG \
-	-fPIC -DPIC -Wl,-s -Werror \
-")
+set(PNG_CFLAGS "-save-temps -fdata-sections -ffunction-sections -Wl,--gc-sections -D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG -fPIC -DPIC -Wl,-s -Werror")
 
 # ARM
 if("${ARCHITECTURE}" STREQUAL "arm")
@@ -37,9 +32,7 @@ set(PNG_SRCS ${PNG_SRCS}
 	arm/filter_neon_intrinsics.c
 )
 
-set(PNG_CFLAGS "${PNG_CFLAGS} \
-	-DPNG_ARM_NEON_OPT=2 \
-")
+set(PNG_CFLAGS "${PNG_CFLAGS} -DPNG_ARM_NEON_OPT=2")
 endif()
 
 # png

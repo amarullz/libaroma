@@ -64,7 +64,11 @@
 #define LIBAROMA_WINDOW_SHOW_ANIMATION_STACKIN      5
 #define LIBAROMA_WINDOW_SHOW_ANIMATION_STACKOUT     6
 #define LIBAROMA_WINDOW_SHOW_ANIMATION_FADE         7
-
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_TOP		8
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_TOP			9
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_BOTTOM	10
+#define LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_BOTTOM	11
+        
 /*
  * Special Size & Position
  */
@@ -157,6 +161,9 @@ struct _LIBAROMA_WINDOW{
   
   /* thread manager */
   byte (*ui_thread)(LIBAROMA_WINDOWP);
+  
+  /* update background */
+  void (*onupdatebg)(LIBAROMA_WINDOWP,LIBAROMA_CANVASP);
   
   /* client window */
   LIBAROMA_WINDOWP parent;

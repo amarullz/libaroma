@@ -24,13 +24,8 @@
 #ifndef __libaroma_platform_c__
 #define __libaroma_platform_c__
 #include <aroma_internal.h>
-
 #include <sys/stat.h>
 
-/* shmem prefix */
-#ifndef LIBAROMA_CONFIG_SHMEM_PREFIX
-  #define LIBAROMA_CONFIG_SHMEM_PREFIX "/libaromashm-"
-#endif
 
 /* event & condition */
 void libaroma_cond_init(

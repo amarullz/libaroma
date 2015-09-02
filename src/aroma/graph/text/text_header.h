@@ -40,7 +40,10 @@
 #include FT_ADVANCES_H
 #include FT_TRUETYPE_TABLES_H
 #include FT_GLYPH_H
+
+#ifndef LIBAROMA_CONFIG_TEXT_NOHARFBUZZ
 #include <hb.h>               /* Harfbuzz-ng */
+#endif
 #include <hb-ucdn/ucdn.h>     /* Harfbuzz-UCDN */
 
 /* include definition & structures */
@@ -48,7 +51,9 @@
 #include "text_structures.h"
 
 /* UCDN CALLBACK */
+#ifndef LIBAROMA_CONFIG_TEXT_NOHARFBUZZ
 hb_unicode_funcs_t * hb_ucdn_get_unicode_funcs(void);
+#endif
 
 /*
  * Function    : _libaroma_text_concat_ex
@@ -145,6 +150,7 @@ byte _libaroma_text_parse_next(
     _LIBAROMA_TEXTCHUNKP chunk,
     char * buf);
 
+#ifndef LIBAROMA_CONFIG_TEXT_NOHARFBUZZ
 /*
  * Function    : _libaroma_font_hb_init
  * Return Value: hb_font_t *
@@ -175,6 +181,7 @@ void _libaroma_font_hb_free(
  */
 void _libaroma_font_hb_update_scale(
     byte fontid);
+#endif
 
 /*
  * Function    : libaroma_font_set_size

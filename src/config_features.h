@@ -39,6 +39,10 @@
 #define LIBAROMA_CONFIG_COMPILER_MESSAGE  1
 #define LIBAROMA_CONFIG_OPENMP            1
 #define LIBAROMA_CONFIG_HICOLOR_BIT       0
+
+#define LIBAROMA_CONFIG_TEXT_GLOBAL_LOCK	1
+#define LIBAROMA_CONFIG_TEXT_NOHARFBUZZ		1
+
 */
 
 /* Process config - Don't change this line      */

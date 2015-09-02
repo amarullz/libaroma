@@ -34,6 +34,7 @@ byte LIBAROMA_FB_INIT_FUNCTION(
  */
 static LIBAROMA_FBP _libaroma_fb=NULL;
 static LIBAROMA_FB_INITIALIZER _libaroma_fb_initializer=NULL;
+static LIBAROMA_MUTEX _libaroma_fb_onpost_mutex;
 
 /*
  * Function    : libaroma_fb_set_initializer
@@ -159,8 +160,8 @@ byte libaroma_fb_init() {
     }
   }
   
-  _libaroma_fb->onpost = 0;
-  
+  _libaroma_fb->onpost=0;
+  libaroma_mutex_init(_libaroma_fb_onpost_mutex);
   return 1;
 } /* End of libaroma_fb_init */
 
@@ -174,13 +175,13 @@ byte libaroma_fb_start_post(){
     ALOGW("libaroma_fb_start_post framebuffer uninitialized");
     return 0;
   }
-  if (_libaroma_fb->onpost){
-    return 2;
-  }
+  libaroma_mutex_lock(_libaroma_fb_onpost_mutex);
   if (_libaroma_fb->start_post(_libaroma_fb)){
-    _libaroma_fb->onpost=1;
+  	_libaroma_fb->onpost=1;
+    return 1;
   }
-  return _libaroma_fb->onpost;
+  libaroma_mutex_unlock(_libaroma_fb_onpost_mutex);
+  return 0;
 } /* End of libaroma_fb_start_post */
 
 /*
@@ -199,6 +200,7 @@ byte libaroma_fb_end_post(){
   }
   _libaroma_fb->end_post(_libaroma_fb);
   _libaroma_fb->onpost=0;
+  libaroma_mutex_unlock(_libaroma_fb_onpost_mutex);
   return 1;
 } /* End of libaroma_fb_end_post */
 
@@ -280,12 +282,18 @@ byte libaroma_fb_release() {
   /* Show Information */
   ALOGS("Framebuffer Released");
   
+  /* cleanup post event */
+  if (_libaroma_fb->onpost){
+  	libaroma_fb_end_post();
+  }
+  _libaroma_fb->onpost=0;
+  libaroma_mutex_free(_libaroma_fb_onpost_mutex);
+  
   /* Free Framebuffer Instance */
   free(_libaroma_fb);
   
   /* Set Null */
   _libaroma_fb = NULL;
-  
   return 1;
 } /* End of libaroma_fb_release */
 

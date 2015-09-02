@@ -53,15 +53,7 @@ set(JPEG_SRCS
 )
 
 # cflags
-set(JPEG_CFLAGS "\
-	-save-temps \
-	-fdata-sections -ffunction-sections -Wl,--gc-sections \
-	-D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG \
-	-fPIC -DPIC -Wl,-s -Werror \
-\
-	-DAVOID_TABLES \
-	-DANDROID_TILE_BASED_DECODE \
-")
+set(JPEG_CFLAGS "-save-temps -fdata-sections -ffunction-sections -Wl,--gc-sections -D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG -fPIC -DPIC -Wl,-s -Werror -DAVOID_TABLES -DANDROID_TILE_BASED_DECODE")
 
 # ARM
 if("${ARCHITECTURE}" STREQUAL "arm")
@@ -70,9 +62,7 @@ set(JPEG_SRCS ${JPEG_SRCS}
 	jsimd_neon.c
 )
 
-set(JPEG_CFLAGS "${JPEG_CFLAGS} \
-	-DNV_ARM_NEON \
-")
+set(JPEG_CFLAGS "${JPEG_CFLAGS} -DNV_ARM_NEON")
 endif()
 
 # jpeg

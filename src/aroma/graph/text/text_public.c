@@ -74,6 +74,7 @@ LIBAROMA_TEXT libaroma_text(
   if (!linespacing) {
     linespacing = 120;
   }
+  _libaroma_pubtext_lock(1);
   _LIBAROMA_TEXTCHUNK_ALIGN_SET(flags, align);
   _LIBAROMA_TEXTCHUNKP chunk =
     _libaroma_text_parse(
@@ -121,10 +122,12 @@ LIBAROMA_TEXT libaroma_text(
       free(prevline);
       i++;
     }
+    _libaroma_pubtext_lock(0);
     return (LIBAROMA_TEXT) txt;
   }
   free(txt);
   free(lines);
+  _libaroma_pubtext_lock(0);
   return NULL;
 } /* End of libaroma_text */
 
@@ -135,6 +138,7 @@ LIBAROMA_TEXT libaroma_text(
  */
 byte libaroma_text_free(LIBAROMA_TEXT text) {
   if (text) {
+  	_libaroma_pubtext_lock(1);
     _LIBAROMA_TEXTP txt = (_LIBAROMA_TEXTP) text;
     int i;
     for (i = 0; i < txt->n; i++) {
@@ -142,6 +146,7 @@ byte libaroma_text_free(LIBAROMA_TEXT text) {
     }
     free(txt->lines);
     free(txt);
+    _libaroma_pubtext_lock(0);
     return 1;
   }
   return 0;
@@ -219,6 +224,7 @@ int libaroma_text_draw_line_ex(
       return 0;
     }
     _LIBAROMA_TEXTLINEP line_txt = txt->lines[line];
+    _libaroma_pubtext_lock(1);
     if (line_txt->span) {
       if (!isshadow) {
         libaroma_textline_draw(
@@ -275,6 +281,7 @@ int libaroma_text_draw_line_ex(
         libaroma_canvas_free(cv);
       }
     }
+    _libaroma_pubtext_lock(0);
     return line_txt->lineheight;
   }
   return 0;

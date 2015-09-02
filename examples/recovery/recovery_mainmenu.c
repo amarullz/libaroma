@@ -176,7 +176,7 @@ byte recovery_mainmenu_init(LIBAROMA_WINDOWP win, MAINMENU * var){
   
   _DIV(302);
   
-  
+  /*
   LIBAROMA_CANVASP cphoto=libaroma_image_uri("file:///data/system/users/0/photo.png");
   if (!cphoto){
     cphoto=libaroma_image_uri("res:///bg/sidebar.jpg");
@@ -208,6 +208,7 @@ byte recovery_mainmenu_init(LIBAROMA_WINDOWP win, MAINMENU * var){
     -1);
     _DIV(303);
   }
+  */
   
   int u;
   for (u=0;u<20;u++){

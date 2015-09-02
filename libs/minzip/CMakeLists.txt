@@ -12,12 +12,7 @@ add_library(minzip STATIC
 )
 
 # cflags
-set_target_properties(minzip PROPERTIES COMPILE_FLAGS "\
-	-save-temps \
-	-fdata-sections -ffunction-sections -Wl,--gc-sections \
-	-D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG \
-	-fPIC -DPIC -Wl,-s -Werror \
-")
+set_target_properties(minzip PROPERTIES COMPILE_FLAGS "-save-temps -fdata-sections -ffunction-sections -Wl,--gc-sections -D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG -fPIC -DPIC -Wl,-s -Werror")
 
 # dependencies
 add_dependencies(minzip z)

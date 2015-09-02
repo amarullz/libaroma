@@ -114,7 +114,7 @@ _LIBAROMA_TEXTLINEP libaroma_textline_align(
           (span->data != NULL)) {
         _LIBAROMA_TEXTSPAN_IMGP imgspan =
           (_LIBAROMA_TEXTSPAN_IMGP) span->data;
-        if (imgspan->s != 0) {
+        if ((imgspan->s&3) != 0) {
           line->maxx = line->w;
           allow_maxmin = 0;
         }
@@ -147,7 +147,7 @@ _LIBAROMA_TEXTLINEP libaroma_textline_align(
           (span->data != NULL)) {
         _LIBAROMA_TEXTSPAN_IMGP imgspan =
           (_LIBAROMA_TEXTSPAN_IMGP) span->data;
-        if (imgspan->s == 0) {
+        if ((imgspan->s&3) == 0) {
           span->x += indent_size;
         }
       }
@@ -171,7 +171,7 @@ _LIBAROMA_TEXTLINEP libaroma_textline_align(
           (span->data != NULL)) {
         _LIBAROMA_TEXTSPAN_IMGP imgspan =
           (_LIBAROMA_TEXTSPAN_IMGP) span->data;
-        if (imgspan->s == 0) {
+        if ((imgspan->s&3) == 0) {
           span->x += width_left;
         }
       }
@@ -196,7 +196,7 @@ _LIBAROMA_TEXTLINEP libaroma_textline_align(
           (span->data != NULL)) {
         _LIBAROMA_TEXTSPAN_IMGP imgspan =
           (_LIBAROMA_TEXTSPAN_IMGP) span->data;
-        if (imgspan->s == 0) {
+        if ((imgspan->s&3) == 0) {
           span->x += x;
         }
       }
@@ -225,7 +225,7 @@ _LIBAROMA_TEXTLINEP libaroma_textline_align(
           /* only non-floating images */
           _LIBAROMA_TEXTSPAN_IMGP imgspan =
             (_LIBAROMA_TEXTSPAN_IMGP) span->data;
-          if (imgspan->s == 0) {
+          if ((imgspan->s&3) == 0) {
             span->x += add_sz;
             isfirstspan = 0;
           }
@@ -359,7 +359,7 @@ void libaroma_textline_add_span_img(
   _LIBAROMA_TEXTSPAN_IMGP imgspan,
   int * limit_width
 ) {
-  if (imgspan->s != 0) {
+  if ((imgspan->s&3) != 0) {
     /* allocating span */
     _LIBAROMA_TEXTSPANP span =
       (_LIBAROMA_TEXTSPANP) malloc(sizeof(_LIBAROMA_TEXTSPAN));
@@ -380,7 +380,7 @@ void libaroma_textline_add_span_img(
     int pending_w = 0;
     
     /* float left/right */
-    if (imgspan->s == 1) {
+    if ((imgspan->s&3) == 1) {
       span->x = libaroma_textline_get_floated_image_width(chunk, line, 1);
       *x += imgspan->w;
       _LIBAROMA_TEXTSPANP next = line->span;
@@ -389,7 +389,7 @@ void libaroma_textline_add_span_img(
           /* only non-floating images */
           _LIBAROMA_TEXTSPAN_IMGP local_imgspan =
             (_LIBAROMA_TEXTSPAN_IMGP) next->data;
-          if (local_imgspan->s == 0) {
+          if ((local_imgspan->s&3) == 0) {
             next->x += local_imgspan->w;
           }
         }
@@ -728,10 +728,13 @@ _LIBAROMA_TEXTLINEP libaroma_textline(
         int  sizen  = 0;
         for (i = 1; i < param_n; i++) {
           if (strcmp(param[i], "left") == 0) {
-            style = 1;
+            style = (style&0xf8)|1;
           }
           else if (strcmp(param[i], "right") == 0) {
-            style = 2;
+            style = (style&0xf8)|2;
+          }
+          else if (strcmp(param[i], "center") == 0) {
+            style |= 4;
           }
           else if (strcmp(param[i], "auto") == 0) {
             if (sizen < 2) {

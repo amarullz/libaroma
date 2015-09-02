@@ -66,7 +66,10 @@ char * libaroma_getprop(
       --val_end;
     }
     val_end[1] = '\0';
-    result = strdup(val_start);
+    size_t ln=strlen(val_start)+1;
+    result = malloc(ln);
+    memcpy(result,val_start,ln);
+    /*strdup(val_start);*/
     break;
   }
   while ((line = strtok(NULL, "\n")));

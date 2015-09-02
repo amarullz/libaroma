@@ -330,6 +330,7 @@ byte recovery_init(){
   */
   
   /* disable shared fb */
+  libaroma_config()->runtime_monitor = LIBAROMA_START_UNSAFE;
   libaroma_config()->fb_shm_name[0]=0;
   
   /* start libaroma */

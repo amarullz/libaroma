@@ -36,9 +36,9 @@
 #define QNX_HIDDI_DEV_MOUSE   0x03
 
 /* Egalax Calibration */
-#define QNX_HIDDI_EGALAX_W 2000
+#define QNX_HIDDI_EGALAX_W 1970
 #define QNX_HIDDI_EGALAX_H 2000
-#define QNX_HIDDI_EGALAX_X 70
+#define QNX_HIDDI_EGALAX_X 10
 #define QNX_HIDDI_EGALAX_Y 70
 
 /* struct */

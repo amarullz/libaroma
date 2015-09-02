@@ -28,10 +28,33 @@
 #define __libaroma_ctl_label_h__
 
 
-LIBAROMA_CONTROLP libaroma_control_label(
+LIBAROMA_CONTROLP libaroma_ctl_label_ex(
   LIBAROMA_WINDOWP win, word id, char * text,
-  int x, int y, int w, int h
+  int x, int y, int w, int h,
+  word color, byte fontid, byte size, dword flags, byte lineheight
 );
 
+#define libaroma_ctl_label(win,i,t,x,y,w,h,c,s,f,l) \
+	libaroma_ctl_label_ex(win,i,t,x,y,w,h,c,0,s,f,l)
+
+byte libaroma_ctl_label_set_flags(
+	LIBAROMA_CONTROLP ctl,dword flags,byte update);
+
+byte libaroma_ctl_label_set_size(
+	LIBAROMA_CONTROLP ctl,byte size,byte update);
+
+byte libaroma_ctl_label_set_fontid(
+	LIBAROMA_CONTROLP ctl,byte fontid,byte update);
+	
+byte libaroma_ctl_label_set_color(
+	LIBAROMA_CONTROLP ctl,word color,byte update);
+
+byte libaroma_ctl_label_set_text(
+	LIBAROMA_CONTROLP ctl,char * text,byte update);
+
+char * libaroma_ctl_label_get_text(LIBAROMA_CONTROLP ctl);
+
+byte libaroma_ctl_label_set_lineheight(
+	LIBAROMA_CONTROLP ctl,byte lineheight,byte update);
 
 #endif /* __libaroma_ctl_label_h__ */

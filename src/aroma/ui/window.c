@@ -252,7 +252,7 @@ LIBAROMA_WINDOWP libaroma_window(
     snprintf(win->theme_bg,256,"%s",bg_theme_name);
   }
   else{
-    snprintf(win->theme_bg,256,"%s","window");
+  	win->theme_bg[0]=0;
   }
   win->rx = x;
   win->ry = y;
@@ -336,7 +336,13 @@ byte _libaroma_window_updatebg(LIBAROMA_WINDOWP win){
   }
   if (win->handler!=NULL){
     if (win->handler->updatebg!=NULL){
-      return win->handler->updatebg(win);
+      if (win->handler->updatebg(win)){
+	      if (win->onupdatebg){
+			  	win->onupdatebg(win,win->bg);
+			  }
+			  return 1;
+			}
+			return 0;
     }
   }
   if (win->parent!=NULL){
@@ -354,11 +360,27 @@ byte _libaroma_window_updatebg(LIBAROMA_WINDOWP win){
     libaroma_canvas_free(win->bg);
   }
   win->bg = libaroma_canvas(w,h);
+  
+  /* default canvas color */
   libaroma_canvas_setcolor(
     win->bg,
     libaroma_colorget(NULL,win)->window_bg,
     0xff
   );
+  
+  /* from theme canvas */
+  if (win->theme_bg[0]!=0){
+  	libaroma_wm_draw_theme(
+	    win->bg, win->theme_bg,
+	    0, 0, win->bg->w, win->bg->h,
+	    NULL
+	  );
+  }
+  
+  /* from updatebg callback */
+  if (win->onupdatebg!=NULL){
+  	win->onupdatebg(win,win->bg);
+  }
   return 1;
 } /* End of _libaroma_window_updatebg */
 
@@ -872,6 +894,70 @@ byte libaroma_window_anishow(
               wmc, win->dc,0,0,0,((byte) (255 * swift_out_state))
             );
             libaroma_window_sync(win, 0, 0, win->w, win->h);
+          }
+          break;
+        case LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_TOP:
+        case LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_TOP:
+          {
+            float swift_out_state = libaroma_cubic_bezier_swiftout(state);
+            int y = win->h - (swift_out_state * win->h);
+            int h = win->h - y;
+            if (h>0){
+              if (animation==LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_TOP){
+                if (h<win->h){
+                  libaroma_draw_ex(
+                    wmc,
+                    back,
+                    0, 0, 0, win->h - (win->h - h), win->w, win->h-h,
+                    0, 0xff
+                  );
+                }
+              }
+              libaroma_draw_ex(
+                wmc,
+                win->dc,
+                0, y, 0, 0, win->w, h,
+                0, 0xff
+              );
+              if (animation==LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_TOP){
+                libaroma_wm_sync(win->x,win->y,win->w,win->h);
+              }
+              else{
+                libaroma_wm_sync(win->x,win->y+y,win->w, h);
+              }
+            }
+          }
+          break;
+        case LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_BOTTOM:
+        case LIBAROMA_WINDOW_SHOW_ANIMATION_PAGE_BOTTOM:
+          {
+            float swift_out_state = libaroma_cubic_bezier_swiftout(state);
+            int y = 0 - (win->h - (swift_out_state * win->h));
+            int h = win->h + y;
+            if (h>0){
+              if (animation==LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_BOTTOM){
+                if (h<win->h){
+                  libaroma_draw_ex(
+                    wmc,
+                    back,
+                    0, h, 0, 0, win->w, win->h-h,
+                    0, 0xff
+                  );
+                }
+              }
+              libaroma_draw_ex(
+                wmc,
+                win->dc,
+                0, 0, 0, win->h-h, win->w, h,
+                0, 0xff
+              );
+              if (animation==LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_BOTTOM){
+                libaroma_wm_sync(win->x,win->y,win->w,win->h);
+              }
+              else{
+                libaroma_wm_sync(win->x,win->y,win->w,h);
+              }
+            }
           }
           break;
         case LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_LEFT:

@@ -47,7 +47,9 @@ typedef struct __LIBAROMA_FONT_FACE _LIBAROMA_FONT_FACE;
 typedef struct __LIBAROMA_FONT_FACE * _LIBAROMA_FONT_FACEP;
 struct __LIBAROMA_FONT_FACE{
   FT_Face face;
+#ifndef LIBAROMA_CONFIG_TEXT_NOHARFBUZZ
   hb_font_t * hb_font;
+#endif
   byte id;
   short size;
   LIBAROMA_IARRAYP cache;
