@@ -170,7 +170,8 @@ LIBAROMA_CANVASP libaroma_jpeg_ex(
   int pcv_c    = cinfo.output_components;
   
   /* verbose */
-  /*ALOGS("load jpeg \"%s\" (%ix%i:%i)", stream->uri, pcv_w, pcv_h, pcv_c);*/
+  ALOGV("load jpeg \"%s\" (%ix%i:%i)", stream->uri, pcv_w, pcv_h, pcv_c);
+  
   /* Create Canvas */
   cv = libaroma_canvas_new(
      pcv_w,
@@ -179,7 +180,9 @@ LIBAROMA_CANVASP libaroma_jpeg_ex(
      hicolor
    );
   if(!cv) {
-    return NULL;
+    jpeg_finish_decompress(&cinfo);
+    jpeg_destroy_decompress(&cinfo);
+    goto exit;
   }
   
   /* image loop */
@@ -209,12 +212,7 @@ LIBAROMA_CANVASP libaroma_jpeg_ex(
     while (cinfo.output_scanline < cinfo.output_height) {
       wordp line = cv->data + (y * cv->l);
       jpeg_read_scanlines(&cinfo, &row_data, 1);
-      for (x = 0, z = row_sz; x < z; x += 3) {
-        *line++ = libaroma_dither_rgb(
-            x, y, row_data[x], row_data[x + 1], row_data[x + 2]
-          );
-      }
-      y++;
+      libaroma_dither_24to16(y++, pcv_w, line, row_data);
     }
   }
   free(row_data);
@@ -226,6 +224,111 @@ exit:
   }
   return cv;
 } /* End of libaroma_jpeg_ex */
+
+
+/*
+ * Function    : libaroma_jpeg_draw
+ * Return Value: byte
+ * Descriptions: read jpeg & directly draw it
+ */
+byte libaroma_jpeg_draw(
+    LIBAROMA_STREAMP stream,
+    byte freeStream,
+    LIBAROMA_CANVASP cv,
+    int dx, int dy, int dw, int dh,
+    byte dither
+    ) {
+  byte retval=0;
+  if (!stream) {
+    return retval;
+  }
+  if (!cv){
+    goto exit;
+  }
+  
+  /* error handler*/
+  struct jpeg_decompress_struct cinfo;
+  _LIBAROMA_JPEG_ERROR_MGR jerr;
+  cinfo.err = jpeg_std_error(&jerr.pub);
+  jerr.pub.error_exit = _libaroma_jpeg_error_exit;
+  
+  /* exception handler */
+  if (setjmp(jerr.setjmp_buffer)) {
+    jpeg_destroy_decompress(&cinfo);
+    goto exit;
+  }
+  
+  /* init */
+  jpeg_create_decompress(&cinfo);
+  _libaroma_jpeg_mem_src(&cinfo, (const JOCTET *) stream->data, stream->size);
+  jpeg_read_header(&cinfo, TRUE);
+  jpeg_start_decompress(&cinfo);
+  
+  dword vdw=(dword) dw;
+  dword vdh=(dword) dh;
+  
+  if ((cinfo.output_width==vdw)&&(cinfo.output_height==vdh)){
+    dword row_sz = cinfo.output_width * cinfo.output_components;
+    bytep row_data = (bytep) malloc(row_sz);
+    int y=0;
+    while(cinfo.output_scanline<vdh){
+      wordp line = cv->data + ((y+dy) * cv->l) + dx;
+      jpeg_read_scanlines(&cinfo, &row_data, 1);
+      if (dither){
+        libaroma_dither_24to16(y, dw, line, row_data);
+      }
+      else{
+        libaroma_color_24to16(line, row_data, dw);
+      }
+      y++;
+    }
+    free(row_data);
+    retval=1;
+  }
+  else{
+    int pcv_w    = cinfo.output_width;
+    int pcv_h    = cinfo.output_height;
+    int pcv_c    = cinfo.output_components;
+    LIBAROMA_CANVASP cvt = libaroma_canvas_new(pcv_w,pcv_h,0,0);
+    if(!cvt) {
+      jpeg_finish_decompress(&cinfo);
+      jpeg_destroy_decompress(&cinfo);
+      goto exit;
+    }
+    
+    /* image loop */
+    dword row_sz    = pcv_w * pcv_c;
+    bytep row_data  = (bytep) malloc(row_sz);
+    int y = 0;
+    while (cinfo.output_scanline < cinfo.output_height) {
+      wordp line = cvt->data + (y * cvt->l);
+      jpeg_read_scanlines(&cinfo, &row_data, 1);
+      if (dither){
+        libaroma_dither_24to16(y, pcv_w, line, row_data);
+      }
+      else{
+        libaroma_color_24to16(line, row_data, pcv_w);
+      }
+      y++;
+    }
+    free(row_data);
+    libaroma_draw_scale_nearest(
+      cv, cvt,
+      dx, dy, dw, dh,
+      0, 0, cvt->w, cvt->h
+    );
+    libaroma_canvas_free(cvt);
+    retval=1;
+  }
+  jpeg_finish_decompress(&cinfo);
+  jpeg_destroy_decompress(&cinfo);
+exit:
+  if (freeStream) {
+    libaroma_stream_close(stream);
+  }
+  return retval;
+} /* End of libaroma_jpeg_draw */
+
 #endif /* LIBAROMA_CONFIG_NOJPEG */
 
 

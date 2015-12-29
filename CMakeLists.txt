@@ -24,6 +24,21 @@ set( LIBAROMA_PLATFORM_NAME "${LIBAROMA_PLATFORM_NAME}" CACHE STRING "Libaroma t
 set_property( CACHE LIBAROMA_PLATFORM_NAME PROPERTY STRINGS "linux;qnx;sdl;rpi" )
 message("Platform           : ${LIBAROMA_PLATFORM_NAME}")
 
+
+# NO HARFBUZZ List
+if(NOT DEFINED LIBAROMA_CONFIG_TEXT_NOHARFBUZZ)  
+	set(LIBAROMA_CONFIG_TEXT_NOHARFBUZZ "DISABLE")
+endif()
+set( LIBAROMA_CONFIG_TEXT_NOHARFBUZZ "${LIBAROMA_CONFIG_TEXT_NOHARFBUZZ}" CACHE STRING "Compile Without Harfbuzz-ng" FORCE )
+set_property( CACHE LIBAROMA_CONFIG_TEXT_NOHARFBUZZ PROPERTY STRINGS "DISABLE;ENABLE" )
+
+# WITH LIBAROMART
+if(NOT DEFINED LIBAROMA_WITH_RT)  
+	set(LIBAROMA_WITH_RT "DISABLE")
+endif()
+set( LIBAROMA_WITH_RT "${LIBAROMA_WITH_RT}" CACHE STRING "Compile With Libaroma RT" FORCE )
+set_property( CACHE LIBAROMA_WITH_RT PROPERTY STRINGS "DISABLE;ENABLE" )
+
 # OpenMP List
 if(NOT DEFINED LIBAROMA_WITH_OPENMP)  
 	set(LIBAROMA_WITH_OPENMP "DISABLE")
@@ -146,6 +161,22 @@ else()
 	set(AROMA_OPENMP false)
 endif()
 
+if (LIBAROMA_CONFIG_TEXT_NOHARFBUZZ STREQUAL ENABLE)
+  SET(NOHARFBUZZNG true)
+  message("Using Harfbuzz-ng  : NO")
+  set(AROMA_CFLAGS "${AROMA_CFLAGS} -DLIBAROMA_CONFIG_TEXT_NOHARFBUZZ=1")
+else()
+  message("Using Harfbuzz-ng  : YES")
+endif()
+
+if (LIBAROMA_WITH_RT STREQUAL ENABLE)
+  SET(WITHAROMART true)
+  message("With AROMA RUNTIME : YES")
+else()
+  message("With AROMA RUNTIME : NO")
+endif()
+
+
 # AROMA config
 set(AROMA_CFLAGS "${AROMA_CFLAGS} -DLIBAROMA_CONFIG_DEBUG=${LIBAROMA_CONFIG_DEBUG}")
 set(AROMA_CFLAGS "${AROMA_CFLAGS} -DLIBAROMA_CONFIG_DEBUG_FILE=${LIBAROMA_CONFIG_DEBUG_FILE}")
@@ -214,18 +245,24 @@ include_directories(
 	${PROJECT_SOURCE_DIR}/libs/minzip
 	${PROJECT_SOURCE_DIR}/libs/png
 	${PROJECT_SOURCE_DIR}/libs/jpeg
-	${PROJECT_SOURCE_DIR}/libs/harfbuzz-ng/src
 	${PROJECT_SOURCE_DIR}/libs/harfbuzz-ng/src/hb-ucdn
+	${PROJECT_SOURCE_DIR}/libs/harfbuzz-ng/src
 	${PROJECT_SOURCE_DIR}/libs/squirrel/include
 	${PROJECT_SOURCE_DIR}/libs/squirrel/squirrel
 	${PROJECT_SOURCE_DIR}/libs/squirrel/sqstdlib
 )
 
+
 # aroma
 add_library(aroma ${CMAKE_LINK_TYPE} ${AROMA_SRCS})
 set_target_properties(aroma PROPERTIES COMPILE_FLAGS ${AROMA_CFLAGS})
-add_dependencies(aroma z freetype harfbuzz hbucdn minzip png jpeg squirrel)
-target_link_libraries(aroma z freetype harfbuzz hbucdn minzip png jpeg squirrel)
+add_dependencies(aroma z freetype hbucdn minzip png jpeg)
+target_link_libraries(aroma z freetype hbucdn minzip png jpeg)
+
+if (NOT DEFINED NOHARFBUZZNG)
+  add_dependencies(aroma harfbuzz)
+  target_link_libraries(aroma harfbuzz)
+endif()
 
 # SDL
 # TODO: move to platform module
@@ -253,17 +290,26 @@ add_subdirectory(libs/harfbuzz-ng/src/hb-ucdn)
 add_subdirectory(libs/minzip)
 add_subdirectory(libs/png)
 add_subdirectory(libs/jpeg)
-add_subdirectory(libs/squirrel)
 
-# aromart
-file(GLOB AROMART_SRCS src/aromart/*.c)
-add_library(aromart ${CMAKE_LINK_TYPE} ${AROMART_SRCS})
-target_link_libraries(aromart aroma)
 
-# aromart_test
-file(GLOB AROMART_TEST_SRCS examples/rt_test/*.c)
-add_executable(aromart_test ${AROMART_TEST_SRCS})
-target_link_libraries(aromart_test aromart)
+if (DEFINED WITHAROMART)
+  add_subdirectory(libs/squirrel)
+  # aromart
+  file(GLOB AROMART_SRCS src/aromart/*.c)
+  add_library(aromart ${CMAKE_LINK_TYPE} ${AROMART_SRCS})
+  add_dependencies(aromart aroma squirrel)
+  target_link_libraries(aromart aroma squirrel)
+  
+  # aromart_test
+  file(GLOB AROMART_TEST_SRCS examples/rt_test/*.c)
+  add_executable(aromart_test ${AROMART_TEST_SRCS})
+  target_link_libraries(aromart_test aromart)
+endif()
+
+# libaroma_test
+file(GLOB LIBAROMA_TEST_SRCS examples/*.c)
+add_executable(libaroma_test ${LIBAROMA_TEST_SRCS})
+target_link_libraries(libaroma_test aroma)
 
 message("CFLAGS             : ${CMAKE_C_FLAGS}")
 message("CXXFLAGS           : ${CMAKE_CXX_FLAGS}")

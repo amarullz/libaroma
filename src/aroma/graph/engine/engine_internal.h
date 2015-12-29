@@ -64,6 +64,10 @@
     bytep __restrict dst, wordp __restrict src, int n);
 #endif
 
+#ifndef __engine_have_libaroma_color_24to16
+  void libaroma_color_24to16(wordp dst, bytep src, int n);
+#endif
+
 /*
  * vector dithering
  */
@@ -72,6 +76,9 @@
 #endif
 #ifndef __engine_have_libaroma_dither_line_const
   void libaroma_dither_line_const(int y, int w, wordp dst, dword src);
+#endif
+#ifndef __engine_have_libaroma_dither_24to16
+  void libaroma_dither_24to16(int y, int n, wordp dst, bytep src);
 #endif
 
 /*

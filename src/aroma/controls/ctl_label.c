@@ -54,6 +54,12 @@ struct __LIBAROMA_CTL_LABEL{
   dword flags;
   byte update;
   byte lh;
+  byte valign;
+  word bgcolor;
+  byte usebg;
+  int  vpos;
+  byte hidden;
+  LIBAROMA_MUTEX mutex;
 };
 
 byte _libaroma_ctl_label_thread(LIBAROMA_CONTROLP ctl) {
@@ -61,7 +67,9 @@ byte _libaroma_ctl_label_thread(LIBAROMA_CONTROLP ctl) {
 	  _libaroma_ctl_label_handler, _LIBAROMA_CTL_LABELP, 0
 	);
   if (me->update){
+    libaroma_mutex_lock(me->mutex);
   	me->update=0;
+  	libaroma_mutex_unlock(me->mutex);
     return 1;
   }
   return 0;
@@ -71,9 +79,12 @@ void _libaroma_ctl_label_destroy(LIBAROMA_CONTROLP ctl){
   _LIBAROMA_CTL_CHECK(
 	  _libaroma_ctl_label_handler, _LIBAROMA_CTL_LABELP, 
 	);
+	libaroma_mutex_lock(me->mutex);
   if (me->text){
     free(me->text);
   }
+  libaroma_mutex_unlock(me->mutex);
+  libaroma_mutex_free(me->mutex);
   free(me);
 }
 
@@ -82,23 +93,62 @@ void _libaroma_ctl_label_draw(
   _LIBAROMA_CTL_CHECK(
 	  _libaroma_ctl_label_handler, _LIBAROMA_CTL_LABELP, 
 	);
-  libaroma_control_erasebg(ctl,c);
-  /*
-  libaroma_draw_rect(
-    c,
-    0,0,c->w,c->h,0,0xcc
-  );*/
-  libaroma_draw_text(
-  	c,
-  	me->text,
-  	0,0,me->color, c->w,
-  	LIBAROMA_FONT(me->fontid,me->size)|me->flags,
-  	me->lh
-  );
+	
+	if (me->usebg){
+	  libaroma_draw_rect(c,0,0,c->w,c->h,me->bgcolor,0xff);
+	}
+	else{
+    libaroma_control_erasebg(ctl,c);
+  }
+  if (!me->hidden){
+    libaroma_mutex_lock(me->mutex);
+    if (me->valign){
+      LIBAROMA_TEXT txt = libaroma_text(
+        me->text,me->color, c->w,LIBAROMA_FONT(me->fontid,me->size)|me->flags,
+      	me->lh
+      );
+      if (txt){
+        int txth=libaroma_text_height(txt);
+        if (me->valign==1){
+          libaroma_text_draw(
+            c, txt, 0, ((c->h>>1)-(txth>>1))+me->vpos
+          );
+        }
+        else{
+          libaroma_text_draw(
+            c, txt, 0, c->h-(txth>>1)
+          );
+        }
+        libaroma_text_free(txt);
+      }
+    }
+    else{
+      libaroma_draw_text(
+      	c,
+      	me->text,
+      	0,me->vpos,me->color, c->w,
+      	LIBAROMA_FONT(me->fontid,me->size)|me->flags,
+      	me->lh
+      );
+    }
+    libaroma_mutex_unlock(me->mutex);
+  }
 }
 
 dword _libaroma_ctl_label_msg(LIBAROMA_CONTROLP ctl, LIBAROMA_MSGP msg){
   return 0;
+}
+
+byte libaroma_ctl_label_hidden(
+	LIBAROMA_CONTROLP ctl,byte hidden){
+  _LIBAROMA_CTL_CHECK(
+		_libaroma_ctl_label_handler, _LIBAROMA_CTL_LABELP, 0
+	);
+	libaroma_mutex_lock(me->mutex);
+	me->hidden=hidden;
+  me->update=1;
+  libaroma_mutex_unlock(me->mutex);
+	return 1;
 }
 
 char * libaroma_ctl_label_get_text(LIBAROMA_CONTROLP ctl){
@@ -109,14 +159,16 @@ char * libaroma_ctl_label_get_text(LIBAROMA_CONTROLP ctl){
 }
 
 byte libaroma_ctl_label_set_text(
-	LIBAROMA_CONTROLP ctl,char * text,byte update){
+	LIBAROMA_CONTROLP ctl,const char * text,byte update){
 	_LIBAROMA_CTL_CHECK(
 		_libaroma_ctl_label_handler, _LIBAROMA_CTL_LABELP, 0
 	);
+	libaroma_mutex_lock(me->mutex);
 	if (me->text){
 		free(me->text);
 	}
 	me->text=strdup(text);
+	libaroma_mutex_unlock(me->mutex);
 	if (update){
 		me->update=1;
 	}
@@ -128,10 +180,12 @@ byte libaroma_ctl_label_set_color(
 	_LIBAROMA_CTL_CHECK(
 		_libaroma_ctl_label_handler, _LIBAROMA_CTL_LABELP, 0
 	);
+	libaroma_mutex_lock(me->mutex);
 	me->color=color;
 	if (update){
 		me->update=1;
 	}
+	libaroma_mutex_unlock(me->mutex);
 	return 1;
 }
 
@@ -140,10 +194,12 @@ byte libaroma_ctl_label_set_size(
 	_LIBAROMA_CTL_CHECK(
 		_libaroma_ctl_label_handler, _LIBAROMA_CTL_LABELP, 0
 	);
+	libaroma_mutex_lock(me->mutex);
 	me->size=size;
 	if (update){
 		me->update=1;
 	}
+	libaroma_mutex_unlock(me->mutex);
 	return 1;
 }
 
@@ -152,10 +208,12 @@ byte libaroma_ctl_label_set_fontid(
 	_LIBAROMA_CTL_CHECK(
 		_libaroma_ctl_label_handler, _LIBAROMA_CTL_LABELP, 0
 	);
+	libaroma_mutex_lock(me->mutex);
 	me->fontid=fontid;
 	if (update){
 		me->update=1;
 	}
+	libaroma_mutex_unlock(me->mutex);
 	return 1;
 }
 
@@ -164,10 +222,12 @@ byte libaroma_ctl_label_set_flags(
 	_LIBAROMA_CTL_CHECK(
 		_libaroma_ctl_label_handler, _LIBAROMA_CTL_LABELP, 0
 	);
+	libaroma_mutex_lock(me->mutex);
 	me->flags=flags;
 	if (update){
 		me->update=1;
 	}
+	libaroma_mutex_unlock(me->mutex);
 	return 1;
 }
 
@@ -176,6 +236,7 @@ byte libaroma_ctl_label_set_lineheight(
 	_LIBAROMA_CTL_CHECK(
 		_libaroma_ctl_label_handler, _LIBAROMA_CTL_LABELP, 0
 	);
+	libaroma_mutex_lock(me->mutex);
 	me->lh   = lineheight;
   if (me->lh==0){
   	me->lh=100;
@@ -183,14 +244,60 @@ byte libaroma_ctl_label_set_lineheight(
 	if (update){
 		me->update=1;
 	}
+	libaroma_mutex_unlock(me->mutex);
+	return 1;
+}
+
+byte libaroma_ctl_label_set_valign(
+	LIBAROMA_CONTROLP ctl,byte valign,byte update){
+	_LIBAROMA_CTL_CHECK(
+		_libaroma_ctl_label_handler, _LIBAROMA_CTL_LABELP, 0
+	);
+	libaroma_mutex_lock(me->mutex);
+	me->valign  = valign;
+	if (update){
+		me->update=1;
+	}
+	libaroma_mutex_unlock(me->mutex);
+	return 1;
+}
+
+byte libaroma_ctl_label_set_vpos(
+	LIBAROMA_CONTROLP ctl,int vpos,byte update){
+	_LIBAROMA_CTL_CHECK(
+		_libaroma_ctl_label_handler, _LIBAROMA_CTL_LABELP, 0
+	);
+	libaroma_mutex_lock(me->mutex);
+	me->vpos  = vpos;
+	if (update){
+		me->update=1;
+	}
+	libaroma_mutex_unlock(me->mutex);
+	return 1;
+}
+
+
+byte libaroma_ctl_label_set_bgcolor(
+	LIBAROMA_CONTROLP ctl,word bgcolor, byte usebg,byte update){
+	_LIBAROMA_CTL_CHECK(
+		_libaroma_ctl_label_handler, _LIBAROMA_CTL_LABELP, 0
+	);
+	libaroma_mutex_lock(me->mutex);
+	me->bgcolor  = bgcolor;
+	me->usebg  = usebg;
+	if (update){
+		me->update=1;
+	}
+	libaroma_mutex_unlock(me->mutex);
 	return 1;
 }
 	
 
-LIBAROMA_CONTROLP libaroma_ctl_label_ex(
-  LIBAROMA_WINDOWP win, word id, char * text,
+LIBAROMA_CONTROLP libaroma_ctl_label_valign(
+  LIBAROMA_WINDOWP win, word id, const char * text,
   int x, int y, int w, int h,
-  word color, byte fontid, byte size, dword flags, byte lineheight
+  word color, byte fontid, byte size, dword flags, byte lineheight,
+  byte valign
 ){
   _LIBAROMA_CTL_LABELP me = (_LIBAROMA_CTL_LABELP)
     calloc(sizeof(_LIBAROMA_CTL_LABEL),1);
@@ -204,16 +311,21 @@ LIBAROMA_CONTROLP libaroma_ctl_label_ex(
   me->fontid = fontid;
   me->flags= flags;
   me->lh   = lineheight;
+  me->valign = valign;
+  me->bgcolor=0;
+  me->usebg=0;
+  me->vpos=0;
+  
   if (me->lh==0){
   	me->lh=100;
   }
   me->update=1;
-  
+  libaroma_mutex_init(me->mutex);
   LIBAROMA_CONTROLP ctl =
     libaroma_control_new(
       id,
       x, y, w, h,
-      libaroma_dp(28),libaroma_dp(32),
+      libaroma_dp(10),libaroma_dp(10),
       me,
       &_libaroma_ctl_label_handler,
       win
@@ -223,6 +335,7 @@ LIBAROMA_CONTROLP libaroma_ctl_label_ex(
     if (me->text){
       free(me->text);
     }
+    libaroma_mutex_free(me->mutex);
     free(me);
   }
   return ctl;

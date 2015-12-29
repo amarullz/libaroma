@@ -27,10 +27,12 @@
 #include <stdarg.h>
 #include <sched.h>
 
-#define QNXHID_EV_TOUCH_UP   0x01
-#define QNXHID_EV_TOUCH_DOWN 0x02
-#define QNXHID_EV_TOUCH_MOVE 0x03
-#define QNXHID_EV_TOUCH_EXIT 0xf0
+#define QNXHID_EV_TOUCH_UP        0x01
+#define QNXHID_EV_TOUCH_DOWN      0x02
+#define QNXHID_EV_TOUCH_MOVE      0x03
+#define QNXHID_EV_TOUCH_KBD       0x08
+#define QNXHID_EV_TOUCH_RAW_KBD   0x10
+#define QNXHID_EV_TOUCH_EXIT      0xf0
 
 /* qnx hid event & state */
 static byte   qnxhid_active         = 0;
@@ -51,6 +53,7 @@ void qnxhid_push_event(QNXHID_EVENT * ev){
 }
 void qnxhid_send_event(byte id, int x, int y){
   pthread_mutex_lock(&qnxhid_mutex);
+  //printf("HID EVENT: %i - %ix%i\n",id,x,y);
   byte send=1;
   if ((id==QNXHID_EV_TOUCH_UP)&&(qnxhid_touchlastid==QNXHID_EV_TOUCH_UP)){
     send=0;
@@ -79,8 +82,21 @@ void qnxhid_release(LIBAROMA_HIDP me);
 
 static void * qnxhid_monitoring(void * cookie){
 	qnx_hiddi_connect();
+	int currnum=qnx_hiddi_getdevnum();
+	ALOGI("INPUT DEVICE : %i Devices Detected",currnum);
   while(qnxhid_active){
-    if (qnxhid_touchlastev<libaroma_tick()-8000){
+    int nownum=qnx_hiddi_getdevnum();
+    if (currnum!=nownum){
+      ALOGI("INPUT DEVICE DETECTED CHANGED : %i to %i",currnum,nownum);
+      // printf("DEV NUM: %i - %i\n",currnum,nownum);
+      currnum=nownum;
+      qnx_hiddi_disconnect();
+      libaroma_sleep(500);
+      qnx_hiddi_init();
+      qnx_hiddi_connect();
+      qnxhid_touchlastev=libaroma_tick();
+    }
+    else if (qnxhid_touchlastev<libaroma_tick()-8000){
       pthread_mutex_lock(&qnxhid_mutex);
       qnxhid_touchlastev=libaroma_tick();
       qnxhid_touchlastid=QNXHID_EV_TOUCH_UP;
@@ -93,9 +109,11 @@ static void * qnxhid_monitoring(void * cookie){
       }
       pthread_mutex_unlock(&qnxhid_mutex);
       qnx_hiddi_disconnect();
+      libaroma_sleep(500);
+      qnx_hiddi_init();
       qnx_hiddi_connect();
     }
-    usleep(50000);
+    libaroma_sleep(1500);
   }
   return NULL;
 }
@@ -115,7 +133,7 @@ byte qnxhid_init(LIBAROMA_HIDP me) {
   qnx_hiddi_screen_h = me->screen_height;
   
   /* set normal priority */
-  setprio(getpid(),1);
+  // setprio(getpid(),1);
   
   /* init hiddi */
   if (!qnx_hiddi_init()){
@@ -129,6 +147,7 @@ byte qnxhid_init(LIBAROMA_HIDP me) {
   me->internal  = NULL;
   me->release   = &qnxhid_release;
   me->getinput  = &qnxhid_getinput;
+  me->config    = &__qnx_hiddi_config;
   qnxhid_active = 1;
   
   /* stuck monitoring */
@@ -177,7 +196,22 @@ byte qnxhid_getinput(LIBAROMA_HIDP me, LIBAROMA_HID_EVENTP dest_ev){
       if (ev.id==QNXHID_EV_TOUCH_EXIT){
         return LIBAROMA_HID_EV_RET_EXIT;
       }
+      else if (ev.id==QNXHID_EV_TOUCH_KBD){
+        libaroma_window_post_command(
+          LIBAROMA_CMD_SET(LIBAROMA_CMD_CLICK, ev.y, ev.x)
+        );
+      }
+      else if (ev.id==QNXHID_EV_TOUCH_RAW_KBD){
+        dest_ev->type  = LIBAROMA_HID_EV_TYPE_KEY;
+        dest_ev->key   = ev.x;
+        dest_ev->x     = ev.x;
+        dest_ev->y     = ev.y;
+        dest_ev->state = LIBAROMA_HID_EV_STATE_UP;
+        ALOGI("RAW KEYBOARD: %i - %i",ev.x,ev.y);
+        return LIBAROMA_HID_EV_RET_RAWKEY;
+      }
       else if ((ev.id>=QNXHID_EV_TOUCH_UP)&&(ev.id<=QNXHID_EV_TOUCH_MOVE)){
+        //printf("EV: %i - %ix%i\n",ev.id,ev.x,ev.y);
         dest_ev->type=LIBAROMA_HID_EV_TYPE_TOUCH;
         dest_ev->key=0;
         dest_ev->state=ev.id-QNXHID_EV_TOUCH_UP;

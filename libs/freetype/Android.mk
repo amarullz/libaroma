@@ -17,7 +17,6 @@ LOCAL_SRC_FILES:= \
 	src/base/ftlcdfil.c \
 	src/base/ftstroke.c \
 	src/base/fttype1.c \
-	src/base/ftxf86.c \
 	src/base/ftbase.c \
 	src/base/ftsystem.c \
 	src/base/ftinit.c \

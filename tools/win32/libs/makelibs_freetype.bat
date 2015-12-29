@@ -1,6 +1,7 @@
 @ECHO OFF
 cd ..\obj
 
+REM   ../../../libs/freetype/src/base/ftxf86.c 
 echo Compiling Freetype
 %LIBAROMA_GCC% -c ^
   -save-temps ^
@@ -18,7 +19,6 @@ echo Compiling Freetype
   ../../../libs/freetype/src/base/ftlcdfil.c ^
   ../../../libs/freetype/src/base/ftstroke.c ^
   ../../../libs/freetype/src/base/fttype1.c ^
-  ../../../libs/freetype/src/base/ftxf86.c ^
   ../../../libs/freetype/src/base/ftbase.c ^
   ../../../libs/freetype/src/base/ftsystem.c ^
   ../../../libs/freetype/src/base/ftinit.c ^

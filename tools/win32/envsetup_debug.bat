@@ -2,11 +2,11 @@
 REM
 REM TOOLCHAIN AND ADB
 REM
-setx LIBAROMA_GDB "D:\DevelTools\linaronew\bin\arm-linux-gnueabihf-gdb.exe"
-setx LIBAROMA_NM "D:\DevelTools\linaronew\bin\arm-linux-gnueabihf-nm.exe"
-setx LIBAROMA_ADB "D:\DevelTools\adt\sdk\platform-tools\adb.exe"
-setx LIBAROMA_GCC "D:\DevelTools\linaronew\bin\arm-linux-gnueabihf-gcc.exe"
-setx LIBAROMA_GPP "D:\DevelTools\linaronew\bin\arm-linux-gnueabihf-g++.exe"
+setx LIBAROMA_GDB "D:\DevTools\linaro\bin\arm-linux-gnueabihf-gdb.exe"
+setx LIBAROMA_NM "D:\DevTools\linaro\bin\arm-linux-gnueabihf-nm.exe"
+setx LIBAROMA_ADB "D:\DevTools\sdk\platform-tools\adb.exe"
+setx LIBAROMA_GCC "D:\DevTools\linaro\bin\arm-linux-gnueabihf-gcc.exe"
+setx LIBAROMA_GPP "D:\DevTools\linaro\bin\arm-linux-gnueabihf-c++.exe"
 
 REM
 REM PRODUCTION CFLAGS

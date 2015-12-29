@@ -52,6 +52,7 @@ _LIBAROMA_TEXTCHUNKP _libaroma_text_parse(
   chunk->curr_state.color = color;
   chunk->curr_state.img_data = NULL;
   chunk->curr_state.linespacing = linespacing;
+  chunk->last_res|=_LIBAROMA_TEXTCHUNK_RETURN_NEWLINE;
   memcpy(
     &chunk->next_state,
     &chunk->curr_state,

@@ -37,7 +37,8 @@ char * libaroma_getprop(
     return NULL;
   }
   char * result = NULL;
-  char * line = strtok(buffer, "\n");
+  char *saveptr1;
+  char * line = strtok_r(buffer, "\n", &saveptr1);
   do {
     while (*line && isspace(*line)) {
       ++line;
@@ -72,7 +73,7 @@ char * libaroma_getprop(
     /*strdup(val_start);*/
     break;
   }
-  while ((line = strtok(NULL, "\n")));
+  while ((line = strtok_r(NULL, "\n", &saveptr1)));
 done:
   free(buffer);
   return result;

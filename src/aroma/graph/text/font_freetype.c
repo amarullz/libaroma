@@ -446,9 +446,16 @@ byte libaroma_font_glyph_draw(
   _libaroma_font_lock(1);
   
   /* copy & render */
-  FT_Glyph fglyph;
-  FT_Glyph_Copy(aglyph->glyph, &fglyph);
-  
+  FT_Glyph fglyph=NULL;
+  fglyph=NULL;
+  int cnt=0;
+  if (FT_Glyph_Copy(aglyph->glyph, &fglyph)!=0){
+    _libaroma_font_lock(0);
+    return 0;
+  }
+  if (cnt>0){
+    printf("[FT] FC: %i %i\n",cnt,aglyph->codepoint);
+  }
   /* italic transform */
   if (flags & _LIBAROMA_TEXTCHUNK_ITALIC) {
     FT_Matrix matrix;
@@ -468,8 +475,14 @@ byte libaroma_font_glyph_draw(
   }
   
   /* convert glyph to bitmap glyph */
-  FT_Glyph_To_Bitmap(&fglyph, _LIBAROMA_FONT_RENDER_FLAG, 0, 1);
-  
+  if (FT_Glyph_To_Bitmap(&fglyph, _LIBAROMA_FONT_RENDER_FLAG, 0, 1)!=0){
+    /* release glyph */
+    printf("[FT] FR:%i\n",aglyph->codepoint);
+    FT_Done_Glyph(fglyph);
+    _libaroma_font_lock(0);
+    return 0;
+  }
+    
   /* as bitmap glyph */
   FT_BitmapGlyph bit = (FT_BitmapGlyph) fglyph;
   

@@ -28,12 +28,16 @@
 #define __libaroma_ctl_label_h__
 
 
-LIBAROMA_CONTROLP libaroma_ctl_label_ex(
-  LIBAROMA_WINDOWP win, word id, char * text,
+LIBAROMA_CONTROLP libaroma_ctl_label_valign(
+  LIBAROMA_WINDOWP win, word id, const char * text,
   int x, int y, int w, int h,
-  word color, byte fontid, byte size, dword flags, byte lineheight
+  word color, byte fontid, byte size, dword flags, byte lineheight,
+  byte valign
 );
 
+#define libaroma_ctl_label_ex(win,i,t,x,y,w,h,c,fn,s,f,l) \
+	libaroma_ctl_label_valign(win,i,t,x,y,w,h,c,fn,s,f,l,0)
+	
 #define libaroma_ctl_label(win,i,t,x,y,w,h,c,s,f,l) \
 	libaroma_ctl_label_ex(win,i,t,x,y,w,h,c,0,s,f,l)
 
@@ -50,11 +54,23 @@ byte libaroma_ctl_label_set_color(
 	LIBAROMA_CONTROLP ctl,word color,byte update);
 
 byte libaroma_ctl_label_set_text(
-	LIBAROMA_CONTROLP ctl,char * text,byte update);
+	LIBAROMA_CONTROLP ctl,const char * text,byte update);
 
 char * libaroma_ctl_label_get_text(LIBAROMA_CONTROLP ctl);
 
 byte libaroma_ctl_label_set_lineheight(
 	LIBAROMA_CONTROLP ctl,byte lineheight,byte update);
 
+byte libaroma_ctl_label_set_valign(
+	LIBAROMA_CONTROLP ctl,byte valign,byte update);
+
+byte libaroma_ctl_label_set_bgcolor(
+	LIBAROMA_CONTROLP ctl,word bgcolor, byte usebg,byte update);
+
+byte libaroma_ctl_label_set_vpos(
+	LIBAROMA_CONTROLP ctl,int vpos,byte update);
+
+byte libaroma_ctl_label_hidden(
+	LIBAROMA_CONTROLP ctl,byte hidden);
+	
 #endif /* __libaroma_ctl_label_h__ */

@@ -233,6 +233,15 @@ void libaroma_msg_release() {
 } /* End of libaroma_msg_release */
 
 /*
+ * Function    : libaroma_msg_runstate
+ * Return Value: byte
+ * Descriptions: get run state
+ */
+byte libaroma_msg_runstate(){
+  return _libaroma_msgqueue_isrun;
+} /* End of libaroma_msg_runstate */
+
+/*
  * Function    : libaroma_msg_post
  * Return Value: byte
  * Descriptions: post user message

@@ -109,6 +109,8 @@ LIBAROMA_CANVASP libaroma_canvas_area(
     int w,
     int h);
 
+LIBAROMA_CANVASP libaroma_canvas_dup(LIBAROMA_CANVASP c);
+
 /*
  * Function    : libaroma_canvas_free_ex1
  * Return Value: void

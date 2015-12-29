@@ -65,7 +65,7 @@ void bar_test(){
   
   /* list */
   LIBAROMA_CONTROLP list = libaroma_ctl_list(
-    win2, 7, /* win, id */
+    win2, 77, /* win, id */
     0, 0, pw, LIBAROMA_SIZE_FULL, /* x,y,w,h */
     0, 0 /*8*/, /* horiz, vert padding */
     RGB(ffffff), /* bgcolor */

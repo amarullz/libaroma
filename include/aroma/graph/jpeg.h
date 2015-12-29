@@ -52,5 +52,18 @@ LIBAROMA_CANVASP libaroma_jpeg_ex(
 #define libaroma_jpeg_file(filepath, hicolor) \
   libaroma_jpeg_ex(libaroma_stream_file(filepath),1,hicolor)
 
+/*
+ * Function    : libaroma_jpeg_draw
+ * Return Value: byte
+ * Descriptions: read jpeg & directly draw it
+ */
+byte libaroma_jpeg_draw(
+    LIBAROMA_STREAMP stream,
+    byte freeStream,
+    LIBAROMA_CANVASP cv,
+    int dx, int dy, int dw, int dh,
+    byte dither
+    );
+
 #endif /* LIBAROMA_CONFIG_NOJPEG */
 #endif /* __libaroma_jpeg_h__ */

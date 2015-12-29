@@ -35,6 +35,48 @@
 #include <unistd.h>     /* open, close, unlink, usleep */
 #include <fcntl.h>
 
+/* non double free mem */
+static void inline ___free_ori(void * mem){
+  if (mem){
+    free(mem);
+  }
+}
+static void * ___malloc_ori(size_t sz){
+  void * ret=NULL;
+  do{
+    ret=malloc(sz);
+    if (!ret){
+      usleep(10);
+    }
+  }while(!ret);
+  return ret;
+}
+static void * ___calloc_ori(size_t sz, size_t cnt){
+  void * ret=NULL;
+  do{
+    ret=calloc(sz,cnt);
+    if (!ret){
+      usleep(10);
+    }
+  }while(!ret);
+  return ret;
+}
+static void * ___realloc_ori(void * addr,size_t sz){
+  void * ret=NULL;
+  do{
+    ret=realloc(addr,sz);
+    if (!ret){
+      usleep(10);
+    }
+  }while(!ret);
+  return ret;
+}
+// #define free(x) ___free_ori(x); x=NULL;
+#define free ___free_ori
+#define malloc ___malloc_ori
+#define calloc ___calloc_ori
+#define realloc ___realloc_ori
+
 #ifndef LIBAROMA_CONFIG_TEXT_GLOBAL_LOCK
 	#define LIBAROMA_CONFIG_TEXT_GLOBAL_LOCK 1
 #endif
@@ -42,7 +84,8 @@
 	#define LIBAROMA_CONFIG_TEXT_NOHARFBUZZ		1
 #endif
 
-// #include "contrib/sse/sse_neon.h"
+/* x86 - sse */
+#include "contrib/x86_sse/x86_sse.h"
 
 
 #if defined(__QNXNTO__)
@@ -129,12 +172,21 @@ static inline void libaroma_thread_set_hiprio(LIBAROMA_THREAD t){
  */
 #define LIBAROMA_COND_MUTEX pthread_mutex_t
 #define LIBAROMA_COND pthread_cond_t
-#define libaroma_cond_wait(c,m) pthread_cond_wait(c,m)
+// #define libaroma_cond_wait(c,m) pthread_cond_wait(c,m)
 #define libaroma_cond_signal(c) pthread_cond_signal(c)
 #define libaroma_cond_lock(m) pthread_mutex_lock(m)
 #define libaroma_cond_unlock(m) pthread_mutex_unlock(m)
 void libaroma_cond_init(LIBAROMA_COND * cond, LIBAROMA_COND_MUTEX * mutex);
 void libaroma_cond_free(LIBAROMA_COND * cond, LIBAROMA_COND_MUTEX * mutex);
+
+/* NO STUCK */
+static inline int __qnx_libaroma_cond_wait(pthread_cond_t* cond,pthread_mutex_t* mutex){
+  struct timespec to;
+  clock_gettime(CLOCK_MONOTONIC, &to);
+  to.tv_sec+=5;
+  return pthread_cond_timedwait(cond,mutex,&to);
+}
+#define libaroma_cond_wait(c,m) __qnx_libaroma_cond_wait(c,m)
 
 
 /*
@@ -143,6 +195,7 @@ void libaroma_cond_free(LIBAROMA_COND * cond, LIBAROMA_COND_MUTEX * mutex);
 int libaroma_filesize(const char * filename);
 int libaroma_filesize_fd(int fd);
 byte libaroma_file_exists(const char * filename);
+
 
 #endif /* __libaroma_platform_h__ */
 

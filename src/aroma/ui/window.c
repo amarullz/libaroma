@@ -890,10 +890,13 @@ byte libaroma_window_anishow(
         case LIBAROMA_WINDOW_SHOW_ANIMATION_FADE:
           {
             float swift_out_state = libaroma_cubic_bezier_swiftout(state);
+            float bstate = 255.0 * swift_out_state;
+            byte bbstate = (byte) round(bstate);
             libaroma_draw_opacity(
-              wmc, win->dc,0,0,0,((byte) (255 * swift_out_state))
+              wmc, win->dc,0,0,0,bbstate
             );
-            libaroma_window_sync(win, 0, 0, win->w, win->h);
+            //libaroma_window_sync(win, 0, 0, win->w, win->h);
+            libaroma_wm_sync(win->x,win->y,win->w,win->h);
           }
           break;
         case LIBAROMA_WINDOW_SHOW_ANIMATION_SLIDE_TOP:
@@ -1046,7 +1049,8 @@ byte libaroma_window_anishow(
   /* sync view now */
   if (retval){
     win->active=1;
-    libaroma_window_sync(win, 0, 0, win->w, win->h);
+    // libaroma_window_sync(win, 0, 0, win->w, win->h);
+    libaroma_wm_sync(win->x,win->y,win->w,win->h);
     
     /* send activate */
     LIBAROMA_MSG _msg;

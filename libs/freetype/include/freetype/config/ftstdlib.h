@@ -5,7 +5,7 @@
 /*    ANSI-specific library and header configuration file (specification   */
 /*    only).                                                               */
 /*                                                                         */
-/*  Copyright 2002-2007, 2009, 2011-2012 by                                */
+/*  Copyright 2002-2015 by                                                 */
 /*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
 /*                                                                         */
 /*  This file is part of the FreeType project, and may only be used,       */
@@ -64,6 +64,7 @@
 #define FT_INT_MAX     INT_MAX
 #define FT_INT_MIN     INT_MIN
 #define FT_UINT_MAX    UINT_MAX
+#define FT_LONG_MAX    LONG_MAX
 #define FT_ULONG_MAX   ULONG_MAX
 
 
@@ -127,11 +128,54 @@
   /*                                                                    */
   /**********************************************************************/
 
+#if defined(__QNXNTO__)
+  #include <unistd.h>
+  static void inline ___ft_free_ori(void * mem){
+    if (mem){
+      free(mem);
+    }
+  }
+  static void * ___ft_malloc_ori(size_t sz){
+    void * ret=NULL;
+    do{
+      ret=malloc(sz);
+      if (!ret){
+        usleep(10);
+      }
+    }while(!ret);
+    return ret;
+  }
+  static void * ___ft_calloc_ori(size_t sz, size_t cnt){
+    void * ret=NULL;
+    do{
+      ret=calloc(sz,cnt);
+      if (!ret){
+        usleep(10);
+      }
+    }while(!ret);
+    return ret;
+  }
+  static void * ___ft_realloc_ori(void * addr,size_t sz){
+    void * ret=NULL;
+    do{
+      ret=realloc(addr,sz);
+      if (!ret){
+        usleep(10);
+      }
+    }while(!ret);
+    return ret;
+  }
+  #define ft_scalloc   ___ft_calloc_ori
+  #define ft_sfree     ___ft_free_ori
+  #define ft_smalloc   ___ft_malloc_ori
+  #define ft_srealloc  ___ft_realloc_ori
+#else
+  #define ft_scalloc   calloc
+  #define ft_sfree     free
+  #define ft_smalloc   malloc
+  #define ft_srealloc  realloc
+#endif
 
-#define ft_scalloc   calloc
-#define ft_sfree     free
-#define ft_smalloc   malloc
-#define ft_srealloc  realloc
 
 
   /**********************************************************************/
@@ -141,8 +185,7 @@
   /**********************************************************************/
 
 
-#define ft_atol   atol
-#define ft_labs   labs
+#define ft_atol  atol
 
 
   /**********************************************************************/

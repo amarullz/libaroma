@@ -55,6 +55,11 @@ static LIBAROMA_CONTROL_HANDLER _libaroma_ctl_scroll_handler={
 #define _LIBAROMA_CTL_SCROLL_MIN_ALOWSCROLL_DP_NOITEM   5
 
 /*
+  #define LIBAROMA_CTL_SCROLL_WITH_MAX_CACHE 1
+  #define LIBAROMA_CTL_SCROLL_WITH_CACHE_THREAD 1
+*/
+
+/*
  * Structure   : __LIBAROMA_CTL_SCROLL
  * Typedef     : _LIBAROMA_CTL_SCROLL, * _LIBAROMA_CTL_SCROLLP
  * Descriptions: button control internal structure
@@ -69,7 +74,9 @@ struct __LIBAROMA_CTL_SCROLL{
   
   /* threads */
   byte active;
+#ifdef LIBAROMA_CTL_SCROLL_WITH_CACHE_THREAD
   LIBAROMA_THREAD cache_thread;
+#endif
   LIBAROMA_THREAD calc_thread;
   
   /* scrolling values */
@@ -298,6 +305,7 @@ byte _libaroma_ctl_scroll_updatecache(LIBAROMA_CONTROLP ctl, int move_sz){
  * Return Value: byte
  * Descriptions: check for cache update
  */
+#ifdef LIBAROMA_CTL_SCROLL_WITH_MAX_CACHE
 byte _libaroma_ctl_scroll_check_update(LIBAROMA_CONTROLP ctl){
   _LIBAROMA_CTL_CHECK(
     _libaroma_ctl_scroll_handler, _LIBAROMA_CTL_SCROLLP, 0
@@ -331,12 +339,14 @@ byte _libaroma_ctl_scroll_check_update(LIBAROMA_CONTROLP ctl){
   }
   return 0;
 } /* End of _libaroma_ctl_scroll_check_update */
+#endif
 
 /*
  * Function    : _libaroma_ctl_scroll_cache_thread
  * Return Value: static void *
  * Descriptions: background cache updater
  */
+#ifdef LIBAROMA_CTL_SCROLL_WITH_CACHE_THREAD
 static void * _libaroma_ctl_scroll_cache_thread(void * cookie){
   LIBAROMA_CONTROLP ctl = (LIBAROMA_CONTROLP) cookie;
   /* internal check */
@@ -356,17 +366,20 @@ static void * _libaroma_ctl_scroll_cache_thread(void * cookie){
       if (me->cache_state==10){
         _libaroma_ctl_scroll_updatecache(ctl, 0);
       }
+#ifdef LIBAROMA_CTL_SCROLL_WITH_MAX_CACHE
       else if (me->client_canvas!=NULL){
         if ((me->client_h>me->client_canvas->h)&&(me->request_new_height==-1)){
           _libaroma_ctl_scroll_check_update(ctl);
         }
       }
+#endif
     }
     libaroma_sleep(1);
   }
   ALOGV("End scroll updater thread");
   return NULL;
 } /* End of _libaroma_ctl_scroll_cache_thread */
+#endif
 
 /*
  * Function    : _libaroma_ctl_scroll_calc_thread
@@ -632,8 +645,20 @@ byte _libaroma_ctl_scroll_thread(LIBAROMA_CONTROLP ctl) {
       me->synced_y=-1;
     }
     if (me->request_new_height!=-1){
+#ifndef LIBAROMA_CTL_SCROLL_WITH_CACHE_THREAD
+      libaroma_ctl_scroll_set_height(ctl,me->request_new_height);
+      libaroma_mutex_lock(me->fmutex);
+      me->request_new_height=-1;
+      libaroma_mutex_unlock(me->fmutex);
+#else
       return 0;
+#endif
     }
+#ifndef LIBAROMA_CTL_SCROLL_WITH_CACHE_THREAD
+    if (me->cache_state==10){
+      _libaroma_ctl_scroll_updatecache(ctl, 0);
+    }
+#endif
     if (me->synced_y!=me->scroll_y){
       return 1;
     }
@@ -1248,10 +1273,12 @@ dword _libaroma_ctl_scroll_msg(
         me->synced_y = -1;
         
         /* start cache thread */
+#ifdef LIBAROMA_CTL_SCROLL_WITH_CACHE_THREAD
         libaroma_thread_create(
           &me->cache_thread,
           _libaroma_ctl_scroll_cache_thread,
           (voidp) ctl);
+#endif
         libaroma_thread_create(
           &me->calc_thread,
           _libaroma_ctl_scroll_calc_thread,
@@ -1269,8 +1296,10 @@ dword _libaroma_ctl_scroll_msg(
         
         libaroma_mutex_lock(me->mutex);
         libaroma_thread_join(me->calc_thread);
+#ifdef LIBAROMA_CTL_SCROLL_WITH_CACHE_THREAD
         libaroma_thread_join(me->cache_thread);
         me->cache_thread=0;
+#endif
         me->calc_thread=0;
         me->client_touch_start=0;
         me->client_touched=0;
@@ -1416,9 +1445,11 @@ byte libaroma_ctl_scroll_set_height(LIBAROMA_CONTROLP ctl, int h){
   else{
     /* max 3x control height */
     int valid_height = h;
+#ifdef LIBAROMA_CTL_SCROLL_WITH_MAX_CACHE
     if (valid_height>_LIBAROMA_CTL_SCROLL_MAX_CACHE){
       valid_height=_LIBAROMA_CTL_SCROLL_MAX_CACHE;
     }
+#endif
     LIBAROMA_CANVASP c=me->client_canvas;
     if (me->client_canvas){
       if (valid_height!=c->h){

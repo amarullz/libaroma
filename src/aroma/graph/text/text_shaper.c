@@ -71,7 +71,8 @@ _LIBAROMA_TEXTSHAPEDP libaroma_text_shaper(
 	FT_Bool use_kerning = FT_HAS_KERNING(afont->face);
 	int previous=0;
 	dword ii;
-	for (ii=0;ii<shaped->coln;ii++) {
+	dword coln=(dword) shaped->coln;
+	for (ii=0;ii<coln;ii++) {
 		if (shaped->rtl){
 			i=(shaped->coln-1)-ii;
 		}

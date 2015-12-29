@@ -122,6 +122,11 @@ static inline byte libaroma_color_merge_b(word color, byte hicolor) {
 word libaroma_rgb_from_string(const char * c);
 byte libaroma_color_luminance(word rgb);
 byte libaroma_color_isdark(word rgb);
+
+/* HUE SATURATION */
+word libaroma_color_hsv(int h, int s, int v);
+int libaroma_color_hue(word color, int * saturation, int * luminance);
+
 dword libaroma_rgb_to32(word rgb);
 dword libaroma_rgb_to_rgba(word rgb, byte alpha);
 

@@ -88,7 +88,7 @@ byte QNXGF_init(LIBAROMA_FBP me) {
   /* Set Internal Address */
   me->internal      = (voidp) mi;
   me->release       = &QNXGF_release;
-  me->double_buffer = 1;
+  me->double_buffer = 0; // 1;
   
   /************************* Init of Init QNX GF ******************************/
   /* Device Attach */
@@ -233,11 +233,6 @@ byte QNXGF_start_post(LIBAROMA_FBP me){
   if (me == NULL) {
     return 0;
   }
-  /*
-  QNXGF_INTERNALP mi = (QNXGF_INTERNALP) me->internal;
-  
-  gf_draw_begin(mi->context);
-  */
   return 1;
 }
 
@@ -251,13 +246,6 @@ byte QNXGF_end_post(LIBAROMA_FBP me){
     return 0;
   }
   QNXGF_INTERNALP mi = (QNXGF_INTERNALP) me->internal;
-  /*
-  gf_draw_flush(mi->context);
-  gf_draw_end(mi->context);
-  */
-  /* virtual vsync */
-  // usleep(16000);
-  
   long nowtick = libaroma_tick();
   long diftick = nowtick - mi->lastpost;
   if (diftick<16){
@@ -298,36 +286,6 @@ byte QNXGF_post(
   gf_draw_flush(mi->context);
   gf_draw_end(mi->context);
   libaroma_mutex_unlock(___qnxfbmutex);
-  /*
-  gf_draw_begin(mi->context);
-  if ((w > 0) && (h > 0)) {
-    wordp copy_src = (wordp) (src + (me->w * y) + x);
-    gf_draw_image(
-      mi->context,
-      (const uint8_t *) copy_src,
-      GF_FORMAT_PKLE_RGB565,
-      me->w * 2,
-      x, y,
-      w, h,
-      0
-    );
-  }
-  else {
-    gf_draw_image(
-      mi->context,
-      (const uint8_t *) src,
-      GF_FORMAT_PKLE_RGB565,
-      me->w * 2,
-      0, 0,
-      me->w, me->h,
-      0
-    );
-  }
-  gf_draw_flush(mi->context);
-  gf_draw_end(mi->context);
-  usleep(16000);
-  */
-  
   return 1;
 }
 

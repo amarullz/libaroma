@@ -222,7 +222,9 @@ byte libaroma_wm_release(){
   libaroma_mutex_lock(_libaroma_wm_ui_mutex);
   _libaroma_wm_onprocessing=1;
   if (_libaroma_wm->client_started){
+    libaroma_mutex_unlock(_libaroma_wm_ui_mutex);
     libaroma_wm_client_stop();
+    libaroma_mutex_lock(_libaroma_wm_ui_mutex);
   }
   ALOGV("libaroma_wm_release release window manager");
   libaroma_sarray_free(_libaroma_wm->color);
@@ -468,7 +470,9 @@ byte libaroma_wm_set_ui_thread(
   }
   else{
     if ((_libaroma_wm->client_started)&&(!_libaroma_wm->active_window)){
+      libaroma_mutex_unlock(_libaroma_wm_ui_mutex);
       libaroma_wm_client_stop();
+      libaroma_mutex_lock(_libaroma_wm_ui_mutex);
     }
   }
   libaroma_mutex_unlock(_libaroma_wm_ui_mutex);
@@ -1052,7 +1056,9 @@ byte libaroma_wm_set_active_window(LIBAROMA_WINDOWP win){
     _libaroma_wm->active_window = NULL;
     if ((_libaroma_wm->client_started)&&(!_libaroma_wm->ui_thread)){
       /* start message client if not started yet */
+      libaroma_mutex_unlock(_libaroma_wm_ui_mutex);
       libaroma_wm_client_stop();
+      libaroma_mutex_lock(_libaroma_wm_ui_mutex);
     }
   }
   _libaroma_wm_onprocessing=0;

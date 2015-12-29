@@ -147,6 +147,14 @@ void libaroma_dither_line_const(int y, int w, wordp dst, dword src) {
 }
 #endif
 
+#ifndef __engine_have_libaroma_dither_24to16
+void libaroma_dither_24to16(int y, int n, wordp dst, bytep src) {
+  int x, z, m=0;
+  for (x=0,z=n*3;x<z;x+=3) {
+    *dst++ = libaroma_dither_rgb(m++, y, src[x], src[x+1], src[x+2]);
+  }
+}
+#endif
 
 #endif /* __libaroma_dither_c__ */
 

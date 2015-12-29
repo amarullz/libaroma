@@ -159,7 +159,7 @@ LIBAROMA_CANVASP libaroma_png_ex(
   int pcv_c    = png_get_channels(png_ptr, info_ptr);
   
   /* verbose */
-  ALOGS("load png \"%s\" (%ix%ix%i)",
+  ALOGV("load png \"%s\" (%ix%ix%i)",
     stream->uri, pcv_w, pcv_h, pcv_c);
 
   /* new canvas */
@@ -172,7 +172,9 @@ LIBAROMA_CANVASP libaroma_png_ex(
   }
   
   /* switch to abgr */
-  png_set_bgr(png_ptr);
+  if (pcv_c == 4) {
+    png_set_bgr(png_ptr);
+  }
   
   /* read row size*/
   int row_sz = (int) png_get_rowbytes(png_ptr, info_ptr);
@@ -225,7 +227,7 @@ LIBAROMA_CANVASP libaroma_png_ex(
         bytep hicl = cv->hicolor + (y * cv->l);
         png_read_row(png_ptr, row_data, NULL);
         for (x = 0, z = pcv_w * pcv_c; x < z; x += 3) {
-          *line++ = libaroma_rgb(row_data[x + 2], row_data[x + 1], row_data[x]);
+          *line++ = libaroma_rgb(row_data[x], row_data[x + 1], row_data[x + 2]);
           *hicl++ = libaroma_color_left(
               row_data[x + 2],
               row_data[x + 1],
@@ -237,10 +239,12 @@ LIBAROMA_CANVASP libaroma_png_ex(
       for (y = 0; y < pcv_h; ++y) {
         wordp line = cv->data + (y * cv->l);
         png_read_row(png_ptr, row_data, NULL);
+        libaroma_dither_24to16(y, pcv_w, line, row_data);
+        /*
         for (x = 0, z = pcv_w * pcv_c; x < z; x += 3) {
           *line++ = libaroma_dither_rgb(
             x, y, row_data[x + 2], row_data[x + 1], row_data[x]);
-        }
+        }*/
       }
     }
     free(row_data);

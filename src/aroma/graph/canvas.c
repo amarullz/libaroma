@@ -468,6 +468,40 @@ LIBAROMA_CANVASP libaroma_canvas_area(
   return c;
 } /* End of libaroma_canvas_area */
 
+/* Duplicate Canvas */
+LIBAROMA_CANVASP libaroma_canvas_dup(LIBAROMA_CANVASP c){
+  if (!c){
+    return NULL;
+  }
+  byte alpha=(c->alpha!=NULL)?1:0;
+  byte hicolor=(c->hicolor!=NULL)?1:0;
+  LIBAROMA_CANVASP o=libaroma_canvas_new_ex(
+    c->w,
+    c->h,
+    alpha,
+    hicolor,
+    NULL
+  );
+  if (!o){
+    return NULL;
+  }
+  int y;
+  for (y=0;y<c->h;y++){
+    memcpy(o->data + (o->w * y), c->data + (o->l*y), 2 * o->w);
+  }
+  if (alpha){
+    for (y=0;y<c->h;y++){
+      memcpy(o->alpha + (o->w * y), c->alpha + (o->l*y), o->w);
+    }
+  }
+  if (hicolor){
+    for (y=0;y<c->h;y++){
+      memcpy(o->hicolor + (o->w * y), c->hicolor + (o->l*y), o->w);
+    }
+  }
+  return o;
+}
+
 /*
  * Function    : libaroma_canvas_free_ex1
  * Return Value: void

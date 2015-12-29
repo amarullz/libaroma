@@ -73,7 +73,7 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
     return;
   }
   
-  
+  libaroma_mutex_lock(me->mutex);
   LIBAROMA_CANVASP rest_canvas=NULL;
   LIBAROMA_CANVASP push_canvas=NULL;
   
@@ -169,7 +169,6 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
   }
   
   /* draw text */
-  libaroma_mutex_lock(me->mutex);
   LIBAROMA_TEXT textp = libaroma_text(
     me->text,
     text_color,
@@ -182,7 +181,7 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
     LIBAROMA_TEXT_NOHR,
     100
   );
-  libaroma_mutex_unlock(me->mutex);
+  // libaroma_mutex_unlock(me->mutex);
   int y = (ctl->h>>1) - ((libaroma_text_height(textp)>>1)+libaroma_dp(1));
   
   if (is_disabled){
@@ -206,7 +205,7 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
   libaroma_canvas_free(btnmask);
   
   /* save it */
-  libaroma_mutex_lock(me->mutex);
+  // libaroma_mutex_lock(me->mutex);
   LIBAROMA_CANVASP rc=me->rest_canvas;
   LIBAROMA_CANVASP pc=me->push_canvas;
   me->rest_canvas=rest_canvas;
@@ -266,39 +265,43 @@ void _libaroma_ctl_button_draw(
     int ripple_i = 0;
     int ripple_p = 0;
     libaroma_draw(c, me->rest_canvas, 0, 0, 0);
-    while(libaroma_ripple_loop(&me->ripple,&ripple_i,&ripple_p)){
-      int x=0;
-      int y=0;
-      int size=0;
-      byte push_opacity=0;
-      byte ripple_opacity=0;
-      if (libaroma_ripple_calculation(
-        &me->ripple, ctl->w, ctl->h, &push_opacity, &ripple_opacity,
-        &x, &y, &size,ripple_p
-        )){
-          /*
-          libaroma_draw_mask_circle(
-            c, me->push_canvas, x, y, x, y, size, ripple_opacity
-          );
-          */
-          libaroma_draw_opacity(c,me->push_canvas,0,0,0,push_opacity*2);
-          LIBAROMA_CANVASP ca=libaroma_canvas_area(
-            c,
-            libaroma_dp(4),
-            libaroma_dp(6),
-            c->w-libaroma_dp(8),
-            c->h-libaroma_dp(12)
-          );
-          if (ca){
-            byte push_opa = (byte) (
-              (((int) ripple_opacity) * (me->isdark?64:30)) >> 8
+    if (me->push_canvas!=NULL){
+      while(libaroma_ripple_loop(&me->ripple,&ripple_i,&ripple_p)){
+        int x=0;
+        int y=0;
+        int size=0;
+        byte push_opacity=0;
+        byte ripple_opacity=0;
+        if (libaroma_ripple_calculation(
+          &me->ripple, ctl->w, ctl->h, &push_opacity, &ripple_opacity,
+          &x, &y, &size,ripple_p
+          )){
+            /*
+            libaroma_draw_mask_circle(
+              c, me->push_canvas, x, y, x, y, size, ripple_opacity
             );
-            word dcolor   = me->isdark?RGB(ffffff):0;
-            libaroma_draw_circle(
-              ca,dcolor,x,y,size,push_opa
+            */
+            if (me->push_canvas!=NULL){
+              libaroma_draw_opacity(c,me->push_canvas,0,0,0,push_opacity*2);
+            }
+            LIBAROMA_CANVASP ca=libaroma_canvas_area(
+              c,
+              libaroma_dp(4),
+              libaroma_dp(6),
+              c->w-libaroma_dp(8),
+              c->h-libaroma_dp(12)
             );
-            libaroma_canvas_free(ca);
-          }
+            if (ca){
+              byte push_opa = (byte) (
+                (((int) ripple_opacity) * (me->isdark?64:30)) >> 8
+              );
+              word dcolor   = me->isdark?RGB(ffffff):0;
+              libaroma_draw_circle(
+                ca,dcolor,x,y,size,push_opa
+              );
+              libaroma_canvas_free(ca);
+            }
+        }
       }
     }
   }
@@ -451,6 +454,7 @@ LIBAROMA_CONTROLP libaroma_ctl_button(
       win
     );
   if (!ctl){
+    libaroma_mutex_free(me->mutex);
     if (me->text!=NULL){
       free(me->text);
     }
@@ -474,8 +478,10 @@ byte libaroma_ctl_button_style(
   _LIBAROMA_CTL_CHECK(
     _libaroma_ctl_button_handler, _LIBAROMA_CTL_BUTTONP, 0
   );
+  libaroma_mutex_lock(me->mutex);
   me->style = button_style;
   me->color = button_color;
+  libaroma_mutex_unlock(me->mutex);
   _libaroma_ctl_button_req_internal_draw(ctl);
   return 1;
 } /* End of libaroma_ctl_button_style */
@@ -516,12 +522,14 @@ byte libaroma_ctl_button_disable(
   _LIBAROMA_CTL_CHECK(
     _libaroma_ctl_button_handler, _LIBAROMA_CTL_BUTTONP, 0
   );
+  libaroma_mutex_lock(me->mutex);
   if (is_disable){
     me->style |= LIBAROMA_CTL_BUTTON_DISABLED;
   }
   else{
     me->style &= ~LIBAROMA_CTL_BUTTON_DISABLED;
   }
+  libaroma_mutex_unlock(me->mutex);
   _libaroma_ctl_button_req_internal_draw(ctl);
   return 1;
 } /* End of libaroma_ctl_button_disable */
@@ -536,9 +544,12 @@ byte libaroma_ctl_button_is_disabled(LIBAROMA_CONTROLP ctl){
   _LIBAROMA_CTL_CHECK(
     _libaroma_ctl_button_handler, _LIBAROMA_CTL_BUTTONP, 0
   );
+  libaroma_mutex_lock(me->mutex);
   if (me->style&LIBAROMA_CTL_BUTTON_DISABLED){
+    libaroma_mutex_unlock(me->mutex);
     return 1;
   }
+  libaroma_mutex_unlock(me->mutex);
   return 0;
 } /* End of libaroma_ctl_button_is_disabled */
 

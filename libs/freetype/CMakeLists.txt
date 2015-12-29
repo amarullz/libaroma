@@ -11,7 +11,6 @@ add_library(freetype STATIC
 	src/base/ftlcdfil.c
 	src/base/ftstroke.c
 	src/base/fttype1.c
-	src/base/ftxf86.c
 	src/base/ftbase.c
 	src/base/ftsystem.c
 	src/base/ftinit.c
@@ -37,7 +36,11 @@ add_library(freetype STATIC
 )
 
 # cflags
+if (NOT DEFINED NOHARFBUZZNG)
 set_target_properties(freetype PROPERTIES COMPILE_FLAGS "-DFT2_BUILD_LIBRARY -DDARWIN_NO_CARBON -save-temps -fdata-sections -ffunction-sections -Wl,--gc-sections -D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG -fPIC -DPIC -Wl,-s -Werror")
+else()
+set_target_properties(freetype PROPERTIES COMPILE_FLAGS "-DFT2_NO_HARFBUZZ -DFT2_BUILD_LIBRARY -DDARWIN_NO_CARBON -save-temps -fdata-sections -ffunction-sections -Wl,--gc-sections -D_GLIBCXX_DEBUG_PEDANTIC -D_GLIBCXX_DEBUG -fPIC -DPIC -Wl,-s -Werror")
+endif()
 
 # dependencies
 add_dependencies(freetype z)
