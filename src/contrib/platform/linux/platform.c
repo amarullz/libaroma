@@ -33,6 +33,14 @@
 #endif
 
 /* event & condition */
+#ifdef LIBAROMA_PFLINUX_DUMMY_PTHREAD
+  void libaroma_cond_init(
+    LIBAROMA_COND * cond, LIBAROMA_COND_MUTEX * mutex){
+  }
+  void libaroma_cond_free(
+    LIBAROMA_COND * cond, LIBAROMA_COND_MUTEX * mutex){
+  }
+#else
 void libaroma_cond_init(
   LIBAROMA_COND * cond, LIBAROMA_COND_MUTEX * mutex){
   pthread_mutex_init(mutex,NULL);
@@ -43,6 +51,7 @@ void libaroma_cond_free(
   pthread_cond_destroy(cond);
   pthread_mutex_destroy(mutex);
 }
+#endif
 
 /* get filesize */
 int libaroma_filesize(const char * filename){

@@ -196,6 +196,7 @@ LIBAROMA_STREAMP libaroma_stream_shmem(
 LIBAROMA_STREAMP libaroma_stream_mzip(
     LIBAROMA_ZIP zip,
     char * zpath) {
+#ifndef LIBAROMA_CONFIG_NOMINZIP
   if ((!zip) || (!zpath)) {
     ALOGW("libaroma_stream_hzip zip/zpath is invalid");
     return 0;
@@ -214,6 +215,9 @@ LIBAROMA_STREAMP libaroma_stream_mzip(
   snprintf(ret->uri, LIBAROMA_STREAM_URI_LENGTH,
       "memzip://[zip_resource]#%s", zpath);
   return ret;
+#else
+  return NULL;
+#endif
 } /* End of libaroma_stream_mzip */
 
 /*
@@ -223,6 +227,7 @@ LIBAROMA_STREAMP libaroma_stream_mzip(
  */
 LIBAROMA_STREAMP libaroma_stream_zip(
     char * zip_path, char * zpath) {
+#ifndef LIBAROMA_CONFIG_NOMINZIP
   if ((!zip_path) || (!zpath)) {
     ALOGW("libaroma_stream_zip zip_path/zpath is invalid");
     return 0;
@@ -248,6 +253,9 @@ LIBAROMA_STREAMP libaroma_stream_zip(
   snprintf(ret->uri, LIBAROMA_STREAM_URI_LENGTH,
       "zip://%s#%s", zip_path, zpath);
   return ret;
+#else
+  return NULL;
+#endif
 } /* End of libaroma_stream_zip */
 
 /*
@@ -273,6 +281,7 @@ LIBAROMA_STREAMP libaroma_stream(
   else if (strcmp(kwd, "shmem://") == 0) {
     return libaroma_stream_shmem(uri + 8);
   }
+#ifndef LIBAROMA_CONFIG_NOMINZIP
   else if (strcmp(kwd, "zip://") == 0) {
     char zip_path[256] = {0};
     char zpath[256] = {0};
@@ -296,6 +305,7 @@ LIBAROMA_STREAMP libaroma_stream(
     }
     return libaroma_stream_zip(zip_path, zpath);
   }
+#endif
   else if (_libaroma_stream_uri_cb != NULL) {
     return _libaroma_stream_uri_cb(uri);
   }

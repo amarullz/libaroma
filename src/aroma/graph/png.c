@@ -481,6 +481,9 @@ byte libaroma_png9p_draw(
 byte libaroma_png_save(
     LIBAROMA_CANVASP sc,
     char * filename) {
+#ifdef LIBAROMA_CONFIG_NOPNGWRITE
+  return 0;
+#else
   volatile LIBAROMA_CANVASP c = sc;
   if (c == NULL) {
     c = libaroma_fb()->canvas;
@@ -605,6 +608,7 @@ finalize:
     free(row);
   }
   return result;
+#endif
 } /* End of libaroma_png_save */
 
 

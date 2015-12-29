@@ -44,7 +44,7 @@
 #ifndef LIBAROMA_CONFIG_TEXT_NOHARFBUZZ
 #include <hb.h>               /* Harfbuzz-ng */
 #endif
-#include <hb-ucdn/ucdn.h>     /* Harfbuzz-UCDN */
+#include <ucdn.h>     /* Harfbuzz-UCDN */
 
 /* include definition & structures */
 #include "text_defs.h"
