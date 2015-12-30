@@ -40,7 +40,7 @@ static _LIBAROMA_FONT_FACE _libaroma_font_faces[_LIBAROMA_FONT_MAX_FACE];
 
 /* MUTEXES */
 static LIBAROMA_MUTEX __libaroma_text_locks[3];
-inline void __libaroma_text_locker_init(byte destroy){
+static inline void __libaroma_text_locker_init(byte destroy){
   int i;
   for (i=0;i<3;i++){
     if (destroy){
@@ -51,7 +51,7 @@ inline void __libaroma_text_locker_init(byte destroy){
     }
   }
 }
-inline void __libaroma_text_locker(byte font, byte lock){
+static inline void __libaroma_text_locker(byte font, byte lock){
   if (lock){
     libaroma_mutex_lock(__libaroma_text_locks[font]);
   }
