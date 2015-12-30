@@ -41,6 +41,7 @@ struct _LIBAROMA_STREAM{
   bytep   data;
   int     size;
   byte    ismmap;
+  byte    ismem;
   char    uri[LIBAROMA_STREAM_URI_LENGTH];
 };
 
@@ -103,6 +104,14 @@ LIBAROMA_STREAMP libaroma_stream_mzip(
  */
 LIBAROMA_STREAMP libaroma_stream_zip(
     char * zip_path, char * zpath);
+
+/*
+ * Function    : libaroma_stream_mem
+ * Return Value: LIBAROMA_STREAMP
+ * Descriptions: new stream from memory range
+ */
+LIBAROMA_STREAMP libaroma_stream_mem(
+    bytep mem, int mem_sz);
 
 /*
  * Function    : libaroma_stream

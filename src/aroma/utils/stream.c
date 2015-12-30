@@ -120,6 +120,7 @@ done:
   ret->data     = mem;
   ret->size     = filesize;
   ret->ismmap   = 0;
+  ret->ismem    = 0;
   snprintf(ret->uri,
       LIBAROMA_STREAM_URI_LENGTH, "file://%s", path);
   return ret;
@@ -180,6 +181,7 @@ LIBAROMA_STREAMP libaroma_stream_shmem(
   ret->data     = mem;
   ret->size     = filesize;
   ret->ismmap   = 1;
+  ret->ismem    = 0;
   snprintf(ret->uri,
       LIBAROMA_STREAM_URI_LENGTH, "shmem://%s", memname);
   return ret;
@@ -212,6 +214,7 @@ LIBAROMA_STREAMP libaroma_stream_mzip(
   ret->data     = mem;
   ret->size     = mem_sz;
   ret->ismmap   = 0;
+  ret->ismem    = 0;
   snprintf(ret->uri, LIBAROMA_STREAM_URI_LENGTH,
       "memzip://[zip_resource]#%s", zpath);
   return ret;
@@ -250,6 +253,7 @@ LIBAROMA_STREAMP libaroma_stream_zip(
   ret->data     = mem;
   ret->size     = mem_sz;
   ret->ismmap   = 0;
+  ret->ismem    = 0;
   snprintf(ret->uri, LIBAROMA_STREAM_URI_LENGTH,
       "zip://%s#%s", zip_path, zpath);
   return ret;
@@ -257,6 +261,27 @@ LIBAROMA_STREAMP libaroma_stream_zip(
   return NULL;
 #endif
 } /* End of libaroma_stream_zip */
+
+/*
+ * Function    : libaroma_stream_mem
+ * Return Value: LIBAROMA_STREAMP
+ * Descriptions: new stream from memory range
+ */
+LIBAROMA_STREAMP libaroma_stream_mem(
+    bytep mem, int mem_sz) {
+  if (!mem || !mem_sz) {
+    ALOGW("libaroma_stream_mem mem/mem_sz is invalid");
+    return 0;
+  }
+  LIBAROMA_STREAMP ret  = (LIBAROMA_STREAMP) malloc(sizeof(LIBAROMA_STREAM));
+  ret->data     = mem;
+  ret->size     = mem_sz;
+  ret->ismmap   = 0;
+  ret->ismem    = 1;
+  snprintf(ret->uri, LIBAROMA_STREAM_URI_LENGTH,
+      "mem://0x%x-0x%x", (unsigned int)mem, mem_sz);
+  return ret;
+} /* End of libaroma_stream_mem */
 
 /*
  * Function    : libaroma_stream
@@ -306,6 +331,19 @@ LIBAROMA_STREAMP libaroma_stream(
     return libaroma_stream_zip(zip_path, zpath);
   }
 #endif
+  else if (strcmp(kwd, "mem://") == 0) {
+    unsigned int mem;
+    int mem_sz;
+    int rc;
+
+    rc = sscanf(uri+6, "0x%x-0x%x", &mem, &mem_sz);
+    if (rc!=2) {
+      ALOGW("libaroma_stream_mem range format is invalid");
+      return NULL;
+    }
+
+    return libaroma_stream_mem((bytep)mem, mem_sz);
+  }
   else if (_libaroma_stream_uri_cb != NULL) {
     return _libaroma_stream_uri_cb(uri);
   }
@@ -329,7 +367,7 @@ byte libaroma_stream_close(
     munmap(a->data, a->size);
 #endif
   }
-  else if (a->data) {
+  else if (a->data && !a->ismem) {
     free(a->data);
     a->data = NULL;
   }
