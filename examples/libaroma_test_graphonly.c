@@ -27,6 +27,15 @@
 /* libaroma header */
 #include <aroma.h>
 
+/*
+ DUMMY PNG
+*/
+#include <png.h>
+#include <pngstruct.h>
+void PNGAPI png_destroy_write_struct(png_structpp png_ptr_ptr, png_infopp info_ptr_ptr){}
+void png_free_buffer_list(png_structrp png_ptr, png_compression_bufferp *listp){}
+
+
 static LIBAROMA_CANVASP dc; /* display canvas */
 
 /* init */
@@ -60,9 +69,12 @@ void release_aroma(){
   libaroma_fb_release();
 }
 
-/* MINIMAL LIST */
+/**********************************************************************************
+ **
+ ** MINIMAL LIST
+ **
+ **/
 #define SCROLL_INDICATOR_WIDTH libaroma_dp(5)
-
 typedef struct{
   LIBAROMA_CANVASP cv;
   LIBAROMA_CANVASP cva;
@@ -74,7 +86,6 @@ typedef struct{
   word textcolor;
   word textselcolor;
 } MINLIST;
-
 MINLIST * list_create(int width, int itemheight, word bg, word sl, word tbg, word tsl){
   MINLIST * list = (MINLIST *) calloc(sizeof(MINLIST),1);
   list->w = width;
@@ -86,7 +97,6 @@ MINLIST * list_create(int width, int itemheight, word bg, word sl, word tbg, wor
   list->textselcolor=tsl;
   return list;
 }
-
 void list_free(MINLIST * list){
   if (list->n>0){
     libaroma_canvas_free(list->cv);
@@ -95,7 +105,10 @@ void list_free(MINLIST * list){
   free(list);
 }
 
-void list_add(MINLIST * list,char * text){
+#define LIST_ADD_MASK_ICON_COLOR        0x1 /* mask icon with text color */
+#define LIST_ADD_WITH_SEPARATOR         0x2 /* add separator below item */
+#define LIST_ADD_SEPARATOR_ALIGN_TEXT   0x4 /* align the separator line with text position */
+void list_add(MINLIST * list,char * icon, char * title, char * subtitle, byte flags){
   int new_n  = list->n + 1;
   int item_y = list->n * list->ih;
   LIBAROMA_CANVASP cv = libaroma_canvas(list->w, list->ih*new_n);
@@ -113,36 +126,96 @@ void list_add(MINLIST * list,char * text){
   libaroma_draw_rect(cv, 0, item_y, list->w, list->ih, list->bgcolor, 0xff);
   
   /* selected bg */
-  libaroma_draw_rect(cva, 0, item_y, list->w, list->ih, list->selcolor, 0xff);
+  libaroma_draw_rect(cva, 0, item_y, list->w, list->ih, list->bgcolor, 0xff);
+  libaroma_draw_rect(cva, 0, item_y+libaroma_dp(1), list->w, list->ih-libaroma_dp(1), list->selcolor, 0xff);
+  
+  char text[256];
+  if (subtitle!=NULL){
+    word scolor = libaroma_alpha(list->bgcolor,list->textcolor,0x66);
+    snprintf(text,256,"<b>%s</b>\n<#%02X%02X%02X><size=3>%s</size></#>",title?title:"",
+      libaroma_color_r(scolor),
+      libaroma_color_g(scolor),
+      libaroma_color_b(scolor),
+      subtitle);
+  }
+  else{
+    snprintf(text,256,"<b>%s</b>",title?title:"");
+  }
   
   /* draw text */
+  int left_pad=libaroma_dp(72);
+  int right_pad=libaroma_dp(16);
   LIBAROMA_TEXT txt = libaroma_text(
     text,
-    list->textcolor, list->w,
-    LIBAROMA_FONT(0,4)|LIBAROMA_TEXT_CENTER,
+    list->textcolor, list->w-(left_pad+right_pad),
+    LIBAROMA_FONT(0,4),
   	100
   );
   if (txt){
-    int txty=item_y + ((list->ih>>1)-(libaroma_text_height(txt)>>1));
+    int txty=item_y + ((list->ih>>1)-((libaroma_text_height(txt)>>1))-libaroma_dp(2));
     libaroma_text_draw(
-      cv, txt, 0, txty
+      cv, txt, left_pad, txty
     );
     libaroma_text_draw_color(
-      cva, txt, 0, txty, list->textselcolor
+      cva, txt, left_pad, txty, list->textselcolor
     );
     libaroma_text_free(txt);
+  }
+  
+  if (icon!=NULL){
+    LIBAROMA_CANVASP ico =libaroma_image_uri(icon);
+    if (ico){
+      int dpsz=libaroma_dp(40);
+      int icoy=item_y + ((list->ih>>1) - (dpsz>>1));
+      int icox=libaroma_dp(16);
+      byte ismask=(LIST_ADD_MASK_ICON_COLOR&flags)?1:0;
+        
+      if (ismask){
+        libaroma_canvas_fillcolor(ico,libaroma_alpha(list->bgcolor,list->textcolor,0xcc));
+      }
+      libaroma_draw_scale_smooth(
+        cv, ico,
+        icox,icoy,
+        dpsz, dpsz,
+        0, 0, ico->w, ico->h
+      );
+      if (ismask){
+        libaroma_canvas_fillcolor(ico,libaroma_alpha(list->selcolor,list->textselcolor,0xcc));
+      }
+      libaroma_draw_scale_smooth(
+        cva, ico,
+        icox,icoy,
+        dpsz, dpsz,
+        0, 0, ico->w, ico->h
+      );
+      libaroma_canvas_free(ico);
+    }
+  }
+  
+  if (LIST_ADD_WITH_SEPARATOR&flags){
+    byte is_dark = libaroma_color_isdark(list->bgcolor);
+    int sepxp=0;
+    if (flags&LIST_ADD_SEPARATOR_ALIGN_TEXT){
+      sepxp=libaroma_dp(72);
+    }
+    libaroma_draw_rect(
+      cv,
+      sepxp,
+      item_y-libaroma_dp(1),
+      cv->w-sepxp,
+      libaroma_dp(1),
+      is_dark?RGB(555555):RGB(dddddd),
+      0xff
+    );
   }
   
   list->cv  = cv;
   list->cva = cva;
   list->n   = new_n;
 }
-
 void list_show(MINLIST * list, int selectedid, int x, int y, int h){
-  
   /* cleanup */
   libaroma_draw_rect(dc, x, y, list->w, h, list->bgcolor, 0xff);
-  
   if (list->n<1){
     /* forget it */
     goto syncit;
@@ -156,7 +229,6 @@ void list_show(MINLIST * list, int selectedid, int x, int y, int h){
   }
   
   int sel_y  = selectedid * list->ih;
-  
   if (list->cv->h<h){
     /* dont need scroll */
     libaroma_draw_ex(
@@ -167,7 +239,6 @@ void list_show(MINLIST * list, int selectedid, int x, int y, int h){
     );
     goto syncit;
   }
-  
   
   int sel_cy = sel_y + (list->ih>>1);
   int draw_y = (h>>1) - sel_cy;
@@ -181,64 +252,145 @@ void list_show(MINLIST * list, int selectedid, int x, int y, int h){
   libaroma_draw_ex(
     dc, list->cva, x, y+(sel_y-draw_y),0,sel_y,list->w,list->ih, 0, 0xff
   );
-  
   /* draw scroll indicator */
   int si_h = (h * h) / list->cv->h;
-  int si_y = (selectedid+1) * (h-si_h);
+  int si_y = draw_y * h;
   if (si_y>0){
-    si_y /= list->n;
-    int si_w = SCROLL_INDICATOR_WIDTH;
-    int pad  = libaroma_dp(1);
-    
-    /* draw indicator */
-    libaroma_draw_rect(dc, x+list->w-si_w, 
-      y+si_y, si_w, si_h, list->bgcolor, 0xff
-    );
-    
-    libaroma_draw_rect(dc, x+list->w-si_w+pad, 
-      y+si_y+pad, si_w-pad*2, si_h-pad*2, list->textcolor, 0xff
-    );
+    si_y /= list->cv->h;
   }
+  int si_w = SCROLL_INDICATOR_WIDTH;
+  int pad  = libaroma_dp(1);
+  byte is_dark = libaroma_color_isdark(list->bgcolor);
+  word indicator_color = is_dark?RGB(cccccc):RGB(666666);
+  /* draw indicator */
+  libaroma_draw_rect(dc, x+list->w-si_w,  y+si_y, si_w-libaroma_dp(2),
+    si_h, indicator_color, 120);
   
 syncit:
+  /* draw shadow ;) */
+  libaroma_gradient_ex1(dc, x, y, list->w,libaroma_dp(5),0,0,0,0,80,0,2);
+  libaroma_sync();
+}
+/**
+ **
+ ** END OF MINIMAL LIST
+ **
+ **********************************************************************************/
+
+void appbar_draw(char * text, word bgcolor, word textcolor, int y, int h){
+  /* draw appbar */
+  libaroma_draw_rect(
+    dc, 0, y, dc->w, h, bgcolor, 0xff
+  );
+  int txt_x = libaroma_dp(16);
+  
+  LIBAROMA_TEXT txt = libaroma_text(
+    text,
+    textcolor,
+    dc->w-txt_x,
+    LIBAROMA_FONT(0,6)|
+    LIBAROMA_TEXT_SINGLELINE|
+    LIBAROMA_TEXT_LEFT|
+    LIBAROMA_TEXT_BOLD|
+    LIBAROMA_TEXT_FIXED_INDENT|
+    LIBAROMA_TEXT_FIXED_COLOR|
+    LIBAROMA_TEXT_NOHR,
+    100
+  );
+  if (txt){
+    int txty=y + ((h>>1)-((libaroma_text_height(txt)>>1))-libaroma_dp(2));
+    libaroma_text_draw(
+      dc, txt, txt_x, txty
+    );
+    libaroma_text_free(txt);
+  }
   libaroma_sync();
 }
 
-
 int main(int argc, char **argv){
-  
-  
   if (init_aroma()){
-    MINLIST * list = list_create(
-      dc->w-100,
-      libaroma_dp(48),
-      RGB(000000),
-      RGB(446688),
-      RGB(ffffff),
-      RGB(ffdd88)
+    int i;
+    int statusbar_height = libaroma_dp(24);
+    int appbar_height    = libaroma_dp(56);
+    int list_y           = statusbar_height + appbar_height;
+    int list_height      = dc->h-list_y;
+    
+    /*
+     * DRAW STATUSBAR
+     */
+    libaroma_draw_rect(
+      dc, 0, 0, dc->w, statusbar_height, RGB(335577), 0xff
+    );
+    libaroma_draw_text(
+    	dc,
+    	"AROMA Bootloader",
+    	0, libaroma_dp(2) ,RGB(ffffff), dc->w,
+    	LIBAROMA_FONT(0,3)|LIBAROMA_TEXT_CENTER,
+    	100
     );
     
-    int i;
+    /*
+     * Create List
+     */
+    MINLIST * list = list_create(
+      dc->w,
+      libaroma_dp(72),
+      RGB(ffffff),
+      RGB(cccccc),
+      RGB(000000),
+      RGB(000000)
+    );
+    
+    /*
+     * Add List Items
+     */
     for (i=0;i<30;i++){
-      char txt[64];
-      snprintf(txt,64,"Item <b>Num %i</b> <u>%i</u>", i, (i+1) * 10);
-      list_add(list,txt);
+      char title[64];
+      char subtitle[64];
+      snprintf(title,64,"Item Number %i", i+1);
+      snprintf(subtitle,64,"This is subtitle text number %i", i+1);
+      list_add(
+        list,
+        "file:///sdcard/gesture.png",
+        title,
+        subtitle,
+        LIST_ADD_MASK_ICON_COLOR|LIST_ADD_WITH_SEPARATOR
+        /*|LIST_ADD_SEPARATOR_ALIGN_TEXT*/
+      );
     }
     
-    int list_height = libaroma_dp(48)*8; /* 8 items per page */
+    /* set appbar */
+    appbar_draw(
+      "Please Select OS",
+      RGB(446688),
+      RGB(ffffff),
+      statusbar_height,
+      appbar_height
+    );
     
-    /* draw frame */
-    libaroma_draw_rect(dc, 40, 290, dc->w-80, list_height+20, RGB(666666), 0xff);
-    
-    /* up to down */
+    /* show & change list selection */
     for (i=-1;i<30;i++){
-      list_show(list, i, 50, 300, list_height);
+      list_show(list, i, 0, list_y, list_height);
+      usleep(200000);
+    }
+    
+    /* change appbar text */
+    for (i=0;i<10;i++){
+      char txapp[32];
+      snprintf(txapp,32,"App Title #%i",i+1);
+      appbar_draw(
+        txapp,
+        RGB(446688),
+        RGB(ffffff),
+        statusbar_height,
+        appbar_height
+      );
       usleep(300000);
     }
     
     /* down to up */
     for (i=29;i>=-1;i--){
-      list_show(list, i, 50, 300, list_height);
+      list_show(list, i, 0, list_y, list_height);
       usleep(300000);
     }
     

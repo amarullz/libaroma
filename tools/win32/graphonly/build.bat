@@ -95,7 +95,6 @@ echo Compiling TEST GRAPH ONLY
  ^
   ../../../src/aroma/aroma.c ^
   ../../../src/aroma/version.c ^
-  ../../../src/aroma/debug/*.c ^
  ^
   ../../../src/aroma/utils/array.c ^
   ../../../src/aroma/utils/minutf8.c ^
@@ -110,9 +109,18 @@ echo Compiling TEST GRAPH ONLY
   ../../../src/aroma/graph/png.c ^
   ../../../src/aroma/graph/text.c ^
  ^
-  ../../../src/aroma/graph/draw/*.c ^
+  ../../../src/aroma/graph/draw/blur.c ^
+  ../../../src/aroma/graph/draw/commondraw.c ^
+  ../../../src/aroma/graph/draw/filters.c ^
+  ../../../src/aroma/graph/draw/gradient.c ^
+  ../../../src/aroma/graph/draw/path.c ^
+  ../../../src/aroma/graph/draw/scale.c ^
  ^
-  ../../../src/aroma/graph/engine/*.c ^
+  ../../../src/aroma/graph/engine/alignblt.c ^
+  ../../../src/aroma/graph/engine/alpha.c ^
+  ../../../src/aroma/graph/engine/blt.c ^
+  ../../../src/aroma/graph/engine/color.c ^
+  ../../../src/aroma/graph/engine/dither.c ^
  ^
   ../../../examples/libaroma_test_graphonly.c ^
  ^
