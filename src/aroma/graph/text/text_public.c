@@ -53,6 +53,33 @@ int libaroma_text_height(
 } /* End of libaroma_text_height */
 
 /*
+ * Function    : libaroma_text_height
+ * Return Value: int
+ * Descriptions: get text width
+ */
+int libaroma_text_width(
+    LIBAROMA_TEXT text) {
+  int i;
+  int maxx = 0, minx = 0;
+  int first = 1;
+
+  if (text) {
+    _LIBAROMA_TEXTP txt = (_LIBAROMA_TEXTP) text;
+    for(i=0; i<txt->n; i++) {
+      _LIBAROMA_TEXTLINEP linep = txt->lines[i];
+
+      if(first || linep->maxx>maxx)
+        maxx = linep->maxx;
+      if(first || linep->minx<minx)
+        minx = linep->minx;
+      if(first)
+        first = 0;
+    }
+  }
+  return maxx-minx;
+} /* End of libaroma_text_width */
+
+/*
  * Function    : libaroma_text
  * Return Value: LIBAROMA_TEXT
  * Descriptions: create text

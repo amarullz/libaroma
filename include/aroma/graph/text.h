@@ -147,6 +147,14 @@ int libaroma_text_line_count(
 /*
  * Function    : libaroma_text_height
  * Return Value: int
+ * Descriptions: get text width
+ */
+int libaroma_text_width(
+    LIBAROMA_TEXT text);
+
+/*
+ * Function    : libaroma_text_height
+ * Return Value: int
  * Descriptions: get text height
  */
 int libaroma_text_height(
