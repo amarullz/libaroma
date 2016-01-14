@@ -601,6 +601,8 @@ dword _libaroma_ctl_fragment_msg(
   dword ret = 0;
   
   switch(msg->msg){
+    case LIBAROMA_MSG_WIN_ACTIVE:
+    case LIBAROMA_MSG_WIN_INACTIVE:
     case LIBAROMA_MSG_WIN_RESIZE:
       {
         libaroma_mutex_lock(me->mutex);

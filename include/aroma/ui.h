@@ -40,6 +40,7 @@ typedef struct _LIBAROMA_CONTROL * LIBAROMA_CONTROLP;
 #include "ui/window.h"
 #include "ui/window_manager.h"
 #include "ui/control.h"
+#include "ui/dialog.h"
 
 /* libaroma control set */
 #include "controls/ctl_bar.h"

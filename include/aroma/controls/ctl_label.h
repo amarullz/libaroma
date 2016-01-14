@@ -27,6 +27,11 @@
 #ifndef __libaroma_ctl_label_h__
 #define __libaroma_ctl_label_h__
 
+int libaroma_ctl_label_height(
+  const char * text, int w,
+  byte fontid, byte size,
+  dword flags, byte lineheight
+);
 
 LIBAROMA_CONTROLP libaroma_ctl_label_valign(
   LIBAROMA_WINDOWP win, word id, const char * text,

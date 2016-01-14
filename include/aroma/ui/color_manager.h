@@ -39,6 +39,9 @@ typedef struct {
   word control_primary_text;
   word control_secondary_text;
   word divider;
+  word dialog_bg;
+  word dialog_primary_text;
+  word dialog_secondary_text;
 } LIBAROMA_COLORSET, * LIBAROMA_COLORSETP;
 byte libaroma_colorset(LIBAROMA_COLORSETP colorset, byte type);
 LIBAROMA_COLORSETP libaroma_colorget(

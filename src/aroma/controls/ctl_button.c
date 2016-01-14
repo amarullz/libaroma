@@ -62,6 +62,26 @@ struct __LIBAROMA_CTL_BUTTON{
   LIBAROMA_CANVASP push_canvas;
 };
 
+int libaroma_ctl_button_width(const char * text){
+  LIBAROMA_TEXT textp = libaroma_text(
+    text,
+    0,
+    libaroma_fb()->w,
+    LIBAROMA_FONT(0,4)|
+    LIBAROMA_TEXT_SINGLELINE|
+    LIBAROMA_TEXT_FIXED_INDENT|
+    LIBAROMA_TEXT_FIXED_COLOR|
+    LIBAROMA_TEXT_NOHR,
+    100
+  );
+  if (textp){
+    int sz=libaroma_text_width(textp)+libaroma_dp(24);
+    libaroma_text_free(textp);
+    return sz;
+  }
+  return 0;
+}
+
 /*
  * Function    : _libaroma_ctl_button_internal_draw
  * Return Value: void
@@ -187,12 +207,12 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
   if (is_disabled){
     rest_text_color=me->isdark?0xffff:0;
   }
-  libaroma_text_draw_color(rest_canvas,textp,libaroma_dp(12)+ix,y,
+  libaroma_text_draw_color(rest_canvas,textp,libaroma_dp(8)+ix,y,
     rest_text_color
   );
   
   if (!is_disabled){
-    libaroma_text_draw(push_canvas,textp,libaroma_dp(12)+ix,y);
+    libaroma_text_draw(push_canvas,textp,libaroma_dp(8)+ix,y);
   }
   else{
     libaroma_draw_ex(rest_canvas,bg,0,0,0,0,ctl->w,ctl->h,0,
@@ -425,7 +445,7 @@ LIBAROMA_CONTROLP libaroma_ctl_button(
     LIBAROMA_WINDOWP win,
     word id,
     int x, int y, int w, int h,
-    char * text,
+    const char * text,
     byte button_style,
     word button_color
 ){
@@ -493,7 +513,7 @@ byte libaroma_ctl_button_style(
  */
 byte libaroma_ctl_button_text(
     LIBAROMA_CONTROLP ctl,
-    char * text
+    const char * text
 ){
   /* internal check */
   _LIBAROMA_CTL_CHECK(

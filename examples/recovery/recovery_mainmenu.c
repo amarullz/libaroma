@@ -63,6 +63,24 @@ void recovery_mainmenu_reset_appbar(LIBAROMA_WINDOWP win, MAINMENU * var){
   libaroma_ctl_bar_update(recovery()->appbar);
 }
 
+/* test open dialog */
+byte recovery_open_dialog(LIBAROMA_WINDOWP parent){
+  libaroma_sleep(700);
+  recovery_statusbar_setcolor(libaroma_alpha(libaroma_colorget(NULL,parent)->primary,0,
+    0x70));
+  libaroma_dialog_confirm(
+    "Unpatched Boot",
+    "Do you want to boot without any ramdisk patching?",
+    "OK",
+    "CANCEL",
+    NULL,
+    LIBAROMA_DIALOG_DIM_PARENT|LIBAROMA_DIALOG_WITH_SHADOW|
+    LIBAROMA_DIALOG_ACCENT_BUTTON|LIBAROMA_DIALOG_CANCELABLE
+  );
+  libaroma_window_anishow(parent,0,0);
+  recovery_statusbar_setcolor(libaroma_colorget(NULL,parent)->primary);
+}
+
 /* event loop */
 byte recovery_mainmenu_pool(LIBAROMA_WINDOWP win, MAINMENU * var){
   byte onpool=1;
@@ -105,6 +123,9 @@ byte recovery_mainmenu_pool(LIBAROMA_WINDOWP win, MAINMENU * var){
           );
           recovery_usb(ID_MAINMENU_FRAGMENT,&rect);
           recovery_mainmenu_reset_appbar(win,var);
+        }
+        else if (msg.key==ID_MENU_INSTALL){
+          recovery_open_dialog(recovery()->win);
         }
         else{
           /*

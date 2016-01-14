@@ -37,7 +37,10 @@ static LIBAROMA_COLORSET __libaroma_fallback_colorset={
   control_bg:0,
   control_primary_text:0,
   control_secondary_text:0,
-  divider:0
+  divider:0,
+  dialog_bg:0,
+  dialog_primary_text:0,
+  dialog_secondary_text:0,
 };
 
 /*
@@ -60,6 +63,16 @@ byte libaroma_colorset(LIBAROMA_COLORSETP colorset, byte type){
   colorset->control_primary_text=RGB(212121);
   colorset->control_secondary_text=RGB(727272);
   colorset->divider=RGB(B6B6B6);
+  
+  
+  colorset->dialog_bg=RGB(FFFFFF);
+  colorset->dialog_primary_text=RGB(212121);
+  colorset->dialog_secondary_text=RGB(727272);
+  /*
+  colorset->dialog_bg=RGB(444444);
+  colorset->dialog_primary_text=RGB(ffffff);
+  colorset->dialog_secondary_text=RGB(999999);
+  */
   return 1;
 }
 

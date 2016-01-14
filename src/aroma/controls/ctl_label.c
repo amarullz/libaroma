@@ -291,7 +291,23 @@ byte libaroma_ctl_label_set_bgcolor(
 	libaroma_mutex_unlock(me->mutex);
 	return 1;
 }
-	
+
+int libaroma_ctl_label_height(
+  const char * text, int w,
+  byte fontid, byte size,
+  dword flags, byte lineheight
+){
+  LIBAROMA_TEXT txt = libaroma_text(
+    text,0,w,LIBAROMA_FONT(fontid,size)|flags,
+  	lineheight
+  );
+  if (txt){
+    int txth=libaroma_text_height(txt);
+    libaroma_text_free(txt);
+    return txth;
+  }
+  return 0;
+}
 
 LIBAROMA_CONTROLP libaroma_ctl_label_valign(
   LIBAROMA_WINDOWP win, word id, const char * text,

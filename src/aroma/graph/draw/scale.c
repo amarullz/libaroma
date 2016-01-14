@@ -275,8 +275,16 @@ byte libaroma_draw_scale_smooth(
           dst->alpha[dst_pos] = MIN(dst->alpha[dst_pos]+asz, 0xff);
         }
         else {
+          *dstp = libaroma_dither(y, x,
+            libaroma_alpha32(
+              *dstp, res, (((al1 * hc1 + al2 * hc2) *
+              wc1 + (al3 * hc1 + al4 * hc2) * wc2) >> 14)
+            )
+          );
+          /*
           *dstp = libaroma_alpha(*dstp, res, (((al1 * hc1 + al2 * hc2) *
               wc1 + (al3 * hc1 + al4 * hc2) * wc2) >> 14));
+          */
         }
       }
       else if (dst->alpha != NULL) {

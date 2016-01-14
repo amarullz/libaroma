@@ -367,4 +367,7 @@ byte libaroma_draw_zshadow(
   LIBAROMA_CANVASP mask,
   int x, int y, byte zindex);
 
+
+LIBAROMA_CANVASP libaroma_canvas_shadow(int radiusx, int radiusy, byte alphamax);
+
 #endif /* __libaroma_draw_h__ */

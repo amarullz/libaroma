@@ -46,6 +46,52 @@ float * _libaroma_blur_kernel(const int inRadius) {
   }
   return gaussian_kernel;
 }
+float * _libaroma_blur_kernel_norm(const int inRadius) {
+  int mem_amount = inRadius+1;
+  float * gaussian_kernel = (float *) malloc(mem_amount * sizeof(float));
+  int i;
+  for (i = 0; i < mem_amount; i++) {
+    gaussian_kernel[i] = libaroma_cubic_bezier(0,0,0.68,1,((float) i) / ((float) mem_amount));
+  }
+  return gaussian_kernel;
+}
+LIBAROMA_CANVASP libaroma_canvas_shadow(int radiusx, int radiusy, byte alphamax){
+  int sx = (radiusx*2) + 3;
+  int sy = (radiusy*2) + 3;
+  int sk = (radiusx*2) + 1;
+  LIBAROMA_CANVASP cv = libaroma_canvas_ex(sx,sy,1);
+  libaroma_canvas_setcolor(cv,0,0);
+  float * kernelx = _libaroma_blur_kernel_norm(radiusx);
+  float * kernely = _libaroma_blur_kernel_norm(radiusy);
+  int x, y;
+  for (y=0;y<=radiusy;y++){
+    int ypos=(cv->l * (y+1));
+    int bpos=(cv->l * (sy-2-y));
+    int pos;
+    for (x=0;x<=radiusx;x++){
+      pos = (x+1) + ypos;
+      cv->alpha[pos] = MIN(alphamax,(kernelx[x]*kernely[y]) * alphamax);
+      if (cv->alpha[pos]<8){
+        cv->alpha[pos]=0;
+      }
+      if (x!=radiusx){
+        int ps = (sx-2-x) + ypos;
+        cv->alpha[ps]=cv->alpha[pos];
+      }
+    }
+    if (y!=radiusy){
+      memcpy(cv->alpha+bpos,cv->alpha+ypos,sk);
+    }
+  }
+  int yps = cv->l * (radiusy+1);
+  int xps = (radiusx+1);
+  cv->alpha[xps]=
+  cv->alpha[yps]=0xff;
+  
+  free(kernelx);
+  free(kernely);
+  return cv;
+}
 
 /*
  * Function    : libaroma_blur_ex

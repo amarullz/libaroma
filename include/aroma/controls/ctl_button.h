@@ -41,10 +41,12 @@ LIBAROMA_CONTROLP libaroma_ctl_button(
     LIBAROMA_WINDOWP win,
     word id,
     int x, int y, int w, int h,
-    char * text,
+    const char * text,
     byte button_style,
     word button_color
 );
+
+int libaroma_ctl_button_width(const char * text);
 
 /*
  * Function    : libaroma_ctl_button_style
@@ -64,7 +66,7 @@ byte libaroma_ctl_button_style(
  */
 byte libaroma_ctl_button_text(
     LIBAROMA_CONTROLP ctl,
-    char * text
+    const char * text
 );
 
 /*
