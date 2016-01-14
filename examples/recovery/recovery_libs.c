@@ -321,7 +321,7 @@ byte recovery_release_ui(){
   }
   return 0;
 }
-
+    
 /* init recovery */
 byte recovery_init(){
   /* 
@@ -338,6 +338,23 @@ byte recovery_init(){
     RLOG("recovery_init: libaroma_start failed");
     return 0;
   }
+  
+  
+  LIBAROMA_CANVASP svg1=libaroma_image(
+    libaroma_stream(
+      "file:///sdcard/23.svg"
+    ),
+    1
+  );
+  if (svg1){
+    libaroma_draw(libaroma_fb()->canvas,svg1,0,0,1);
+    libaroma_sync();
+    sleep(4);
+  }
+  else{
+    printf("\n\nSVG RENDER ERROR\n\n\n");
+  }
+  
   
   /* set workspace size */
   libaroma_wm_set_workspace(

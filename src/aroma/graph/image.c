@@ -59,6 +59,36 @@ LIBAROMA_CANVASP libaroma_image_ex(
     return libaroma_jpeg_ex(stream,freeStream,hicolor);
   }
 #endif
+
+#ifndef LIBAROMA_CONFIG_NOSVG
+  /* svg */
+  byte is_svg=0;
+  if (libaroma_stristr(stream->uri, ".svg", stream->size)!=NULL){
+    is_svg=1;
+  }
+  else{
+    int i;
+    for (i=0;((i<stream->size)&&(i<2048));i++){
+      switch (d[i]){
+        case '<':
+          is_svg=1;
+          i=10000;
+          break;
+        case ' ':
+        case '\n':
+        case '\r':
+        case '\t':
+          break;
+        default:
+          i=10000;
+      }
+    }
+  }
+  if (is_svg){
+    return libaroma_svg_ex(stream,freeStream,0);
+  }
+#endif
+
 errorgo:
   ALOGW("libaroma_image_new \"%s\" not valid image", stream->uri);
   if (freeStream){
