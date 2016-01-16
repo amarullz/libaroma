@@ -318,6 +318,35 @@ int libaroma_dialog_confirm(
   return retval;
 }
 
+byte _libaroma_dialog_list_simple_option_cb(
+  LIBAROMA_CONTROLP ctl,
+  LIBAROMA_CTL_LIST_ITEMP item,
+  int id,
+  byte checked,
+  voidp data,
+  byte state
+){
+  LIBAROMA_CTL_LIST_ITEMP * currsel = (LIBAROMA_CTL_LIST_ITEMP*) data;
+  if (state==LIBAROMA_LISTITEM_CB_SELECTED){
+    if (*currsel==NULL){
+      *currsel=item;
+      return 1;
+    }
+    else if (*currsel!=item){
+      LIBAROMA_CTL_LIST_ITEMP oldsel=*currsel;
+      *currsel=NULL;
+      libaroma_listitem_set_selected(ctl,oldsel,0);
+      *currsel=item;
+      return 1;
+    }
+  }
+  else if (state==LIBAROMA_LISTITEM_CB_UNSELECTED){
+    if (*currsel!=item){
+      return 1;
+    }
+  }
+  return 0;
+}
 
 int libaroma_dialog_list(
   const char * title,
@@ -380,11 +409,21 @@ int libaroma_dialog_list(
         extraText,
         NULL,
         NULL,
-        LIBAROMA_LISTITEM_CHECK_LEFT_CONTROL,
+        LIBAROMA_LISTITEM_CHECK_LEFT_CONTROL|LIBAROMA_LISTITEM_CHECK_OPTION,
         -1
       );
+    
+    libaroma_listitem_check_set_cb(
+      listc,
+      itm,
+      _libaroma_dialog_list_simple_option_cb,
+      (voidp) &selitem
+    );
+    
     if (u==15){
-      selitem=itm;
+      libaroma_listitem_set_selected(
+        listc,itm,1
+      );
     }
   }
   msg_h = libaroma_ctl_scroll_get_height(listc);
@@ -479,15 +518,17 @@ int libaroma_dialog_list(
     else if (cmd==LIBAROMA_CMD_CLICK){
       if (id==1){
         ALOGV("libaroma_dialog_confirm: Button 1 Selected");
-        retval=1;
+        if (selitem!=NULL){
+          retval=selitem->id-10;
+        }
         onpool=0;
-        libaroma_sleep(300);
+        //libaroma_sleep(300);
       }
       else if (id==2){
         ALOGV("libaroma_dialog_confirm: Button 2 Selected");
-        retval=2;
+        retval=-1;
         onpool=0;
-        libaroma_sleep(300);
+        //libaroma_sleep(300);
       }
     }
     else if (msg.msg==LIBAROMA_MSG_TOUCH){

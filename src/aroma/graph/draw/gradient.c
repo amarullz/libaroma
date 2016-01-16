@@ -138,9 +138,11 @@ byte libaroma_gradient_ex1(
   if ((startAlpha == 0xff) && (endAlpha == 0xff)) {
     useAlpha = 0;
   }
-  if (dst->alpha != NULL) {
-    useCanvasAlpha = 1;
-    useAlpha = 0;
+  if (!(flags&LIBAROMA_DRAW_NO_DST_ALPHA)){
+    if (dst->alpha != NULL) {
+      useCanvasAlpha = 1;
+      useAlpha = 0;
+    }
   }
   if (ignoreAlpha) {
     roundSize = 0;

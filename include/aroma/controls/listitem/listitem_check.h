@@ -34,7 +34,35 @@
 #define LIBAROMA_LISTITEM_CHECK_FREE_ICON          0x0800
 #define LIBAROMA_LISTITEM_CHECK_SWITCH             0x1000
 #define LIBAROMA_LISTITEM_CHECK_LEFT_CONTROL       0x2000
+#define LIBAROMA_LISTITEM_CHECK_OPTION             0x4000
 
+#define LIBAROMA_LISTITEM_CB_UNSELECTED           0x0
+#define LIBAROMA_LISTITEM_CB_SELECTED             0x1
+#define LIBAROMA_LISTITEM_CB_FREE                 0x2
+
+/* Onchange cb */
+typedef byte (*LIBAROMA_LISTITEM_CB)(
+  LIBAROMA_CONTROLP ctl,
+  LIBAROMA_CTL_LIST_ITEMP item,
+  int id,
+  byte checked,
+  voidp data,
+  byte state
+);
+
+/* Set callback */
+byte libaroma_listitem_check_set_cb(
+    LIBAROMA_CONTROLP ctl,
+    LIBAROMA_CTL_LIST_ITEMP item,
+    LIBAROMA_LISTITEM_CB cb,
+    voidp data);
+
+/* set selected */
+byte libaroma_listitem_set_selected(
+  LIBAROMA_CONTROLP ctl,
+  LIBAROMA_CTL_LIST_ITEMP item,
+  byte selected);
+  
 /*
  * Function    : libaroma_listitem_check
  * Return Value: LIBAROMA_CTL_LIST_ITEMP

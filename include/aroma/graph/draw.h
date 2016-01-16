@@ -44,6 +44,7 @@ typedef word (*LIBAROMA_DRAW_FILTER)(word color, dword param);
 #define LIBAROMA_DRAW_WITH_ALPHA    0x1
 #define LIBAROMA_DRAW_NODITHER      0x2
 #define LIBAROMA_DRAW_TO_BLACK      0x4
+#define LIBAROMA_DRAW_NO_DST_ALPHA  0x8
 
 /*
  * Function    : libaroma_draw_limit

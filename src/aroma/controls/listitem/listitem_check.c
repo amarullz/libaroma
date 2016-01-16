@@ -48,7 +48,68 @@ typedef struct{
   char * extra_text;
   LIBAROMA_CANVASP icon;
   int h;
+  LIBAROMA_LISTITEM_CB change_cb;
+  voidp change_data;
 } _LIBAROMA_LISTITEM_CHECK, * _LIBAROMA_LISTITEM_CHECKP;
+
+byte _libaroma_ctl_list_dodraw_item(
+    LIBAROMA_CONTROLP ctl,
+    LIBAROMA_CTL_LIST_ITEMP item
+);
+byte libaroma_listitem_set_selected(
+  LIBAROMA_CONTROLP ctl,
+  LIBAROMA_CTL_LIST_ITEMP item,
+  byte selected){
+  if (item->handler!=&_libaroma_listitem_check_handler){
+    return 0;
+  }
+  _LIBAROMA_LISTITEM_CHECKP mi = (_LIBAROMA_LISTITEM_CHECKP) item->internal;
+  byte is_ondraw=0;
+  if (selected>=10){
+    is_ondraw=1;
+    selected-=10;
+  }
+  if (!selected){
+    if (mi->change_cb){
+      if (mi->change_cb(
+        ctl, item, item->id, mi->selected, mi->change_data, LIBAROMA_LISTITEM_CB_UNSELECTED
+      )){
+        mi->selected=0;
+        mi->onchangeani=1;
+      }
+      else{
+        return 0;
+      }
+    }
+    else{
+      mi->selected=0;
+      mi->onchangeani=1;
+    }
+  }
+  else{
+    if (mi->change_cb){
+      if (mi->change_cb(
+        ctl, item, item->id, mi->selected, mi->change_data, LIBAROMA_LISTITEM_CB_SELECTED
+      )){
+        mi->selected=1;
+        mi->onchangeani=1;
+      }
+      else{
+        return 0;
+      }
+    }
+    else{
+      mi->selected=1;
+      mi->onchangeani=1;
+    }
+  }
+  if (mi->onchangeani){
+    if (!is_ondraw){
+      _libaroma_ctl_list_dodraw_item(ctl,item);
+    }
+  }
+  return 1;
+}
 
 /*
  * Function    : _libaroma_listitem_check_message
@@ -94,21 +155,11 @@ byte _libaroma_listitem_check_message(
       {
         mi->onchangeani=0;
         if (param!=LIBAROMA_CTL_LIST_ITEM_MSGPARAM_HOLDED){
-          mi->onchangeani=1;
-          if (mi->selected){
-            mi->selected=0;
-          }
-          else{
-            mi->selected=1;
-          }
+          libaroma_listitem_set_selected(ctl,item,mi->selected?10:11);
           libaroma_window_post_command_ex(
             LIBAROMA_CMD_SET(LIBAROMA_CMD_CLICK, 0, ctl->id),
             mi->selected, item->id, 0, (voidp) item
           );
-          //printf("list item #%i -> up/change state: %i\n",item->id,mi->selected);
-        }
-        else{
-          //printf("list item #%i -> up - already holded\n",item->id);
         }
         return 0;
       }
@@ -407,6 +458,7 @@ void _libaroma_listitem_check_draw(
       );
     }
     else{
+      byte isoption=(LIBAROMA_LISTITEM_CHECK_OPTION&flags)?1:0;
       word cprimary=is_dark?
       libaroma_colorget(ctl,NULL)->primary_light:
       libaroma_colorget(ctl,NULL)->primary;
@@ -428,20 +480,36 @@ void _libaroma_listitem_check_draw(
           checkcache = libaroma_canvas_ex(rsz,rsz,1);
           memset(checkcache->alpha,0,rsz*rsz);
   
-          libaroma_gradient_ex1(checkcache,
-            0,0,rsz,rsz,cprimary,cprimary,libaroma_dp(2),0x1111,
-            0xff,0xff,2);
-          
-          /* tick */
-          LIBAROMA_PATHP path=libaroma_path(12*rsz>>6, 27*rsz>>6);
-          libaroma_path_add(path, 25*rsz>>6, 40*rsz>>6);
-          libaroma_path_add(path, 52*rsz>>6, 13*rsz>>6);
-          libaroma_path_add(path, 57*rsz>>6, 18*rsz>>6);
-          libaroma_path_add(path, 25*rsz>>6, 50*rsz>>6);
-          libaroma_path_add(path,  7*rsz>>6, 32*rsz>>6);
-          libaroma_path_draw(checkcache, path, 0, 0, 2, 0.5);
-          libaroma_path_free(path);
-          
+          if (isoption){
+            libaroma_gradient_ex1(checkcache,
+              0,0,rsz,rsz,cprimary,cprimary,rsz>>1,0x1111,
+              0xff,0xff,2);
+            int vrsz=rsz-libaroma_dp(4);
+            libaroma_gradient_ex1(checkcache,
+              libaroma_dp(2),libaroma_dp(2),
+              vrsz,vrsz,bgcolor,bgcolor,vrsz>>1,0x1111,
+              0xff,0xff,2|LIBAROMA_DRAW_NO_DST_ALPHA);
+            vrsz-=libaroma_dp(4);
+            libaroma_gradient_ex1(checkcache,
+              libaroma_dp(4),libaroma_dp(4),
+              vrsz,vrsz,cprimary,cprimary,vrsz>>1,0x1111,
+              0xff,0xff,2|LIBAROMA_DRAW_NO_DST_ALPHA);
+          }
+          else{
+            libaroma_gradient_ex1(checkcache,
+              0,0,rsz,rsz,cprimary,cprimary,libaroma_dp(2),0x1111,
+              0xff,0xff,2);
+            
+            /* tick */
+            LIBAROMA_PATHP path=libaroma_path(12*rsz>>6, 27*rsz>>6);
+            libaroma_path_add(path, 25*rsz>>6, 40*rsz>>6);
+            libaroma_path_add(path, 52*rsz>>6, 13*rsz>>6);
+            libaroma_path_add(path, 57*rsz>>6, 18*rsz>>6);
+            libaroma_path_add(path, 25*rsz>>6, 50*rsz>>6);
+            libaroma_path_add(path,  7*rsz>>6, 32*rsz>>6);
+            libaroma_path_draw(checkcache, path, 0, 0, 2, 0.5);
+            libaroma_path_free(path);
+          }
           if (item->state!=NULL){
             /* will automatically freed by list control */
             item->state->cache_client=checkcache;
@@ -461,7 +529,7 @@ void _libaroma_listitem_check_draw(
             hal_sz,
             hal_sz,
             dprimary,dprimary,
-            libaroma_dp(2),0x1111,
+            libaroma_dp(isoption?hal_sz:2),0x1111,
             0xff,0xff,
             0
           );
@@ -472,7 +540,7 @@ void _libaroma_listitem_check_draw(
               ypos-(irsz>>1),
               irsz,irsz,
               bgcolor,bgcolor,
-              libaroma_dp(1),0x1111,
+              libaroma_dp(isoption?irsz:1),0x1111,
               0xff,0xff,
               0
             );
@@ -503,7 +571,7 @@ void _libaroma_listitem_check_draw(
           rsz,
           rsz,
           dprimary,dprimary,
-          libaroma_dp(2),0x1111,
+          libaroma_dp(isoption?rsz:2),0x1111,
           0xff,0xff,
           0
         );
@@ -513,7 +581,7 @@ void _libaroma_listitem_check_draw(
           ypos-(irsz>>1),
           irsz,irsz,
           bgcolor,bgcolor,
-          libaroma_dp(1),0x1111,
+          libaroma_dp(isoption?irsz:1),0x1111,
           0xff,0xff,
           0
         );
@@ -551,6 +619,29 @@ void _libaroma_listitem_check_release_internal(_LIBAROMA_LISTITEM_CHECKP mi,
   free(mi);
 } /* End of _libaroma_listitem_check_release_internal */
 
+byte libaroma_listitem_check_set_cb(
+    LIBAROMA_CONTROLP ctl,
+    LIBAROMA_CTL_LIST_ITEMP item,
+    LIBAROMA_LISTITEM_CB cb,
+    voidp data){
+  if (item->handler!=&_libaroma_listitem_check_handler){
+    return 0;
+  }
+  _LIBAROMA_LISTITEM_CHECKP mi = (_LIBAROMA_LISTITEM_CHECKP) item->internal;
+  if (mi->change_cb){
+    mi->change_cb(
+      ctl, item, item->id, mi->selected, mi->change_data, LIBAROMA_LISTITEM_CB_FREE
+    );
+    mi->change_cb=NULL;
+    mi->change_data=NULL;
+  }
+  if (cb){
+    mi->change_cb=cb;
+    mi->change_data=data;
+  }
+  return 1;
+}
+
 /*
  * Function    : _libaroma_listitem_check_destroy
  * Return Value: void
@@ -562,9 +653,13 @@ void _libaroma_listitem_check_destroy(
   if (item->handler!=&_libaroma_listitem_check_handler){
     return;
   }
-  _libaroma_listitem_check_release_internal(
-    (_LIBAROMA_LISTITEM_CHECKP) item->internal, item->flags
-  );
+  _LIBAROMA_LISTITEM_CHECKP mi = (_LIBAROMA_LISTITEM_CHECKP) item->internal;
+  if (mi->change_cb){
+    mi->change_cb(
+      ctl, item, item->id, mi->selected, mi->change_data, LIBAROMA_LISTITEM_CB_FREE
+    );
+  }
+  _libaroma_listitem_check_release_internal(mi, item->flags);
 } /* End of _libaroma_listitem_check_destroy */
 
 /*

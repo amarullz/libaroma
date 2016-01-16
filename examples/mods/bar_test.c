@@ -1,5 +1,5 @@
 byte dialog_demo(LIBAROMA_WINDOWP parent){
-  libaroma_dialog_list(
+  int res=libaroma_dialog_list(
     "Dialog Demo",
     "OK",
     "CANCEL",
@@ -7,6 +7,7 @@ byte dialog_demo(LIBAROMA_WINDOWP parent){
     LIBAROMA_DIALOG_DIM_PARENT|LIBAROMA_DIALOG_WITH_SHADOW|
     LIBAROMA_DIALOG_ACCENT_BUTTON|LIBAROMA_DIALOG_CANCELABLE
   );
+  printf("DIALOG RESULT: %i\n",res);
   libaroma_window_anishow(parent,0,0);
 }
 
