@@ -40,7 +40,7 @@ dword libaroma_hash(
  * Return Value: char *
  * Descriptions: stristr
  */
-char * libaroma_stristr(char *ch1, char *ch2, int sz);
+char * libaroma_stristr(const char *ch1, const char *ch2, int sz);
 
 /*
  * Function    : libaroma_lang_get

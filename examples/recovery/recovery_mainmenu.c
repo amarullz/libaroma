@@ -63,11 +63,19 @@ void recovery_mainmenu_reset_appbar(LIBAROMA_WINDOWP win, MAINMENU * var){
   libaroma_ctl_bar_update(recovery()->appbar);
 }
 
+int libaroma_dialog_list(
+  const char * title,
+  const char * button1,
+  const char * button2,
+  LIBAROMA_COLORSETP colorset,
+  byte flags);
+  
 /* test open dialog */
 byte recovery_open_dialog(LIBAROMA_WINDOWP parent){
-  libaroma_sleep(700);
+  // libaroma_sleep(700);
   recovery_statusbar_setcolor(libaroma_alpha(libaroma_colorget(NULL,parent)->primary,0,
     0x70));
+    /*
   libaroma_dialog_confirm(
     "Unpatched Boot",
     "Do you want to boot without any ramdisk patching?",
@@ -76,7 +84,17 @@ byte recovery_open_dialog(LIBAROMA_WINDOWP parent){
     NULL,
     LIBAROMA_DIALOG_DIM_PARENT|LIBAROMA_DIALOG_WITH_SHADOW|
     LIBAROMA_DIALOG_ACCENT_BUTTON|LIBAROMA_DIALOG_CANCELABLE
+  );*/
+  
+  libaroma_dialog_list(
+    "Unpatched Boot",
+    "OK",
+    "CANCEL",
+    NULL,
+    LIBAROMA_DIALOG_DIM_PARENT|LIBAROMA_DIALOG_WITH_SHADOW|
+    LIBAROMA_DIALOG_ACCENT_BUTTON|LIBAROMA_DIALOG_CANCELABLE
   );
+  
   libaroma_window_anishow(parent,0,0);
   recovery_statusbar_setcolor(libaroma_colorget(NULL,parent)->primary);
 }
@@ -166,18 +184,89 @@ byte recovery_mainmenu_init(LIBAROMA_WINDOWP win, MAINMENU * var){
     LIBAROMA_LISTITEM_MENU_FREE_ICON|
     LIBAROMA_LISTITEM_WITH_SEPARATOR|
     LIBAROMA_LISTITEM_SEPARATOR_TEXTALIGN;
-  
+  word menuflagsb =
+    LIBAROMA_LISTITEM_MENU_INDENT_NOICON|
+    LIBAROMA_LISTITEM_MENU_FREE_ICON|
+    LIBAROMA_LISTITEM_WITH_SEPARATOR|
+    LIBAROMA_LISTITEM_SEPARATOR_TEXTALIGN;
+    
   /* menu item macro */
   #define _ITEM(id,text,ico,extra) \
     libaroma_listitem_menu(\
       var->menu, id, text, extra, (ico!=NULL)?recovery_load_icon(ico,win):NULL, \
       menuflags,-1)
+  #define _ITEMB(id,text,ico,extra) \
+    libaroma_listitem_menu(\
+      var->menu, id, text, extra, (ico!=NULL)?recovery_load_icon(ico,win):NULL, \
+      menuflagsb,-1)
   #define _TITLE(id,text) \
     libaroma_listitem_caption_color(var->menu, id, text, \
       libaroma_colorget(NULL,win)->accent, -1)
   #define _DIV(id) \
     libaroma_listitem_divider(var->menu, id, \
       LIBAROMA_LISTITEM_DIVIDER_SUBSCREEN,-1)
+  
+  
+  LIBAROMA_CANVASP cphoto=libaroma_image_uri("file:///data/system/users/0/photo.png");
+  if (cphoto){
+    LIBAROMA_CANVASP dcphoto=libaroma_canvas(
+      libaroma_fb()->w, libaroma_dp(320)
+    );
+    libaroma_canvas_setcolor(dcphoto,RGB(333333),0xff);
+    LIBAROMA_CANVASP bgside=libaroma_image_uri("file:///sdcard/wall1.jpg");
+    if (bgside){
+      libaroma_draw_scale_smooth(
+        dcphoto, bgside,
+        0,0,dcphoto->w, dcphoto->h,
+        0, 0, bgside->w, bgside->h
+      );
+      libaroma_canvas_free(bgside);
+    }
+    
+    libaroma_draw_scale_smooth(
+      dcphoto, cphoto,
+      libaroma_dp(16),libaroma_dp(56),libaroma_dp(72), libaroma_dp(72), 
+      0, 0, cphoto->w, cphoto->h
+    );
+    
+    
+    char * namexml=libaroma_stream_to_string(libaroma_stream("file:///data/system/users/0.xml"),1);
+    if (namexml){
+      char * nametag=libaroma_stristr(namexml, "<name>", strlen(namexml))+6;
+      if (nametag){
+        char * nexttag=libaroma_stristr(nametag,"</name>",strlen(nametag));
+        if (nexttag){
+          nexttag[0]=0;
+          char myname[256];
+          snprintf(myname,256,"Hi %s\n<size=4>Welcome to Recovery",nametag);
+          libaroma_draw_text_ex(
+            dcphoto,
+            myname,
+            libaroma_dp(96),
+            libaroma_dp(74),
+            RGB(ffffff),
+            dcphoto->w-libaroma_dp(104),
+            LIBAROMA_FONT(0,5)|
+            LIBAROMA_TEXT_LEFT|
+            LIBAROMA_TEXT_FIXED_INDENT|
+            LIBAROMA_TEXT_FIXED_COLOR|
+            LIBAROMA_TEXT_NOHR,
+            100, 1, 2, 0, 0x80, libaroma_dp(1), libaroma_dp(1)
+          );
+        }
+      }
+      free(namexml);
+    }
+    libaroma_canvas_free(cphoto);
+    libaroma_listitem_image(
+      var->menu, 400,
+      dcphoto,
+      140,
+      LIBAROMA_LISTITEM_IMAGE_FREE|LIBAROMA_LISTITEM_WITH_SEPARATOR|
+      LIBAROMA_LISTITEM_IMAGE_FILL|LIBAROMA_LISTITEM_IMAGE_PROPORTIONAL|
+      LIBAROMA_CTL_LIST_ITEM_RECEIVE_TOUCH|LIBAROMA_LISTITEM_IMAGE_PARALAX,
+    -1);
+  }
   
   /* ITEMS */
   _TITLE(200,"ROM & SYSTEM");
@@ -195,7 +284,22 @@ byte recovery_mainmenu_init(LIBAROMA_WINDOWP win, MAINMENU * var){
     _ITEM(ID_MENU_LOGGING,"Logging","logs",NULL);
     _ITEM(ID_MENU_PARTITION,"Partition Manager","partition",NULL);
   
-  _DIV(302);
+  
+    libaroma_listitem_image(
+      var->menu, 400,
+      libaroma_image_uri("file:///sdcard/23.svg"),
+      250,
+      LIBAROMA_LISTITEM_IMAGE_FREE|LIBAROMA_LISTITEM_WITH_SEPARATOR|
+      LIBAROMA_LISTITEM_IMAGE_FILL|LIBAROMA_LISTITEM_IMAGE_PROPORTIONAL|
+      LIBAROMA_CTL_LIST_ITEM_RECEIVE_TOUCH|LIBAROMA_LISTITEM_IMAGE_PARALAX,
+    -1);
+  
+  _TITLE(202,"SVG ITEMS");
+    _ITEMB(500,"Loyalty","ic_loyalty_48px.svg","ic_loyalty_48px.svg");
+    _ITEMB(501,"Motorcycle","ic_motorcycle_48px.svg","ic_motorcycle_48px.svg");
+    _ITEMB(502,"ic_note_add_48px.svg","ic_note_add_48px.svg","ic_note_add_48px.svg");
+    _ITEMB(503,"ic_opacity_48px.svg","ic_opacity_48px.svg","ic_opacity_48px.svg");
+    _ITEMB(504,"ic_open_in_browser_48px.svg","ic_open_with_48px.svg","ic_open_with_48px.svg");
   
   /*
   LIBAROMA_CANVASP cphoto=libaroma_image_uri("file:///data/system/users/0/photo.png");
@@ -230,18 +334,20 @@ byte recovery_mainmenu_init(LIBAROMA_WINDOWP win, MAINMENU * var){
     _DIV(303);
   }
   */
-  
+  /*
   int u;
   for (u=0;u<20;u++){
     char extraText[100];
     snprintf(extraText,100,"Dummy Number %i",u);
     _ITEM(401+u,"Dummy Item",NULL,extraText);
   }
+  */
   
   /* undef menu item macro */
   #undef _DIV
   #undef _TITLE
   #undef _ITEM
+  #undef _ITEMB
   return 1;
 }
 
@@ -279,6 +385,16 @@ void recovery_mainmenu(){
         1, 500, 0,
         NULL, NULL, NULL
       );
+      
+      /*
+      libaroma_control_resize(
+        mainmenu.menu,
+        0, 0, LIBAROMA_SIZE_FULL, 200
+      );
+      */
+      
+      printf("Scroll Height: %i\n",libaroma_ctl_scroll_get_height(mainmenu.menu));
+      
       recovery_mainmenu_pool(win,&mainmenu);
     }
     else{

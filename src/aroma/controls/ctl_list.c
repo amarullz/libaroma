@@ -1138,6 +1138,39 @@ byte libaroma_ctl_list_item_position(
 } /* End of libaroma_ctl_list_item_position */
 
 /*
+ * Function    : libaroma_ctl_list_scroll_to_item
+ * Return Value: byte
+ * Descriptions: focus item to scroll
+ */
+byte libaroma_ctl_list_scroll_to_item(
+    LIBAROMA_CONTROLP ctl,
+    LIBAROMA_CTL_LIST_ITEMP item,
+    byte smooth
+  ){
+  if (!item){
+    return 0;
+  }
+  LIBAROMA_CTL_SCROLL_CLIENTP client = libaroma_ctl_scroll_get_client(ctl);
+  if (!client){
+    return 0;
+  }
+  if (client->handler!=&_libaroma_ctl_list_handler){
+    return 0;
+  }
+  /*LIBAROMA_CTL_LISTP mi = (LIBAROMA_CTL_LISTP) client->internal;*/
+  int sel_cy = item->y + (item->h>>1);
+  int draw_y = (ctl->h>>1) - sel_cy;
+  draw_y = (draw_y<0)?(0-draw_y):0;
+  if (smooth){
+    libaroma_ctl_scroll_request_pos(ctl,draw_y);
+  }
+  else{
+    libaroma_ctl_scroll_set_pos(ctl,draw_y);
+  }
+  return 1;
+} /* End of libaroma_ctl_list_scroll_to_item */
+
+/*
  * Function    : libaroma_ctl_list_add_item_internal
  * Return Value: LIBAROMA_CTL_LIST_ITEMP
  * Descriptions: add item internally

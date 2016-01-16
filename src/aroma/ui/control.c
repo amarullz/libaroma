@@ -64,6 +64,40 @@ LIBAROMA_CONTROLP libaroma_control_new(
   return ret;
 } /* End of libaroma_control_new */
 
+
+byte libaroma_window_measure_size(LIBAROMA_WINDOWP win);
+byte _libaroma_window_ready(LIBAROMA_WINDOWP win);
+/*
+ * Function    : libaroma_control_resize
+ * Return Value: byte
+ * Descriptions: resize control
+ */
+byte libaroma_control_resize(
+  LIBAROMA_CONTROLP ctl,
+  int x, int y, int w, int h
+){
+  if (!ctl){
+    return 0;
+  }
+  ctl->rx = x;
+  ctl->ry = y;
+  ctl->rw = w;
+  ctl->rh = h;
+  if (ctl->window){
+    LIBAROMA_WINDOWP win=ctl->window;
+    while (win->parent){
+      win=win->parent;
+    }
+    if (libaroma_window_measure_size(win)){
+      if (!_libaroma_window_ready(win)){
+        return 0;
+      }
+    }
+  }
+  libaroma_control_draw(ctl,1);
+  return 1;
+} /* End of libaroma_control_resize */
+
 /*
  * Function    : libaroma_control_draw_flush
  * Return Value: byte

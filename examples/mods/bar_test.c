@@ -1,3 +1,15 @@
+byte dialog_demo(LIBAROMA_WINDOWP parent){
+  libaroma_dialog_list(
+    "Dialog Demo",
+    "OK",
+    "CANCEL",
+    NULL,
+    LIBAROMA_DIALOG_DIM_PARENT|LIBAROMA_DIALOG_WITH_SHADOW|
+    LIBAROMA_DIALOG_ACCENT_BUTTON|LIBAROMA_DIALOG_CANCELABLE
+  );
+  libaroma_window_anishow(parent,0,0);
+}
+
 void bar_test(){
   
   LIBAROMA_WINDOWP win = libaroma_window(
@@ -54,6 +66,20 @@ void bar_test(){
     win2, 8, pw*2, 0, pw, 60,
     "Second Button", LIBAROMA_CTL_BUTTON_COLORED|LIBAROMA_CTL_BUTTON_RAISED, RGB(008800)
   );
+  
+  LIBAROMA_CONTROLP buttonx_2 = libaroma_ctl_button(
+    win2, 181, pw*2, 60, 72, 72,
+    "X", LIBAROMA_CTL_BUTTON_COLORED|LIBAROMA_CTL_BUTTON_RAISED|LIBAROMA_CTL_BUTTON_CIRCLE,
+    RGB(44688)
+  );
+  
+  LIBAROMA_CONTROLP buttonx_3 = libaroma_ctl_button(
+    win2, 182, pw*2+72, 60, 72, 72,
+    "A", LIBAROMA_CTL_BUTTON_COLORED|LIBAROMA_CTL_BUTTON_RAISED|LIBAROMA_CTL_BUTTON_CIRCLE,
+    RGB(ffffff)
+  );
+  
+  
   
   LIBAROMA_CONTROLP progress2 = libaroma_ctl_progress(
     win2, 51,
@@ -280,6 +306,9 @@ void bar_test(){
               libaroma_window_sidebar_show(sidebar, 1)
             );
           }
+        }
+        else if (id==8){
+          dialog_demo(win);
         }
         else if (id==7){
           libaroma_ctl_bar_set_textgap(bar,gap_wide,1);

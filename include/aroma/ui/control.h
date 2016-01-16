@@ -121,5 +121,14 @@ byte libaroma_control_free(
   LIBAROMA_CONTROLP ctl
 );
 
+/*
+ * Function    : libaroma_control_resize
+ * Return Value: byte
+ * Descriptions: resize control
+ */
+byte libaroma_control_resize(
+  LIBAROMA_CONTROLP ctl,
+  int x, int y, int w, int h
+);
 
 #endif /* __libaroma_control_h__ */

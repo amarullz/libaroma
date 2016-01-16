@@ -204,4 +204,15 @@ byte libaroma_ctl_list_item_position(
     LIBAROMA_CONTROLP ctl,LIBAROMA_CTL_LIST_ITEMP item,
     LIBAROMA_RECTP rect, byte absolute);
 
+/*
+ * Function    : libaroma_ctl_list_scroll_to_item
+ * Return Value: byte
+ * Descriptions: focus item to scroll
+ */
+byte libaroma_ctl_list_scroll_to_item(
+    LIBAROMA_CONTROLP ctl,
+    LIBAROMA_CTL_LIST_ITEMP item,
+    byte smooth
+  );
+
 #endif /* __libaroma_ctl_list_h__ */

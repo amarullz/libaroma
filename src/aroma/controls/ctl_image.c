@@ -98,6 +98,22 @@ void _libaroma_ctl_image_draw(
 }
 
 dword _libaroma_ctl_image_msg(LIBAROMA_CONTROLP ctl, LIBAROMA_MSGP msg){
+  /* internal check */
+  _LIBAROMA_CTL_CHECK(
+    _libaroma_ctl_image_handler, _LIBAROMA_CTL_IMAGEP, 0
+  );
+  
+  switch(msg->msg){
+    case LIBAROMA_MSG_WIN_ACTIVE:
+    case LIBAROMA_MSG_WIN_INACTIVE:
+    case LIBAROMA_MSG_WIN_RESIZE:
+      {
+        libaroma_mutex_lock(me->mutex);
+        me->update=1;
+        libaroma_mutex_unlock(me->mutex);
+      }
+      break;
+  }
   return 0;
 }
 

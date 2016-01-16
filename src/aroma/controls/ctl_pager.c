@@ -123,8 +123,8 @@ byte _libaroma_ctl_pager_direct_canvas(LIBAROMA_CONTROLP ctl, byte state){
   _LIBAROMA_CTL_CHECK(
     _libaroma_ctl_pager_handler, _LIBAROMA_CTL_PAGERP, 0
   );
-  libaroma_mutex_lock(me->mutex);
-  int xt = me->page_position * ctl->w;
+  //libaroma_mutex_lock(me->mutex);
+  int xt = me->scroll_x; // me->page_position * ctl->w;
   if (state){
     if (!me->on_direct_canvas){
       me->on_direct_canvas=1;
@@ -134,13 +134,14 @@ byte _libaroma_ctl_pager_direct_canvas(LIBAROMA_CONTROLP ctl, byte state){
     if (me->on_direct_canvas){
       LIBAROMA_CANVASP ccv = libaroma_control_draw_begin(ctl);
       if (ccv) {
-        libaroma_draw_ex(me->win->dc,ccv,0,0,xt,0,ccv->w,ccv->h,0,0xff);
+        // libaroma_draw_ex(me->win->dc,ccv,0,0,xt,0,ccv->w,ccv->h,0,0xff);
+        libaroma_draw_ex(me->win->dc,ccv,xt,0,0,0,ccv->w,ccv->h,0,0xff);
         libaroma_canvas_free(ccv);
       }
       me->on_direct_canvas=0;
     }
   }
-  libaroma_mutex_unlock(me->mutex);
+  //libaroma_mutex_unlock(me->mutex);
   return 1;
 } /* End of _libaroma_ctl_pager_direct_canvas */
 
@@ -205,7 +206,7 @@ byte _libaroma_ctl_pager_window_control_isvisible(
   _LIBAROMA_CTL_CHECK(
     _libaroma_ctl_pager_handler, _LIBAROMA_CTL_PAGERP, 0
   );
-  
+  libaroma_mutex_lock(me->mutex);
   int xt = me->scroll_x; /*me->page_position * ctl->w;*/
   int ww = ctl->w;
   if (!win->active){
@@ -214,7 +215,7 @@ byte _libaroma_ctl_pager_window_control_isvisible(
   }
   int sx = cctl->x-xt;
   int sy = cctl->y;
-  
+  libaroma_mutex_unlock(me->mutex);
   if (sx+cctl->w<0){
     return 0;
   }
@@ -345,9 +346,9 @@ void _libaroma_ctl_pager_draw(
     /* need revert to direct canvas */
     if (me->need_direct_canvas){
       me->need_direct_canvas=0;
-      libaroma_mutex_unlock(me->mutex);
+      //libaroma_mutex_unlock(me->mutex);
       _libaroma_ctl_pager_direct_canvas(ctl, 1);
-      libaroma_mutex_lock(me->mutex);
+      //libaroma_mutex_lock(me->mutex);
     }
   }
   libaroma_mutex_unlock(me->mutex);
@@ -388,7 +389,6 @@ byte _libaroma_ctl_pager_thread(LIBAROMA_CONTROLP ctl) {
             }
           }
         }
-        libaroma_mutex_unlock(me->mutex);
         
         if (me->req_scroll_x!=-1){
           /* direct request */
@@ -415,14 +415,17 @@ byte _libaroma_ctl_pager_thread(LIBAROMA_CONTROLP ctl) {
                 (me->controller->controller)) {
                 if (me->controller->handler){
                   if (me->controller->handler->onscroll){
+                    int scrollx=me->scroll_x;
+                    libaroma_mutex_unlock(me->mutex);
                     me->controller->handler->onscroll(
                       me->controller->controller,
                       me->controller->pager,
-                      me->scroll_x,
+                      scrollx,
                       me->win->w,
                       ctl->w,
                       me->page_position
                     );
+                    libaroma_mutex_lock(me->mutex);
                   }
                 }
               }
@@ -432,7 +435,7 @@ byte _libaroma_ctl_pager_thread(LIBAROMA_CONTROLP ctl) {
             me->req_scroll_x=-1;
           }
         }
-        
+        libaroma_mutex_unlock(me->mutex);
         /* fling */
         if (me->scroll_target_start>0){
           me->req_scroll_x=-1;
@@ -445,7 +448,9 @@ byte _libaroma_ctl_pager_thread(LIBAROMA_CONTROLP ctl) {
           state = libaroma_motion_fluid(state);
           
           int difxt = dxt * (1.0-state);
+          libaroma_mutex_lock(me->mutex);
           me->scroll_x = xt-difxt;
+          libaroma_mutex_unlock(me->mutex);
           /* onscroll controller message */
           if (me->controller){
             if ((me->controller->pager==ctl)&&(me->controller->controller)) {
@@ -466,9 +471,9 @@ byte _libaroma_ctl_pager_thread(LIBAROMA_CONTROLP ctl) {
           
           
           if (state>=1.0){
+            libaroma_mutex_lock(me->mutex);
             me->scroll_x = xt;
             me->scroll_target_start=0;
-            libaroma_mutex_lock(me->mutex);
             me->need_direct_canvas=1;
             libaroma_mutex_unlock(me->mutex);
             
@@ -564,7 +569,9 @@ dword _libaroma_ctl_pager_msg(
               win->childs[i]->handler->message(win->childs[i], msg);
             }
           }
-          _libaroma_ctl_pager_direct_canvas(ctl, 1);
+          libaroma_mutex_lock(me->mutex);
+          me->need_direct_canvas=1;
+          libaroma_mutex_unlock(me->mutex);
         }
       }
       break;
@@ -581,6 +588,9 @@ dword _libaroma_ctl_pager_msg(
     case LIBAROMA_MSG_WIN_INACTIVE:
       {
         if (win->active){
+          libaroma_mutex_lock(me->mutex);
+          _libaroma_ctl_pager_direct_canvas(ctl, 0);
+          libaroma_mutex_unlock(me->mutex);
           win->active=0;
           int i;
           for (i=0;i<win->childn;i++){
@@ -634,10 +644,10 @@ dword _libaroma_ctl_pager_msg(
         
         /* touch handler */
         if (msg->state==LIBAROMA_HID_EV_STATE_DOWN){
+          libaroma_mutex_lock(me->mutex);
           memcpy(&me->pretouched_msg,msg,sizeof(LIBAROMA_MSG));
           me->pretouched_msg.x=x+xt;
           win->touched = NULL;
-          libaroma_mutex_lock(me->mutex);
           me->pretouched=NULL;
           libaroma_mutex_unlock(me->mutex);
           if (me->scroll_target_start==0){
@@ -667,7 +677,6 @@ dword _libaroma_ctl_pager_msg(
               me->pretouched=NULL;
             }
           }
-          libaroma_mutex_unlock(me->mutex);
           if (me->scroll_target_start==0){
             if (me->max_scroll_x>0){
               me->allow_scroll=2;
@@ -683,6 +692,7 @@ dword _libaroma_ctl_pager_msg(
           me->touch_x=x;
           me->touch_y=y;
           libaroma_fling_down(&me->fling, x);
+          libaroma_mutex_unlock(me->mutex);
         }
         else if (win->touched!=NULL){
           x+=xt;
@@ -696,6 +706,7 @@ dword _libaroma_ctl_pager_msg(
         }
         else{
           if (msg->state==LIBAROMA_HID_EV_STATE_MOVE){
+            libaroma_mutex_lock(me->mutex);
             if (me->max_scroll_x>0){
               byte is_first_scroll=0;
               if (me->allow_scroll==2){
@@ -704,7 +715,6 @@ dword _libaroma_ctl_pager_msg(
                 int scrdp=libaroma_dp(24);
                 if ((abs(move_sz_y)>=scrdp)&&(abs(move_sz_y)>=abs(move_sz))){
                   /* halt the scroll and send to control */
-                  libaroma_mutex_lock(me->mutex);
                   if (me->pretouched){
                     if (me->pretouched->handler->message){
                       msg->x=x+xt;
@@ -728,15 +738,12 @@ dword _libaroma_ctl_pager_msg(
                     me->touch_y=y;
                     me->redraw=1;
                   }
-                  libaroma_mutex_unlock(me->mutex);
                 }
                 else if (abs(move_sz)>=scrdp){
                   is_first_scroll=1;
                   me->allow_scroll=1;
                   me->client_touch_start=0;
-                  libaroma_mutex_lock(me->mutex);
                   me->pretouched=NULL;
-                  libaroma_mutex_unlock(me->mutex);
                   win->touched=NULL;
                 }
               }
@@ -794,8 +801,10 @@ dword _libaroma_ctl_pager_msg(
                 }
               }
             }
+            libaroma_mutex_unlock(me->mutex);
           }
           else if (msg->state==LIBAROMA_HID_EV_STATE_UP){
+            libaroma_mutex_lock(me->mutex);
             if (me->allow_scroll){
               int vel = libaroma_fling_up(&me->fling, x);
               int target_x = me->page_position;
@@ -814,11 +823,12 @@ dword _libaroma_ctl_pager_msg(
                   }
                 }
               }
+              libaroma_mutex_unlock(me->mutex);
               libaroma_ctl_pager_set_active_page(
                 ctl, target_x, velocity
               );
+              libaroma_mutex_lock(me->mutex);
             }
-            libaroma_mutex_lock(me->mutex);
             if (me->client_touch_start||me->pretouched){
               if (me->pretouched->handler->message){
                 msg->x=x+xt;
@@ -831,10 +841,10 @@ dword _libaroma_ctl_pager_msg(
             }
             me->client_touch_start=0;
             me->pretouched=NULL;
-            libaroma_mutex_unlock(me->mutex);
             me->touch_x=x;
             me->touch_y=y;
             me->redraw=1;
+            libaroma_mutex_unlock(me->mutex);
           }
         }
       }
@@ -856,7 +866,7 @@ byte libaroma_ctl_pager_set_active_page(
   if ((page_id<0)||(page_id>=me->pagen)){
     return 0;
   }
-  
+  libaroma_mutex_lock(me->mutex);
   /* calculate slide duration */
   int dx = (page_id * ctl->w) - me->scroll_x;
   if (dx!=0) {
@@ -883,6 +893,7 @@ byte libaroma_ctl_pager_set_active_page(
     me->scroll_target_from_x = me->scroll_x;
     me->scroll_target_start=libaroma_tick();
   }
+  libaroma_mutex_unlock(me->mutex);
   return 1;
 } /* End of libaroma_ctl_pager_set_active_page */
 

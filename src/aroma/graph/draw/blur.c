@@ -51,46 +51,87 @@ float * _libaroma_blur_kernel_norm(const int inRadius) {
   float * gaussian_kernel = (float *) malloc(mem_amount * sizeof(float));
   int i;
   for (i = 0; i < mem_amount; i++) {
-    gaussian_kernel[i] = libaroma_cubic_bezier(0,0,0.68,1,((float) i) / ((float) mem_amount));
+    gaussian_kernel[i] = libaroma_cubic_bezier(0,0,0.4,1,((float) i) / ((float) mem_amount));
   }
   return gaussian_kernel;
 }
-LIBAROMA_CANVASP libaroma_canvas_shadow(int radiusx, int radiusy, byte alphamax){
-  int sx = (radiusx*2) + 3;
-  int sy = (radiusy*2) + 3;
-  int sk = (radiusx*2) + 1;
-  LIBAROMA_CANVASP cv = libaroma_canvas_ex(sx,sy,1);
-  libaroma_canvas_setcolor(cv,0,0);
-  float * kernelx = _libaroma_blur_kernel_norm(radiusx);
-  float * kernely = _libaroma_blur_kernel_norm(radiusy);
-  int x, y;
+byte libaroma_draw_shadow(
+  LIBAROMA_CANVASP dst,
+  int dx, int dy, int w, int h,
+  int radiusx, int radiusy,
+  byte alphamax, byte fill
+){
+  float * kernelx   = _libaroma_blur_kernel_norm(radiusx);
+  float * kernely   = _libaroma_blur_kernel_norm(radiusy);
+  LIBAROMA_CANVASP cv = libaroma_canvas_ex(radiusx*2+1,radiusy*2+1,1);
+  LIBAROMA_CANVASP horiz = libaroma_canvas_ex(w,radiusy*2,1);
+  LIBAROMA_CANVASP vert    = libaroma_canvas_ex(radiusx*2+1,h,1);
+  memset(cv->alpha, 0, cv->s);
+  memset(horiz->alpha, 0, horiz->s);
+  memset(vert->alpha, 0, vert->s);
+  
+  int y;
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
   for (y=0;y<=radiusy;y++){
-    int ypos=(cv->l * (y+1));
-    int bpos=(cv->l * (sy-2-y));
-    int pos;
+    int ypos=(cv->l*y);
+    int x;
     for (x=0;x<=radiusx;x++){
-      pos = (x+1) + ypos;
-      cv->alpha[pos] = MIN(alphamax,(kernelx[x]*kernely[y]) * alphamax);
-      if (cv->alpha[pos]<8){
-        cv->alpha[pos]=0;
-      }
+      byte av = MIN(alphamax,(kernelx[x]*kernely[y]) * alphamax);
       if (x!=radiusx){
-        int ps = (sx-2-x) + ypos;
-        cv->alpha[ps]=cv->alpha[pos];
+        cv->alpha[ypos+cv->w-x-1]=cv->alpha[ypos+x]=av; //(av<8)?0:av;
+      }
+      else{
+        cv->alpha[ypos+x]=av;//(av<8)?0:av;
       }
     }
     if (y!=radiusy){
-      memcpy(cv->alpha+bpos,cv->alpha+ypos,sk);
+      int bpos=(cv->l*(cv->h-y-1));
+      memcpy(cv->alpha+bpos,cv->alpha+ypos,cv->w);
+      memset(
+        horiz->alpha+(y*horiz->l),
+        cv->alpha[ypos+radiusx],
+        w
+      );
+      memset(
+        horiz->alpha+((radiusy*2-y-1)*horiz->l),
+        cv->alpha[ypos+radiusx],
+        w
+      );
     }
   }
-  int yps = cv->l * (radiusy+1);
-  int xps = (radiusx+1);
-  cv->alpha[xps]=
-  cv->alpha[yps]=0xff;
+  
+  bytep calpha=cv->alpha+(cv->l*radiusy);
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
+  for (y=0;y<h;y++){
+    memcpy(vert->alpha+(y*vert->l),calpha,vert->l);
+  }
+  if (fill){
+    libaroma_draw_rect(dst,dx,dy,w,h,0,alphamax);
+  }
+  
+  libaroma_draw_ex(dst,cv,dx-radiusx,dy-radiusy,0,0,radiusx,radiusy,1,0xff); /* left-top */
+  libaroma_draw_ex(dst,cv,dx+w,dy-radiusy,radiusx+1,0,radiusx,radiusy,1,0xff); /* right-top */
+  libaroma_draw_ex(dst,cv,dx-radiusx,dy+h,0,radiusy+1,radiusx,radiusy,1,0xff); /* left-bottom */
+  libaroma_draw_ex(dst,cv,dx+w,dy+h,radiusx+1,radiusy+1,radiusx,radiusy,1,0xff); /* right-bottom */
+  
+  libaroma_draw_ex(dst,horiz,dx,dy-radiusy,0,0,horiz->w,radiusy,1,0xff); /* top */
+  libaroma_draw_ex(dst,horiz,dx,dy+h,0,radiusy,horiz->w,radiusy,1,0xff); /* bottom */
+  
+  libaroma_draw_ex(dst,vert,dx-radiusx,dy,0,0,radiusx,vert->h,1,0xff); /* left */
+  libaroma_draw_ex(dst,vert,dx+w,dy,radiusx+1,0,radiusx,vert->h,1,0xff); /* right */
+  
+  
+  libaroma_canvas_free(cv);
+  libaroma_canvas_free(horiz);
+  libaroma_canvas_free(vert);
   
   free(kernelx);
   free(kernely);
-  return cv;
+  return 1;
 }
 
 /*

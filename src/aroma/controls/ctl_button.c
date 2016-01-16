@@ -109,7 +109,8 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
   }
   libaroma_control_erasebg(ctl,bg);
   
-  int ix = libaroma_dp(4);
+  byte is_circle=(me->style&LIBAROMA_CTL_BUTTON_CIRCLE)?1:0;
+  int ix = libaroma_dp(is_circle?6:4);
   int iy = libaroma_dp(6);
   int iw = ctl->w-ix*2;
   int ih = ctl->h-iy*2;
@@ -130,9 +131,9 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
   libaroma_canvas_setcolor(btnmask,0,0);
   libaroma_gradient(btnmask,
     0,0,
-    ctl->w-libaroma_dp(8), ctl->h-libaroma_dp(12),
+    ctl->w-libaroma_dp(is_circle?12:8), ctl->h-libaroma_dp(12),
     0,0,
-    libaroma_dp(2),
+    is_circle?MAX(ctl->w,ctl->h):libaroma_dp(2),
     0x1111
   );
   
@@ -202,7 +203,7 @@ void _libaroma_ctl_button_internal_draw(LIBAROMA_CONTROLP ctl){
     100
   );
   // libaroma_mutex_unlock(me->mutex);
-  int y = (ctl->h>>1) - ((libaroma_text_height(textp)>>1)+libaroma_dp(1));
+  int y = (ctl->h>>1) - ((libaroma_text_height(textp)>>1)+libaroma_dp(2));
   
   if (is_disabled){
     rest_text_color=me->isdark?0xffff:0;
@@ -286,6 +287,7 @@ void _libaroma_ctl_button_draw(
     int ripple_p = 0;
     libaroma_draw(c, me->rest_canvas, 0, 0, 0);
     if (me->push_canvas!=NULL){
+      byte is_circle=(me->style&LIBAROMA_CTL_BUTTON_CIRCLE)?1:0;
       while(libaroma_ripple_loop(&me->ripple,&ripple_i,&ripple_p)){
         int x=0;
         int y=0;
@@ -296,30 +298,43 @@ void _libaroma_ctl_button_draw(
           &me->ripple, ctl->w, ctl->h, &push_opacity, &ripple_opacity,
           &x, &y, &size,ripple_p
           )){
-            /*
-            libaroma_draw_mask_circle(
-              c, me->push_canvas, x, y, x, y, size, ripple_opacity
-            );
-            */
             if (me->push_canvas!=NULL){
               libaroma_draw_opacity(c,me->push_canvas,0,0,0,push_opacity*2);
             }
-            LIBAROMA_CANVASP ca=libaroma_canvas_area(
-              c,
-              libaroma_dp(4),
-              libaroma_dp(6),
-              c->w-libaroma_dp(8),
-              c->h-libaroma_dp(12)
+            word dcolor   = me->isdark?RGB(ffffff):0;
+            byte push_opa = (byte) (
+              (((int) ripple_opacity) * (me->isdark?64:30)) >> 8
             );
-            if (ca){
-              byte push_opa = (byte) (
-                (((int) ripple_opacity) * (me->isdark?64:30)) >> 8
+            if(is_circle){
+              LIBAROMA_CANVASP rdc = libaroma_canvas(c->w,c->h);
+              if (rdc){
+                libaroma_draw(rdc,c,0,0,0);
+                libaroma_draw_circle(
+                  rdc, dcolor, x, y, size, push_opa
+                );
+                int cntx=rdc->w>>1;
+                int cnty=rdc->h>>1;
+                int szxy=MIN(rdc->w,rdc->h)-libaroma_dp(12);
+                libaroma_draw_mask_circle(c, rdc, 
+                  cntx, cnty, cntx, cnty, szxy, 0xff
+                );
+                libaroma_canvas_free(rdc);
+              }
+            }
+            else{
+              LIBAROMA_CANVASP ca=libaroma_canvas_area(
+                c,
+                libaroma_dp(4),
+                libaroma_dp(6),
+                c->w-libaroma_dp(8),
+                c->h-libaroma_dp(12)
               );
-              word dcolor   = me->isdark?RGB(ffffff):0;
-              libaroma_draw_circle(
-                ca,dcolor,x,y,size,push_opa
-              );
-              libaroma_canvas_free(ca);
+              if (ca){
+                libaroma_draw_circle(
+                  ca,dcolor,x,y,size,push_opa
+                );
+                libaroma_canvas_free(ca);
+              }
             }
         }
       }
@@ -399,6 +414,15 @@ dword _libaroma_ctl_button_msg(
   );
   
   switch(msg->msg){
+    case LIBAROMA_MSG_WIN_ACTIVE:
+    case LIBAROMA_MSG_WIN_INACTIVE:
+    case LIBAROMA_MSG_WIN_RESIZE:
+      {
+        libaroma_mutex_lock(me->mutex);
+        me->forcedraw=1;
+        libaroma_mutex_unlock(me->mutex);
+      }
+      break;
     case LIBAROMA_MSG_TOUCH:
       {
         if (me->style&LIBAROMA_CTL_BUTTON_DISABLED){

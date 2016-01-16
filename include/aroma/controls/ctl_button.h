@@ -31,6 +31,7 @@
 #define LIBAROMA_CTL_BUTTON_RAISED    0x1
 #define LIBAROMA_CTL_BUTTON_COLORED   0x2
 #define LIBAROMA_CTL_BUTTON_DISABLED  0x4
+#define LIBAROMA_CTL_BUTTON_CIRCLE    0x8
 
 /*
  * Function    : libaroma_ctl_button

@@ -827,7 +827,8 @@ void _libaroma_ctl_scroll_draw(
         {
         #endif
           if (me->active){
-            if (!(me->flags&LIBAROMA_CTL_SCROLL_NO_INDICATOR)){
+            if ((!(me->flags&LIBAROMA_CTL_SCROLL_NO_INDICATOR))&&
+                (me->max_scroll_y>me->minscroll_y)){
               if ((me->scroll_state>0)||(me->handle_touched)){
                 int hdl_w,hdl_r,ctl_y,ctl_h;
                 byte handle_opa=180;
@@ -889,6 +890,40 @@ void _libaroma_ctl_scroll_draw(
         #pragma omp section
         {
         #endif
+          /* vertical border */
+          if (me->flags&LIBAROMA_CTL_SCROLL_WITH_VBORDER){
+            if (me->max_scroll_y>me->minscroll_y){
+              word divcolor = libaroma_color_isdark(me->color_bg)?RGB(cccccc):RGB(666666);
+              divcolor=libaroma_alpha(me->color_bg,divcolor,50);
+              if (scroll_y>me->minscroll_y){
+                libaroma_draw_rect(
+                  c, 
+                  0,
+                  0,
+                  c->w,
+                  libaroma_dp(1),
+                  divcolor,
+                  0xff
+                );
+              }
+              if (scroll_y<me->max_scroll_y){
+                libaroma_draw_rect(
+                  c, 
+                  0,
+                  c->h-libaroma_dp(1),
+                  c->w,
+                  libaroma_dp(1),
+                  divcolor,
+                  0xff
+                );
+              }
+            }
+          }
+        #ifdef LIBAROMA_CONFIG_OPENMP
+        }
+        #pragma omp section
+        {
+        #endif
           /* shadow */
           if (me->flags&LIBAROMA_CTL_SCROLL_WITH_SHADOW){
             libaroma_gradient_ex1(c, 0, 0, ctl->w,
@@ -900,7 +935,7 @@ void _libaroma_ctl_scroll_draw(
       #endif
       
       /* overshoot draw */
-      if ((me->max_scroll_y>0)&&(me->ovs_state>0)&&(me->ovs_state<1)){
+      if ((me->max_scroll_y>me->minscroll_y)&&(me->ovs_state>0)&&(me->ovs_state<1)){
         int max_ovsz = MIN(c->h/4,libaroma_dp(100));
         int overshoot_sz = MIN(abs(me->ovs_y)/3,max_ovsz);
         if (overshoot_sz>0){
@@ -1413,6 +1448,24 @@ int libaroma_ctl_scroll_get_scroll(LIBAROMA_CONTROLP ctl, int * scroll_h){
   }
   return me->scroll_y;
 } /* End of libaroma_ctl_scroll_get_scroll */
+
+/*
+ * Function    : libaroma_ctl_scroll_get_height
+ * Return Value: int
+ * Descriptions: get scroll height
+ */
+int libaroma_ctl_scroll_get_height(LIBAROMA_CONTROLP ctl){
+  _LIBAROMA_CTL_CHECK(
+    _libaroma_ctl_scroll_handler, _LIBAROMA_CTL_SCROLLP, 0
+  );
+  int ret=me->client_h;
+  libaroma_mutex_lock(me->fmutex);
+  if (me->request_new_height!=-1){
+    ret=me->request_new_height;
+  }
+  libaroma_mutex_unlock(me->fmutex);
+  return ret;
+} /* End of libaroma_ctl_scroll_get_height */
 
 /*
  * Function    : libaroma_ctl_scroll_set_height

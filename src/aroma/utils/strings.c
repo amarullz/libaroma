@@ -48,11 +48,11 @@ dword libaroma_hash(
  * Return Value: char *
  * Descriptions: stristr
  */
-char * libaroma_stristr(char *ch1, char *ch2, int sz){
+char * libaroma_stristr(const char *ch1, const char *ch2, int sz){
   int i=0;
   size_t j=0;
-  char * found=NULL;
-  char * out=NULL;
+  const char * found=NULL;
+  const char * out=NULL;
   for (i=0;i<sz;i++){
     if (tolower(ch1[i])==tolower(ch2[j])){
       if (!found){
@@ -68,7 +68,7 @@ char * libaroma_stristr(char *ch1, char *ch2, int sz){
       found=NULL;
     }
   }
-  return out;
+  return (char *) out;
 } /* End of libaroma_stristr */
 
 /*

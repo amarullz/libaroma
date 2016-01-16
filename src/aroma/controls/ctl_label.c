@@ -136,6 +136,22 @@ void _libaroma_ctl_label_draw(
 }
 
 dword _libaroma_ctl_label_msg(LIBAROMA_CONTROLP ctl, LIBAROMA_MSGP msg){
+  /* internal check */
+  _LIBAROMA_CTL_CHECK(
+    _libaroma_ctl_label_handler, _LIBAROMA_CTL_LABELP, 0
+  );
+  
+  switch(msg->msg){
+    case LIBAROMA_MSG_WIN_ACTIVE:
+    case LIBAROMA_MSG_WIN_INACTIVE:
+    case LIBAROMA_MSG_WIN_RESIZE:
+      {
+        libaroma_mutex_lock(me->mutex);
+        me->update=1;
+        libaroma_mutex_unlock(me->mutex);
+      }
+      break;
+  }
   return 0;
 }
 
@@ -327,11 +343,16 @@ LIBAROMA_CONTROLP libaroma_ctl_label_valign(
   me->fontid = fontid;
   me->flags= flags;
   me->lh   = lineheight;
-  me->valign = valign;
   me->bgcolor=0;
   me->usebg=0;
-  me->vpos=0;
-  
+  if (valign>=10){
+    valign-=10;
+    me->vpos=-libaroma_dp(2);
+  }
+  else{
+    me->vpos=0;
+  }
+  me->valign = valign;
   if (me->lh==0){
   	me->lh=100;
   }

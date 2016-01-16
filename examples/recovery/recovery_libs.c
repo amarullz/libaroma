@@ -285,6 +285,8 @@ byte recovery_init_ui(){
       _ITEM(ID_SIDEMENU_SETTINGS,"Settings","settings",NULL);
       _ITEM(ID_SIDEMENU_ABOUT,"About","info",NULL);
       _ITEM(ID_SIDEMENU_HELP,"Help","help",NULL);
+    
+    /*
     _DIV(311);
     
     int u;
@@ -293,6 +295,7 @@ byte recovery_init_ui(){
       snprintf(extraText,100,"Dummy Sidebar %i",u);
       _ITEM(501+u,"Dummy Sidebar",NULL,extraText);
     }
+  */
   
     /* undef menu item macro */
     #undef _DIV
@@ -339,7 +342,7 @@ byte recovery_init(){
     return 0;
   }
   
-  
+  /*
   LIBAROMA_CANVASP svg1=libaroma_image(
     libaroma_stream(
       "file:///sdcard/23.svg"
@@ -354,7 +357,7 @@ byte recovery_init(){
   else{
     printf("\n\nSVG RENDER ERROR\n\n\n");
   }
-  
+  */
   
   /* set workspace size */
   libaroma_wm_set_workspace(
@@ -428,7 +431,12 @@ byte recovery_release(){
 /* load icon and mask the color */
 LIBAROMA_CANVASP recovery_load_icon_ex(const char * icon_name, word color){
   char uri[256];
-  snprintf(uri,256,"res:///ico/%s.png",icon_name);
+  if (libaroma_stristr(icon_name,".svg",strlen(icon_name))!=NULL){
+    snprintf(uri,256,"file:///sdcard/svg/%s",icon_name);
+  }
+  else{
+    snprintf(uri,256,"res:///ico/%s.png",icon_name);
+  }
   LIBAROMA_CANVASP ico = libaroma_image_uri(uri);
   if (ico){
     libaroma_canvas_fillcolor(ico,

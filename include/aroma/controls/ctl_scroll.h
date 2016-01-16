@@ -28,9 +28,10 @@
 #define __libaroma_ctl_scroll_h__
 
 /* style flags */
-#define LIBAROMA_CTL_SCROLL_NO_INDICATOR    1
-#define LIBAROMA_CTL_SCROLL_WITH_SHADOW     2
-#define LIBAROMA_CTL_SCROLL_WITH_HANDLE     4
+#define LIBAROMA_CTL_SCROLL_NO_INDICATOR    0x01
+#define LIBAROMA_CTL_SCROLL_WITH_SHADOW     0x02
+#define LIBAROMA_CTL_SCROLL_WITH_HANDLE     0x04
+#define LIBAROMA_CTL_SCROLL_WITH_VBORDER    0x80
 
 /* messaging */
 #define LIBAROMA_CTL_SCROLL_MSG                 LIBAROMA_MSG_SYS(0x80)
@@ -107,6 +108,13 @@ byte libaroma_ctl_scroll_request_height(LIBAROMA_CONTROLP ctl, int h);
  * Descriptions: set scroll height
  */
 byte libaroma_ctl_scroll_set_height(LIBAROMA_CONTROLP ctl, int h);
+
+/*
+ * Function    : libaroma_ctl_scroll_get_height
+ * Return Value: int
+ * Descriptions: get scroll height
+ */
+int libaroma_ctl_scroll_get_height(LIBAROMA_CONTROLP ctl);
 
 /*
  * Function    : libaroma_ctl_scroll_set_pos

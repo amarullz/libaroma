@@ -314,13 +314,14 @@ dword _libaroma_ctl_progress_msg(
   );
   
   switch(msg->msg){
-    case LIBAROMA_MSG_WIN_ACTIVE:
+    case LIBAROMA_MSG_WIN_ACTIVE: 
+    case LIBAROMA_MSG_WIN_INACTIVE:
+    case LIBAROMA_MSG_WIN_RESIZE:
       {
         me->currstate = 0.0;
       }
       break;
   }
-
   return 1;
 } /* End of _libaroma_ctl_progress_msg */
 

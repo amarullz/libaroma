@@ -168,7 +168,7 @@ byte libaroma_draw_ex2(
         if (ismask){
           libaroma_alpha_mono(
             sr_w, dst_mem, dst_mem, maskcolor, 
-            (bytep) (src->alpha + (y * src->l) + sr_x)
+            (bytep) (src->alpha + ((sr_y + y) * src->l) + sr_x)
           );
         }
         else{
@@ -176,13 +176,13 @@ byte libaroma_draw_ex2(
           if (noDither){
             libaroma_alpha_px(
               sr_w, dst_mem, dst_mem,
-              src_mem, (bytep) (src->alpha + (y * src->l) + sr_x)
+              src_mem, (bytep) (src->alpha + ((sr_y + y) * src->l) + sr_x)
             );
           }
           else{
             libaroma_alpha_px_line(
               y, sr_w, dst_mem, dst_mem,
-              src_mem, (bytep) (src->alpha + (y * src->l) + sr_x)
+              src_mem, (bytep) (src->alpha + ((sr_y + y) * src->l) + sr_x)
             );
           }
         }
@@ -214,7 +214,7 @@ byte libaroma_draw_ex2(
         if (ismask){
           libaroma_alpha_mono(
             sr_w, tmp_dst, dst_mem, maskcolor, 
-            (bytep) (src->alpha + (y * src->l) + sr_x)
+            (bytep) (src->alpha + ((sr_y + y) * src->l) + sr_x)
           );
           libaroma_alpha_const(
             sr_w, dst_mem, dst_mem, tmp_dst, opacity
@@ -225,14 +225,14 @@ byte libaroma_draw_ex2(
           if (toBlack){
             libaroma_alpha_px(
               sr_w, tmp_dst, dst_mem, src_mem,
-              (bytep) (src->alpha + (y * src->l) + sr_x)
+              (bytep) (src->alpha + ((sr_y + y) * src->l) + sr_x)
             );
             libaroma_alpha_black(sr_w, dst_mem, tmp_dst, opacity);
           }
           else if (noDither){
             libaroma_alpha_px(
               sr_w, tmp_dst, dst_mem, src_mem,
-              (bytep) (src->alpha + (y * src->l) + sr_x)
+              (bytep) (src->alpha + ((sr_y + y) * src->l) + sr_x)
             );
             libaroma_alpha_const(
               sr_w, dst_mem, dst_mem, tmp_dst, opacity
@@ -241,7 +241,7 @@ byte libaroma_draw_ex2(
           else{
             libaroma_alpha_px_line(
               y, sr_w, tmp_dst, dst_mem, src_mem,
-              (bytep) (src->alpha + (y * src->l) + sr_x)
+              (bytep) (src->alpha + ((sr_y + y) * src->l) + sr_x)
             );
             libaroma_alpha_const_line(
               y, sr_w, dst_mem, dst_mem, tmp_dst, opacity
@@ -329,7 +329,11 @@ byte libaroma_draw_rect(
 #endif
     for (dy = y; dy < y2; dy++) {
       wordp linepos = dst->data + (dy * dst->l) + x;
+#ifdef __engine_have_libaroma_alpha_rgba_fill
+      libaroma_alpha_rgba_fill_line(dy, w, linepos, linepos, color, alpha);
+#else
       libaroma_alpha_rgba_fill(w, linepos, linepos, color, alpha);
+#endif
     }
   }
   return 1;
@@ -614,7 +618,11 @@ byte libaroma_draw_circle(
           libaroma_color_set(dd,color,w);
         }
         else{
+#ifdef __engine_have_libaroma_alpha_rgba_fill
+          libaroma_alpha_rgba_fill_line(pdy,w,dd, dd,color,alpha);
+#else
           libaroma_alpha_rgba_fill(w,dd, dd,color,alpha);
+#endif
         }
       }
     }

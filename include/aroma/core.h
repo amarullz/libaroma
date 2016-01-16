@@ -44,7 +44,7 @@
 #include "graph/draw.h"       /* common drawing */
 #include "graph/png.h"        /* png */
 #include "graph/jpeg.h"       /* jpeg */
-#include "graph/svg.h"       /* jpeg */
+#include "graph/svg.h"        /* svg */
 #include "graph/image.h"      /* image */
 #include "graph/text.h"       /* font & text */
 #include "graph/artworker.h"  /* art drawing */

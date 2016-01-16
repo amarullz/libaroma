@@ -367,7 +367,16 @@ byte libaroma_draw_zshadow(
   LIBAROMA_CANVASP mask,
   int x, int y, byte zindex);
 
-
-LIBAROMA_CANVASP libaroma_canvas_shadow(int radiusx, int radiusy, byte alphamax);
+/*
+ * Function    : libaroma_draw_shadow
+ * Return Value: byte
+ * Descriptions: draw rectangle shadow
+ */
+byte libaroma_draw_shadow(
+  LIBAROMA_CANVASP dst,
+  int dx, int dy, int w, int h,
+  int radiusx, int radiusy,
+  byte alphamax, byte fill
+);
 
 #endif /* __libaroma_draw_h__ */

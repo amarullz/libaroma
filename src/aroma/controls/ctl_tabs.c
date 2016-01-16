@@ -710,6 +710,15 @@ dword _libaroma_ctl_tabs_msg(
   );
   
   switch(msg->msg){
+    case LIBAROMA_MSG_WIN_ACTIVE:
+    case LIBAROMA_MSG_WIN_INACTIVE:
+    case LIBAROMA_MSG_WIN_RESIZE:
+      {
+        libaroma_mutex_lock(me->mutex);
+        me->forcedraw=1;
+        libaroma_mutex_unlock(me->mutex);
+      }
+      break;
     case LIBAROMA_MSG_TOUCH:
       {
         int x = msg->x;
