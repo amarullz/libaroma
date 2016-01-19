@@ -315,12 +315,16 @@ byte libaroma_draw_rect(
   int dy;
   
   if (alpha == 0xff) {
+    int w2=w*2;
+    wordp datapos   = dst->data + x;
+    wordp firstline = datapos + (y * dst->l);
+    libaroma_color_set(firstline, color, w);
 #ifdef LIBAROMA_CONFIG_OPENMP
     #pragma omp parallel for
 #endif
-    for (dy = y; dy < y2; dy++) {
-      wordp linepos = dst->data + (dy * dst->l) + x;
-      libaroma_color_set(linepos, color, w);
+    for (dy = y+1; dy < y2; dy++) {
+      wordp linepos = datapos + (dy * dst->l);
+      memcpy(linepos,firstline,w2);
     }
   }
   else {
