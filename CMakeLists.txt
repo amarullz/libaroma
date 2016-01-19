@@ -221,6 +221,7 @@ endif()
 # sources
 file(GLOB AROMA_SRCS
 	${PROJECT_SOURCE_DIR}/src/contrib/platform/${LIBAROMA_PLATFORM_NAME}/*.c
+	src/aroma/arch/${ARCHITECTURE}/*.c
 	src/aroma/aroma.c
 	src/aroma/version.c
 	src/aroma/utils/*.c
