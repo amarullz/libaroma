@@ -14,33 +14,33 @@
  * limitations under the License.
  *______________________________________________________________________________
  *
- * Filename    : aroma_internal.h
- * Description : libaroma internal header
+ * Filename    : system.h
+ * Description : system utilities
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 06/04/15 - Author(s): Ahmad Amarullah
+ * + 14/02/15 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_internal_h__
-#define __libaroma_aroma_internal_h__
+#ifndef __libaroma_aroma_h__
+  #error "Include <aroma.h> instead."
+#endif
+#ifndef __libaroma_memory_h__
+#define __libaroma_memory_h__
 
-/* config & public headers */
-#include "config.h"
-#include "config_features.h"
+/*
+ * Function    : android_memset16
+ * Return Value: void
+ * Descriptions: size is given in bytes and must be multiple of 2
+ */
+void android_memset16(uint16_t* dst, uint16_t value, size_t size);
 
-#include <aroma.h>
+/*
+ * Function    : android_memset16
+ * Return Value: void
+ * Descriptions: size is given in bytes and must be multiple of 4
+ */
+void android_memset32(uint32_t* dst, uint32_t value, size_t size);
 
-/* standard c headers */
-#include <string.h>
-#include <math.h>
-#include <limits.h>
-#include <ctype.h>
+#define libaroma_memset16(s,d,n) android_memset16(s,d,n*2)
 
-/* debug, platform & fallback header */
-#include "aroma/debug/debug.h"
-#include <aroma_platform.h>
-#include "fallbacks.h"
-#include "aroma/graph/engine/engine_internal.h"
-#include "memory.h"
-
-#endif /* __libaroma_aroma_internal_h__ */
+#endif /* __libaroma_memory_h__ */
