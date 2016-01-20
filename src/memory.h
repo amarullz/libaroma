@@ -26,6 +26,7 @@
 #endif
 #ifndef __libaroma_memory_h__
 #define __libaroma_memory_h__
+#ifndef LIBAROMA_CONFIG_NO_ANDROID_MEM
 
 /*
  * Function    : android_memset16
@@ -41,6 +42,8 @@ void android_memset16(uint16_t* dst, uint16_t value, size_t size);
  */
 void android_memset32(uint32_t* dst, uint32_t value, size_t size);
 
-#define libaroma_memset16(s,d,n) android_memset16(s,d,n*2)
+#define libaroma_memset16(s,d,n) android_memset16(s,d,n<<1)
+#define libaroma_memset32(s,d,n) android_memset32(s,d,n<<2)
 
+#endif /* LIBAROMA_CONFIG_NO_ANDROID_MEM */
 #endif /* __libaroma_memory_h__ */

@@ -315,8 +315,14 @@ byte libaroma_draw_rect(
   int dy;
   
   if (alpha == 0xff) {
-    int w2=w*2;
     wordp datapos   = dst->data + x;
+#ifdef libaroma_memset16
+    for (dy = y; dy < y2; dy++) {
+      wordp linepos = datapos + (dy * dst->l);
+      libaroma_color_set(linepos,color,w);
+    }
+#else
+    int w2=w*2;
     wordp firstline = datapos + (y * dst->l);
     libaroma_color_set(firstline, color, w);
 #ifdef LIBAROMA_CONFIG_OPENMP
@@ -326,6 +332,7 @@ byte libaroma_draw_rect(
       wordp linepos = datapos + (dy * dst->l);
       memcpy(linepos,firstline,w2);
     }
+#endif
   }
   else {
 #ifdef LIBAROMA_CONFIG_OPENMP

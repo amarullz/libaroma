@@ -27,6 +27,7 @@
 #ifndef __libaroma_x86_sse_color_h__
 #define __libaroma_x86_sse_color_h__
 
+#ifndef libaroma_memset16
 #define __engine_have_libaroma_color_set 1
 static inline void libaroma_color_set(wordp dst, word color, int n) {
   int i,left=n%32;
@@ -44,6 +45,7 @@ static inline void libaroma_color_set(wordp dst, word color, int n) {
     }
   }
 }
+#endif
 
 #define __engine_have_libaroma_color_24to16 1
 static inline void libaroma_color_24to16(

@@ -218,10 +218,14 @@ if("${ARCHITECTURE}" STREQUAL "arm")
 	endif()
 endif()
 
+# asm
+set(CMAKE_ASM_COMPILE_OBJECT "<CMAKE_C_COMPILER> <FLAGS> <DEFINES> -fPIC -c -o <OBJECT> <SOURCE>")
+
 # sources
 file(GLOB AROMA_SRCS
 	${PROJECT_SOURCE_DIR}/src/contrib/platform/${LIBAROMA_PLATFORM_NAME}/*.c
 	src/aroma/arch/${ARCHITECTURE}/*.c
+	src/aroma/arch/${ARCHITECTURE}/*.S
 	src/aroma/aroma.c
 	src/aroma/version.c
 	src/aroma/utils/*.c
@@ -308,7 +312,10 @@ if (DEFINED WITHAROMART)
 endif()
 
 # libaroma_test
-file(GLOB LIBAROMA_TEST_SRCS examples/*.c)
+file(GLOB LIBAROMA_TEST_SRCS examples/recovery/*.c)
+include_directories(
+  ${PROJECT_SOURCE_DIR}/examples/recovery
+)
 add_executable(libaroma_test ${LIBAROMA_TEST_SRCS})
 target_link_libraries(libaroma_test aroma)
 

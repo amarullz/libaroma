@@ -43,7 +43,9 @@
 #define __engine_have_libaroma_alpha_rgba_fill_line 1
 #define __engine_have_libaroma_alpha_mono 1
 #define __engine_have_libaroma_alpha_multi_line 1
-#define __engine_have_libaroma_color_set 1
+#ifndef libaroma_memset16
+  #define __engine_have_libaroma_color_set 1
+#endif
 #define __engine_have_libaroma_color_copy32 1
 #define __engine_have_libaroma_color_copy16 1
 #define __engine_have_libaroma_color_copy_rgb24 1

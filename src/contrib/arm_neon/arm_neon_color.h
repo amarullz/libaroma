@@ -30,6 +30,7 @@
 /*
  * memset color 16bit
  */
+#ifndef libaroma_memset16
 static inline void libaroma_color_set(
   wordp __restrict dst,
   word color,
@@ -49,6 +50,7 @@ static inline void libaroma_color_set(
     }
   }
 }
+#endif
 
 /*
  * 16 to 32bit
