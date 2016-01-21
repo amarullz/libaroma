@@ -14,15 +14,15 @@
  * limitations under the License.
  *______________________________________________________________________________
  *
- * Filename    : system.h
- * Description : system utilities
+ * Filename    : memory.h
+ * Description : memory utilities
  *
  * + This is part of libaroma, an embedded ui toolkit.
- * + 14/02/15 - Author(s): Ahmad Amarullah
+ * + 20/01/16 - Author(s): Ahmad Amarullah
  *
  */
-#ifndef __libaroma_aroma_h__
-  #error "Include <aroma.h> instead."
+#ifndef __libaroma_aroma_internal_h__
+  #error "Include <aroma_internal.h> instead."
 #endif
 #ifndef __libaroma_memory_h__
 #define __libaroma_memory_h__
