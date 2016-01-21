@@ -141,12 +141,27 @@ static inline long libaroma_tick(){
   #define libaroma_mutex_lock(x) omp_set_nest_lock(&x)
   #define libaroma_mutex_unlock(x) omp_unset_nest_lock(&x)
 #else
+  /* PTHREAD TYPE SHOULD BE PTHREAD_MUTEX_RECURSIVE */
+  static inline void libaroma_pthread_mutex_init(pthread_mutex_t * x){
+    pthread_mutexattr_t Attr;
+    pthread_mutexattr_init(&Attr);
+    pthread_mutexattr_settype(&Attr, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_init(x, &Attr);
+  }
+  #define LIBAROMA_MUTEX pthread_mutex_t
+  #define libaroma_mutex_init(x) libaroma_pthread_mutex_init(&x)
+  #define libaroma_mutex_free(x) pthread_mutex_destroy(&x)
+  #define libaroma_mutex_lock(x) pthread_mutex_lock(&x)
+  #define libaroma_mutex_unlock(x) pthread_mutex_unlock(&x)
+  /*
   #define LIBAROMA_MUTEX pthread_mutex_t
   #define libaroma_mutex_init(x) pthread_mutex_init(&x,NULL)
   #define libaroma_mutex_free(x) pthread_mutex_destroy(&x)
   #define libaroma_mutex_lock(x) pthread_mutex_lock(&x)
   #define libaroma_mutex_unlock(x) pthread_mutex_unlock(&x)
+  */
 #endif
+
 
 /*
  * THREADS

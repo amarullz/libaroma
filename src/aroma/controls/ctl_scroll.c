@@ -54,6 +54,7 @@ static LIBAROMA_CONTROL_HANDLER _libaroma_ctl_scroll_handler={
 /* minimal touch y-move in dp if client doesn't request touch message */
 #define _LIBAROMA_CTL_SCROLL_MIN_ALOWSCROLL_DP_NOITEM   5
 
+#define LIBAROMA_CTL_SCROLL_WITH_CACHE_THREAD 1
 /*
   #define LIBAROMA_CTL_SCROLL_WITH_MAX_CACHE 1
   #define LIBAROMA_CTL_SCROLL_WITH_CACHE_THREAD 1
