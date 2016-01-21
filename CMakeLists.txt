@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 # Project Config
-project(libaroma)
+project(libaroma C ASM)
 set(CMAKE_BUILD_TYPE Release)
 
 execute_process( COMMAND ${CMAKE_C_COMPILER} -dumpmachine OUTPUT_VARIABLE DUMP_MACHINE OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -217,9 +217,6 @@ if("${ARCHITECTURE}" STREQUAL "arm")
 		endif()
 	endif()
 endif()
-
-# asm
-set(CMAKE_ASM_COMPILE_OBJECT "<CMAKE_C_COMPILER> <FLAGS> <DEFINES> -fPIC -c -o <OBJECT> <SOURCE>")
 
 # sources
 file(GLOB AROMA_SRCS
