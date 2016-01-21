@@ -41,6 +41,6 @@
 #include <aroma_platform.h>
 #include "fallbacks.h"
 #include "aroma/graph/engine/engine_internal.h"
-#include "memory.h"
+#include "aroma_memory.h"
 
 #endif /* __libaroma_aroma_internal_h__ */

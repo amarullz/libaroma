@@ -238,7 +238,7 @@ byte libaroma_jpeg_draw(
     int dx, int dy, int dw, int dh,
     byte dither
     ) {
-  byte retval=0;
+  volatile byte retval=0;
   if (!stream) {
     return retval;
   }

@@ -44,3 +44,9 @@ set_target_properties(harfbuzz PROPERTIES COMPILE_FLAGS "-DHB_NO_MT -DHAVE_OT -D
 # dependencies
 add_dependencies(harfbuzz freetype)
 target_link_libraries(harfbuzz freetype)
+
+if(NOT DEFINED ANDROID_NDK)
+	# non ndk add stdc++
+	target_link_libraries(harfbuzz stdc++)
+endif()
+
