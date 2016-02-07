@@ -117,6 +117,20 @@ void libaroma_blt_align_to16_pos(wordp __restrict dst, dwordp __restrict src,
     );
   }
 }
+void libaroma_blt_align24(bytep __restrict dst, wordp __restrict src,
+    int w, int h, int dst_stride, int src_stride) {
+  int i;
+  int dline = (w*3)+(dst_stride);
+  int sline = w+(src_stride>>1);
+#ifdef LIBAROMA_CONFIG_OPENMP
+  #pragma omp parallel for
+#endif
+  for (i = 0; i < h; i++) {
+    libaroma_color_copy_bgr24(
+      dst+dline*i, src+sline*i, w
+    );
+  }
+}
 
 
 #endif /* __libaroma_alignblt_c__ */

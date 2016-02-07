@@ -153,6 +153,10 @@
       int w, int h, int dst_stride, int src_stride,
       bytep __restrict rgb_pos);
 #endif
+#ifndef __engine_have_libaroma_blt_align24
+  void libaroma_blt_align24(bytep __restrict dst, wordp __restrict src,
+      int w, int h, int dst_stride, int src_stride);
+#endif
 
 #endif /* __libaroma_engine_internal_h__ */
 
