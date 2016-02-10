@@ -100,6 +100,15 @@ byte libaroma_png_save(
     LIBAROMA_CANVASP sc,
     char * filename);
 
+/*
+ * Function    : libaroma_png_save_buffer
+ * Return Value: int
+ * Descriptions: save canvas into png memory buffer
+ */
+int libaroma_png_save_buffer(
+    LIBAROMA_CANVASP sc,
+    bytep data, int size);
+
 /* libaroma_png_ex aliases */
 #define libaroma_png(stream, freeStream) \
   libaroma_png_ex(stream, freeStream, 0)
