@@ -60,6 +60,26 @@ void _libaroma_png_reader(
 } /* End of _libaroma_png_reader */
 
 /*
+ * Function    : _libaroma_png_writer
+ * Return Value: void
+ * Descriptions: internal png writer callback
+ */
+void _libaroma_png_writer(
+    png_structp pngPtr,
+    png_bytep data,
+    png_size_t length) {
+  png_voidp a   = png_get_io_ptr(pngPtr);
+  _LIBAROMA_PNG_ADAPTERP p = (_LIBAROMA_PNG_ADAPTERP) a;
+  if ( (p->p + ((int)length)) >= p->n) {
+    length = p->n - p->p;
+  }
+  if (length) {
+    memcpy(p->data + p->p, data, length);
+    p->p += length;
+  }
+} /* End of _libaroma_png_writer */
+
+/*
  * Function    : libaroma_png_ex
  * Return Value: LIBAROMA_CANVASP
  * Descriptions: read png - extended
@@ -609,6 +629,139 @@ finalize:
   }
   return result;
 #endif
+} /* End of libaroma_png_save */
+
+/*
+ * Function    : libaroma_png_save_buffer
+ * Return Value: int
+ * Descriptions: save canvas into png memory buffer
+ */
+int libaroma_png_save_buffer(
+    LIBAROMA_CANVASP sc,
+    bytep data, int size) {
+  volatile LIBAROMA_CANVASP c = sc;
+  if (c == NULL) {
+    c = libaroma_fb()->canvas;
+  }
+  
+  volatile int result = 0;
+  png_structp png_ptr = NULL;
+  volatile png_infop info_ptr = NULL;
+  volatile png_bytep row = NULL;
+
+  /* init adapter */
+  _LIBAROMA_PNG_ADAPTERP adapter = (_LIBAROMA_PNG_ADAPTERP)
+    malloc(sizeof(_LIBAROMA_PNG_ADAPTER));
+  if (!adapter) {
+    ALOGW("libaroma_png_ex cannot allocating adapter");
+    
+    goto finalize;
+  }
+  adapter->data = data;
+  adapter->n    = size;
+  adapter->p    = 0;
+  
+  /* png structure */
+  png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+  if (!png_ptr) {
+    ALOGW("libaroma_png_save png_ptr is invalid");
+    goto finalize;
+  }
+  
+  /* info structure */
+  info_ptr = png_create_info_struct(png_ptr);
+  if (!info_ptr) {
+    ALOGW("libaroma_png_save info_ptr is invalid");
+    goto finalize;
+  }
+  
+  /* exception */
+  if (setjmp(png_jmpbuf(png_ptr))) {
+    ALOGW("libaroma_png_save jmp exception...");
+    goto finalize;
+  }
+
+  /* callback */
+  png_set_write_fn(png_ptr, adapter, _libaroma_png_writer, NULL);
+  
+  int px_sz = (c->alpha ? 4 : 3);
+  png_set_IHDR(png_ptr, info_ptr, c->w, c->h,
+               8, (c->alpha ? PNG_COLOR_TYPE_RGBA : PNG_COLOR_TYPE_RGB),
+               PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+
+  /* text info */
+  png_text title_text;
+  title_text.compression = PNG_TEXT_COMPRESSION_NONE;
+  title_text.key  = "Title";
+  title_text.text = "memory screenshot";
+  png_set_text(png_ptr, info_ptr, &title_text, 1);
+  
+  title_text.key  = "Author";
+  title_text.text = libaroma_info(LIBAROMA_INFO_AUTHOR);
+  png_set_text(png_ptr, info_ptr, &title_text, 1);
+  
+  title_text.key  = "Description";
+  title_text.text = "captured from " LIBAROMA_CONFIG_NAME " canvas";
+  png_set_text(png_ptr, info_ptr, &title_text, 1);
+  
+  title_text.key  = "Copyright";
+  title_text.text = libaroma_info(LIBAROMA_INFO_COPYRIGHT);
+  png_set_text(png_ptr, info_ptr, &title_text, 1);
+  
+  title_text.key  = "Software";
+  title_text.text = libaroma_info(LIBAROMA_INFO_SIGNATURE);
+  png_set_text(png_ptr, info_ptr, &title_text, 1);
+  
+  /* image data */
+  png_write_info(png_ptr, info_ptr);
+  row = (png_bytep) malloc(px_sz * c->w * sizeof(png_byte));
+  int x, y;
+  if ((!c->hicolor)&&(!c->alpha)){
+    for (y = 0 ; y < c->h ; y++) {
+      libaroma_color_copy_rgb24(row,c->data+y*c->l,c->w);
+      png_write_row(png_ptr, row);
+    }
+  }
+  else{
+    for (y = 0 ; y < c->h ; y++) {
+      int slpos=y*c->l;
+      for (x = 0 ; x < c->w ; x++) {
+        int spos = slpos + x;
+        int dpos = x * px_sz;
+        word px = c->data[spos];
+        if (c->hicolor) {
+          byte hi = c->hicolor[spos];
+          row[dpos] = libaroma_color_merge_r(px, hi);
+          row[dpos + 1] = libaroma_color_merge_g(px, hi);
+          row[dpos + 2] = libaroma_color_merge_b(px, hi);
+        }
+        else {
+          row[dpos]    = libaroma_color_hi_r(libaroma_color_r(px));
+          row[dpos + 1]  = libaroma_color_hi_g(libaroma_color_g(px));
+          row[dpos + 2]  = libaroma_color_hi_b(libaroma_color_b(px));
+        }
+        if (c->alpha) {
+          row[dpos + 3]  = c->alpha[spos];
+        }
+      }
+      png_write_row(png_ptr, row);
+    }
+  }
+  /* end write */
+  png_write_end(png_ptr, NULL);
+  result = adapter->p;
+finalize:
+
+  if (info_ptr != NULL) {
+    png_free_data(png_ptr, info_ptr, PNG_FREE_ALL, -1);
+  }
+  if (png_ptr != NULL) {
+    png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
+  }
+  if (row != NULL) {
+    free(row);
+  }
+  return result;
 } /* End of libaroma_png_save */
 
 
