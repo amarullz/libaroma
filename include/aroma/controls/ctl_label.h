@@ -33,6 +33,15 @@ int libaroma_ctl_label_height(
   dword flags, byte lineheight
 );
 
+void libaroma_ctl_label_setshadow(
+    LIBAROMA_CONTROLP ctl,
+    byte isshadow,
+    int radius,
+    word shadow_color,
+    byte shadow_opacity,
+    int shadow_x,
+    int shadow_y);
+
 LIBAROMA_CONTROLP libaroma_ctl_label_valign(
   LIBAROMA_WINDOWP win, word id, const char * text,
   int x, int y, int w, int h,

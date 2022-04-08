@@ -48,4 +48,25 @@ typedef void * voidp;
 typedef uint32_t uchar;
 typedef uchar * ucharp;
 
+/* MIN / MAX */
+static inline int __MAX(int a, int b){
+  return (a>b)?a:b;
+}
+static inline int __MIN(int a, int b){
+  return (a<b)?a:b;
+}
+static inline float __FMAX(float a, float b){
+  return (a>b)?a:b;
+}
+static inline float __FMIN(float a, float b){
+  return (a<b)?a:b;
+}
+static inline double __DMAX(double a, double b){
+  return (a>b)?a:b;
+}
+static inline double __DMIN(double a, double b){
+  return (a<b)?a:b;
+}
+
+
 #endif /* __libaroma_types_h__ */

@@ -106,7 +106,7 @@ typedef struct{
  * Return Value: int 
  * Descriptions: get window index
  */
-inline int _libaroma_ctl_fragment_get_win_index(
+int _libaroma_ctl_fragment_get_win_index(
     _LIBAROMA_CTL_FRAGMENTP me,
     LIBAROMA_WINDOWP win){
   int i;
@@ -206,7 +206,9 @@ void _libaroma_ctl_fragment_measure(LIBAROMA_WINDOWP win){
       win->h
     );
   }
+  libaroma_mutex_unlock(me->dmutex);
   _libaroma_ctl_fragment_window_updatebg(win);
+  libaroma_mutex_lock(me->dmutex);
   int i;
   #ifdef LIBAROMA_CONFIG_OPENMP
     #pragma omp parallel for

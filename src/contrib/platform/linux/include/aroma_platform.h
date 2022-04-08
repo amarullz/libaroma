@@ -44,8 +44,12 @@
 #endif
 
 /* X86 32bit */
-#if defined(__i386) || defined(_M_IX86)
+#ifdef LIBAROMA_CONFIG_X86_SSE
   #include "contrib/x86_sse/x86_sse.h"
+#else
+  #if defined(__i386) || defined(_M_IX86)
+    #include "contrib/x86_sse/x86_sse.h"
+  #endif
 #endif
 
 /* Android */
@@ -67,7 +71,9 @@
 /*
  * platform flags
  */
+#ifndef LIBAROMA_CONFIG_NOSHMEM
 #define LIBAROMA_PLATFORM_HAS_SHMEM  1
+#endif
 #define LIBAROMA_PLATFORM_HAS_MMAP   1
 #define LIBAROMA_PLATFORM_HAS_FD     1
 
@@ -87,7 +93,7 @@ static inline long libaroma_tick(){
   }
   return ((long) (now.tv_sec * 1000 + now.tv_nsec / 1000000));
 }
-
+    
 /*
  * MUTEX - NEED MULTICORE THREAD SAFE
  */
@@ -95,16 +101,30 @@ static inline long libaroma_tick(){
   #ifdef LIBAROMA_CONFIG_OPENMP
     #include <omp.h>
     #define LIBAROMA_MUTEX omp_nest_lock_t
-    #define libaroma_mutex_init(x) omp_init_nest_lock(&x)
-    #define libaroma_mutex_free(x) omp_destroy_nest_lock(&x)
-    #define libaroma_mutex_lock(x) omp_set_nest_lock(&x)
-    #define libaroma_mutex_unlock(x) omp_unset_nest_lock(&x)
+    #define libaroma_mutex_init(x) omp_init_nest_lock(&(x))
+    #define libaroma_mutex_free(x) omp_destroy_nest_lock(&(x))
+    #define libaroma_mutex_lock(x) omp_set_nest_lock(&(x))
+    #define libaroma_mutex_unlock(x) omp_unset_nest_lock(&(x))
   #else
+    /* PTHREAD TYPE SHOULD BE PTHREAD_MUTEX_RECURSIVE */
+    static inline void libaroma_pthread_mutex_init(pthread_mutex_t * x){
+      pthread_mutexattr_t Attr;
+      pthread_mutexattr_init(&Attr);
+      pthread_mutexattr_settype(&Attr, PTHREAD_MUTEX_RECURSIVE);
+      pthread_mutex_init(x, &Attr);
+    }
+    #define LIBAROMA_MUTEX pthread_mutex_t
+    #define libaroma_mutex_init(x) libaroma_pthread_mutex_init(&(x))
+    #define libaroma_mutex_free(x) pthread_mutex_destroy(&(x))
+    #define libaroma_mutex_lock(x) pthread_mutex_lock(&(x))
+    #define libaroma_mutex_unlock(x) pthread_mutex_unlock(&(x))
+    /*
     #define LIBAROMA_MUTEX pthread_mutex_t
     #define libaroma_mutex_init(x) pthread_mutex_init(&x,NULL)
     #define libaroma_mutex_free(x) pthread_mutex_destroy(&x)
     #define libaroma_mutex_lock(x) pthread_mutex_lock(&x)
     #define libaroma_mutex_unlock(x) pthread_mutex_unlock(&x)
+    */
   #endif
   
   /*
@@ -149,9 +169,6 @@ static inline long libaroma_tick(){
   #define libaroma_thread_kill(th)
   static inline void libaroma_thread_set_hiprio(LIBAROMA_THREAD t){
   }
-  /*
-   * CONDITION & MUTEX CONDITION - NOT NEED MULTICORE THREADSAFE
-   */
   #define LIBAROMA_COND_MUTEX voidp
   #define LIBAROMA_COND voidp
   #define libaroma_cond_wait(c,m)

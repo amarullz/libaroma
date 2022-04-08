@@ -141,8 +141,8 @@ int libaroma_color_hue(word color, int * saturation, int * luminance){
   red/=255;
   green/=255;
   blue/=255;
-  float mn = MIN(MIN(red, green), blue);
-  float mx = MIN(MIN(red, green), blue);
+  float mn = __FMIN(__FMIN(red, green), blue);
+  float mx = __FMAX(__FMAX(red, green), blue);
 
   float hue = 0.0;
   if (mx == red) {

@@ -107,10 +107,10 @@ void LINUXFBDR_init_32bit(LIBAROMA_FBP me) {
 
   /* gralloc framebuffer subpixel position style */
   if (mi->var.transp.offset){
-    LINUXFBDR_setrgbpos(me,16,8,0);
+    LINUXFBDR_setrgbpos(me,0,8,16);
   }
   else{
-    LINUXFBDR_setrgbpos(me,0,8,16);
+    LINUXFBDR_setrgbpos(me,16,8,0);
   }
   
   /* set sync callbacks */

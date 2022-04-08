@@ -120,6 +120,8 @@ byte qnx_hiddi_init(){
       continue;
     }
     _qnx_hiddi_dev_type[i] = qnx_hiddi_get_device_type(data, len);
+
+    // ALOGI("QNXHID DEVICE TYPE: id=%i, type=%i",i,_qnx_hiddi_dev_type[i]);
     free(data);
   }
   if (hidd_disconnect(_qnx_hiddi_connection)!=EOK){
@@ -230,7 +232,7 @@ static long __qnxhiddi_lastkey_tick=0;
 /*****************************************************************************
  * CALIBRATING
  */
-static byte __qnxhiddi_calibrated=0;
+byte __qnxhiddi_calibrated=0;
 typedef struct {
   float An;     /* A = An/Divider */
   float Bn;     /* B = Bn/Divider */
@@ -290,6 +292,7 @@ void atouch_translate_raw(int * x, int * y){
 }
 void atouch_matrix_calibrate(AW_CALIBMATRIXP matrix){
   memcpy(&atouch_calib_matrix,matrix,sizeof(AW_CALIBMATRIX));
+  printf("atouch_matrix_calibrate memcpy\n");
   FILE * fp = fopen(_QNX_EGALAX_CONFIG_FILE,"w+");
   fwrite(&atouch_calib_matrix,sizeof(AW_CALIBMATRIX),1,fp);
   fclose(fp);
@@ -297,6 +300,10 @@ void atouch_matrix_calibrate(AW_CALIBMATRIXP matrix){
 }
 byte libaroma_msg_runstate();
 byte __qnx_hiddi_config(LIBAROMA_HIDP me, const char * name, const char * val, dword vl){
+  byte is_test=(strcmp(val,"test")==0)?1:0;
+  if (!is_test){
+    __qnxhiddi_calibrated=0;
+  }
   if (strcmp("calibrate",name)==0){
     LIBAROMA_CANVASP cv=libaroma_fb()->canvas;
     LIBAROMA_CANVASP tmp_canvas = libaroma_canvas(cv->w,cv->h);
@@ -323,7 +330,6 @@ byte __qnx_hiddi_config(LIBAROMA_HIDP me, const char * name, const char * val, d
     int sz=48;
     int szh=sz/2;
     byte restart_calib=0;
-    byte is_test=(strcmp(val,"test")==0)?1:0;
     
     do{ /* restart calib */
       byte onpool=1;
@@ -358,6 +364,8 @@ byte __qnx_hiddi_config(LIBAROMA_HIDP me, const char * name, const char * val, d
           
           onpool=1;
           libaroma_msg_start();
+          __qnxhiddi_calibrated=0;
+          libaroma_msg_clean_hid();
           int now_x = -1;
           int now_y = -1;
           do{
@@ -365,6 +373,7 @@ byte __qnx_hiddi_config(LIBAROMA_HIDP me, const char * name, const char * val, d
             byte mv=libaroma_msg(&msg);
             if (mv==LIBAROMA_MSG_TOUCH){
               if (msg.state==0){
+                printf("CALIB POS (%i): %i x %i\n",i,now_x,now_y);
                 xtch[i]=now_x;
                 ytch[i]=now_y;
                 onpool=0;
@@ -412,7 +421,9 @@ byte __qnx_hiddi_config(LIBAROMA_HIDP me, const char * name, const char * val, d
         AW_CALIBMATRIX matrix;
         byte is_calib_ok=0;
         if (!is_test){
+          printf("aw_calibmatrix\n");
           if (aw_calibmatrix(dPoint,tPoint, &matrix)){    
+            printf("atouch_matrix_calibrate\n");
             atouch_matrix_calibrate(&matrix);
             is_calib_ok=1;
           }
@@ -533,6 +544,8 @@ byte __qnx_hiddi_config(LIBAROMA_HIDP me, const char * name, const char * val, d
  * Return Value: void
  * Descriptions: Take screenshoot
  */
+#define _QNX_HIDDI_WITH_SCREENSHOT 0
+#if _QNX_HIDDI_WITH_SCREENSHOT
 static long _qnx_hiddi_takescreenshoot_last=0;
 void qnx_hiddi_takescreenshoot(){
   if (_qnx_hiddi_takescreenshoot_last+1000<libaroma_tick()){
@@ -552,6 +565,15 @@ void qnx_hiddi_takescreenshoot(){
   }
 }
 
+static byte _qnx_hiddi_last_key_ss=0;
+static byte _qnx_hiddi_last_key=0;
+static byte _qnx_hiddi_last_key_n=0;
+void qnx_hiddi_set_screenshot_key(byte key, byte repeat){
+  _qnx_hiddi_last_key=key;
+  _qnx_hiddi_last_key_n=repeat;
+  ALOGI("SET SCREENSHOT KEY: %i/%i",key,repeat);
+}
+#endif
 /*
  * Function    : qnx_hiddi_report
  * Return Value: void
@@ -570,7 +592,33 @@ static void qnx_hiddi_report(
   byte type=_qnx_hiddi_dev_type[devno];
   bytep data = (bytep) repdata;
   
-  if (type==QNX_HIDDI_DEV_TOUCH){
+  /* ALOGI("RAW HID: t=%i, d=%i, l=%i",type,devno,len); */
+  if ((type==QNX_HIDDI_DEV_MOUSE)&&(len==7)){
+    byte * rd=(byte *) repdata;
+    int x  = (rd[2]<<8)|rd[1];
+    int y  = (rd[4]<<8)|rd[3];
+    atouch_translate_raw(&x,&y);
+    
+    /* process */
+    if (rd[0]==0){
+      qnx_hiddi_touch_x=-1;
+      qnx_hiddi_touch_y=-1;
+      qnxhid_send_event(QNXHID_EV_TOUCH_UP,x,y);
+      return;
+    }
+    else if ((qnx_hiddi_touch_x==-1)&&(qnx_hiddi_touch_y==-1)){
+      qnx_hiddi_touch_x=x;
+      qnx_hiddi_touch_y=y;
+      qnxhid_send_event(QNXHID_EV_TOUCH_DOWN,x,y);
+      /* send down x,y */
+    }
+    else if ((qnx_hiddi_touch_x!=x)||(qnx_hiddi_touch_y!=y)){
+      qnx_hiddi_touch_x=x;
+      qnx_hiddi_touch_y=y;
+      qnxhid_send_event(QNXHID_EV_TOUCH_MOVE,x,y);
+    }
+  }
+  else if (type==QNX_HIDDI_DEV_TOUCH){
     /* touch handler */
     if ((len==5)||(len==6)) {
       //printf("TOUCH: %i %i %i %i %i\n",data[0],data[1],data[2],data[3],data[4]);
@@ -578,7 +626,6 @@ static void qnx_hiddi_report(
         /* get x & y */
         int y = (data[2]<<8)|data[1];
         int x = (data[4]<<8)|data[3];
-        
         atouch_translate_raw(&x,&y);
         
         /* calibrate */
@@ -618,12 +665,12 @@ static void qnx_hiddi_report(
   }
   else if (type==QNX_HIDDI_DEV_KBD) {
     if (len==8){
-      if (__qnxhiddi_lastkey_tick<libaroma_tick()-100){
+      if (__qnxhiddi_lastkey_tick<libaroma_tick()-50){
         __qnxhiddi_lastkey=0;
       }
       if (__qnxhiddi_lastkey!=data[2]){
         if (data[2]==0){
-          if (__qnxhiddi_lastkey_tick<libaroma_tick()-100){
+          if (__qnxhiddi_lastkey_tick<libaroma_tick()-50){
             __qnxhiddi_lastkey=0;
           }
           return;
@@ -631,7 +678,8 @@ static void qnx_hiddi_report(
         
         __qnxhiddi_lastkey=data[2];
         __qnxhiddi_lastkey_tick=libaroma_tick();
-        
+
+#if _QNX_HIDDI_WITH_SCREENSHOT
         // printf("KEYBOARD: %i\n",__qnxhiddi_lastkey);
         //ALOGI("KEYBOARD KEY CODE: %i",__qnxhiddi_lastkey);
         /* SCREEN SHOOT */
@@ -639,9 +687,28 @@ static void qnx_hiddi_report(
           qnx_hiddi_takescreenshoot();
           return;
         }
+
+        /* CUSTOM SCREENSHOT KEY HANDLER */
+        if (_qnx_hiddi_last_key&&_qnx_hiddi_last_key_n){
+          if (_qnx_hiddi_last_key==__qnxhiddi_lastkey){
+            if (++_qnx_hiddi_last_key_ss>=_qnx_hiddi_last_key_n){
+              _qnx_hiddi_last_key_ss=0;
+              qnx_hiddi_takescreenshoot();
+              return;
+            }
+            else{
+              ALOGI("SCREENSHOT KEY (%i of %i)",_qnx_hiddi_last_key_ss,_qnx_hiddi_last_key_n);
+            }
+          }
+          else{
+            _qnx_hiddi_last_key_ss=0;
+          }
+        }
+#endif
+
         
         qnxhid_send_event(QNXHID_EV_TOUCH_RAW_KBD, __qnxhiddi_lastkey,devno);
-        
+#if 0
         if ((data[2]==41)||(data[2]==86)){
           /* esc */
           qnxhid_send_event(QNXHID_EV_TOUCH_KBD, 1/* id */,1 /* param */);
@@ -666,6 +733,7 @@ static void qnx_hiddi_report(
           /* 0 */
           qnxhid_send_event(QNXHID_EV_TOUCH_KBD, 10,0);
         }
+#endif
       }
     }
     // qnxhid_send_event(QNXHID_EV_TOUCH_KBD,/* id */,0 /* param */);

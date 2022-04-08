@@ -158,8 +158,11 @@ byte libaroma_start() {
   
 #ifdef LIBAROMA_TTY_KDSETMODE
   ALOGI("KDSETMODE = KD_GRAPHICS");
-  int tty1 = open("/dev/tty1", O_RDWR);
+  char ttydev[32];
+  snprintf(ttydev,32,"/dev/tty%i",LIBAROMA_TTY_KDSETMODE);
+  int tty1 = open(ttydev, O_RDWR);
   ioctl(tty1, KDSETMODE, KD_GRAPHICS);
+  close(tty1);
 #endif
   
   /* Init Safe Process Monitoring */
@@ -186,9 +189,11 @@ byte libaroma_start() {
     libaroma_runtime_activate_cores(libaroma_config()->multicore_init_num);
   }
   
-  if (!libaroma_fb_init()) {
-    ALOGE("libaroma_start cannot start framebuffer...");
-    return 0;
+  if (!libaroma_fb()){
+    if (!libaroma_fb_init()) {
+      ALOGE("libaroma_start cannot start framebuffer...");
+      return 0;
+    }
   }
   if (!libaroma_font_init()) {
     ALOGE("libaroma_start cannot start font engine...");
@@ -243,7 +248,9 @@ byte libaroma_end() {
   libaroma_hid_release();
   libaroma_font_release();
   libaroma_fb_release();
+#if 0
   libaroma_runtime_rollback_cores();
+#endif
   
   ALOGI("===================================================");
 #ifdef LIBAROMA_CONFIG_DEBUG_MEMORY
@@ -256,8 +263,11 @@ byte libaroma_end() {
 
 #ifdef LIBAROMA_TTY_KDSETMODE
   ALOGI("KDSETMODE = KD_TEXT");
-  int tty1 = open("/dev/tty1", O_RDWR);
+  char ttydev[32];
+  snprintf(ttydev,32,"/dev/tty%i",LIBAROMA_TTY_KDSETMODE);
+  int tty1 = open(ttydev, O_RDWR);
   ioctl(tty1, KDSETMODE, KD_TEXT);
+  close(tty1);
 #endif
 
   return 1;

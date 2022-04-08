@@ -139,7 +139,55 @@ void libaroma_hid_release() {
   /* free instance */
   ALOGV("release hid instance");
   free(_libaroma_hid);
+  _libaroma_hid=NULL;
 } /* End of libaroma_hid_release */
+
+void libaroma_hid_restart(){
+  /* check instance */
+  if (_libaroma_hid == NULL) {
+    ALOGE("hid instance uninitialized");
+    libaroma_hid_init();
+    return;
+  }
+  /* re-init driver */
+  LIBAROMA_HIDP _tmp_hid = (LIBAROMA_HIDP) calloc(sizeof(LIBAROMA_HID),1);
+  if (!_tmp_hid) {
+    return;
+  }
+  _tmp_hid->screen_width = libaroma_fb()->w;
+  _tmp_hid->screen_height = libaroma_fb()->h;
+  _tmp_hid->touch_last_x = 0;
+  _tmp_hid->touch_last_y = 0;
+  if (_libaroma_hid_initializer){
+    if (!_libaroma_hid_initializer(_tmp_hid)) {
+      ALOGE("reinit hid driver failed");
+      free(_tmp_hid);
+      return;
+    }
+  }
+  else{
+    if (!LIBAROMA_HID_INIT_FUNCTION(_tmp_hid)) {
+      ALOGE("reinit hid driver failed");
+      free(_tmp_hid);
+      return;
+    }
+  }
+  if ((_tmp_hid->release == NULL) ||
+      (_tmp_hid->getinput == NULL)){
+    ALOGE("reinit driver callback invalid");
+    free(_tmp_hid);
+    return;
+  }
+  
+  LIBAROMA_HIDP _old_hid = _libaroma_hid;
+  _libaroma_hid=_tmp_hid;
+  if (_old_hid == NULL) {
+    ALOGE("reinit hid instance uninitialized");
+    return;
+  }
+  _old_hid->release(_old_hid);
+  free(_old_hid);
+}
 
 /*
  * Function    : libaroma_hid_set_keypress
@@ -218,6 +266,7 @@ byte libaroma_hid_get(
     
     ALOGT("EVENT RECIVED: type=%i, state=%i, key=%i, x=%i, y=%i",
       ret,e->state,e->key,e->x,e->y);
+	
     
     /* check return value */
     switch (ret) {

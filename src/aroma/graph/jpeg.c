@@ -24,7 +24,7 @@
 #ifndef __libaroma_jpeg_c__
 #define __libaroma_jpeg_c__
 #include <aroma_internal.h>
-#include <jinclude.h>         /* JPEG */
+// #include <jinclude.h>         /* JPEG */
 #include <jpeglib.h>
 #include <jerror.h>
 #include <setjmp.h>
@@ -104,7 +104,7 @@ void _libaroma_jpeg_mem_src(
   if (cinfo->src == NULL) {
     cinfo->src = (struct jpeg_source_mgr *)
                  (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
-                     SIZEOF(_LIBAROMA_JPEG_MEM_MGR));
+                     sizeof(_LIBAROMA_JPEG_MEM_MGR));
   }
   src = (_LIBAROMA_JPEG_MEM_MGRP) cinfo->src;
   src->pub.init_source = _libaroma_jpeg_mem_source;
@@ -328,6 +328,152 @@ exit:
   }
   return retval;
 } /* End of libaroma_jpeg_draw */
+
+
+byte libaroma_jpeg_save(LIBAROMA_CANVASP sc, char *filename, int quality){
+#ifdef LIBAROMA_CONFIG_NOJPEGWRITE
+  return 0;
+#else
+  volatile LIBAROMA_CANVASP c = sc;
+  if (c == NULL) {
+    c = libaroma_fb()->canvas;
+  }
+  struct jpeg_compress_struct cinfo;
+  struct jpeg_error_mgr jerr;
+
+  JSAMPROW row_pointer[1];
+  FILE *outfile = fopen( filename, "wb" );
+  if ( !outfile )
+  {
+      ALOGW("libaroma_jpeg_save fopen \"%s\" error", filename);
+      return 0;
+  }
+
+  cinfo.err = jpeg_std_error( &jerr );
+  jpeg_create_compress(&cinfo);
+  jpeg_stdio_dest(&cinfo, outfile);
+
+  /* Setting the parameters of the output file here */
+  cinfo.image_width = c->w;  
+  cinfo.image_height = c->h;
+  cinfo.input_components = 3;
+  cinfo.in_color_space = JCS_RGB;
+  jpeg_set_defaults(&cinfo);
+  jpeg_set_quality(&cinfo, quality, TRUE);
+  jpeg_start_compress( &cinfo, TRUE );
+  int ypos=0;
+  bytep row = (bytep) malloc(3 * c->w);
+  while( cinfo.next_scanline < cinfo.image_height )
+  {
+    libaroma_color_copy_rgb24(row,c->data+ypos*c->l,c->w);
+    row_pointer[0]=row;
+    jpeg_write_scanlines( &cinfo, row_pointer, 1 );
+    ypos++;
+  }
+  free(row);
+  jpeg_finish_compress( &cinfo );
+  jpeg_destroy_compress( &cinfo );
+  fclose( outfile );
+  return 1;
+#endif
+}
+
+byte libaroma_jpeg_savemem(LIBAROMA_CANVASP sc, unsigned long * jpegSize, bytep * jpegBuf, int quality){
+#ifdef LIBAROMA_CONFIG_NOJPEGWRITE
+  return 0;
+#else
+  volatile LIBAROMA_CANVASP c = sc;
+  if (c == NULL) {
+    c = libaroma_fb()->canvas;
+  }
+  struct jpeg_compress_struct cinfo;
+  struct jpeg_error_mgr jerr;
+
+  JSAMPROW row_pointer[1];
+  cinfo.err = jpeg_std_error( &jerr );
+  jpeg_create_compress(&cinfo);
+  jpeg_mem_dest(&cinfo, jpegBuf, jpegSize);
+
+  /* Setting the parameters of the output file here */
+  cinfo.image_width = c->w;  
+  cinfo.image_height = c->h;
+  cinfo.input_components = 3;
+  cinfo.in_color_space = JCS_RGB;
+  cinfo.dct_method = JDCT_IFAST;
+  jpeg_set_defaults(&cinfo);
+  jpeg_set_quality(&cinfo, quality, TRUE);
+  jpeg_start_compress( &cinfo, TRUE );
+  int ypos=0;
+  bytep row = (bytep) malloc(3 * c->w);
+  while( cinfo.next_scanline < cinfo.image_height )
+  {
+    libaroma_color_copy_rgb24(row,c->data+ypos*c->l,c->w);
+    row_pointer[0]=row;
+    jpeg_write_scanlines( &cinfo, row_pointer, 1 );
+    ypos++;
+  }
+  free(row);
+  jpeg_finish_compress( &cinfo );
+  jpeg_destroy_compress( &cinfo );
+  return 1;
+#endif
+}
+
+byte libaroma_jpeg_savemem_scale(LIBAROMA_CANVASP sc, unsigned long * jpegSize, bytep * jpegBuf, int quality, float divsz){
+#ifdef LIBAROMA_CONFIG_NOJPEGWRITE
+  return 0;
+#else
+  if ((divsz>1)||(divsz<0.1)){
+    divsz=1;
+  }
+  if (divsz==1){
+    return libaroma_jpeg_savemem(sc, jpegSize, jpegBuf, quality);
+  }
+  if (sc == NULL) {
+    sc = libaroma_fb()->canvas;
+  }
+  LIBAROMA_CANVASP cc=libaroma_canvas(sc->w*divsz,sc->h*divsz);
+  libaroma_draw_scale(
+    cc,sc,
+    0, 0, cc->w, cc->h,
+    0, 0, sc->w, sc->h,
+    1
+  );
+  volatile LIBAROMA_CANVASP c = cc;
+  struct jpeg_compress_struct cinfo;
+  struct jpeg_error_mgr jerr;
+
+  JSAMPROW row_pointer[1];
+  cinfo.err = jpeg_std_error( &jerr );
+  jpeg_create_compress(&cinfo);
+  jpeg_mem_dest(&cinfo, jpegBuf, jpegSize);
+
+  /* Setting the parameters of the output file here */
+  cinfo.image_width = c->w;  
+  cinfo.image_height = c->h;
+  cinfo.input_components = 3;
+  cinfo.in_color_space = JCS_RGB;
+  cinfo.dct_method = JDCT_IFAST;
+  jpeg_set_defaults(&cinfo);
+  jpeg_set_quality(&cinfo, quality, TRUE);
+  jpeg_start_compress( &cinfo, TRUE );
+  int ypos=0;
+  bytep row = (bytep) malloc(3 * c->w);
+  while( cinfo.next_scanline < cinfo.image_height )
+  {
+    libaroma_color_copy_rgb24(row,c->data+ypos*c->l,c->w);
+    row_pointer[0]=row;
+    jpeg_write_scanlines( &cinfo, row_pointer, 1 );
+    ypos++;
+  }
+  free(row);
+  jpeg_finish_compress( &cinfo );
+  jpeg_destroy_compress( &cinfo );
+  libaroma_canvas_free(cc);
+  return 1;
+#endif
+}
+
 
 #endif /* LIBAROMA_CONFIG_NOJPEG */
 

@@ -226,6 +226,7 @@ file(GLOB AROMA_SRCS
   ../../../src/aroma/utils/strings.c 
   ../../../src/aroma/utils/system.c 
   ../../../src/aroma/utils/time.c 
+  ../../../src/aroma/graph/artworker.c 
   ../../../src/aroma/graph/canvas.c 
   ../../../src/aroma/graph/fb.c 
   ../../../src/aroma/graph/image.c 

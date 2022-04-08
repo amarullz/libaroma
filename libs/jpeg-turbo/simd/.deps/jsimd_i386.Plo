@@ -1,0 +1,85 @@
+jsimd_i386.lo: jsimd_i386.c ../jinclude.h ../jconfig.h \
+ C:/QNX/host/win32/x86/usr/lib/gcc/i486-pc-nto-qnx6.5.0/4.4.2/include/stddef.h \
+ C:/QNX/target/qnx6/usr/include/stddef.h \
+ C:/QNX/target/qnx6/usr/include/sys/platform.h \
+ C:/QNX/target/qnx6/usr/include/sys/srcversion.h \
+ C:/QNX/target/qnx6/usr/include/sys/compiler_gnu.h \
+ C:/QNX/target/qnx6/usr/include/sys/cdefs.h \
+ C:/QNX/target/qnx6/usr/include/x86/platform.h \
+ C:/QNX/target/qnx6/usr/include/_pack64.h \
+ C:/QNX/target/qnx6/usr/include/sys/target_nto.h \
+ C:/QNX/target/qnx6/usr/include/_packpop.h \
+ C:/QNX/target/qnx6/usr/include/stdlib.h \
+ C:/QNX/target/qnx6/usr/include/malloc.h \
+ C:/QNX/target/qnx6/usr/include/alloca.h \
+ C:/QNX/target/qnx6/usr/include/sys/wait.h \
+ C:/QNX/target/qnx6/usr/include/signal.h \
+ C:/QNX/target/qnx6/usr/include/sys/siginfo.h \
+ C:/QNX/target/qnx6/usr/include/sys/types.h \
+ C:/QNX/target/qnx6/usr/include/stdio.h \
+ C:/QNX/target/qnx6/usr/include/string.h \
+ C:/QNX/target/qnx6/usr/include/strings.h \
+ C:/QNX/target/qnx6/usr/include/x86/string.h ../jpeglib.h ../jmorecfg.h \
+ ../jpegint.h ../jerror.h ../jsimd.h ../jdct.h ../jsimddct.h jsimd.h
+
+../jinclude.h:
+
+../jconfig.h:
+
+C:/QNX/host/win32/x86/usr/lib/gcc/i486-pc-nto-qnx6.5.0/4.4.2/include/stddef.h:
+
+C:/QNX/target/qnx6/usr/include/stddef.h:
+
+C:/QNX/target/qnx6/usr/include/sys/platform.h:
+
+C:/QNX/target/qnx6/usr/include/sys/srcversion.h:
+
+C:/QNX/target/qnx6/usr/include/sys/compiler_gnu.h:
+
+C:/QNX/target/qnx6/usr/include/sys/cdefs.h:
+
+C:/QNX/target/qnx6/usr/include/x86/platform.h:
+
+C:/QNX/target/qnx6/usr/include/_pack64.h:
+
+C:/QNX/target/qnx6/usr/include/sys/target_nto.h:
+
+C:/QNX/target/qnx6/usr/include/_packpop.h:
+
+C:/QNX/target/qnx6/usr/include/stdlib.h:
+
+C:/QNX/target/qnx6/usr/include/malloc.h:
+
+C:/QNX/target/qnx6/usr/include/alloca.h:
+
+C:/QNX/target/qnx6/usr/include/sys/wait.h:
+
+C:/QNX/target/qnx6/usr/include/signal.h:
+
+C:/QNX/target/qnx6/usr/include/sys/siginfo.h:
+
+C:/QNX/target/qnx6/usr/include/sys/types.h:
+
+C:/QNX/target/qnx6/usr/include/stdio.h:
+
+C:/QNX/target/qnx6/usr/include/string.h:
+
+C:/QNX/target/qnx6/usr/include/strings.h:
+
+C:/QNX/target/qnx6/usr/include/x86/string.h:
+
+../jpeglib.h:
+
+../jmorecfg.h:
+
+../jpegint.h:
+
+../jerror.h:
+
+../jsimd.h:
+
+../jdct.h:
+
+../jsimddct.h:
+
+jsimd.h:

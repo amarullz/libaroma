@@ -171,7 +171,6 @@
     "  ----------------\n"\
     "  JPEG Support        : " __LIBAROMA_WITH_JPEG "\n"\
     "  Shmem FB            : " __LIBAROMA_FBCANVAS_SHMEM "\n"\
-    "  Shmem Prefix        : " LIBAROMA_CONFIG_SHMEM_PREFIX "\n"\
     "  Freetype Rendering  : " __LIBAROMA_CMSG_SUBPIXEL "\n"\
     "  32bit highcolor bit : " __LIBAROMA_CMSG_HICOLOR "\n"\
     "  ARM NEON Optimized  : " __LIBAROMA_CMSG_NEON "\n"\

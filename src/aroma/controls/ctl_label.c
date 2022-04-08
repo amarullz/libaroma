@@ -60,7 +60,34 @@ struct __LIBAROMA_CTL_LABEL{
   int  vpos;
   byte hidden;
   LIBAROMA_MUTEX mutex;
+
+  /* SHADOWING */
+  byte isshadow;
+  int radius;
+  word shadow_color;
+  byte shadow_opacity;
+  int shadow_x;
+  int shadow_y;
 };
+
+void libaroma_ctl_label_setshadow(
+    LIBAROMA_CONTROLP ctl,
+    byte isshadow,
+    int radius,
+    word shadow_color,
+    byte shadow_opacity,
+    int shadow_x,
+    int shadow_y){
+  _LIBAROMA_CTL_CHECK(
+	  _libaroma_ctl_label_handler, _LIBAROMA_CTL_LABELP, 
+	);
+  me->isshadow=isshadow;
+  me->radius=radius;
+  me->shadow_color=shadow_color;
+  me->shadow_opacity=shadow_opacity;
+  me->shadow_x=shadow_x;
+  me->shadow_y=shadow_y;
+}
 
 byte _libaroma_ctl_label_thread(LIBAROMA_CONTROLP ctl) {
   _LIBAROMA_CTL_CHECK(
@@ -110,25 +137,48 @@ void _libaroma_ctl_label_draw(
       if (txt){
         int txth=libaroma_text_height(txt);
         if (me->valign==1){
-          libaroma_text_draw(
-            c, txt, 0, ((c->h>>1)-(txth>>1))+me->vpos
+          libaroma_text_draw_ex(
+            c, txt, 0, ((c->h>>1)-(txth>>1))+me->vpos,
+            
+            0,0,0,
+            me->isshadow,
+            me->radius,
+            me->shadow_color,
+            me->shadow_opacity,
+            me->shadow_x,
+            me->shadow_y
           );
         }
         else{
-          libaroma_text_draw(
-            c, txt, 0, c->h-(txth>>1)
+          libaroma_text_draw_ex(
+            c, txt, 0, c->h-(txth>>1),
+            
+            0,0,0,
+            me->isshadow,
+            me->radius,
+            me->shadow_color,
+            me->shadow_opacity,
+            me->shadow_x,
+            me->shadow_y
           );
         }
         libaroma_text_free(txt);
       }
     }
     else{
-      libaroma_draw_text(
+      libaroma_draw_text_ex(
       	c,
       	me->text,
       	0,me->vpos,me->color, c->w,
       	LIBAROMA_FONT(me->fontid,me->size)|me->flags,
-      	me->lh
+      	me->lh,
+
+        me->isshadow,
+        me->radius,
+        me->shadow_color,
+        me->shadow_opacity,
+        me->shadow_x,
+        me->shadow_y
       );
     }
     libaroma_mutex_unlock(me->mutex);

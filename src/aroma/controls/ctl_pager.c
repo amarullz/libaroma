@@ -872,7 +872,7 @@ byte libaroma_ctl_pager_set_active_page(
   if (dx!=0) {
     int width = ctl->w;
     int halfWidth = width / 2;
-    float distanceRatio = MIN(1.0, 1.0 * abs(dx) / width);
+    float distanceRatio = __FMIN(1.0, 1.0 * abs(dx) / width);
     distanceRatio -= 0.5;
     distanceRatio *= 0.3;
     distanceRatio = sin(distanceRatio);

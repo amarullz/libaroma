@@ -2,13 +2,13 @@
 REM
 REM TOOLCHAIN AND ADB
 REM
-setx NDK_ROOT "D:\DevelTools\ndk\android-ndk-r10c"
-setx SYSROOT_INC "%NDK_ROOT%\platforms\android-21\arch-arm"
-setx LIBAROMA_GDB "%NDK_ROOT%\toolchains\arm-linux-androideabi-4.9\prebuilt\windows-x86_64\bin\arm-linux-androideabi-gdb.exe"
-setx LIBAROMA_NM "%NDK_ROOT%\toolchains\arm-linux-androideabi-4.9\prebuilt\windows-x86_64\bin\arm-linux-androideabi-nm.exe"
-setx LIBAROMA_ADB "D:\DevelTools\adt\sdk\platform-tools\adb.exe"
-setx LIBAROMA_GCC "%NDK_ROOT%\toolchains\arm-linux-androideabi-4.9\prebuilt\windows-x86_64\bin\arm-linux-androideabi-gcc.exe"
-setx LIBAROMA_GPP "%NDK_ROOT%\toolchains\arm-linux-androideabi-4.9\prebuilt\windows-x86_64\bin\arm-linux-androideabi-g++.exe"
+setx NDKROOT "D:\DevTools\ndk\android-ndk-r10e"
+setx SYSROOT_INC "%NDKROOT%\platforms\android-21\arch-arm"
+setx LIBAROMA_GDB "%NDKROOT%\toolchains\arm-linux-androideabi-4.9\prebuilt\windows-x86_64\bin\arm-linux-androideabi-gdb.exe"
+setx LIBAROMA_NM "%NDKROOT%\toolchains\arm-linux-androideabi-4.9\prebuilt\windows-x86_64\bin\arm-linux-androideabi-nm.exe"
+setx LIBAROMA_GCC "%NDKROOT%\toolchains\arm-linux-androideabi-4.9\prebuilt\windows-x86_64\bin\arm-linux-androideabi-gcc.exe"
+setx LIBAROMA_GPP "%NDKROOT%\toolchains\arm-linux-androideabi-4.9\prebuilt\windows-x86_64\bin\arm-linux-androideabi-g++.exe"
+setx LIBAROMA_ADB "D:\DevTools\sdk\platform-tools\adb.exe"
 
 REM
 REM PRODUCTION CFLAGS

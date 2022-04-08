@@ -851,13 +851,13 @@ void _libaroma_ctl_bar_draw(
             if (me->tools){
               if (switch_id<me->tools->n){
                 float outstate = 1.0-libaroma_cubic_bezier_swiftout(
-                  MIN(MAX(0,(
+                  __FMIN(__FMAX(0,(
                     libaroma_ripple_current(&me->ripple,release_state)-0.5)
                     *2),1)
                 );
                 if (me->touched_switch>=2){
                   float xstate = libaroma_cubic_bezier_swiftout(
-                    MIN(libaroma_ripple_current(&me->ripple,release_state)*2,1)
+                    __FMIN(libaroma_ripple_current(&me->ripple,release_state)*2,1)
                   );
                   _libaroma_ctl_bar_draw_switch(
                     ctl, c, switch_id, 1, xstate, 0xff * outstate
@@ -1239,6 +1239,18 @@ byte libaroma_ctl_bar_set_title(LIBAROMA_CONTROLP ctl,
   }
   return 1;
 } /* End of libaroma_ctl_bar_set_title */
+
+/*
+ * Function    : libaroma_ctl_bar_get_title
+ * Return Value: char *
+ * Descriptions: get title
+ */
+char * libaroma_ctl_bar_get_title(LIBAROMA_CONTROLP ctl){
+	_LIBAROMA_CTL_CHECK(
+		_libaroma_ctl_bar_handler, _LIBAROMA_CTL_BARP, NULL
+	);
+	return me->title;
+}
 
 /*
  * Function    : libaroma_ctl_bar_set_textgap

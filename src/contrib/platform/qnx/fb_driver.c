@@ -35,6 +35,9 @@
  * Headers Includes
  *
  */
+#if LIBAROMA_QNX_USE_SCREEN_API
+#include "fb_driver_screen_api.c"
+#else
 #include <gf/gf.h>
 #include <aroma_internal.h>
 
@@ -295,5 +298,5 @@ byte QNXGF_post(
 byte libaroma_fb_driver_init(LIBAROMA_FBP me) {
   return QNXGF_init(me);
 }
-
+#endif
 #endif /* __libaroma_qnxnto_fb_driver_c__ */

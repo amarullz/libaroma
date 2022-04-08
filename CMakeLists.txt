@@ -2,7 +2,14 @@ cmake_minimum_required(VERSION 2.8)
 
 # Project Config
 project(libaroma C ASM)
-set(CMAKE_BUILD_TYPE Release)
+
+# Build Type
+if(NOT DEFINED BUILD_TYPE)  
+	set(BUILD_TYPE "Release")
+endif()
+set( BUILD_TYPE "${BUILD_TYPE}" CACHE STRING "Libaroma Build Type" FORCE )
+set_property( CACHE BUILD_TYPE PROPERTY STRINGS "Release;Debug" )
+SET(CMAKE_BUILD_TYPE "${BUILD_TYPE}")
 
 execute_process( COMMAND ${CMAKE_C_COMPILER} -dumpmachine OUTPUT_VARIABLE DUMP_MACHINE OUTPUT_STRIP_TRAILING_WHITESPACE)
 message("Dump Machine       : ${DUMP_MACHINE}")
@@ -13,6 +20,7 @@ if(NOT DEFINED ARCHITECTURE)
   string(SUBSTRING ${DUMP_MACHINE} 0 ${DUMP_MACHINE_STRIP} ARCHITECTURE)
 endif()
 message("Architecture       : ${ARCHITECTURE}")
+message("Build Type         : ${CMAKE_BUILD_TYPE}")
 
 # Check Platform
 if(NOT DEFINED LIBAROMA_PLATFORM_NAME)  
@@ -41,7 +49,7 @@ set_property( CACHE LIBAROMA_WITH_RT PROPERTY STRINGS "DISABLE;ENABLE" )
 
 # OpenMP List
 if(NOT DEFINED LIBAROMA_WITH_OPENMP)  
-	set(LIBAROMA_WITH_OPENMP "DISABLE")
+	set(LIBAROMA_WITH_OPENMP "ENABLE")
 endif()
 set( LIBAROMA_WITH_OPENMP "${LIBAROMA_WITH_OPENMP}" CACHE STRING "Force Compile Libaroma with OpenMP" FORCE )
 set_property( CACHE LIBAROMA_WITH_OPENMP PROPERTY STRINGS "DISABLE;ENABLE" )
@@ -83,7 +91,7 @@ set_property( CACHE LIBAROMA_CONFIG_COMPILER_MESSAGE PROPERTY STRINGS "0;1" )
 
 # Freetype rendering
 if(NOT DEFINED LIBAROMA_FONT_RENDERING)
-	set(LIBAROMA_FONT_RENDERING "ANTIALIAS")
+	set(LIBAROMA_FONT_RENDERING "SUBPIXEL ANTIALIAS")
 endif()
 set( LIBAROMA_FONT_RENDERING "${LIBAROMA_FONT_RENDERING}" CACHE STRING "Set freetype font rendering" FORCE )
 set_property( CACHE LIBAROMA_FONT_RENDERING PROPERTY STRINGS "SUBPIXEL ANTIALIAS;ANTIALIAS" )
@@ -113,9 +121,9 @@ endif()
 # linkage
 if("${CMAKE_LINK_TYPE}" STREQUAL "STATIC")
   message("Linkage            : STATIC")
-	set(CMAKE_SKIP_RPATH YES)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static")
+  set(CMAKE_SKIP_RPATH YES)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static -fno-rtti -fno-exceptions")
 else()
 	message("Linkage            : SHARED")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")

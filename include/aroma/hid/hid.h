@@ -153,5 +153,6 @@ byte libaroma_hid_get(LIBAROMA_HID_EVENTP e);
  */
 byte libaroma_hid_config(char * name,char * svalue,dword dvalue);
 
+void libaroma_hid_restart();
 
 #endif /* __libaroma_hid_h__ */

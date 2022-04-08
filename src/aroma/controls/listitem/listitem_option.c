@@ -320,9 +320,9 @@ void _libaroma_listitem_option_draw(
           relstate=1;
         }
         else{
-          relstate=MAX(MIN((curelstate-0.25) * 2,1),0);
+          relstate=__FMAX(__FMIN((curelstate-0.25) * 2,1),0);
           relstate=libaroma_cubic_bezier_swiftout(relstate);
-          relstate=MAX(MIN(1,relstate),0);
+          relstate=__FMAX(__FMIN(1,relstate),0);
         }
       }
     }

@@ -84,6 +84,8 @@
 #define SYN_MT_REPORT          2
 #endif
 
+// LINUXHIDRV_DEVCLASS_MOUSE_EMULATION
+
 /*
  * function : calculate touch event with calibration data
  */
@@ -125,6 +127,131 @@ static byte LINUXHIDRV_calibrate(
   */
 }
 
+
+/*
+ * function : translate raw touch emulated mouse device
+ */
+byte LINUXHIDRV_translate_mousetouch_emulation(
+    LIBAROMA_HIDP me,
+    LINUXHIDRV_DEVICEP dev,
+    LIBAROMA_HID_EVENTP dest_ev,
+    struct input_event * ev) {
+  
+	/* get internal data */
+	LINUXHIDRV_INTERNALP mi = (LINUXHIDRV_INTERNALP) me->internal;
+	/* process EV_ABS event */
+	byte event_state=0;
+	
+  if (ev->type == EV_KEY) {
+	  if (ev->code==BTN_LEFT){
+		  if (ev->value==1){
+			  dev->p.state    |= LINUXHIDRV_POS_ST_LASTSYNC;
+		  }
+		  else{
+			  dev->p.state    |= LINUXHIDRV_POS_ST_RLS_NEXT;
+		  }
+		  
+	  }
+	  goto emu_return_none;
+  }
+  if (ev->type==EV_ABS) {
+    switch (ev->code) {
+      case ABS_X:
+        /* x only event */
+        dev->p.state |= LINUXHIDRV_POS_ST_SYNC_X;
+        dev->p.x = ev->value;
+        break;
+      case ABS_Y:
+        /* y only event */
+        dev->p.state |= LINUXHIDRV_POS_ST_SYNC_Y;
+        dev->p.y = ev->value;
+        break;
+      default:
+        /* unknown event */
+        goto emu_return_none;
+    }
+  }
+  if (ev->type == EV_SYN) {
+    if (ev->code == SYN_REPORT) {
+		if (dev->p.state&LINUXHIDRV_POS_ST_RLS_NEXT){
+			/* KEYUP */
+			dev->p.state    &= ~LINUXHIDRV_POS_ST_SYNC_X;
+			dev->p.state    &= ~LINUXHIDRV_POS_ST_SYNC_Y;
+			dev->p.state    &= ~LINUXHIDRV_POS_ST_RLS_NEXT;
+			dev->p.state    &= ~LINUXHIDRV_POS_ST_DOWNED;
+			dev->p.state    &= ~LINUXHIDRV_POS_ST_LASTSYNC;
+			event_state=3;
+		}
+		else if ((dev->p.state&LINUXHIDRV_POS_ST_SYNC_X)&&(dev->p.state&LINUXHIDRV_POS_ST_SYNC_Y)){
+			/* reset last sync xy event */
+			dev->p.state    &= ~LINUXHIDRV_POS_ST_SYNC_X;
+			dev->p.state    &= ~LINUXHIDRV_POS_ST_SYNC_Y;
+			
+			if (dev->p.state&LINUXHIDRV_POS_ST_DOWNED){
+				/* MOVE */
+				event_state=2;
+			}
+			else if (dev->p.state&LINUXHIDRV_POS_ST_LASTSYNC){
+				/* DOWN */
+				dev->p.state    &= ~LINUXHIDRV_POS_ST_LASTSYNC;
+				dev->p.state    |= LINUXHIDRV_POS_ST_DOWNED;
+				event_state=1;
+			}
+		}
+		else{
+			goto emu_return_none;
+		}
+		
+	}
+  }
+  
+  if (event_state!=0){
+	if (event_state<3){
+		/* Calibrating */
+		int cx = -1;
+		int cy = -1;
+		LINUXHIDRV_calibrate(me, &dev->p, &cx, &cy);
+		/* swap & flip handler */
+		if (mi->touch_swap_xy) {
+		  cx ^= cy;
+		  cy ^= cx;
+		  cx ^= cy;
+		}
+		if (mi->touch_flip_x) {
+		  cx = me->screen_width - cx;
+		}
+		if (mi->touch_flip_y) {
+		  cy = me->screen_height - cy;
+		}
+		/* if we have nothing useful to report, skip it */
+		if (cx == -1 || cy == -1 || dev->p.x == -1 || dev->p.y == -1) {
+		  ALOGRT("RAW TOUCH STATUS - x/y=-1 (x=%i,y=%i)",dev->p.x,dev->p.y);
+		  goto emu_return_none;
+		}
+		if (event_state==1){
+			dest_ev->state  = LIBAROMA_HID_EV_STATE_DOWN;
+		}
+		else{
+			dest_ev->state  = LIBAROMA_HID_EV_STATE_MOVE;
+		}
+		/* set translated coordinat */
+		dev->p.tx    = cx;
+		dev->p.ty    = cy;
+	}
+	else{
+		dest_ev->state  = LIBAROMA_HID_EV_STATE_UP;
+	}
+	
+	dest_ev->x      = dev->p.tx;
+	dest_ev->y      = dev->p.ty;
+	dest_ev->type   = LIBAROMA_HID_EV_TYPE_TOUCH;
+	dest_ev->key    = 0;
+	return LIBAROMA_HID_EV_RET_TOUCH;
+  }
+emu_return_none:
+  return LIBAROMA_HID_EV_RET_NONE;
+}
+
 /*
  * function : translate raw multitouch touch device
  */
@@ -137,7 +264,8 @@ byte LINUXHIDRV_translate_touch(
   LINUXHIDRV_INTERNALP mi = (LINUXHIDRV_INTERNALP)
                       me->internal;
   /* dump raw events */
-  ALOGRT("RAW TOUCH: T=%i, C=%i, V=%i", ev->type, ev->code, ev->value);
+  //ALOGRT("RAW TOUCH: T=%i, C=%i, V=%i", ev->type, ev->code, ev->value);
+  //ALOGI("RAW TOUCH: T=%i, C=%i, V=%i", ev->type, ev->code, ev->value);
   static int MT_TRACKING_IS_UNTOUCHED = 0;
   static int TOUCH_RELEASE_NEXTSYN = 0;
   

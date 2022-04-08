@@ -55,6 +55,7 @@ byte LINUXHIDRV_translate_keyboard(LIBAROMA_HIDP me, LINUXHIDRV_DEVICEP dev,
     }
     
     /* translate key code to aroma-core return code */
+#ifndef LIBAROMA_CONFIG_INPUT_ALLRAWKEY
     switch (ev->code) {
       /* select key */
       case KEY_LEFTBRACE:
@@ -99,7 +100,8 @@ byte LINUXHIDRV_translate_keyboard(LIBAROMA_HIDP me, LINUXHIDRV_DEVICEP dev,
         return LIBAROMA_HID_EV_RET_DOWN;
         break;
     }
-    
+#endif
+
     /* process as raw key code */
     return LIBAROMA_HID_EV_RET_RAWKEY;
   }

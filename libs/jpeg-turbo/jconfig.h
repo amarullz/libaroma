@@ -25,7 +25,10 @@
  */
 
 /* libjpeg API version */
-#define JPEG_LIB_VERSION 62
+#define C_ARITH_CODING_SUPPORTED 1
+#define D_ARITH_CODING_SUPPORTED 1
+#define JPEG_LIB_VERSION 80
+// 62
 
 /* Does your compiler support function prototypes?
  * (If not, you also need to use ansi2knr, see install.doc)

@@ -30,6 +30,33 @@
 #include "fb_colorspace/fb_32bit.c" /* 32 bit */
 #include "fb_qcom/fb_qcom.c" /* qcom overlay */
 
+static byte LINUXFBDR_request_initialized=0;
+static int LINUXFBDR_request_width=0;
+static int LINUXFBDR_request_height=0;
+static int LINUXFBDR_request_depth=0;
+static int LINUXFBDR_request_dpi=0;
+static byte LINUXFBDR_request_with_vsync=0;
+static byte LINUXFBDR_request_double_buffer=0;
+byte LINUXFBDR_set_resolution(int width, int height, int bit_depth){
+  if (LINUXFBDR_request_initialized) {
+    return 0;
+  }
+  LINUXFBDR_request_width=width;
+  LINUXFBDR_request_height=height;
+  LINUXFBDR_request_depth=bit_depth;
+  return 1;
+}
+byte LINUXFBDR_set_prop(int dpi, byte double_buffer, byte enable_wait_vsync){
+  if (LINUXFBDR_request_initialized) {
+    return 0;
+  }
+  LINUXFBDR_request_double_buffer=double_buffer;
+  LINUXFBDR_request_dpi=dpi;
+  LINUXFBDR_request_with_vsync=enable_wait_vsync;
+  return 1;
+}
+
+
 /*
  * Function    : LINUXFBDR_start_post
  * Return Value: byte
@@ -112,12 +139,16 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
   /* init mutex & cond */
   libaroma_mutex_init(mi->mutex);
 
+#ifdef __ANDROID__
   /* open framebuffer device */
   mi->fb = open(LINUXFBDR_DEVICE, O_RDWR, 0);
   if (mi->fb < 1) {
     /* if not works, try non android standard device path */
     mi->fb = open(LINUXFBDR_DEVICE_NON_ANDROID, O_RDWR, 0);
   }
+#else
+  mi->fb = open(LINUXFBDR_DEVICE_NON_ANDROID, O_RDWR, 0);
+#endif
   if (mi->fb < 1) {
     /* cannot find device */
     ALOGE("LINUXFBDR no framebuffer device");
@@ -127,6 +158,45 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
   /* get framebuffer var & fix data */
   ioctl(mi->fb, FBIOGET_FSCREENINFO, &mi->fix); /* fix info */
   ioctl(mi->fb, FBIOGET_VSCREENINFO, &mi->var); /* var info */
+  
+  if ((LINUXFBDR_request_width>0)&&(LINUXFBDR_request_height>0)&&(LINUXFBDR_request_depth>0)){
+	  ALOGI("LINUXFBDRV Set Resolution %ix%ix%ibit",
+		LINUXFBDR_request_width,
+		LINUXFBDR_request_height,
+		LINUXFBDR_request_depth
+	  );
+	  mi->var.xres            = LINUXFBDR_request_width;
+	  mi->var.yres            = LINUXFBDR_request_height;
+    mi->var.yres_virtual    = mi->var.yres * (LINUXFBDR_request_double_buffer?2:1);
+    mi->var.xres_virtual    = mi->var.xres;
+    mi->var.width           = mi->var.xres;
+    mi->var.height          = mi->var.yres;
+    mi->var.xoffset         = 0;
+    mi->var.yoffset         = 0;
+
+	  mi->var.bits_per_pixel  = LINUXFBDR_request_depth;
+	  /* activate */
+	  mi->var.activate |= FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
+	  ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var);
+	  /* get updated data */
+	  ioctl(mi->fb, FBIOGET_FSCREENINFO, &mi->fix);
+	  ioctl(mi->fb, FBIOGET_VSCREENINFO, &mi->var);
+  }
+  else{
+  /* UPDATE SCREEN SIZE */
+#ifdef AROMA_LINUX_SETRES
+	  #pragma message "[FB] AROMA_LINUX_SETRES"
+	  mi->var.xres            = AROMA_LINUX_SETRES_X;
+	  mi->var.yres            = AROMA_LINUX_SETRES_Y;
+	  mi->var.bits_per_pixel  = AROMA_LINUX_SETRES_DEPTH;
+	  /* activate */
+	  mi->var.activate |= FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
+	  ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var);
+	  /* get updated data */
+	  ioctl(mi->fb, FBIOGET_FSCREENINFO, &mi->fix);
+	  ioctl(mi->fb, FBIOGET_VSCREENINFO, &mi->var);
+#endif
+  }
   
   /* dump info */
   LINUXFBDR_dump(mi);
@@ -163,12 +233,17 @@ byte LINUXFBDR_init(LIBAROMA_FBP me) {
     mi->depth     = mi->var.bits_per_pixel;   /* color depth */
     mi->pixsz     = mi->depth >> 3;           /* pixel size per byte */
     mi->fb_sz     = (mi->var.xres_virtual * mi->var.yres_virtual * mi->pixsz);
-    
+
+#ifndef AROMA_LINUX_NOCHECKFBSZ
     if (mi->fix.smem_len<(dword) mi->fb_sz){
       /* smem_len is invalid */
       ALOGE("LINUXFBDR smem_len(%i) < fb_sz(%i)", mi->fix.smem_len, mi->fb_sz);
       goto error;
     }
+#else
+  #pragma message "[FB] AROMA_LINUX_NOCHECKFBSZ"
+#endif
+
     /* map buffer */
     ALOGV("LINUXFBDR mmap Framebuffer Memory");
     mi->buffer  = (voidp) mmap(
@@ -211,6 +286,7 @@ error:
   free(mi);
   return 0;
 ok:
+  LINUXFBDR_request_initialized=1;
   return 1;
 } /* End of LINUXFBDR_init */
 
@@ -223,6 +299,8 @@ void LINUXFBDR_release(LIBAROMA_FBP me) {
   if (me==NULL) {
     return;
   }
+  
+  LINUXFBDR_request_initialized=0;
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
   if (mi==NULL){
     return;
@@ -272,7 +350,7 @@ void LINUXFBDR_swap_buffer(LINUXFBDR_INTERNALP mi){
  * Descriptions: wait for vsync
  */
 void LINUXFBDR_wait_vsync(LINUXFBDR_INTERNALP mi){
-  /*
+  if (!LINUXFBDR_request_with_vsync) return;
   if (mi->is_omap){
     int s=0;
     mi->last_vsync=ioctl(mi->fb, OMAPFB_WAITFORVSYNC, &s);
@@ -280,7 +358,6 @@ void LINUXFBDR_wait_vsync(LINUXFBDR_INTERNALP mi){
   else{
     mi->last_vsync=ioctl(mi->fb, FBIO_WAITFORVSYNC, 0);
   }
-  */
 } /* End of LINUXFBDR_wait_vsync */
 
 /*
@@ -294,17 +371,18 @@ byte LINUXFBDR_flush(LIBAROMA_FBP me) {
   }
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
   
-  // fsync(mi->fb);
   LINUXFBDR_swap_buffer(mi);
-  /*
-  if (mi->last_vsync==0){
-    mi->var.activate = FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
-  }
-  else{
-    mi->var.activate = FB_ACTIVATE_VBL; 
-  }
-  */
+
   mi->var.activate = FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
+  if (LINUXFBDR_request_with_vsync){
+    if (mi->last_vsync==0){
+      mi->var.activate = FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
+    }
+    else{
+      mi->var.activate = FB_ACTIVATE_VBL; 
+    }
+  }
+  
   if (ioctl(mi->fb, FBIOPAN_DISPLAY, &mi->var)!=0){
     ioctl(mi->fb, FBIOPUT_VSCREENINFO, &mi->var);
   }
@@ -331,6 +409,7 @@ void LINUXFBDR_init_features(LIBAROMA_FBP me) {
   
   /* request double buffer */
   mi->double_buffering=0;
+#ifndef LINUXFBDR_NO_DOUBLE_BUFFER
   if (mi->var.yres_virtual<mi->var.yres*2){
     mi->var.yres_virtual=mi->var.yres*2;
     mi->var.activate = FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
@@ -345,8 +424,9 @@ void LINUXFBDR_init_features(LIBAROMA_FBP me) {
     }
   }
   else{
-    mi->double_buffering=1;
+    mi->double_buffering=0;
   }
+#endif
   me->double_buffer=mi->double_buffering;
   ALOGV("LINUXFBDR Double Buffering = %s",mi->double_buffering?"yes":"no");
   
@@ -383,6 +463,13 @@ void LINUXFBDP_set_dpi(LIBAROMA_FBP me) {
   if (me==NULL) {
     return;
   }
+  if (LINUXFBDR_request_dpi!=0){
+    me->dpi = LINUXFBDR_request_dpi;
+    return;
+  }
+#if AROMA_LINUX_SETDPI
+  me->dpi = AROMA_LINUX_SETDPI;
+#else
   LINUXFBDR_INTERNALP mi = (LINUXFBDR_INTERNALP) me->internal;
   me->dpi = 0;
   int dpi_fallback = floor(MIN(mi->var.xres,mi->var.yres)/160) * 80;
@@ -421,6 +508,7 @@ void LINUXFBDP_set_dpi(LIBAROMA_FBP me) {
     ALOGI("android getprop ro.sf.lcd_density not found");
   }
 #endif
+#endif
 } /* End of LINUXFBDP_set_dpi */
 
 /*
@@ -433,10 +521,10 @@ void LINUXFBDR_dump(LINUXFBDR_INTERNALP mi) {
   ALOGI("VAR");
   ALOGI(" xres           : %i", mi->var.xres);
   ALOGI(" yres           : %i", mi->var.yres);
-  ALOGV(" xres_virtual   : %i", mi->var.xres_virtual);
-  ALOGV(" yres_virtual   : %i", mi->var.yres_virtual);
-  ALOGV(" xoffset        : %i", mi->var.xoffset);
-  ALOGV(" yoffset        : %i", mi->var.yoffset);
+  ALOGI(" xres_virtual   : %i", mi->var.xres_virtual);
+  ALOGI(" yres_virtual   : %i", mi->var.yres_virtual);
+  ALOGI(" xoffset        : %i", mi->var.xoffset);
+  ALOGI(" yoffset        : %i", mi->var.yoffset);
   ALOGI(" bits_per_pixel : %i", mi->var.bits_per_pixel);
   ALOGV(" grayscale      : %i", mi->var.grayscale);
   ALOGI(" red            : %i, %i, %i", 

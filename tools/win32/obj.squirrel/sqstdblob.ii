@@ -1,0 +1,1410 @@
+# 1 "../../../libs/squirrel/sqstdlib/sqstdblob.cpp"
+# 1 "<command-line>"
+# 1 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\stdc-predef.h" 1 3 4
+# 1 "<command-line>" 2
+# 1 "../../../libs/squirrel/sqstdlib/sqstdblob.cpp"
+
+# 1 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\new" 1 3
+# 37 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\new" 3
+       
+# 38 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\new" 3
+
+# 1 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\arm-linux-gnueabihf\\bits\\c++config.h" 1 3
+# 184 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\arm-linux-gnueabihf\\bits\\c++config.h" 3
+namespace std
+{
+  typedef unsigned int size_t;
+  typedef int ptrdiff_t;
+
+
+
+
+}
+# 244 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\arm-linux-gnueabihf\\bits\\c++config.h" 3
+namespace std
+{
+
+  namespace __cxx1998
+  {
+
+
+
+  }
+
+
+
+  inline namespace __debug { }
+# 268 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\arm-linux-gnueabihf\\bits\\c++config.h" 3
+}
+# 363 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\arm-linux-gnueabihf\\bits\\c++config.h" 3
+namespace std
+{
+
+
+  inline void
+  __replacement_assert(const char* __file, int __line,
+         const char* __function, const char* __condition)
+  {
+    __builtin_printf("%s:%d: %s: Assertion '%s' failed.\n", __file, __line,
+       __function, __condition);
+    __builtin_abort();
+  }
+}
+# 426 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\arm-linux-gnueabihf\\bits\\c++config.h" 3
+# 1 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\arm-linux-gnueabihf\\bits\\os_defines.h" 1 3
+# 39 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\arm-linux-gnueabihf\\bits\\os_defines.h" 3
+# 1 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\features.h" 1 3 4
+# 378 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\features.h" 3 4
+# 1 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\sys\\cdefs.h" 1 3 4
+# 385 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\sys\\cdefs.h" 3 4
+# 1 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\bits\\wordsize.h" 1 3 4
+# 386 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\sys\\cdefs.h" 2 3 4
+# 379 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\features.h" 2 3 4
+# 402 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\features.h" 3 4
+# 1 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\gnu\\stubs.h" 1 3 4
+# 10 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\gnu\\stubs.h" 3 4
+# 1 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\gnu\\stubs-hard.h" 1 3 4
+# 11 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\gnu\\stubs.h" 2 3 4
+# 403 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\features.h" 2 3 4
+# 40 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\arm-linux-gnueabihf\\bits\\os_defines.h" 2 3
+# 427 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\arm-linux-gnueabihf\\bits\\c++config.h" 2 3
+
+
+# 1 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\arm-linux-gnueabihf\\bits\\cpu_defines.h" 1 3
+# 430 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\arm-linux-gnueabihf\\bits\\c++config.h" 2 3
+# 40 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\new" 2 3
+# 1 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\exception" 1 3
+# 33 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\exception" 3
+       
+# 34 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\exception" 3
+
+#pragma GCC visibility push(default)
+
+
+# 1 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\bits\\atomic_lockfree_defines.h" 1 3
+# 33 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\bits\\atomic_lockfree_defines.h" 3
+       
+# 34 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\bits\\atomic_lockfree_defines.h" 3
+# 39 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\exception" 2 3
+
+extern "C++" {
+
+namespace std
+{
+# 60 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\exception" 3
+  class exception
+  {
+  public:
+    exception() throw() { }
+    virtual ~exception() throw();
+
+
+
+    virtual const char* what() const throw();
+  };
+
+
+
+  class bad_exception : public exception
+  {
+  public:
+    bad_exception() throw() { }
+
+
+
+    virtual ~bad_exception() throw();
+
+
+    virtual const char* what() const throw();
+  };
+
+
+  typedef void (*terminate_handler) ();
+
+
+  typedef void (*unexpected_handler) ();
+
+
+  terminate_handler set_terminate(terminate_handler) throw();
+
+
+
+  void terminate() throw() __attribute__ ((__noreturn__));
+
+
+  unexpected_handler set_unexpected(unexpected_handler) throw();
+
+
+
+  void unexpected() __attribute__ ((__noreturn__));
+# 117 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\exception" 3
+  bool uncaught_exception() throw() __attribute__ ((__pure__));
+
+
+}
+
+namespace __gnu_cxx
+{
+
+# 142 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\exception" 3
+  void __verbose_terminate_handler();
+
+
+}
+
+}
+
+#pragma GCC visibility pop
+# 41 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\new" 2 3
+
+#pragma GCC visibility push(default)
+
+extern "C++" {
+
+namespace std
+{
+
+
+
+
+
+
+  class bad_alloc : public exception
+  {
+  public:
+    bad_alloc() throw() { }
+
+
+
+    virtual ~bad_alloc() throw();
+
+
+    virtual const char* what() const throw();
+  };
+
+  struct nothrow_t { };
+
+  extern const nothrow_t nothrow;
+
+
+
+  typedef void (*new_handler)();
+
+
+
+  new_handler set_new_handler(new_handler) throw();
+}
+# 91 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\include\\c++\\4.8.3\\new" 3
+void* operator new(std::size_t) throw(std::bad_alloc)
+  __attribute__((__externally_visible__));
+void* operator new[](std::size_t) throw(std::bad_alloc)
+  __attribute__((__externally_visible__));
+void operator delete(void*) throw()
+  __attribute__((__externally_visible__));
+void operator delete[](void*) throw()
+  __attribute__((__externally_visible__));
+void* operator new(std::size_t, const std::nothrow_t&) throw()
+  __attribute__((__externally_visible__));
+void* operator new[](std::size_t, const std::nothrow_t&) throw()
+  __attribute__((__externally_visible__));
+void operator delete(void*, const std::nothrow_t&) throw()
+  __attribute__((__externally_visible__));
+void operator delete[](void*, const std::nothrow_t&) throw()
+  __attribute__((__externally_visible__));
+
+
+inline void* operator new(std::size_t, void* __p) throw()
+{ return __p; }
+inline void* operator new[](std::size_t, void* __p) throw()
+{ return __p; }
+
+
+inline void operator delete (void*, void*) throw() { }
+inline void operator delete[](void*, void*) throw() { }
+
+}
+
+#pragma GCC visibility pop
+# 3 "../../../libs/squirrel/sqstdlib/sqstdblob.cpp" 2
+# 1 "../../../libs/squirrel/include/squirrel.h" 1
+# 26 "../../../libs/squirrel/include/squirrel.h"
+extern "C" {
+# 53 "../../../libs/squirrel/include/squirrel.h"
+typedef int SQInteger;
+typedef int SQInt32;
+typedef unsigned int SQUnsignedInteger32;
+typedef unsigned int SQUnsignedInteger;
+typedef unsigned int SQHash;
+
+
+
+
+
+
+typedef float SQFloat;
+# 75 "../../../libs/squirrel/include/squirrel.h"
+typedef SQUnsignedInteger SQRawObjectVal;
+# 87 "../../../libs/squirrel/include/squirrel.h"
+typedef void* SQUserPointer;
+typedef SQUnsignedInteger SQBool;
+typedef SQInteger SQRESULT;
+
+
+
+
+struct SQVM;
+struct SQTable;
+struct SQArray;
+struct SQString;
+struct SQClosure;
+struct SQGenerator;
+struct SQNativeClosure;
+struct SQUserData;
+struct SQFunctionProto;
+struct SQRefCounted;
+struct SQClass;
+struct SQInstance;
+struct SQDelegable;
+struct SQOuter;
+# 148 "../../../libs/squirrel/include/squirrel.h"
+typedef char SQChar;
+# 225 "../../../libs/squirrel/include/squirrel.h"
+typedef enum tagSQObjectType{
+ OT_NULL = (0x00000001|0x01000000),
+ OT_INTEGER = (0x00000002|0x04000000|0x01000000),
+ OT_FLOAT = (0x00000004|0x04000000|0x01000000),
+ OT_BOOL = (0x00000008|0x01000000),
+ OT_STRING = (0x00000010|0x08000000),
+ OT_TABLE = (0x00000020|0x08000000|0x02000000),
+ OT_ARRAY = (0x00000040|0x08000000),
+ OT_USERDATA = (0x00000080|0x08000000|0x02000000),
+ OT_CLOSURE = (0x00000100|0x08000000),
+ OT_NATIVECLOSURE = (0x00000200|0x08000000),
+ OT_GENERATOR = (0x00000400|0x08000000),
+ OT_USERPOINTER = 0x00000800,
+ OT_THREAD = (0x00001000|0x08000000) ,
+ OT_FUNCPROTO = (0x00002000|0x08000000),
+ OT_CLASS = (0x00004000|0x08000000),
+ OT_INSTANCE = (0x00008000|0x08000000|0x02000000),
+ OT_WEAKREF = (0x00010000|0x08000000),
+ OT_OUTER = (0x00020000|0x08000000)
+}SQObjectType;
+
+
+
+
+typedef union tagSQObjectValue
+{
+ struct SQTable *pTable;
+ struct SQArray *pArray;
+ struct SQClosure *pClosure;
+ struct SQOuter *pOuter;
+ struct SQGenerator *pGenerator;
+ struct SQNativeClosure *pNativeClosure;
+ struct SQString *pString;
+ struct SQUserData *pUserData;
+ SQInteger nInteger;
+ SQFloat fFloat;
+ SQUserPointer pUserPointer;
+ struct SQFunctionProto *pFunctionProto;
+ struct SQRefCounted *pRefCounted;
+ struct SQDelegable *pDelegable;
+ struct SQVM *pThread;
+ struct SQClass *pClass;
+ struct SQInstance *pInstance;
+ struct SQWeakRef *pWeakRef;
+ SQRawObjectVal raw;
+}SQObjectValue;
+
+
+typedef struct tagSQObject
+{
+ SQObjectType _type;
+ SQObjectValue _unVal;
+}SQObject;
+
+typedef struct tagSQMemberHandle{
+ SQBool _static;
+ SQInteger _index;
+}SQMemberHandle;
+
+typedef struct tagSQStackInfos{
+ const SQChar* funcname;
+ const SQChar* source;
+ SQInteger line;
+}SQStackInfos;
+
+typedef struct SQVM* HSQUIRRELVM;
+typedef SQObject HSQOBJECT;
+typedef SQMemberHandle HSQMEMBERHANDLE;
+typedef SQInteger (*SQFUNCTION)(HSQUIRRELVM);
+typedef SQInteger (*SQRELEASEHOOK)(SQUserPointer,SQInteger size);
+typedef void (*SQCOMPILERERROR)(HSQUIRRELVM,const SQChar * ,const SQChar * ,SQInteger ,SQInteger );
+typedef void (*SQPRINTFUNCTION)(HSQUIRRELVM,const SQChar * ,...);
+typedef void (*SQDEBUGHOOK)(HSQUIRRELVM , SQInteger , const SQChar * , SQInteger , const SQChar * );
+typedef SQInteger (*SQWRITEFUNC)(SQUserPointer,SQUserPointer,SQInteger);
+typedef SQInteger (*SQREADFUNC)(SQUserPointer,SQUserPointer,SQInteger);
+
+typedef SQInteger (*SQLEXREADFUNC)(SQUserPointer);
+
+typedef struct tagSQRegFunction{
+ const SQChar *name;
+ SQFUNCTION f;
+ SQInteger nparamscheck;
+ const SQChar *typemask;
+}SQRegFunction;
+
+typedef struct tagSQFunctionInfo {
+ SQUserPointer funcid;
+ const SQChar *name;
+ const SQChar *source;
+}SQFunctionInfo;
+
+
+extern HSQUIRRELVM sq_open(SQInteger initialstacksize);
+extern HSQUIRRELVM sq_newthread(HSQUIRRELVM friendvm, SQInteger initialstacksize);
+extern void sq_seterrorhandler(HSQUIRRELVM v);
+extern void sq_close(HSQUIRRELVM v);
+extern void sq_setforeignptr(HSQUIRRELVM v,SQUserPointer p);
+extern SQUserPointer sq_getforeignptr(HSQUIRRELVM v);
+extern void sq_setprintfunc(HSQUIRRELVM v, SQPRINTFUNCTION printfunc,SQPRINTFUNCTION errfunc);
+extern SQPRINTFUNCTION sq_getprintfunc(HSQUIRRELVM v);
+extern SQPRINTFUNCTION sq_geterrorfunc(HSQUIRRELVM v);
+extern SQRESULT sq_suspendvm(HSQUIRRELVM v);
+extern SQRESULT sq_wakeupvm(HSQUIRRELVM v,SQBool resumedret,SQBool retval,SQBool raiseerror,SQBool throwerror);
+extern SQInteger sq_getvmstate(HSQUIRRELVM v);
+extern SQInteger sq_getversion();
+
+
+extern SQRESULT sq_compile(HSQUIRRELVM v,SQLEXREADFUNC read,SQUserPointer p,const SQChar *sourcename,SQBool raiseerror);
+extern SQRESULT sq_compilebuffer(HSQUIRRELVM v,const SQChar *s,SQInteger size,const SQChar *sourcename,SQBool raiseerror);
+extern void sq_enabledebuginfo(HSQUIRRELVM v, SQBool enable);
+extern void sq_notifyallexceptions(HSQUIRRELVM v, SQBool enable);
+extern void sq_setcompilererrorhandler(HSQUIRRELVM v,SQCOMPILERERROR f);
+
+
+extern void sq_push(HSQUIRRELVM v,SQInteger idx);
+extern void sq_pop(HSQUIRRELVM v,SQInteger nelemstopop);
+extern void sq_poptop(HSQUIRRELVM v);
+extern void sq_remove(HSQUIRRELVM v,SQInteger idx);
+extern SQInteger sq_gettop(HSQUIRRELVM v);
+extern void sq_settop(HSQUIRRELVM v,SQInteger newtop);
+extern SQRESULT sq_reservestack(HSQUIRRELVM v,SQInteger nsize);
+extern SQInteger sq_cmp(HSQUIRRELVM v);
+extern void sq_move(HSQUIRRELVM dest,HSQUIRRELVM src,SQInteger idx);
+
+
+extern SQUserPointer sq_newuserdata(HSQUIRRELVM v,SQUnsignedInteger size);
+extern void sq_newtable(HSQUIRRELVM v);
+extern void sq_newtableex(HSQUIRRELVM v,SQInteger initialcapacity);
+extern void sq_newarray(HSQUIRRELVM v,SQInteger size);
+extern void sq_newclosure(HSQUIRRELVM v,SQFUNCTION func,SQUnsignedInteger nfreevars);
+extern SQRESULT sq_setparamscheck(HSQUIRRELVM v,SQInteger nparamscheck,const SQChar *typemask);
+extern SQRESULT sq_bindenv(HSQUIRRELVM v,SQInteger idx);
+extern void sq_pushstring(HSQUIRRELVM v,const SQChar *s,SQInteger len);
+extern void sq_pushfloat(HSQUIRRELVM v,SQFloat f);
+extern void sq_pushinteger(HSQUIRRELVM v,SQInteger n);
+extern void sq_pushbool(HSQUIRRELVM v,SQBool b);
+extern void sq_pushuserpointer(HSQUIRRELVM v,SQUserPointer p);
+extern void sq_pushnull(HSQUIRRELVM v);
+extern SQObjectType sq_gettype(HSQUIRRELVM v,SQInteger idx);
+extern SQRESULT sq_typeof(HSQUIRRELVM v,SQInteger idx);
+extern SQInteger sq_getsize(HSQUIRRELVM v,SQInteger idx);
+extern SQHash sq_gethash(HSQUIRRELVM v, SQInteger idx);
+extern SQRESULT sq_getbase(HSQUIRRELVM v,SQInteger idx);
+extern SQBool sq_instanceof(HSQUIRRELVM v);
+extern SQRESULT sq_tostring(HSQUIRRELVM v,SQInteger idx);
+extern void sq_tobool(HSQUIRRELVM v, SQInteger idx, SQBool *b);
+extern SQRESULT sq_getstring(HSQUIRRELVM v,SQInteger idx,const SQChar **c);
+extern SQRESULT sq_getinteger(HSQUIRRELVM v,SQInteger idx,SQInteger *i);
+extern SQRESULT sq_getfloat(HSQUIRRELVM v,SQInteger idx,SQFloat *f);
+extern SQRESULT sq_getbool(HSQUIRRELVM v,SQInteger idx,SQBool *b);
+extern SQRESULT sq_getthread(HSQUIRRELVM v,SQInteger idx,HSQUIRRELVM *thread);
+extern SQRESULT sq_getuserpointer(HSQUIRRELVM v,SQInteger idx,SQUserPointer *p);
+extern SQRESULT sq_getuserdata(HSQUIRRELVM v,SQInteger idx,SQUserPointer *p,SQUserPointer *typetag);
+extern SQRESULT sq_settypetag(HSQUIRRELVM v,SQInteger idx,SQUserPointer typetag);
+extern SQRESULT sq_gettypetag(HSQUIRRELVM v,SQInteger idx,SQUserPointer *typetag);
+extern void sq_setreleasehook(HSQUIRRELVM v,SQInteger idx,SQRELEASEHOOK hook);
+extern SQChar *sq_getscratchpad(HSQUIRRELVM v,SQInteger minsize);
+extern SQRESULT sq_getfunctioninfo(HSQUIRRELVM v,SQInteger level,SQFunctionInfo *fi);
+extern SQRESULT sq_getclosureinfo(HSQUIRRELVM v,SQInteger idx,SQUnsignedInteger *nparams,SQUnsignedInteger *nfreevars);
+extern SQRESULT sq_getclosurename(HSQUIRRELVM v,SQInteger idx);
+extern SQRESULT sq_setnativeclosurename(HSQUIRRELVM v,SQInteger idx,const SQChar *name);
+extern SQRESULT sq_setinstanceup(HSQUIRRELVM v, SQInteger idx, SQUserPointer p);
+extern SQRESULT sq_getinstanceup(HSQUIRRELVM v, SQInteger idx, SQUserPointer *p,SQUserPointer typetag);
+extern SQRESULT sq_setclassudsize(HSQUIRRELVM v, SQInteger idx, SQInteger udsize);
+extern SQRESULT sq_newclass(HSQUIRRELVM v,SQBool hasbase);
+extern SQRESULT sq_createinstance(HSQUIRRELVM v,SQInteger idx);
+extern SQRESULT sq_setattributes(HSQUIRRELVM v,SQInteger idx);
+extern SQRESULT sq_getattributes(HSQUIRRELVM v,SQInteger idx);
+extern SQRESULT sq_getclass(HSQUIRRELVM v,SQInteger idx);
+extern void sq_weakref(HSQUIRRELVM v,SQInteger idx);
+extern SQRESULT sq_getdefaultdelegate(HSQUIRRELVM v,SQObjectType t);
+extern SQRESULT sq_getmemberhandle(HSQUIRRELVM v,SQInteger idx,HSQMEMBERHANDLE *handle);
+extern SQRESULT sq_getbyhandle(HSQUIRRELVM v,SQInteger idx,const HSQMEMBERHANDLE *handle);
+extern SQRESULT sq_setbyhandle(HSQUIRRELVM v,SQInteger idx,const HSQMEMBERHANDLE *handle);
+
+
+extern void sq_pushroottable(HSQUIRRELVM v);
+extern void sq_pushregistrytable(HSQUIRRELVM v);
+extern void sq_pushconsttable(HSQUIRRELVM v);
+extern SQRESULT sq_setroottable(HSQUIRRELVM v);
+extern SQRESULT sq_setconsttable(HSQUIRRELVM v);
+extern SQRESULT sq_newslot(HSQUIRRELVM v, SQInteger idx, SQBool bstatic);
+extern SQRESULT sq_deleteslot(HSQUIRRELVM v,SQInteger idx,SQBool pushval);
+extern SQRESULT sq_set(HSQUIRRELVM v,SQInteger idx);
+extern SQRESULT sq_get(HSQUIRRELVM v,SQInteger idx);
+extern SQRESULT sq_rawget(HSQUIRRELVM v,SQInteger idx);
+extern SQRESULT sq_rawset(HSQUIRRELVM v,SQInteger idx);
+extern SQRESULT sq_rawdeleteslot(HSQUIRRELVM v,SQInteger idx,SQBool pushval);
+extern SQRESULT sq_newmember(HSQUIRRELVM v,SQInteger idx,SQBool bstatic);
+extern SQRESULT sq_rawnewmember(HSQUIRRELVM v,SQInteger idx,SQBool bstatic);
+extern SQRESULT sq_arrayappend(HSQUIRRELVM v,SQInteger idx);
+extern SQRESULT sq_arraypop(HSQUIRRELVM v,SQInteger idx,SQBool pushval);
+extern SQRESULT sq_arrayresize(HSQUIRRELVM v,SQInteger idx,SQInteger newsize);
+extern SQRESULT sq_arrayreverse(HSQUIRRELVM v,SQInteger idx);
+extern SQRESULT sq_arrayremove(HSQUIRRELVM v,SQInteger idx,SQInteger itemidx);
+extern SQRESULT sq_arrayinsert(HSQUIRRELVM v,SQInteger idx,SQInteger destpos);
+extern SQRESULT sq_setdelegate(HSQUIRRELVM v,SQInteger idx);
+extern SQRESULT sq_getdelegate(HSQUIRRELVM v,SQInteger idx);
+extern SQRESULT sq_clone(HSQUIRRELVM v,SQInteger idx);
+extern SQRESULT sq_setfreevariable(HSQUIRRELVM v,SQInteger idx,SQUnsignedInteger nval);
+extern SQRESULT sq_next(HSQUIRRELVM v,SQInteger idx);
+extern SQRESULT sq_getweakrefval(HSQUIRRELVM v,SQInteger idx);
+extern SQRESULT sq_clear(HSQUIRRELVM v,SQInteger idx);
+
+
+extern SQRESULT sq_call(HSQUIRRELVM v,SQInteger params,SQBool retval,SQBool raiseerror);
+extern SQRESULT sq_resume(HSQUIRRELVM v,SQBool retval,SQBool raiseerror);
+extern const SQChar *sq_getlocal(HSQUIRRELVM v,SQUnsignedInteger level,SQUnsignedInteger idx);
+extern SQRESULT sq_getcallee(HSQUIRRELVM v);
+extern const SQChar *sq_getfreevariable(HSQUIRRELVM v,SQInteger idx,SQUnsignedInteger nval);
+extern SQRESULT sq_throwerror(HSQUIRRELVM v,const SQChar *err);
+extern SQRESULT sq_throwobject(HSQUIRRELVM v);
+extern void sq_reseterror(HSQUIRRELVM v);
+extern void sq_getlasterror(HSQUIRRELVM v);
+
+
+extern SQRESULT sq_getstackobj(HSQUIRRELVM v,SQInteger idx,HSQOBJECT *po);
+extern void sq_pushobject(HSQUIRRELVM v,HSQOBJECT obj);
+extern void sq_addref(HSQUIRRELVM v,HSQOBJECT *po);
+extern SQBool sq_release(HSQUIRRELVM v,HSQOBJECT *po);
+extern SQUnsignedInteger sq_getrefcount(HSQUIRRELVM v,HSQOBJECT *po);
+extern void sq_resetobject(HSQOBJECT *po);
+extern const SQChar *sq_objtostring(const HSQOBJECT *o);
+extern SQBool sq_objtobool(const HSQOBJECT *o);
+extern SQInteger sq_objtointeger(const HSQOBJECT *o);
+extern SQFloat sq_objtofloat(const HSQOBJECT *o);
+extern SQUserPointer sq_objtouserpointer(const HSQOBJECT *o);
+extern SQRESULT sq_getobjtypetag(const HSQOBJECT *o,SQUserPointer * typetag);
+
+
+extern SQInteger sq_collectgarbage(HSQUIRRELVM v);
+extern SQRESULT sq_resurrectunreachable(HSQUIRRELVM v);
+
+
+extern SQRESULT sq_writeclosure(HSQUIRRELVM vm,SQWRITEFUNC writef,SQUserPointer up);
+extern SQRESULT sq_readclosure(HSQUIRRELVM vm,SQREADFUNC readf,SQUserPointer up);
+
+
+extern void *sq_malloc(SQUnsignedInteger size);
+extern void *sq_realloc(void* p,SQUnsignedInteger oldsize,SQUnsignedInteger newsize);
+extern void sq_free(void *p,SQUnsignedInteger size);
+
+
+extern SQRESULT sq_stackinfos(HSQUIRRELVM v,SQInteger level,SQStackInfos *si);
+extern void sq_setdebughook(HSQUIRRELVM v);
+extern void sq_setnativedebughook(HSQUIRRELVM v,SQDEBUGHOOK hook);
+# 503 "../../../libs/squirrel/include/squirrel.h"
+}
+# 4 "../../../libs/squirrel/sqstdlib/sqstdblob.cpp" 2
+# 1 "../../../libs/squirrel/include/sqstdio.h" 1
+# 9 "../../../libs/squirrel/include/sqstdio.h"
+struct SQStream {
+ virtual SQInteger Read(void *buffer, SQInteger size) = 0;
+ virtual SQInteger Write(void *buffer, SQInteger size) = 0;
+ virtual SQInteger Flush() = 0;
+ virtual SQInteger Tell() = 0;
+ virtual SQInteger Len() = 0;
+ virtual SQInteger Seek(SQInteger offset, SQInteger origin) = 0;
+ virtual bool IsValid() = 0;
+ virtual bool EOS() = 0;
+};
+
+extern "C" {
+
+
+
+
+
+
+typedef void* SQFILE;
+
+extern SQFILE sqstd_fopen(const SQChar *,const SQChar *);
+extern SQInteger sqstd_fread(SQUserPointer, SQInteger, SQInteger, SQFILE);
+extern SQInteger sqstd_fwrite(const SQUserPointer, SQInteger, SQInteger, SQFILE);
+extern SQInteger sqstd_fseek(SQFILE , SQInteger , SQInteger);
+extern SQInteger sqstd_ftell(SQFILE);
+extern SQInteger sqstd_fflush(SQFILE);
+extern SQInteger sqstd_fclose(SQFILE);
+extern SQInteger sqstd_feof(SQFILE);
+
+extern SQRESULT sqstd_createfile(HSQUIRRELVM v, SQFILE file,SQBool own);
+extern SQRESULT sqstd_getfile(HSQUIRRELVM v, SQInteger idx, SQFILE *file);
+
+
+extern SQRESULT sqstd_loadfile(HSQUIRRELVM v,const SQChar *filename,SQBool printerror);
+extern SQRESULT sqstd_dofile(HSQUIRRELVM v,const SQChar *filename,SQBool retval,SQBool printerror);
+extern SQRESULT sqstd_writeclosuretofile(HSQUIRRELVM v,const SQChar *filename);
+
+extern SQRESULT sqstd_register_iolib(HSQUIRRELVM v);
+
+
+}
+# 5 "../../../libs/squirrel/sqstdlib/sqstdblob.cpp" 2
+# 1 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\string.h" 1 3 4
+# 27 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\string.h" 3 4
+extern "C" {
+
+
+
+
+# 1 "d:\\devtools\\linaro\\lib\\gcc\\arm-linux-gnueabihf\\4.8.3\\include\\stddef.h" 1 3 4
+# 212 "d:\\devtools\\linaro\\lib\\gcc\\arm-linux-gnueabihf\\4.8.3\\include\\stddef.h" 3 4
+typedef unsigned int size_t;
+# 33 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\string.h" 2 3 4
+# 44 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\string.h" 3 4
+
+
+extern void *memcpy (void *__restrict __dest, const void *__restrict __src,
+       size_t __n) throw () __attribute__ ((__nonnull__ (1, 2)));
+
+
+extern void *memmove (void *__dest, const void *__src, size_t __n)
+     throw () __attribute__ ((__nonnull__ (1, 2)));
+
+
+
+
+
+
+extern void *memccpy (void *__restrict __dest, const void *__restrict __src,
+        int __c, size_t __n)
+     throw () __attribute__ ((__nonnull__ (1, 2)));
+
+
+
+
+
+extern void *memset (void *__s, int __c, size_t __n) throw () __attribute__ ((__nonnull__ (1)));
+
+
+extern int memcmp (const void *__s1, const void *__s2, size_t __n)
+     throw () __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
+
+
+
+extern "C++"
+{
+extern void *memchr (void *__s, int __c, size_t __n)
+      throw () __asm ("memchr") __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
+extern const void *memchr (const void *__s, int __c, size_t __n)
+      throw () __asm ("memchr") __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
+# 94 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\string.h" 3 4
+}
+
+
+
+
+
+
+
+
+
+
+extern "C++" void *rawmemchr (void *__s, int __c)
+     throw () __asm ("rawmemchr") __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
+extern "C++" const void *rawmemchr (const void *__s, int __c)
+     throw () __asm ("rawmemchr") __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
+
+
+
+
+
+
+
+extern "C++" void *memrchr (void *__s, int __c, size_t __n)
+      throw () __asm ("memrchr") __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
+extern "C++" const void *memrchr (const void *__s, int __c, size_t __n)
+      throw () __asm ("memrchr") __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
+
+
+
+
+
+
+
+
+
+extern char *strcpy (char *__restrict __dest, const char *__restrict __src)
+     throw () __attribute__ ((__nonnull__ (1, 2)));
+
+extern char *strncpy (char *__restrict __dest,
+        const char *__restrict __src, size_t __n)
+     throw () __attribute__ ((__nonnull__ (1, 2)));
+
+
+extern char *strcat (char *__restrict __dest, const char *__restrict __src)
+     throw () __attribute__ ((__nonnull__ (1, 2)));
+
+extern char *strncat (char *__restrict __dest, const char *__restrict __src,
+        size_t __n) throw () __attribute__ ((__nonnull__ (1, 2)));
+
+
+extern int strcmp (const char *__s1, const char *__s2)
+     throw () __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
+
+extern int strncmp (const char *__s1, const char *__s2, size_t __n)
+     throw () __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
+
+
+extern int strcoll (const char *__s1, const char *__s2)
+     throw () __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
+
+extern size_t strxfrm (char *__restrict __dest,
+         const char *__restrict __src, size_t __n)
+     throw () __attribute__ ((__nonnull__ (2)));
+
+
+
+
+
+
+# 1 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\xlocale.h" 1 3 4
+# 27 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\xlocale.h" 3 4
+typedef struct __locale_struct
+{
+
+  struct __locale_data *__locales[13];
+
+
+  const unsigned short int *__ctype_b;
+  const int *__ctype_tolower;
+  const int *__ctype_toupper;
+
+
+  const char *__names[13];
+} *__locale_t;
+
+
+typedef __locale_t locale_t;
+# 164 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\string.h" 2 3 4
+
+
+extern int strcoll_l (const char *__s1, const char *__s2, __locale_t __l)
+     throw () __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2, 3)));
+
+extern size_t strxfrm_l (char *__dest, const char *__src, size_t __n,
+    __locale_t __l) throw () __attribute__ ((__nonnull__ (2, 4)));
+
+
+
+
+
+extern char *strdup (const char *__s)
+     throw () __attribute__ ((__malloc__)) __attribute__ ((__nonnull__ (1)));
+
+
+
+
+
+
+extern char *strndup (const char *__string, size_t __n)
+     throw () __attribute__ ((__malloc__)) __attribute__ ((__nonnull__ (1)));
+# 211 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\string.h" 3 4
+
+
+
+extern "C++"
+{
+extern char *strchr (char *__s, int __c)
+     throw () __asm ("strchr") __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
+extern const char *strchr (const char *__s, int __c)
+     throw () __asm ("strchr") __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
+# 234 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\string.h" 3 4
+}
+
+
+
+
+
+
+extern "C++"
+{
+extern char *strrchr (char *__s, int __c)
+     throw () __asm ("strrchr") __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
+extern const char *strrchr (const char *__s, int __c)
+     throw () __asm ("strrchr") __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
+# 261 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\string.h" 3 4
+}
+
+
+
+
+
+
+
+
+
+
+extern "C++" char *strchrnul (char *__s, int __c)
+     throw () __asm ("strchrnul") __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
+extern "C++" const char *strchrnul (const char *__s, int __c)
+     throw () __asm ("strchrnul") __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
+
+
+
+
+
+
+
+
+
+extern size_t strcspn (const char *__s, const char *__reject)
+     throw () __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
+
+
+extern size_t strspn (const char *__s, const char *__accept)
+     throw () __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
+
+
+extern "C++"
+{
+extern char *strpbrk (char *__s, const char *__accept)
+     throw () __asm ("strpbrk") __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
+extern const char *strpbrk (const char *__s, const char *__accept)
+     throw () __asm ("strpbrk") __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
+# 313 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\string.h" 3 4
+}
+
+
+
+
+
+
+extern "C++"
+{
+extern char *strstr (char *__haystack, const char *__needle)
+     throw () __asm ("strstr") __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
+extern const char *strstr (const char *__haystack, const char *__needle)
+     throw () __asm ("strstr") __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
+# 340 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\string.h" 3 4
+}
+
+
+
+
+
+
+
+extern char *strtok (char *__restrict __s, const char *__restrict __delim)
+     throw () __attribute__ ((__nonnull__ (2)));
+
+
+
+
+extern char *__strtok_r (char *__restrict __s,
+    const char *__restrict __delim,
+    char **__restrict __save_ptr)
+     throw () __attribute__ ((__nonnull__ (2, 3)));
+
+extern char *strtok_r (char *__restrict __s, const char *__restrict __delim,
+         char **__restrict __save_ptr)
+     throw () __attribute__ ((__nonnull__ (2, 3)));
+
+
+
+
+
+extern "C++" char *strcasestr (char *__haystack, const char *__needle)
+     throw () __asm ("strcasestr") __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
+extern "C++" const char *strcasestr (const char *__haystack,
+         const char *__needle)
+     throw () __asm ("strcasestr") __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
+# 382 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\string.h" 3 4
+extern void *memmem (const void *__haystack, size_t __haystacklen,
+       const void *__needle, size_t __needlelen)
+     throw () __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 3)));
+
+
+
+extern void *__mempcpy (void *__restrict __dest,
+   const void *__restrict __src, size_t __n)
+     throw () __attribute__ ((__nonnull__ (1, 2)));
+extern void *mempcpy (void *__restrict __dest,
+        const void *__restrict __src, size_t __n)
+     throw () __attribute__ ((__nonnull__ (1, 2)));
+
+
+
+
+
+extern size_t strlen (const char *__s)
+     throw () __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
+
+
+
+
+
+extern size_t strnlen (const char *__string, size_t __maxlen)
+     throw () __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
+
+
+
+
+
+extern char *strerror (int __errnum) throw ();
+
+# 438 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\string.h" 3 4
+extern char *strerror_r (int __errnum, char *__buf, size_t __buflen)
+     throw () __attribute__ ((__nonnull__ (2))) ;
+
+
+
+
+
+extern char *strerror_l (int __errnum, __locale_t __l) throw ();
+
+
+
+
+
+extern void __bzero (void *__s, size_t __n) throw () __attribute__ ((__nonnull__ (1)));
+
+
+
+extern void bcopy (const void *__src, void *__dest, size_t __n)
+     throw () __attribute__ ((__nonnull__ (1, 2)));
+
+
+extern void bzero (void *__s, size_t __n) throw () __attribute__ ((__nonnull__ (1)));
+
+
+extern int bcmp (const void *__s1, const void *__s2, size_t __n)
+     throw () __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
+
+
+
+extern "C++"
+{
+extern char *index (char *__s, int __c)
+     throw () __asm ("index") __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
+extern const char *index (const char *__s, int __c)
+     throw () __asm ("index") __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
+# 487 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\string.h" 3 4
+}
+
+
+
+
+
+
+
+extern "C++"
+{
+extern char *rindex (char *__s, int __c)
+     throw () __asm ("rindex") __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
+extern const char *rindex (const char *__s, int __c)
+     throw () __asm ("rindex") __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
+# 515 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\string.h" 3 4
+}
+
+
+
+
+
+
+
+extern int ffs (int __i) throw () __attribute__ ((__const__));
+
+
+
+
+extern int ffsl (long int __l) throw () __attribute__ ((__const__));
+__extension__ extern int ffsll (long long int __ll)
+     throw () __attribute__ ((__const__));
+
+
+
+extern int strcasecmp (const char *__s1, const char *__s2)
+     throw () __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
+
+
+extern int strncasecmp (const char *__s1, const char *__s2, size_t __n)
+     throw () __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
+
+
+
+
+
+extern int strcasecmp_l (const char *__s1, const char *__s2,
+    __locale_t __loc)
+     throw () __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2, 3)));
+
+extern int strncasecmp_l (const char *__s1, const char *__s2,
+     size_t __n, __locale_t __loc)
+     throw () __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2, 4)));
+
+
+
+
+
+extern char *strsep (char **__restrict __stringp,
+       const char *__restrict __delim)
+     throw () __attribute__ ((__nonnull__ (1, 2)));
+
+
+
+
+extern char *strsignal (int __sig) throw ();
+
+
+extern char *__stpcpy (char *__restrict __dest, const char *__restrict __src)
+     throw () __attribute__ ((__nonnull__ (1, 2)));
+extern char *stpcpy (char *__restrict __dest, const char *__restrict __src)
+     throw () __attribute__ ((__nonnull__ (1, 2)));
+
+
+
+extern char *__stpncpy (char *__restrict __dest,
+   const char *__restrict __src, size_t __n)
+     throw () __attribute__ ((__nonnull__ (1, 2)));
+extern char *stpncpy (char *__restrict __dest,
+        const char *__restrict __src, size_t __n)
+     throw () __attribute__ ((__nonnull__ (1, 2)));
+
+
+
+
+extern int strverscmp (const char *__s1, const char *__s2)
+     throw () __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
+
+
+extern char *strfry (char *__string) throw () __attribute__ ((__nonnull__ (1)));
+
+
+extern void *memfrob (void *__s, size_t __n) throw () __attribute__ ((__nonnull__ (1)));
+
+
+
+
+
+
+
+extern "C++" char *basename (char *__filename)
+     throw () __asm ("basename") __attribute__ ((__nonnull__ (1)));
+extern "C++" const char *basename (const char *__filename)
+     throw () __asm ("basename") __attribute__ ((__nonnull__ (1)));
+# 644 "d:\\devtools\\linaro\\arm-linux-gnueabihf\\libc\\usr\\include\\string.h" 3 4
+}
+# 6 "../../../libs/squirrel/sqstdlib/sqstdblob.cpp" 2
+# 1 "../../../libs/squirrel/include/sqstdblob.h" 1
+
+
+
+
+
+extern "C" {
+
+
+extern SQUserPointer sqstd_createblob(HSQUIRRELVM v, SQInteger size);
+extern SQRESULT sqstd_getblob(HSQUIRRELVM v,SQInteger idx,SQUserPointer *ptr);
+extern SQInteger sqstd_getblobsize(HSQUIRRELVM v,SQInteger idx);
+
+extern SQRESULT sqstd_register_bloblib(HSQUIRRELVM v);
+
+
+}
+# 7 "../../../libs/squirrel/sqstdlib/sqstdblob.cpp" 2
+# 1 "../../../libs/squirrel/sqstdlib/sqstdstream.h" 1
+
+
+
+
+SQInteger _stream_readblob(HSQUIRRELVM v);
+SQInteger _stream_readline(HSQUIRRELVM v);
+SQInteger _stream_readn(HSQUIRRELVM v);
+SQInteger _stream_writeblob(HSQUIRRELVM v);
+SQInteger _stream_writen(HSQUIRRELVM v);
+SQInteger _stream_seek(HSQUIRRELVM v);
+SQInteger _stream_tell(HSQUIRRELVM v);
+SQInteger _stream_len(HSQUIRRELVM v);
+SQInteger _stream_eos(HSQUIRRELVM v);
+SQInteger _stream_flush(HSQUIRRELVM v);
+
+
+SQRESULT declare_stream(HSQUIRRELVM v,const SQChar* name,SQUserPointer typetag,const SQChar* reg_name,SQRegFunction *methods,SQRegFunction *globals);
+# 8 "../../../libs/squirrel/sqstdlib/sqstdblob.cpp" 2
+# 1 "../../../libs/squirrel/sqstdlib/sqstdblobimpl.h" 1
+
+
+
+
+struct SQBlob : public SQStream
+{
+ SQBlob(SQInteger size) {
+  _size = size;
+  _allocated = size;
+  _buf = (unsigned char *)sq_malloc(size);
+  memset(_buf, 0, _size);
+  _ptr = 0;
+  _owns = true;
+ }
+ virtual ~SQBlob() {
+  sq_free(_buf, _allocated);
+ }
+ SQInteger Write(void *buffer, SQInteger size) {
+  if(!CanAdvance(size)) {
+   GrowBufOf(_ptr + size - _size);
+  }
+  memcpy(&_buf[_ptr], buffer, size);
+  _ptr += size;
+  return size;
+ }
+ SQInteger Read(void *buffer,SQInteger size) {
+  SQInteger n = size;
+  if(!CanAdvance(size)) {
+   if((_size - _ptr) > 0)
+    n = _size - _ptr;
+   else return 0;
+  }
+  memcpy(buffer, &_buf[_ptr], n);
+  _ptr += n;
+  return n;
+ }
+ bool Resize(SQInteger n) {
+  if(!_owns) return false;
+  if(n != _allocated) {
+   unsigned char *newbuf = (unsigned char *)sq_malloc(n);
+   memset(newbuf,0,n);
+   if(_size > n)
+    memcpy(newbuf,_buf,n);
+   else
+    memcpy(newbuf,_buf,_size);
+   sq_free(_buf,_allocated);
+   _buf=newbuf;
+   _allocated = n;
+   if(_size > _allocated)
+    _size = _allocated;
+   if(_ptr > _allocated)
+    _ptr = _allocated;
+  }
+  return true;
+ }
+ bool GrowBufOf(SQInteger n)
+ {
+  bool ret = true;
+  if(_size + n > _allocated) {
+   if(_size + n > _size * 2)
+    ret = Resize(_size + n);
+   else
+    ret = Resize(_size * 2);
+  }
+  _size = _size + n;
+  return ret;
+ }
+ bool CanAdvance(SQInteger n) {
+  if(_ptr+n>_size)return false;
+  return true;
+ }
+ SQInteger Seek(SQInteger offset, SQInteger origin) {
+  switch(origin) {
+   case 2:
+    if(offset > _size || offset < 0) return -1;
+    _ptr = offset;
+    break;
+   case 0:
+    if(_ptr + offset > _size || _ptr + offset < 0) return -1;
+    _ptr += offset;
+    break;
+   case 1:
+    if(_size + offset > _size || _size + offset < 0) return -1;
+    _ptr = _size + offset;
+    break;
+   default: return -1;
+  }
+  return 0;
+ }
+ bool IsValid() {
+  return _buf?true:false;
+ }
+ bool EOS() {
+  return _ptr == _size;
+ }
+ SQInteger Flush() { return 0; }
+ SQInteger Tell() { return _ptr; }
+ SQInteger Len() { return _size; }
+ SQUserPointer GetBuf(){ return _buf; }
+private:
+ SQInteger _size;
+ SQInteger _allocated;
+ SQInteger _ptr;
+ unsigned char *_buf;
+ bool _owns;
+};
+# 9 "../../../libs/squirrel/sqstdlib/sqstdblob.cpp" 2
+# 23 "../../../libs/squirrel/sqstdlib/sqstdblob.cpp"
+static SQInteger _blob_resize(HSQUIRRELVM v)
+{
+ SQBlob *self = __null; { if((sq_getinstanceup(v,1,(SQUserPointer*)&self,(SQUserPointer)(0x80000000 | 0x00000002))<0)) return sq_throwerror(v,"invalid type tag"); } if(!self || !self->IsValid()) return sq_throwerror(v,"the blob is invalid");;
+ SQInteger size;
+ sq_getinteger(v,2,&size);
+ if(!self->Resize(size))
+  return sq_throwerror(v,"resize failed");
+ return 0;
+}
+
+static void __swap_dword(unsigned int *n)
+{
+ *n=(unsigned int)(((*n&0xFF000000)>>24) |
+   ((*n&0x00FF0000)>>8) |
+   ((*n&0x0000FF00)<<8) |
+   ((*n&0x000000FF)<<24));
+}
+
+static void __swap_word(unsigned short *n)
+{
+ *n=(unsigned short)((*n>>8)&0x00FF)| ((*n<<8)&0xFF00);
+}
+
+static SQInteger _blob_swap4(HSQUIRRELVM v)
+{
+ SQBlob *self = __null; { if((sq_getinstanceup(v,1,(SQUserPointer*)&self,(SQUserPointer)(0x80000000 | 0x00000002))<0)) return sq_throwerror(v,"invalid type tag"); } if(!self || !self->IsValid()) return sq_throwerror(v,"the blob is invalid");;
+ SQInteger num=(self->Len()-(self->Len()%4))>>2;
+ unsigned int *t=(unsigned int *)self->GetBuf();
+ for(SQInteger i = 0; i < num; i++) {
+  __swap_dword(&t[i]);
+ }
+ return 0;
+}
+
+static SQInteger _blob_swap2(HSQUIRRELVM v)
+{
+ SQBlob *self = __null; { if((sq_getinstanceup(v,1,(SQUserPointer*)&self,(SQUserPointer)(0x80000000 | 0x00000002))<0)) return sq_throwerror(v,"invalid type tag"); } if(!self || !self->IsValid()) return sq_throwerror(v,"the blob is invalid");;
+ SQInteger num=(self->Len()-(self->Len()%2))>>1;
+ unsigned short *t = (unsigned short *)self->GetBuf();
+ for(SQInteger i = 0; i < num; i++) {
+  __swap_word(&t[i]);
+ }
+ return 0;
+}
+
+static SQInteger _blob__set(HSQUIRRELVM v)
+{
+ SQBlob *self = __null; { if((sq_getinstanceup(v,1,(SQUserPointer*)&self,(SQUserPointer)(0x80000000 | 0x00000002))<0)) return sq_throwerror(v,"invalid type tag"); } if(!self || !self->IsValid()) return sq_throwerror(v,"the blob is invalid");;
+ SQInteger idx,val;
+ sq_getinteger(v,2,&idx);
+ sq_getinteger(v,3,&val);
+ if(idx < 0 || idx >= self->Len())
+  return sq_throwerror(v,"index out of range");
+ ((unsigned char *)self->GetBuf())[idx] = (unsigned char) val;
+ sq_push(v,3);
+ return 1;
+}
+
+static SQInteger _blob__get(HSQUIRRELVM v)
+{
+ SQBlob *self = __null; { if((sq_getinstanceup(v,1,(SQUserPointer*)&self,(SQUserPointer)(0x80000000 | 0x00000002))<0)) return sq_throwerror(v,"invalid type tag"); } if(!self || !self->IsValid()) return sq_throwerror(v,"the blob is invalid");;
+ SQInteger idx;
+ sq_getinteger(v,2,&idx);
+ if(idx < 0 || idx >= self->Len())
+  return sq_throwerror(v,"index out of range");
+ sq_pushinteger(v,((unsigned char *)self->GetBuf())[idx]);
+ return 1;
+}
+
+static SQInteger _blob__nexti(HSQUIRRELVM v)
+{
+ SQBlob *self = __null; { if((sq_getinstanceup(v,1,(SQUserPointer*)&self,(SQUserPointer)(0x80000000 | 0x00000002))<0)) return sq_throwerror(v,"invalid type tag"); } if(!self || !self->IsValid()) return sq_throwerror(v,"the blob is invalid");;
+ if(sq_gettype(v,2) == OT_NULL) {
+  sq_pushinteger(v, 0);
+  return 1;
+ }
+ SQInteger idx;
+ if((sq_getinteger(v, 2, &idx)>=0)) {
+  if(idx+1 < self->Len()) {
+   sq_pushinteger(v, idx+1);
+   return 1;
+  }
+  sq_pushnull(v);
+  return 1;
+ }
+ return sq_throwerror(v,"internal error (_nexti) wrong argument type");
+}
+
+static SQInteger _blob__typeof(HSQUIRRELVM v)
+{
+ sq_pushstring(v,"blob",-1);
+ return 1;
+}
+
+static SQInteger _blob_releasehook(SQUserPointer p, SQInteger size)
+{
+ SQBlob *self = (SQBlob*)p;
+ self->~SQBlob();
+ sq_free(self,sizeof(SQBlob));
+ return 1;
+}
+
+static SQInteger _blob_constructor(HSQUIRRELVM v)
+{
+ SQInteger nparam = sq_gettop(v);
+ SQInteger size = 0;
+ if(nparam == 2) {
+  sq_getinteger(v, 2, &size);
+ }
+ if(size < 0) return sq_throwerror(v, "cannot create blob with negative size");
+
+
+ SQBlob *b = new (sq_malloc(sizeof(SQBlob)))SQBlob(size);
+ if((sq_setinstanceup(v,1,b)<0)) {
+  b->~SQBlob();
+  sq_free(b,sizeof(SQBlob));
+  return sq_throwerror(v, "cannot create blob");
+ }
+ sq_setreleasehook(v,1,_blob_releasehook);
+ return 0;
+}
+
+static SQInteger _blob__cloned(HSQUIRRELVM v)
+{
+ SQBlob *other = __null;
+ {
+  if((sq_getinstanceup(v,2,(SQUserPointer*)&other,(SQUserPointer)(0x80000000 | 0x00000002))<0))
+   return (-1);
+ }
+
+ SQBlob *thisone = new (sq_malloc(sizeof(SQBlob)))SQBlob(other->Len());
+ memcpy(thisone->GetBuf(),other->GetBuf(),thisone->Len());
+ if((sq_setinstanceup(v,1,thisone)<0)) {
+  thisone->~SQBlob();
+  sq_free(thisone,sizeof(SQBlob));
+  return sq_throwerror(v, "cannot clone blob");
+ }
+ sq_setreleasehook(v,1,_blob_releasehook);
+ return 0;
+}
+
+
+static SQRegFunction _blob_methods[] = {
+ {"constructor",_blob_constructor,-1,"xn"},
+ {"resize",_blob_resize,2,"xn"},
+ {"swap2",_blob_swap2,1,"x"},
+ {"swap4",_blob_swap4,1,"x"},
+ {"_set",_blob__set,3,"xnn"},
+ {"_get",_blob__get,2,"xn"},
+ {"_typeof",_blob__typeof,1,"x"},
+ {"_nexti",_blob__nexti,2,"x"},
+ {"_cloned",_blob__cloned,2,"xx"},
+ {0,0,0,0}
+};
+
+
+
+
+
+static SQInteger _g_blob_casti2f(HSQUIRRELVM v)
+{
+ SQInteger i;
+ sq_getinteger(v,2,&i);
+ sq_pushfloat(v,*((SQFloat *)&i));
+ return 1;
+}
+
+static SQInteger _g_blob_castf2i(HSQUIRRELVM v)
+{
+ SQFloat f;
+ sq_getfloat(v,2,&f);
+ sq_pushinteger(v,*((SQInteger *)&f));
+ return 1;
+}
+
+static SQInteger _g_blob_swap2(HSQUIRRELVM v)
+{
+ SQInteger i;
+ sq_getinteger(v,2,&i);
+ short s=(short)i;
+ sq_pushinteger(v,(s<<8)|((s>>8)&0x00FF));
+ return 1;
+}
+
+static SQInteger _g_blob_swap4(HSQUIRRELVM v)
+{
+ SQInteger i;
+ sq_getinteger(v,2,&i);
+ unsigned int t4 = (unsigned int)i;
+ __swap_dword(&t4);
+ sq_pushinteger(v,(SQInteger)t4);
+ return 1;
+}
+
+static SQInteger _g_blob_swapfloat(HSQUIRRELVM v)
+{
+ SQFloat f;
+ sq_getfloat(v,2,&f);
+ __swap_dword((unsigned int *)&f);
+ sq_pushfloat(v,f);
+ return 1;
+}
+
+
+static SQRegFunction bloblib_funcs[]={
+ {"casti2f",_g_blob_casti2f,2,".n"},
+ {"castf2i",_g_blob_castf2i,2,".n"},
+ {"swap2",_g_blob_swap2,2,".n"},
+ {"swap4",_g_blob_swap4,2,".n"},
+ {"swapfloat",_g_blob_swapfloat,2,".n"},
+ {0,0}
+};
+
+SQRESULT sqstd_getblob(HSQUIRRELVM v,SQInteger idx,SQUserPointer *ptr)
+{
+ SQBlob *blob;
+ if((sq_getinstanceup(v,idx,(SQUserPointer *)&blob,(SQUserPointer)(0x80000000 | 0x00000002))<0))
+  return -1;
+ *ptr = blob->GetBuf();
+ return (0);
+}
+
+SQInteger sqstd_getblobsize(HSQUIRRELVM v,SQInteger idx)
+{
+ SQBlob *blob;
+ if((sq_getinstanceup(v,idx,(SQUserPointer *)&blob,(SQUserPointer)(0x80000000 | 0x00000002))<0))
+  return -1;
+ return blob->Len();
+}
+
+SQUserPointer sqstd_createblob(HSQUIRRELVM v, SQInteger size)
+{
+ SQInteger top = sq_gettop(v);
+ sq_pushregistrytable(v);
+ sq_pushstring(v,"std_blob",-1);
+ if((sq_get(v,-2)>=0)) {
+  sq_remove(v,-2);
+  sq_push(v,1);
+  sq_pushinteger(v,size);
+  SQBlob *blob = __null;
+  if((sq_call(v,2,(1),(0))>=0)
+   && (sq_getinstanceup(v,-1,(SQUserPointer *)&blob,(SQUserPointer)(0x80000000 | 0x00000002))>=0)) {
+   sq_remove(v,-2);
+   return blob->GetBuf();
+  }
+ }
+ sq_settop(v,top);
+ return __null;
+}
+
+SQRESULT sqstd_register_bloblib(HSQUIRRELVM v)
+{
+ return declare_stream(v,"blob",(SQUserPointer)(0x80000000 | 0x00000002),"std_blob",_blob_methods,bloblib_funcs);
+}

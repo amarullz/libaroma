@@ -111,6 +111,13 @@ byte libaroma_ctl_bar_set_title(LIBAROMA_CONTROLP ctl,
   char * title, byte update_now);
 
 /*
+ * Function    : libaroma_ctl_bar_get_title
+ * Return Value: char *
+ * Descriptions: get title
+ */
+char * libaroma_ctl_bar_get_title(LIBAROMA_CONTROLP ctl);
+
+/*
  * Function    : libaroma_ctl_bar_set_subtitle
  * Return Value: byte
  * Descriptions: set subtitle

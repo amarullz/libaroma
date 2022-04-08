@@ -75,7 +75,7 @@ static inline void libaroma_color_24to16(
       g = _mm_slli_epi16(_mm_srli_epi16(g,2),5);
       b = _mm_srli_epi16(b,3);
       r = _mm_or_si128(_mm_or_si128(r,g),b);
-      _mm_store_si128((__m128i*) (dst+i), r);
+      /*_mm_store_si128*/ _mm_storeu_si128((__m128i*) (dst+i), r);
     }
   }
   if (left>0){

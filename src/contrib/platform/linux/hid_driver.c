@@ -46,7 +46,7 @@
  */
 #define LINUXHIDRV_DEVPATH "/dev/input"
 #define LINUXHIDRV_BOARD_VKEY_PATH "/sys/board_properties/virtualkeys."
-#define LINUXHIDRV_MAXDEV 0xf
+#define LINUXHIDRV_MAXDEV 64
 #define LINUXHIDRV_SIZEOF_BIT_ARRAY(bits) ((bits + 7) / 8)
 #define LINUXHIDRV_TEST_BIT(bit, array) (array[bit/8] & (1<<(bit%8)))
 
@@ -57,7 +57,8 @@ enum {
   LINUXHIDRV_DEVCLASS_KEYBOARD    = 0x01,
   LINUXHIDRV_DEVCLASS_TOUCH       = 0x02,
   LINUXHIDRV_DEVCLASS_MULTITOUCH  = 0x04,
-  LINUXHIDRV_DEVCLASS_POINTER     = 0x08
+  LINUXHIDRV_DEVCLASS_POINTER     = 0x08,
+  LINUXHIDRV_DEVCLASS_MOUSE_EMULATION	= 0x80
 };
 
 /*
@@ -152,6 +153,21 @@ byte LINUXHIDRV_init_device(
  */
 byte LINUXHIDRV_blacklist(
     char * name) {
+  
+  /* BLACKLIST DEVICES */
+  if (strcmp(name,"Video Bus")==0){
+    return 1;
+  }
+  else if (strcmp(name,"Power Button")==0){
+    return 1;
+  }
+  else if (strcmp(name,"PC Speaker")==0){
+    return 1;
+  }
+  else if (strstr(name, "Barcode") != NULL) {
+    return 1;
+  }
+  
   /* no blacklisted */
   return 0;
 }
@@ -161,11 +177,12 @@ byte LINUXHIDRV_blacklist(
  */
 void LINUXHIDRV_dumpdev(
     LINUXHIDRV_DEVICEP dev) {
+
   /* print logs */
   ALOGI("INDR Input Device: %s (%s) - Class : %x",
     dev->name, dev->file, dev->devclass
   );
-  ALOGV("  VKN : %d, CALIB : (%d,%d,%d,%d)", dev->vkn,
+  ALOGI("  VKN : %d, CALIB : (%d,%d,%d,%d)", dev->vkn,
     dev->p.xi.minimum,
     dev->p.xi.maximum,
     dev->p.yi.minimum,
@@ -351,14 +368,14 @@ byte LINUXHIDRV_getdevclass(
                  LINUXHIDRV_SIZEOF_BIT_ARRAY(KEY_MAX + 1));
   
   /* check gamepad */
-  byte haveGamepadButtons =
+  byte haveGamepadButtons = 
     LINUXHIDRV_nonzero(keyBitmask,
                  LINUXHIDRV_SIZEOF_BIT_ARRAY(BTN_MISC),
                  LINUXHIDRV_SIZEOF_BIT_ARRAY(BTN_MOUSE)) ||
     LINUXHIDRV_nonzero(keyBitmask,
                  LINUXHIDRV_SIZEOF_BIT_ARRAY(BTN_JOYSTICK),
                  LINUXHIDRV_SIZEOF_BIT_ARRAY(BTN_DIGI));
-                 
+
   if (haveKeyboardKeys) {
     ret |= LINUXHIDRV_DEVCLASS_KEYBOARD;
   }
@@ -376,8 +393,14 @@ byte LINUXHIDRV_getdevclass(
   else if (LINUXHIDRV_TEST_BIT(BTN_TOUCH, keyBitmask) &&
            LINUXHIDRV_TEST_BIT(ABS_X, absBitmask) &&
            LINUXHIDRV_TEST_BIT(ABS_Y, absBitmask)) {
-    /* single touch */
+	/* single touch */
     ret |= LINUXHIDRV_DEVCLASS_TOUCH;
+  }
+  else if (LINUXHIDRV_TEST_BIT(BTN_LEFT, keyBitmask) &&
+           LINUXHIDRV_TEST_BIT(ABS_X, absBitmask) &&
+           LINUXHIDRV_TEST_BIT(ABS_Y, absBitmask)) {
+	/* single touch - mouse emulation */
+    ret |= LINUXHIDRV_DEVCLASS_TOUCH|LINUXHIDRV_DEVCLASS_MOUSE_EMULATION;
   }
   
   /* mouse or gamepad */
@@ -410,11 +433,19 @@ byte LINUXHIDRV_init_device(
   
   /* blacklisted devices */
   if (LINUXHIDRV_blacklist(dev->name)) {
+    ALOGI("INDR BLACKLIST: %s", dev->name);
     return 0;
   }
   
   /* get device class */
   dev->devclass = LINUXHIDRV_getdevclass(fd);
+  
+  /* Touch Whitelist */
+  /*
+  if (stricmp(dev->name,"Touchscreen")==0){
+    return 1;
+  }
+  */
   
   /* if class is none, ignore it */
   if (!dev->devclass) {
@@ -515,7 +546,14 @@ byte LINUXHIDRV_init_device(
  */
 byte LINUXHIDRV_translate(LIBAROMA_HIDP me, LINUXHIDRV_DEVICEP dev,
                     LIBAROMA_HID_EVENTP dest_ev, struct input_event * ev) {
-  if (dev->devclass & LINUXHIDRV_DEVCLASS_TOUCH) {
+  
+  
+  
+  if (dev->devclass & LINUXHIDRV_DEVCLASS_MOUSE_EMULATION) {
+    /* it's touch device mouse emulation - input_translate/translate_touch.c */
+    return LINUXHIDRV_translate_mousetouch_emulation(me, dev, dest_ev, ev);
+  }
+  else if (dev->devclass & LINUXHIDRV_DEVCLASS_TOUCH) {
     /* it's touch device - input_translate/translate_touch.c */
     return LINUXHIDRV_translate_touch(me, dev, dest_ev, ev);
   }

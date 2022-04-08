@@ -187,11 +187,26 @@ void qnxhid_release(LIBAROMA_HIDP me) {
   }
 }
 
+
+long qnxhid_keyboard_timeout=10;
+int qnxhid_last_rawkey=-1;
+long qnxhid_last_rawkey_num=0;
+long qnxhid_last_rawkey_time=0;
+void qnxhid_set_keyboard_spam_timeout(long n){
+  qnxhid_keyboard_timeout=n;
+  ALOGI("[KBD] SET ANTI SPAM TIMEOUT = %ims",n);
+}
+
+
 /* get input */
 byte qnxhid_getinput(LIBAROMA_HIDP me, LIBAROMA_HID_EVENTP dest_ev){
   QNXHID_EVENT ev;
   while(qnxhid_active){
     if (read(qnxhid_pipe[0],&ev,sizeof(QNXHID_EVENT))==sizeof(QNXHID_EVENT)){
+
+
+      // ALOGI("RAWINPUT: id=%i y=%i x=%i",ev.id,ev.y, ev.x);
+
       byte retval = 0;
       if (ev.id==QNXHID_EV_TOUCH_EXIT){
         return LIBAROMA_HID_EV_RET_EXIT;
@@ -202,22 +217,43 @@ byte qnxhid_getinput(LIBAROMA_HIDP me, LIBAROMA_HID_EVENTP dest_ev){
         );
       }
       else if (ev.id==QNXHID_EV_TOUCH_RAW_KBD){
-        dest_ev->type  = LIBAROMA_HID_EV_TYPE_KEY;
-        dest_ev->key   = ev.x;
-        dest_ev->x     = ev.x;
-        dest_ev->y     = ev.y;
-        dest_ev->state = LIBAROMA_HID_EV_STATE_UP;
-        ALOGI("RAW KEYBOARD: %i - %i",ev.x,ev.y);
-        return LIBAROMA_HID_EV_RET_RAWKEY;
+        byte accept_key=1;
+        if (qnxhid_last_rawkey==ev.x){
+          if (qnxhid_last_rawkey_time+qnxhid_keyboard_timeout>libaroma_tick()){
+            qnxhid_last_rawkey=ev.x;
+            qnxhid_last_rawkey_time=libaroma_tick();
+            qnxhid_last_rawkey_num++;
+            accept_key=0;
+            if (qnxhid_last_rawkey_num%1000==0){
+              ALOGI("REPEATED KBD: %i - %i - %ix",ev.x,ev.y,qnxhid_last_rawkey_num);
+            }
+          }
+        }
+        if (accept_key){
+          qnxhid_last_rawkey_num=0;
+          qnxhid_last_rawkey=ev.x;
+          qnxhid_last_rawkey_time=libaroma_tick();
+          dest_ev->type  = LIBAROMA_HID_EV_TYPE_KEY;
+          dest_ev->key   = ev.x;
+          dest_ev->x     = ev.x;
+          dest_ev->y     = ev.y;
+          dest_ev->state = LIBAROMA_HID_EV_STATE_UP;
+          ALOGI("RAW KEYBOARD: %i - %i",ev.x,ev.y);
+          // LIBAROMA_QNX_NOREPEAT_KBD
+          return LIBAROMA_HID_EV_RET_RAWKEY;
+        }
       }
       else if ((ev.id>=QNXHID_EV_TOUCH_UP)&&(ev.id<=QNXHID_EV_TOUCH_MOVE)){
-        //printf("EV: %i - %ix%i\n",ev.id,ev.x,ev.y);
+        printf("EV TOUCH: %i - %ix%i\n",ev.id,ev.x,ev.y);
         dest_ev->type=LIBAROMA_HID_EV_TYPE_TOUCH;
         dest_ev->key=0;
         dest_ev->state=ev.id-QNXHID_EV_TOUCH_UP;
         dest_ev->x=ev.x;
         dest_ev->y=ev.y;
         return LIBAROMA_HID_EV_RET_TOUCH;
+      }
+      else{
+        printf("EV NONE: %i - %ix%i\n",ev.id,ev.x,ev.y);
       }
     }
   }

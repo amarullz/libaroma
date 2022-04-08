@@ -75,7 +75,7 @@ static inline void libaroma_dither_line(
       g = _mm_slli_epi16(_mm_srli_epi16(_mm_min_epi16(_mm_add_epi16(g,table_g),ff),2),5);
       b = _mm_srli_epi16(_mm_min_epi16(_mm_add_epi16(b,table_b),ff),3);
       r = _mm_or_si128(_mm_or_si128(r,g),b);
-      _mm_store_si128((__m128i*) (dst+i), r);
+      /*_mm_store_si128*/ _mm_storeu_si128((__m128i*) (dst+i), r);
     }
   }
   /* leftover */
@@ -109,7 +109,7 @@ static inline void libaroma_dither_line_const(
       __m128i g = _mm_slli_epi16(_mm_srli_epi16(_mm_min_epi16(_mm_add_epi16(sg,table_g),ff),2),5);
       __m128i b = _mm_srli_epi16(_mm_min_epi16(_mm_add_epi16(sb,table_b),ff),3);
       r = _mm_or_si128(_mm_or_si128(r,g),b);
-      _mm_store_si128((__m128i*) (dst+i), r);
+      /*_mm_store_si128*/ _mm_storeu_si128((__m128i*) (dst+i), r);
     }
   }
   /* leftover */
@@ -151,7 +151,7 @@ static inline void libaroma_dither_24to16(
       g = _mm_slli_epi16(_mm_srli_epi16(_mm_min_epi16(_mm_add_epi16(g,table_g),ff),2),5);
       b = _mm_srli_epi16(_mm_min_epi16(_mm_add_epi16(b,table_b),ff),3);
       r = _mm_or_si128(_mm_or_si128(r,g),b);
-      _mm_store_si128((__m128i*) (dst+i), r);
+      /*_mm_store_si128*/ _mm_storeu_si128((__m128i*) (dst+i), r);
     }
   }
   if (left>0){

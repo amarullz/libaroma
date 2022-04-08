@@ -76,7 +76,7 @@ static inline void LINUXHIDRV_pointer_set_y(LIBAROMA_HIDP me,int y){
 byte LINUXHIDRV_translate_pointer(LIBAROMA_HIDP me, LINUXHIDRV_DEVICEP dev,
                              LIBAROMA_HID_EVENTP dest_ev, struct input_event * ev) {
   /* dump raw events */
-  ALOGRT("RAW KEY: T=%i, C=%i, V=%i", ev->type, ev->code, ev->value);
+  ALOGRT("POINTER TRANSLATE: T=%i, C=%i, V=%i", ev->type, ev->code, ev->value);
   
   /* EV_REL */
   if (ev->type==EV_REL) {

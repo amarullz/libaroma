@@ -161,7 +161,9 @@ byte libaroma_draw_ex2(
   if (opacity == 0xff) {
     if (useAlpha) {
 #ifdef LIBAROMA_CONFIG_OPENMP
+  #if LIBAROMA_CONFIG_OPENMP==1
   #pragma omp parallel for
+#endif
 #endif
       for (y = 0; y < sr_h; y++) {
         wordp dst_mem = (wordp) (dst_data+((ds_y + y)*pos_dc_w)+pos_ds_x);
@@ -191,7 +193,9 @@ byte libaroma_draw_ex2(
     else {
       /* Copy Data Directly */
 #ifdef LIBAROMA_CONFIG_OPENMP
+  #if LIBAROMA_CONFIG_OPENMP==1
   #pragma omp parallel for
+#endif
 #endif
       for (y = 0; y < sr_h; y++) {
         memcpy(
@@ -206,7 +210,9 @@ byte libaroma_draw_ex2(
     if (useAlpha) {
       /* Blend Destination with Source */
 #ifdef LIBAROMA_CONFIG_OPENMP
+  #if LIBAROMA_CONFIG_OPENMP==1
   #pragma omp parallel for
+#endif
 #endif
       for (y = 0; y < sr_h; y++) {
         wordp tmp_dst = (wordp) malloc(sr_w * 2);
@@ -254,7 +260,9 @@ byte libaroma_draw_ex2(
     else {
       /* Blend Data Directly */
 #ifdef LIBAROMA_CONFIG_OPENMP
+#if LIBAROMA_CONFIG_OPENMP==1
   #pragma omp parallel for
+#endif
 #endif
       for (y = 0; y < sr_h; y++) {
         wordp dst_mem = (wordp) (dst_data + ((ds_y + y) * pos_dc_w) + pos_ds_x);
@@ -324,19 +332,25 @@ byte libaroma_draw_rect(
 #else
     int w2=w*2;
     wordp firstline = datapos + (y * dst->l);
-    libaroma_color_set(firstline, color, w);
+    if (y<y2){
+    	libaroma_color_set(firstline, color, w);
 #ifdef LIBAROMA_CONFIG_OPENMP
-    #pragma omp parallel for
+#if LIBAROMA_CONFIG_OPENMP==1
+  #pragma omp parallel for
 #endif
-    for (dy = y+1; dy < y2; dy++) {
-      wordp linepos = datapos + (dy * dst->l);
-      memcpy(linepos,firstline,w2);
-    }
+#endif
+	    for (dy = y+1; dy < y2; dy++) {
+	      wordp linepos = datapos + (dy * dst->l);
+	      memcpy(linepos,firstline,w2);
+	    }
+	  }
 #endif
   }
   else {
 #ifdef LIBAROMA_CONFIG_OPENMP
-    #pragma omp parallel for
+    #if LIBAROMA_CONFIG_OPENMP==1
+  #pragma omp parallel for
+#endif
 #endif
     for (dy = y; dy < y2; dy++) {
       wordp linepos = dst->data + (dy * dst->l) + x;
@@ -544,7 +558,9 @@ byte libaroma_draw_mask_circle(
   int rad2   = radius * radius;
   int y;
 #ifdef LIBAROMA_CONFIG_OPENMP
+  #if LIBAROMA_CONFIG_OPENMP==1
   #pragma omp parallel for
+#endif
 #endif
   for(y=-radius; y<=radius; y++){
     int pdy = dy + y;
@@ -607,7 +623,9 @@ byte libaroma_draw_circle(
   int rad2   = radius * radius;
   int y;
 #ifdef LIBAROMA_CONFIG_OPENMP
+  #if LIBAROMA_CONFIG_OPENMP==1
   #pragma omp parallel for
+#endif
 #endif
   for(y=-radius; y<=radius; y++){
     int pdy = dy + y;

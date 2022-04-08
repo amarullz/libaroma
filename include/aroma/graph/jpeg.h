@@ -65,5 +65,9 @@ byte libaroma_jpeg_draw(
     byte dither
     );
 
+byte libaroma_jpeg_save(LIBAROMA_CANVASP sc, char *filename, int quality);
+byte libaroma_jpeg_savemem(LIBAROMA_CANVASP sc, unsigned long * jpegSize, bytep * jpegBuf, int quality);
+byte libaroma_jpeg_savemem_scale(LIBAROMA_CANVASP sc, unsigned long * jpegSize, bytep * jpegBuf, int quality, float divsz);
+
 #endif /* LIBAROMA_CONFIG_NOJPEG */
 #endif /* __libaroma_jpeg_h__ */
