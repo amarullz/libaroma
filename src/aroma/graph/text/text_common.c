@@ -43,7 +43,7 @@ static LIBAROMA_MUTEX __libaroma_text_locks[3];
 static inline void __libaroma_text_locker_init(byte destroy){
   int i;
   for (i=0;i<3;i++){
-    if (destroy){
+    if (!destroy){
       libaroma_mutex_init(__libaroma_text_locks[i]);
     }
     else{
