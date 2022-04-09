@@ -3,5 +3,6 @@ CMakeFiles
 Makefile
 cmake_install.cmake
 install_manifest.txt
-
-/build
+/build/armv7
+/build/aarch64
+/build/x86_64

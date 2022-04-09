@@ -1,0 +1,10 @@
+{
+  "editor.minimap.enabled": true,
+  "git.autorefresh": true,
+  "editor.tabSize": 4,
+  "editor.rulers": [
+    80,
+    120
+  ],
+  "C_Cpp.errorSquiggles": "Disabled"
+}

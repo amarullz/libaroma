@@ -1,0 +1,65 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build-Libaroma",
+      "type": "shell",
+      "command": "bash ./build.sh",
+      "options": {
+        "cwd": "${workspaceRoot}"
+      },
+      "presentation": {
+        "focus": true,
+        "clear": true
+      }
+    },
+    {
+      "label": "Clean-Build-Libaroma",
+      "type": "shell",
+      "command": "bash ./build.sh clean",
+      "options": {
+        "cwd": "${workspaceRoot}"
+      },
+      "presentation": {
+        "focus": true,
+        "clear": true
+      }
+    },
+    {
+      "label": "Build-Libaroma-x86_64",
+      "type": "shell",
+      "command": "bash ./build.sh x86_64",
+      "options": {
+        "cwd": "${workspaceRoot}"
+      },
+      "presentation": {
+        "focus": true,
+        "clear": true
+      }
+    },
+    {
+      "label": "Build-Libaroma-aarch64",
+      "type": "shell",
+      "command": "bash ./build.sh aarch64",
+      "options": {
+        "cwd": "${workspaceRoot}"
+      },
+      "presentation": {
+        "focus": true,
+        "clear": true
+      }
+    },
+    {
+      "label": "Build-Libaroma-armv7",
+      "type": "shell",
+      "command": "bash ./build.sh armv7",
+      "options": {
+        "cwd": "${workspaceRoot}"
+      },
+      "presentation": {
+        "focus": true,
+        "clear": true
+      }
+    }
+  ]
+}
