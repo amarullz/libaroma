@@ -51,6 +51,7 @@ struct __LIBAROMA_CTL_IMAGE{
   LIBAROMA_MUTEX mutex;
   byte update;
   byte hidden;
+  byte mode;
 };
 
 byte _libaroma_ctl_image_thread(LIBAROMA_CONTROLP ctl) {
@@ -88,10 +89,73 @@ void _libaroma_ctl_image_draw(
   if (!me->hidden){
     libaroma_mutex_lock(me->mutex);
     if (me->img){
-      libaroma_draw_scale_smooth(c,me->img,
-        0,0,c->w,c->h,
-        0,0,me->img->w,me->img->h
-      );
+      int dx = 0;
+      int dy = 0;
+      int dw = c->w;
+      int dh = c->h;
+      int sx = 0;
+      int sy = 0;
+      int sw = me->img->w;
+      int sh = me->img->h;
+
+      if ((me->mode & LIBAROMA_CTL_IMAGE_MODE_NOSCALE) == LIBAROMA_CTL_IMAGE_MODE_NOSCALE){
+        if ((me->mode & LIBAROMA_CTL_IMAGE_MODE_CENTER) == LIBAROMA_CTL_IMAGE_MODE_CENTER){
+          dx = (c->w >> 1) - (me->img->w >> 1);
+          dy = (c->h >> 1) - (me->img->h >> 1);
+          libaroma_draw(c, me->img, dx, dy, 1);
+        }
+        else{
+          libaroma_draw(c, me->img, dx, dy, 1);
+        }
+      }
+      else if ((me->mode & 0xf0) != 0){
+        byte isfit = ((me->mode & LIBAROMA_CTL_IMAGE_MODE_FIT) == LIBAROMA_CTL_IMAGE_MODE_FIT);
+        /* prevent div by zero */
+        if ((me->img->w>0)&&(me->img->h>0)){
+          float b = c->w/((float) me->img->w);
+          int hcheck = (int) (b * me->img->h);
+          if (isfit){
+            if (hcheck>c->h) b = c->h/((float) me->img->h);
+          }
+          else{
+            if (hcheck<c->h) b = c->h/((float) me->img->h);
+          }
+          int w2=(int)(me->img->w*b);
+          int h2=(int)(me->img->h*b);
+          int x2=(w2-c->w)>>1;
+          int y2=(h2-c->h)>>1;
+          dx -= x2;
+          dy -= y2;
+          dw = w2;
+          dh = h2;
+          if (dx<0){
+            sx += (0 - dx) / b;
+            sw += dx / b;
+            dw += dx;
+            dx = 0;
+          }
+          if (dy<0){
+            sy += (0 - dy) / b;
+            sh += dy / b;
+            dh += dy;
+            dy = 0;
+          }
+          if (dw>c->w){
+            sw -= (dw - c->w) / b;
+            dw = c->w;
+          }
+          if (dh>c->h){
+            sh -= (dh - c->h) / b;
+            dh = c->h;
+          }
+        }
+      }
+      if ((me->mode & LIBAROMA_CTL_IMAGE_MODE_NOSMOOTH) == LIBAROMA_CTL_IMAGE_MODE_NOSMOOTH){
+        libaroma_draw_scale_nearest(c, me->img, dx,dy,dw,dh,sx,sy,sw,sh);
+      }
+      else{
+        libaroma_draw_scale_smooth(c, me->img, dx,dy,dw,dh,sx,sy,sw,sh);
+      }
     }
     libaroma_mutex_unlock(me->mutex);
   }
@@ -124,6 +188,18 @@ byte libaroma_ctl_image_hidden(
 	);
 	libaroma_mutex_lock(me->mutex);
 	me->hidden=hidden;
+  me->update=1;
+  libaroma_mutex_unlock(me->mutex);
+	return 1;
+}
+
+byte libaroma_ctl_image_mode(
+	LIBAROMA_CONTROLP ctl,byte mode){
+  _LIBAROMA_CTL_CHECK(
+		_libaroma_ctl_image_handler, _LIBAROMA_CTL_IMAGEP, 0
+	);
+	libaroma_mutex_lock(me->mutex);
+	me->mode=mode;
   me->update=1;
   libaroma_mutex_unlock(me->mutex);
 	return 1;

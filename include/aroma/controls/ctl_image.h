@@ -27,6 +27,11 @@
 #ifndef __libaroma_ctl_image_h__
 #define __libaroma_ctl_image_h__
 
+#define LIBAROMA_CTL_IMAGE_MODE_NOSMOOTH 0x01
+#define LIBAROMA_CTL_IMAGE_MODE_CENTER 0x02
+#define LIBAROMA_CTL_IMAGE_MODE_COVER 0x10
+#define LIBAROMA_CTL_IMAGE_MODE_FIT 0x20
+#define LIBAROMA_CTL_IMAGE_MODE_NOSCALE 0x30
 
 byte libaroma_ctl_image_set_image(
 	LIBAROMA_CONTROLP ctl,char * src,byte update);
@@ -46,5 +51,8 @@ LIBAROMA_CONTROLP libaroma_ctl_image_canvas(
 
 byte libaroma_ctl_image_hidden(
 	LIBAROMA_CONTROLP ctl,byte hidden);
-	
+
+byte libaroma_ctl_image_mode(
+    LIBAROMA_CONTROLP ctl, byte mode);
+    
 #endif /* __libaroma_ctl_image_h__ */
