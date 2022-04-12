@@ -216,6 +216,7 @@ byte libaroma_wm_client_stop();
  * Descriptions: clear window message
  */
 void libaroma_wm_message_clear();
+void libaroma_wm_message_noclear(byte noclear);
 
 /*
  * Function    : libaroma_wm_getmessage

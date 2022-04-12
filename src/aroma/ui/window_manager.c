@@ -743,13 +743,19 @@ byte libaroma_wm_client_stop(){
  * Descriptions: clear window message
  */
 void libaroma_wm_message_clear() {
-  if (_libaroma_wm->client_started) {
+  if (_libaroma_wm->client_started==1) {
     libaroma_cond_lock(&_libaroma_wm_mutex);
     libaroma_stack_free(_libaroma_wm->queue);
     _libaroma_wm->queue = libaroma_stack(NULL);
     libaroma_cond_unlock(&_libaroma_wm_mutex);
   }
 } /* End of libaroma_wm_message_clear */
+
+void libaroma_wm_message_noclear(byte noclear){
+  if (_libaroma_wm->client_started){
+    _libaroma_wm->client_started=noclear?2:1;
+  }
+}
 
 /*
  * Function    : libaroma_wm_set_theme

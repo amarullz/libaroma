@@ -4,5 +4,24 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"git.autofetch": true,
+		"git.autorefresh": true,
+		"editor.minimap.enabled": true,
+		"editor.formatOnPaste": true,
+		"editor.formatOnSave": true,
+		"editor.formatOnType": true,
+		"editor.codeActionsOnSave": {
+			"source.fixAll": true
+		},
+		"clang-format.executable": "clang-format-10",
+		"clang-format.style": "google",
+		"clang-format.language.c.enable": true,
+		"[c]": {
+			"editor.defaultFormatter": "xaver.clang-format",
+			"editor.wordBasedSuggestions": false,
+			"editor.suggest.insertMode": "replace",
+			"editor.semanticHighlighting.enabled": true
+		}
+	}
 }

@@ -242,6 +242,10 @@ byte _libaroma_text_parse_next(
                   _LIBAROMA_TEXTCHUNK_RETURN_SPACE:
                   _LIBAROMA_TEXTCHUNK_RETURN_TAB
               );
+            if ((chr=='\t')&&(bufn==0)) {
+              buf[bufn++] = ' ';
+              // buf[bufn++] = '#';
+            }
           }
           _libaroma_text_change_current(chunk, cur + 1);
           buf[bufn] = 0;
