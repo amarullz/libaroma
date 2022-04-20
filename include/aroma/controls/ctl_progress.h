@@ -34,6 +34,7 @@
 #define LIBAROMA_CTL_PROGRESS_INDETERMINATE 0x1
 #define LIBAROMA_CTL_PROGRESS_QUERY         0x2
 #define LIBAROMA_CTL_PROGRESS_CIRCULAR      0x4
+#define LIBAROMA_CTL_PROGRESS_HIDDEN        0x8
 
 /*
  * Function    : libaroma_ctl_progress
