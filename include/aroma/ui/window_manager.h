@@ -22,19 +22,19 @@
  *
  */
 #ifndef __libaroma_aroma_h__
-  #error "Include <aroma.h> instead."
+#error "Include <aroma.h> instead."
 #endif
 #ifndef __libaroma_window_manager_h__
 #define __libaroma_window_manager_h__
 
 /* defines */
-#define LIBAROMA_WM_MSG_UNHANDLED       0x0
-#define LIBAROMA_WM_MSG_HANDLED         0x1
-#define LIBAROMA_WM_MSG_EXIT            0x2
-#define LIBAROMA_WM_FLAG_RESET_COLOR    0x1
-#define LIBAROMA_WM_FLAG_RESET_THEME    0x2
-#define LIBAROMA_WM_FLAG_THEME_PNG9P    0x1
-#define LIBAROMA_WM_FLAG_THEME_WMFREE   0x2
+#define LIBAROMA_WM_MSG_UNHANDLED 0x0
+#define LIBAROMA_WM_MSG_HANDLED 0x1
+#define LIBAROMA_WM_MSG_EXIT 0x2
+#define LIBAROMA_WM_FLAG_RESET_COLOR 0x1
+#define LIBAROMA_WM_FLAG_RESET_THEME 0x2
+#define LIBAROMA_WM_FLAG_THEME_PNG9P 0x1
+#define LIBAROMA_WM_FLAG_THEME_WMFREE 0x2
 
 /*
  * Structure   : _LIBAROMA_WM
@@ -42,29 +42,27 @@
  * Descriptions: window manager structure
  */
 typedef struct _LIBAROMA_WM LIBAROMA_WM;
-typedef struct _LIBAROMA_WM * LIBAROMA_WMP;
+typedef struct _LIBAROMA_WM* LIBAROMA_WMP;
 
 /*
  * Typedef     : LIBAROMA_WMCB_*
  * Descriptions: window manager callback
  */
-typedef byte (*LIBAROMA_WMCB_MESSAGE_HANDLER) \
-  (LIBAROMA_WMP, LIBAROMA_MSGP);
-typedef void (*LIBAROMA_WMCB_RESET_HANDLER) \
-  (LIBAROMA_WMP, byte flags);
+typedef byte (*LIBAROMA_WMCB_MESSAGE_HANDLER)(LIBAROMA_WMP, LIBAROMA_MSGP);
+typedef void (*LIBAROMA_WMCB_RESET_HANDLER)(LIBAROMA_WMP, byte flags);
 typedef byte (*LIBAROMA_WMCB_UI_THREAD)();
-  
+
 /*
  * Structure   : _LIBAROMA_WM
  * Typedef     : LIBAROMA_WM, * LIBAROMA_WMP
  * Descriptions: window manager structure
  */
-struct _LIBAROMA_WM{
+struct _LIBAROMA_WM {
   LIBAROMA_COLORSET colorset; /* default colorset */
-  
+
   LIBAROMA_SARRAYP theme; /* themeset */
   LIBAROMA_SARRAYP color; /* colorset */
-  
+
   /* hooker callbacks */
   LIBAROMA_WMCB_MESSAGE_HANDLER message_handler;
   LIBAROMA_WMCB_RESET_HANDLER reset_handler;
@@ -75,17 +73,17 @@ struct _LIBAROMA_WM{
   int y;
   int w;
   int h;
-  
+
   /* window sync */
   byte sync_all;
   int sync_x;
   int sync_y;
   int sync_w;
   int sync_h;
-  
+
   /* message state */
   LIBAROMA_STACKP queue;
-  
+
   byte client_started;
   LIBAROMA_WINDOWP active_window;
   LIBAROMA_CANVASP workspace_bg;
@@ -97,8 +95,8 @@ struct _LIBAROMA_WM{
  * Descriptions: theme structure
  */
 typedef struct _LIBAROMA_WM_THEME LIBAROMA_WM_THEME;
-typedef struct _LIBAROMA_WM_THEME * LIBAROMA_WM_THEMEP;
-struct _LIBAROMA_WM_THEME{
+typedef struct _LIBAROMA_WM_THEME* LIBAROMA_WM_THEMEP;
+struct _LIBAROMA_WM_THEME {
   LIBAROMA_CANVASP canvas;
   byte theme_flags;
   int dpi;
@@ -130,12 +128,8 @@ void libaroma_wm_resetsync();
  * Return Value: LIBAROMA_MSGP
  * Descriptions: compose window message
  */
-LIBAROMA_MSGP libaroma_wm_compose(
-    LIBAROMA_MSGP msg,
-    byte m,
-    voidp data,
-    int param1,
-    int param2);
+LIBAROMA_MSGP libaroma_wm_compose(LIBAROMA_MSGP msg, byte m, voidp data,
+                                  int param1, int param2);
 
 /*
  * Function    : libaroma_wm_clean_workspace
@@ -163,24 +157,21 @@ byte libaroma_wm_set_workspace(int x, int y, int w, int h);
  * Return Value: byte
  * Descriptions: set message handler
  */
-byte libaroma_wm_set_message_handler(
-    LIBAROMA_WMCB_MESSAGE_HANDLER callback);
+byte libaroma_wm_set_message_handler(LIBAROMA_WMCB_MESSAGE_HANDLER callback);
 
 /*
  * Function    : libaroma_wm_set_reset_handler
  * Return Value: byte
  * Descriptions: set theme reset handler
  */
-byte libaroma_wm_set_reset_handler(
-    LIBAROMA_WMCB_RESET_HANDLER callback);
+byte libaroma_wm_set_reset_handler(LIBAROMA_WMCB_RESET_HANDLER callback);
 
 /*
  * Function    : libaroma_wm_set_ui_thread
  * Return Value: byte
  * Descriptions: set theme reset handler
  */
-byte libaroma_wm_set_ui_thread(
-    LIBAROMA_WMCB_UI_THREAD callback);
+byte libaroma_wm_set_ui_thread(LIBAROMA_WMCB_UI_THREAD callback);
 
 /*
  * Function    : libaroma_wm_sync
@@ -230,63 +221,54 @@ byte libaroma_wm_getmessage(LIBAROMA_MSGP msg);
  * Return Value: byte
  * Descriptions: set theme
  */
-byte libaroma_wm_set_theme(
-    char * name,
-    LIBAROMA_CANVASP canvas,
-    byte theme_flags,
-    int dpi);
+byte libaroma_wm_set_theme(char* name, LIBAROMA_CANVASP canvas,
+                           byte theme_flags, int dpi);
 
 /*
  * Function    : libaroma_wm_set_theme_stream
  * Return Value: byte
  * Descriptions: set theme from stream
  */
-byte libaroma_wm_set_theme_stream(
-    char * name,
-    LIBAROMA_STREAMP stream,
-    byte freestream,
-    int dpi);
+byte libaroma_wm_set_theme_stream(char* name, LIBAROMA_STREAMP stream,
+                                  byte freestream, int dpi);
 
 /*
  * Function    : libaroma_wm_get_theme
  * Return Value: LIBAROMA_WM_THEMEP
  * Descriptions: get theme
  */
-LIBAROMA_WM_THEMEP libaroma_wm_get_theme(char * name);
+LIBAROMA_WM_THEMEP libaroma_wm_get_theme(char* name);
 
 /*
  * Function    : libaroma_wm_theme_exists
  * Return Value: byte
  * Descriptions: is theme exists
  */
-byte libaroma_wm_theme_exists(char * name);
+byte libaroma_wm_theme_exists(char* name);
 
 /*
  * Function    : libaroma_wm_draw_themep
  * Return Value: byte
  * Descriptions: draw theme struct into canvas
  */
-byte libaroma_wm_draw_themep(
-    LIBAROMA_CANVASP dest, LIBAROMA_WM_THEMEP th,
-    int dx, int dy, int dw, int dh,
-    LIBAROMA_PNG9_PADP padding);
+byte libaroma_wm_draw_themep(LIBAROMA_CANVASP dest, LIBAROMA_WM_THEMEP th,
+                             int dx, int dy, int dw, int dh,
+                             LIBAROMA_PNG9_PADP padding);
 
 /*
  * Function    : libaroma_wm_draw_theme
  * Return Value: byte
  * Descriptions: draw theme into canvas
  */
-byte libaroma_wm_draw_theme(
-    LIBAROMA_CANVASP dest, char * name,
-    int dx, int dy, int dw, int dh,
-    LIBAROMA_PNG9_PADP padding);
+byte libaroma_wm_draw_theme(LIBAROMA_CANVASP dest, char* name, int dx, int dy,
+                            int dw, int dh, LIBAROMA_PNG9_PADP padding);
 
 /*
  * Function    : libaroma_wm_del_theme
  * Return Value: byte
  * Descriptions: delete theme item
  */
-byte libaroma_wm_del_theme(char * name);
+byte libaroma_wm_del_theme(char* name);
 #define libaroma_wm_delete_theme(n) libaroma_wm_del_theme(n)
 
 /*
@@ -294,21 +276,21 @@ byte libaroma_wm_del_theme(char * name);
  * Return Value: byte
  * Descriptions: set colorset
  */
-byte libaroma_wm_set_color(char * name, word color);
+byte libaroma_wm_set_color(char* name, word color);
 
 /*
  * Function    : libaroma_wm_get_color
  * Return Value: word
  * Descriptions: get colorset
  */
-word libaroma_wm_get_color(char * name);
+word libaroma_wm_get_color(char* name);
 
 /*
  * Function    : libaroma_wm_del_color
  * Return Value: byte
  * Descriptions: delete color item
  */
-byte libaroma_wm_del_color(char * name);
+byte libaroma_wm_del_color(char* name);
 #define libaroma_wm_delete_color(n) libaroma_wm_del_color(n)
 
 /*
@@ -324,5 +306,7 @@ byte libaroma_wm_set_active_window(LIBAROMA_WINDOWP win);
  * Descriptions: get current active window
  */
 LIBAROMA_WINDOWP libaroma_wm_get_active_window();
+
+int libaroma_wm_setdelay(int delay);
 
 #endif /* __libaroma_window_manager_h__ */

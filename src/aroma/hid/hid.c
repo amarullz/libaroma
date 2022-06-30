@@ -25,28 +25,28 @@
 #define __libaroma_hid_c__
 #include <aroma_internal.h>
 
-byte LIBAROMA_HID_INIT_FUNCTION(
-    LIBAROMA_HIDP);
+byte LIBAROMA_HID_INIT_FUNCTION(LIBAROMA_HIDP);
 /*
  * Variable    : _libaroma_hid
  * Type        : type_data
  * Descriptions: hid instance storage
  */
-static LIBAROMA_HIDP _libaroma_hid=NULL;
-static LIBAROMA_HID_INITIALIZER _libaroma_hid_initializer=NULL;
+static LIBAROMA_HIDP _libaroma_hid = NULL;
+static LIBAROMA_HIDP _libaroma_hid_old = NULL;
+static LIBAROMA_HID_INITIALIZER _libaroma_hid_initializer = NULL;
 
 /*
  * Function    : libaroma_hid_set_initializer
  * Return Value: byte
  * Descriptions: Set hid initializer callback
  */
-byte libaroma_hid_set_initializer(LIBAROMA_HID_INITIALIZER cb){
+byte libaroma_hid_set_initializer(LIBAROMA_HID_INITIALIZER cb) {
   if (_libaroma_hid != NULL) {
     ALOGE("libaroma_hid_set_initializer hid already initialized");
     return 0;
   }
   _libaroma_hid_initializer = cb;
-  if (cb){
+  if (cb) {
     return 1;
   }
   return 0;
@@ -63,50 +63,48 @@ byte libaroma_hid_init() {
     ALOGE("hid instance already initialized");
     goto return_error;
   }
-  
+
   /* allocating input instance */
   ALOGV("allocating hid instance");
-  _libaroma_hid = (LIBAROMA_HIDP) calloc(sizeof(LIBAROMA_HID),1);
-  
+  _libaroma_hid = (LIBAROMA_HIDP)calloc(sizeof(LIBAROMA_HID), 1);
+
   /* check allocation */
   if (!_libaroma_hid) {
     ALOGE("unable to allocating hid instance");
     goto return_error_clean;
   }
-  
+
   /* check framebuffer */
   if (libaroma_fb() == NULL) {
     ALOGE("framebuffer instance not initialized yet!");
     goto return_error_clean;
   }
-  
+
   /* set screen information */
   _libaroma_hid->screen_width = libaroma_fb()->w;
   _libaroma_hid->screen_height = libaroma_fb()->h;
   _libaroma_hid->touch_last_x = 0;
   _libaroma_hid->touch_last_y = 0;
-  
+
   /* init driver */
   ALOGV("init hid driver");
-  
-  if (_libaroma_hid_initializer){
+
+  if (_libaroma_hid_initializer) {
     ALOGV("Init hid driver - runtime");
     if (!_libaroma_hid_initializer(_libaroma_hid)) {
       ALOGE("init hid driver failed");
       goto return_error_clean;
     }
-  }
-  else{
+  } else {
     ALOGV("Init hid driver - default");
     if (!LIBAROMA_HID_INIT_FUNCTION(_libaroma_hid)) {
       ALOGE("init hid driver failed");
       goto return_error_clean;
     }
   }
-  
+
   /* Check Callbacks */
-  if ((_libaroma_hid->release == NULL) ||
-      (_libaroma_hid->getinput == NULL)){
+  if ((_libaroma_hid->release == NULL) || (_libaroma_hid->getinput == NULL)) {
     ALOGE("hid driver callback invalid");
     goto return_error_clean;
   }
@@ -139,10 +137,10 @@ void libaroma_hid_release() {
   /* free instance */
   ALOGV("release hid instance");
   free(_libaroma_hid);
-  _libaroma_hid=NULL;
+  _libaroma_hid = NULL;
 } /* End of libaroma_hid_release */
 
-void libaroma_hid_restart(){
+void libaroma_hid_restart() {
   /* check instance */
   if (_libaroma_hid == NULL) {
     ALOGE("hid instance uninitialized");
@@ -150,7 +148,7 @@ void libaroma_hid_restart(){
     return;
   }
   /* re-init driver */
-  LIBAROMA_HIDP _tmp_hid = (LIBAROMA_HIDP) calloc(sizeof(LIBAROMA_HID),1);
+  LIBAROMA_HIDP _tmp_hid = (LIBAROMA_HIDP)calloc(sizeof(LIBAROMA_HID), 1);
   if (!_tmp_hid) {
     return;
   }
@@ -158,35 +156,33 @@ void libaroma_hid_restart(){
   _tmp_hid->screen_height = libaroma_fb()->h;
   _tmp_hid->touch_last_x = 0;
   _tmp_hid->touch_last_y = 0;
-  if (_libaroma_hid_initializer){
+
+  if (_libaroma_hid_initializer) {
     if (!_libaroma_hid_initializer(_tmp_hid)) {
       ALOGE("reinit hid driver failed");
       free(_tmp_hid);
       return;
     }
-  }
-  else{
+  } else {
     if (!LIBAROMA_HID_INIT_FUNCTION(_tmp_hid)) {
       ALOGE("reinit hid driver failed");
       free(_tmp_hid);
       return;
     }
   }
-  if ((_tmp_hid->release == NULL) ||
-      (_tmp_hid->getinput == NULL)){
+  if ((_tmp_hid->release == NULL) || (_tmp_hid->getinput == NULL)) {
     ALOGE("reinit driver callback invalid");
     free(_tmp_hid);
     return;
   }
-  
-  LIBAROMA_HIDP _old_hid = _libaroma_hid;
-  _libaroma_hid=_tmp_hid;
-  if (_old_hid == NULL) {
-    ALOGE("reinit hid instance uninitialized");
-    return;
+
+  if (_libaroma_hid_old != NULL) {
+    _libaroma_hid_old->release(_libaroma_hid_old);
+    free(_libaroma_hid_old);
+    _libaroma_hid_old = NULL;
   }
-  _old_hid->release(_old_hid);
-  free(_old_hid);
+  _libaroma_hid_old = _libaroma_hid;
+  _libaroma_hid = _tmp_hid;
 }
 
 /*
@@ -194,15 +190,14 @@ void libaroma_hid_restart(){
  * Return Value: byte
  * Descriptions: set key press status
  */
-byte libaroma_hid_set_keypress(
-    int code, byte state) {
+byte libaroma_hid_set_keypress(int code, byte state) {
   if (code <= LIBAROMA_HID_KEYCODE_MAX) {
-    byte bit_pos   = 1 << (code % 8);
+    byte bit_pos = 1 << (code % 8);
     switch (state) {
       case LIBAROMA_HID_EV_STATE_DOWN:
         _libaroma_hid->key_pressed[code >> 3] |= bit_pos;
         break;
-        
+
       case LIBAROMA_HID_EV_STATE_UP:
       case LIBAROMA_HID_EV_STATE_CANCEL:
         _libaroma_hid->key_pressed[code >> 3] &= ~bit_pos;
@@ -218,15 +213,14 @@ byte libaroma_hid_set_keypress(
  * Return Value: byte
  * Descriptions: get key press status
  */
-byte libaroma_hid_get_keypress(
-    int code) {
+byte libaroma_hid_get_keypress(int code) {
   if (_libaroma_hid == NULL) {
     ALOGW("hid instance uninitialized");
     return 0;
   }
   if (code <= LIBAROMA_HID_KEYCODE_MAX) {
-    byte bit_pos   = 1 << (code % 8);
-    if ((_libaroma_hid->key_pressed[code >> 3]&bit_pos)) {
+    byte bit_pos = 1 << (code % 8);
+    if ((_libaroma_hid->key_pressed[code >> 3] & bit_pos)) {
       return 1;
     }
     return 0;
@@ -248,26 +242,24 @@ byte libaroma_hid_touch_pressed() {
  * Return Value: byte
  * Descriptions: get hid event
  */
-byte libaroma_hid_get(
-    LIBAROMA_HID_EVENTP e) {
+byte libaroma_hid_get(LIBAROMA_HID_EVENTP e) {
   /* clean destination variable */
   memset(e, 0, sizeof(LIBAROMA_HID_EVENT));
-  
+
   /* check instance */
   if (_libaroma_hid == NULL) {
     ALOGW("hid instance uninitialized");
     return LIBAROMA_HID_EV_RET_ERROR;
   }
-  
+
   /* Loop Until Event Type != LIBAROMA_HID_EV_TYPE_NONE & _libaroma_hid!=NULL */
   while (_libaroma_hid != NULL) {
     /* call driver getinput callback */
     byte ret = _libaroma_hid->getinput(_libaroma_hid, e);
-    
-    ALOGT("EVENT RECIVED: type=%i, state=%i, key=%i, x=%i, y=%i",
-      ret,e->state,e->key,e->x,e->y);
-	
-    
+
+    ALOGT("EVENT RECIVED: type=%i, state=%i, key=%i, x=%i, y=%i", ret, e->state,
+          e->key, e->x, e->y);
+
     /* check return value */
     switch (ret) {
       case LIBAROMA_HID_EV_RET_NONE:
@@ -276,8 +268,14 @@ byte libaroma_hid_get(
       case LIBAROMA_HID_EV_RET_EXIT:
         /* clean destination variable */
         memset(e, 0, sizeof(LIBAROMA_HID_EVENT));
-        ALOGV("libaroma_hid_get got LIBAROMA_HID_EV_TYPE_EXIT");
-        return ret;
+        ALOGI("libaroma_hid_get got LIBAROMA_HID_EV_TYPE_EXIT");
+        if (_libaroma_hid_old != NULL) {
+          ALOGI("EXIT HID Caused by restart hid");
+          _libaroma_hid_old->release(_libaroma_hid_old);
+          free(_libaroma_hid_old);
+          _libaroma_hid_old = NULL;
+        } else
+          return ret;
         break;
       case LIBAROMA_HID_EV_RET_ERROR:
         /* clean destination variable */
@@ -286,27 +284,25 @@ byte libaroma_hid_get(
         return ret;
         break;
       case LIBAROMA_HID_EV_RET_TOUCH: {
-          /* filter move event to prevent flooding move messages */
-          if (e->state == LIBAROMA_HID_EV_STATE_MOVE) {
-            /* ignore the floods */
-            if ((_libaroma_hid->touch_last_x!=e->x)||
-               (_libaroma_hid->touch_last_y!=e->y)){
-              libaroma_hid_set_keypress(LIBAROMA_HID_TOUCH_KEYCODE, e->state);
-              /* set last move info */
-              _libaroma_hid->touch_last_x = e->x;
-              _libaroma_hid->touch_last_y = e->y;
-              return ret;
-            }
-          }
-          else {
+        /* filter move event to prevent flooding move messages */
+        if (e->state == LIBAROMA_HID_EV_STATE_MOVE) {
+          /* ignore the floods */
+          if ((_libaroma_hid->touch_last_x != e->x) ||
+              (_libaroma_hid->touch_last_y != e->y)) {
             libaroma_hid_set_keypress(LIBAROMA_HID_TOUCH_KEYCODE, e->state);
             /* set last move info */
             _libaroma_hid->touch_last_x = e->x;
             _libaroma_hid->touch_last_y = e->y;
             return ret;
           }
+        } else {
+          libaroma_hid_set_keypress(LIBAROMA_HID_TOUCH_KEYCODE, e->state);
+          /* set last move info */
+          _libaroma_hid->touch_last_x = e->x;
+          _libaroma_hid->touch_last_y = e->y;
+          return ret;
         }
-        break;
+      } break;
       default:
         /* send value */
         libaroma_hid_set_keypress(e->key, e->state);
@@ -324,25 +320,20 @@ byte libaroma_hid_get(
  * Return Value: byte
  * Descriptions: runtime config
  */
-byte libaroma_hid_config(
-    char * name,
-    char * svalue,
-    dword dvalue) {
+byte libaroma_hid_config(char* name, char* svalue, dword dvalue) {
   if (_libaroma_hid == NULL) {
     ALOGW("hid instance uninitialized");
     return 0;
   }
-  
+
   if (_libaroma_hid->config == NULL) {
     /* Not Supported */
     ALOGW("hid driver do not support runtime configuration");
     return 0;
   }
-  
+
   ALOGV("hid set config %s=%s,(%x)", name, svalue, dvalue);
   return _libaroma_hid->config(_libaroma_hid, name, svalue, dvalue);
 } /* End of libaroma_hid_config */
 
-
 #endif /* __libaroma_hid_c__ */
-
