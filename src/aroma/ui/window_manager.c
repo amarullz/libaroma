@@ -668,7 +668,7 @@ byte libaroma_wm_client_start() {
                            NULL);
 
     /* high priority thread */
-    // libaroma_thread_set_hiprio(_libaroma_wm_ui_thread_var);
+    libaroma_thread_set_hiprio(_libaroma_wm_ui_thread_var);
     return 1;
   }
   return 0;

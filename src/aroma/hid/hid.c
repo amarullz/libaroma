@@ -32,7 +32,6 @@ byte LIBAROMA_HID_INIT_FUNCTION(LIBAROMA_HIDP);
  * Descriptions: hid instance storage
  */
 static LIBAROMA_HIDP _libaroma_hid = NULL;
-static LIBAROMA_HIDP _libaroma_hid_old = NULL;
 static LIBAROMA_HID_INITIALIZER _libaroma_hid_initializer = NULL;
 
 /*
@@ -140,6 +139,7 @@ void libaroma_hid_release() {
   _libaroma_hid = NULL;
 } /* End of libaroma_hid_release */
 
+static byte _libaroma_hid_restart = 0;
 void libaroma_hid_restart() {
   /* check instance */
   if (_libaroma_hid == NULL) {
@@ -147,6 +147,9 @@ void libaroma_hid_restart() {
     libaroma_hid_init();
     return;
   }
+
+  ALOGI("Input Re-Initializing");
+
   /* re-init driver */
   LIBAROMA_HIDP _tmp_hid = (LIBAROMA_HIDP)calloc(sizeof(LIBAROMA_HID), 1);
   if (!_tmp_hid) {
@@ -176,13 +179,16 @@ void libaroma_hid_restart() {
     return;
   }
 
+  _libaroma_hid_restart = 1;
+  LIBAROMA_HIDP _libaroma_hid_old = _libaroma_hid;
+  _libaroma_hid = _tmp_hid;
   if (_libaroma_hid_old != NULL) {
     _libaroma_hid_old->release(_libaroma_hid_old);
     free(_libaroma_hid_old);
     _libaroma_hid_old = NULL;
   }
-  _libaroma_hid_old = _libaroma_hid;
-  _libaroma_hid = _tmp_hid;
+
+  ALOGI("Input Re-Initialized");
 }
 
 /*
@@ -266,16 +272,14 @@ byte libaroma_hid_get(LIBAROMA_HID_EVENTP e) {
         /* continue */
         break;
       case LIBAROMA_HID_EV_RET_EXIT:
+        if (_libaroma_hid_restart) {
+          _libaroma_hid_restart = 0;
+          continue;
+        }
         /* clean destination variable */
         memset(e, 0, sizeof(LIBAROMA_HID_EVENT));
         ALOGI("libaroma_hid_get got LIBAROMA_HID_EV_TYPE_EXIT");
-        if (_libaroma_hid_old != NULL) {
-          ALOGI("EXIT HID Caused by restart hid");
-          _libaroma_hid_old->release(_libaroma_hid_old);
-          free(_libaroma_hid_old);
-          _libaroma_hid_old = NULL;
-        } else
-          return ret;
+        return ret;
         break;
       case LIBAROMA_HID_EV_RET_ERROR:
         /* clean destination variable */

@@ -398,6 +398,7 @@ byte libaroma_jpeg_savemem(LIBAROMA_CANVASP sc, unsigned long * jpegSize, bytep 
   cinfo.image_width = c->w;  
   cinfo.image_height = c->h;
   cinfo.input_components = 3;
+  // cinfo.input_components = 2;
   cinfo.in_color_space = JCS_RGB;
   cinfo.dct_method = JDCT_IFAST;
   jpeg_set_defaults(&cinfo);
@@ -408,6 +409,7 @@ byte libaroma_jpeg_savemem(LIBAROMA_CANVASP sc, unsigned long * jpegSize, bytep 
   while( cinfo.next_scanline < cinfo.image_height )
   {
     libaroma_color_copy_rgb24(row,c->data+ypos*c->l,c->w);
+    // memcpy(row,c->data+ypos*c->l,c->w*2);
     row_pointer[0]=row;
     jpeg_write_scanlines( &cinfo, row_pointer, 1 );
     ypos++;

@@ -34,11 +34,11 @@
 /*
  * headers
  */
+#include <dirent.h>
+#include <fcntl.h>
 #include <linux/input.h>
 #include <sys/ioctl.h>
 #include <sys/poll.h>
-#include <fcntl.h>
-#include <dirent.h>
 #include <unistd.h>
 
 /*
@@ -126,14 +126,16 @@ typedef struct {
   byte touch_swap_xy; /* swap x with y */
   byte touch_flip_x;  /* x was flipped */
   byte touch_flip_y;  /* y was flipped */
+
+  int fdctl[2];
 } LINUXHIDRV_INTERNAL, *LINUXHIDRV_INTERNALP;
 
 /*
  * input translator
  */
 #include "hid_translate/translate_keyboard.c" /* keyboard */
-#include "hid_translate/translate_touch.c"    /* touch */
 #include "hid_translate/translate_pointer.c"  /* mouse & gamepad */
+#include "hid_translate/translate_touch.c"    /* touch */
 
 /*
  * forward functions
@@ -143,10 +145,14 @@ byte LINUXHIDRV_getinput(LIBAROMA_HIDP me, LIBAROMA_HID_EVENTP dest_ev);
 byte LINUXHIDRV_init_device(LINUXHIDRV_INTERNALP mi, int fd,
                             LINUXHIDRV_DEVICEP dev);
 
+static byte __blacklist_barcode = 1;
+
+void LINUXHIDRV_SetBarcodeBlacklist(byte val) { __blacklist_barcode = val; }
+
 /*
  * function : check blacklisted devices
  */
-byte LINUXHIDRV_blacklist(char* name) {
+byte LINUXHIDRV_blacklist(char *name) {
   /* BLACKLIST DEVICES */
   if (strcmp(name, "Video Bus") == 0) {
     return 1;
@@ -155,7 +161,9 @@ byte LINUXHIDRV_blacklist(char* name) {
   } else if (strcmp(name, "PC Speaker") == 0) {
     return 1;
   } else if (strstr(name, "Barcode") != NULL) {
-    return 1;
+    if (__blacklist_barcode) {
+      return 1;
+    }
   }
 
   /* no blacklisted */
@@ -186,9 +194,9 @@ byte LINUXHIDRV_init(LIBAROMA_HIDP me) {
   /* set initial value */
   mi->n = 0;
   /* open input device directory */
-  DIR* dir = opendir(LINUXHIDRV_DEVPATH);
+  DIR *dir = opendir(LINUXHIDRV_DEVPATH);
   if (dir != 0) {
-    struct dirent* de; /* dirent */
+    struct dirent *de; /* dirent */
     int fd;            /* temporary device fd */
 
     /* read input device directory */
@@ -245,6 +253,10 @@ byte LINUXHIDRV_init(LIBAROMA_HIDP me) {
       return 0;
     }
 
+    pipe(mi->fdctl);
+    mi->fds[mi->n].fd = mi->fdctl[0];
+    mi->fds[mi->n].events = POLLIN;
+
     /* set driver callbacks */
     me->release = &LINUXHIDRV_release;
     me->getinput = &LINUXHIDRV_getinput;
@@ -267,8 +279,13 @@ void LINUXHIDRV_release(LIBAROMA_HIDP me) {
   if (me == NULL) {
     return;
   }
+
   /* get internal data */
   LINUXHIDRV_INTERNALP mi = (LINUXHIDRV_INTERNALP)me->internal;
+
+  write(mi->fdctl[1], "X", 1);
+  libaroma_sleep(200);
+
   /* release devices data */
   while (mi->n-- > 0) {
     /* release virtual keys */
@@ -279,6 +296,10 @@ void LINUXHIDRV_release(LIBAROMA_HIDP me) {
     /* close fd */
     close(mi->fds[mi->n].fd);
   }
+
+  close(mi->fdctl[0]);
+  close(mi->fdctl[1]);
+
   /* free internal data */
   free(me->internal);
   me->internal = NULL;
@@ -287,8 +308,8 @@ void LINUXHIDRV_release(LIBAROMA_HIDP me) {
 /*
  * function : returns empty tokens
  */
-static char* LINUXHIDRV_strtok_r(char* str, const char* delim,
-                                 char** save_str) {
+static char *LINUXHIDRV_strtok_r(char *str, const char *delim,
+                                 char **save_str) {
   if (!str) {
     if (!*save_str) {
       return NULL;
@@ -387,7 +408,7 @@ byte LINUXHIDRV_init_device(LINUXHIDRV_INTERNALP mi, int fd,
                             LINUXHIDRV_DEVICEP dev) {
   /* virtual key path */
   char vk_path[PATH_MAX] = LINUXHIDRV_BOARD_VKEY_PATH;
-  char* ts = NULL;
+  char *ts = NULL;
   char vks[2048];
 
   /* get device name */
@@ -475,7 +496,7 @@ byte LINUXHIDRV_init_device(LINUXHIDRV_INTERNALP mi, int fd,
       dev->vks = malloc(sizeof(LINUXHIDRV_VK) * dev->vkn);
       int i;
       for (i = 0; i < dev->vkn; i++) {
-        char* token[6];
+        char *token[6];
         int j;
         for (j = 0; j < 6; j++) {
           token[j] = LINUXHIDRV_strtok_r((i || j) ? NULL : vks, ":", &ts);
@@ -504,7 +525,7 @@ byte LINUXHIDRV_init_device(LINUXHIDRV_INTERNALP mi, int fd,
  * function : translate raw data
  */
 byte LINUXHIDRV_translate(LIBAROMA_HIDP me, LINUXHIDRV_DEVICEP dev,
-                          LIBAROMA_HID_EVENTP dest_ev, struct input_event* ev) {
+                          LIBAROMA_HID_EVENTP dest_ev, struct input_event *ev) {
   if (dev->devclass & LINUXHIDRV_DEVCLASS_MOUSE_EMULATION) {
     /* it's touch device mouse emulation - input_translate/translate_touch.c */
     return LINUXHIDRV_translate_mousetouch_emulation(me, dev, dest_ev, ev);
@@ -532,15 +553,21 @@ byte LINUXHIDRV_getinput(LIBAROMA_HIDP me, LIBAROMA_HID_EVENTP dest_ev) {
 
   /* polling loop */
   do {
-    int r = poll(mi->fds, mi->n, -1);
+    int r = poll(mi->fds, mi->n + 1, -1);
     if (me->internal == NULL) {
       /* if released */
       break;
     } else if (r > 0) {
       /* events loop */
       int n;
-      for (n = 0; n < mi->n; n++) {
-        if (mi->fds[n].revents & POLLIN) {
+      for (n = 0; n < mi->n + 1; n++) {
+        if (n == mi->n) {
+          if (mi->fds[n].revents & POLLIN) {
+            ALOGI("HID INPUT RELEASE EVENT");
+            libaroma_sleep(100);
+            return LIBAROMA_HID_EV_RET_EXIT;
+          }
+        } else if (mi->fds[n].revents & POLLIN) {
           /* read data */
           struct input_event ev;
           r = read(mi->fds[n].fd, &ev, sizeof(ev));
