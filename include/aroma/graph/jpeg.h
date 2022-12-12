@@ -22,7 +22,7 @@
  *
  */
 #ifndef __libaroma_aroma_h__
-  #error "Include <aroma.h> instead."
+#error "Include <aroma.h> instead."
 #endif
 #ifndef __libaroma_jpeg_h__
 #define __libaroma_jpeg_h__
@@ -33,41 +33,38 @@
  * Return Value: LIBAROMA_CANVASP
  * Descriptions: read jpeg - extended
  */
-LIBAROMA_CANVASP libaroma_jpeg_ex(
-    LIBAROMA_STREAMP stream,
-    byte freeStream,
-    byte hicolor);
+LIBAROMA_CANVASP libaroma_jpeg_ex(LIBAROMA_STREAMP stream, byte freeStream,
+                                  byte hicolor);
 
 /* libaroma_jpeg_ex aliases */
 #define libaroma_jpeg(stream, freeStream) \
   libaroma_jpeg_ex(stream, freeStream, 0)
-#define libaroma_jpeg_uri_ex(uri,hicolor) \
+#define libaroma_jpeg_uri_ex(uri, hicolor) \
   libaroma_jpeg_ex(libaroma_stream(uri), 1, hicolor)
-#define libaroma_jpeg_uri(uri) \
-  libaroma_jpeg_ex(libaroma_stream(uri), 1, 0)
+#define libaroma_jpeg_uri(uri) libaroma_jpeg_ex(libaroma_stream(uri), 1, 0)
 #define libaroma_jpeg_zip(path, zpath, hicolor) \
-  libaroma_jpeg_ex(libaroma_stream_zip(path,zpath),1,hicolor)
+  libaroma_jpeg_ex(libaroma_stream_zip(path, zpath), 1, hicolor)
 #define libaroma_jpeg_mzip(zip, zpath, hicolor) \
-  libaroma_jpeg_ex(libaroma_stream_mzip(zip,zpath),1,hicolor)
+  libaroma_jpeg_ex(libaroma_stream_mzip(zip, zpath), 1, hicolor)
 #define libaroma_jpeg_file(filepath, hicolor) \
-  libaroma_jpeg_ex(libaroma_stream_file(filepath),1,hicolor)
+  libaroma_jpeg_ex(libaroma_stream_file(filepath), 1, hicolor)
 
 /*
- * Function    : libaroma_jpeg_draw
+ * Function    : libaroma_jpeg_draw_ex
  * Return Value: byte
  * Descriptions: read jpeg & directly draw it
  */
-byte libaroma_jpeg_draw(
-    LIBAROMA_STREAMP stream,
-    byte freeStream,
-    LIBAROMA_CANVASP cv,
-    int dx, int dy, int dw, int dh,
-    byte dither
-    );
+byte libaroma_jpeg_draw_ex(LIBAROMA_STREAMP stream, byte freeStream,
+                           LIBAROMA_CANVASP cv, int dx, int dy, int dw, int dh,
+                           byte dither, byte resize);
+#define libaroma_jpeg_draw(s, f, c, x, y, w, h, d) \
+  libaroma_jpeg_draw_ex(s, f, c, x, y, w, h, d, 1)
 
 byte libaroma_jpeg_save(LIBAROMA_CANVASP sc, char *filename, int quality);
-byte libaroma_jpeg_savemem(LIBAROMA_CANVASP sc, unsigned long * jpegSize, bytep * jpegBuf, int quality);
-byte libaroma_jpeg_savemem_scale(LIBAROMA_CANVASP sc, unsigned long * jpegSize, bytep * jpegBuf, int quality, float divsz);
+byte libaroma_jpeg_savemem(LIBAROMA_CANVASP sc, unsigned long *jpegSize,
+                           bytep *jpegBuf, int quality);
+byte libaroma_jpeg_savemem_scale(LIBAROMA_CANVASP sc, unsigned long *jpegSize,
+                                 bytep *jpegBuf, int quality, float divsz);
 
 #endif /* LIBAROMA_CONFIG_NOJPEG */
 #endif /* __libaroma_jpeg_h__ */
