@@ -25,11 +25,17 @@
 #define __libaroma_jpeg_c__
 #include <aroma_internal.h>
 // #include <jinclude.h>         /* JPEG */
-#include <jpeglib.h>
 #include <jerror.h>
+#include <jpeglib.h>
 #include <setjmp.h>
 
 #ifndef LIBAROMA_CONFIG_NOJPEG
+
+//
+// LIB-JPEG-TURBO RGB565 - Define in build argument
+//
+// #define LIBJPEG_HASRGB565_OUT 1
+// #define LIBJPEG_HASRGB565_IN 1 /* not work yet? jpeg-turbo bugs? */
 
 /*
  * Structure   : __LIBAROMA_JPEG_MEM_MGR
@@ -155,6 +161,11 @@ LIBAROMA_CANVASP libaroma_jpeg_ex(LIBAROMA_STREAMP stream, byte freeStream,
   jpeg_create_decompress(&cinfo);
   _libaroma_jpeg_mem_src(&cinfo, (const JOCTET *)stream->data, stream->size);
   jpeg_read_header(&cinfo, TRUE);
+#ifdef LIBJPEG_HASRGB565_OUT
+  cinfo.out_color_space = JCS_RGB565;
+  cinfo.dither_mode = JDITHER_NONE;
+#endif
+  cinfo.dct_method = JDCT_IFAST;
   jpeg_start_decompress(&cinfo);
 
   /* set info */
@@ -177,24 +188,32 @@ LIBAROMA_CANVASP libaroma_jpeg_ex(LIBAROMA_STREAMP stream, byte freeStream,
   dword row_sz = pcv_w * pcv_c;
   bytep row_data = (bytep)malloc(row_sz);
   int y = 0;
-  int x, z;
   if (hicolor) {
     while (cinfo.output_scanline < cinfo.output_height) {
       wordp line = cv->data + (y * cv->l);
-      bytep hicl = cv->hicolor + (y * cv->l);
       jpeg_read_scanlines(&cinfo, &row_data, 1);
+#ifdef LIBJPEG_HASRGB565_OUT
+      memcpy(line, row_data, pcv_w*2);
+#else
+      int x, z;
+      bytep hicl = cv->hicolor + (y * cv->l);
       for (x = 0, z = row_sz; x < z; x += 3) {
         *line++ = libaroma_rgb(row_data[x], row_data[x + 1], row_data[x + 2]);
         *hicl++ =
             libaroma_color_left(row_data[x], row_data[x + 1], row_data[x + 2]);
       }
+#endif
       y++;
     }
   } else {
     while (cinfo.output_scanline < cinfo.output_height) {
       wordp line = cv->data + (y * cv->l);
       jpeg_read_scanlines(&cinfo, &row_data, 1);
+#ifdef LIBJPEG_HASRGB565_OUT
+      memcpy(line, row_data, pcv_w);
+#else
       libaroma_dither_24to16(y++, pcv_w, line, row_data);
+#endif
     }
   }
   free(row_data);
@@ -239,6 +258,11 @@ byte libaroma_jpeg_draw_ex(LIBAROMA_STREAMP stream, byte freeStream,
   jpeg_create_decompress(&cinfo);
   _libaroma_jpeg_mem_src(&cinfo, (const JOCTET *)stream->data, stream->size);
   jpeg_read_header(&cinfo, TRUE);
+#ifdef LIBJPEG_HASRGB565_OUT
+  cinfo.output_components = 2;
+  cinfo.out_color_space = JCS_RGB565;
+#endif
+  cinfo.dct_method = JDCT_IFAST;
   jpeg_start_decompress(&cinfo);
 
   dword vdw = (dword)dw;
@@ -256,11 +280,15 @@ byte libaroma_jpeg_draw_ex(LIBAROMA_STREAMP stream, byte freeStream,
     while (cinfo.output_scanline < vdh) {
       wordp line = cv->data + ((y + dy) * cv->l) + dx;
       jpeg_read_scanlines(&cinfo, &row_data, 1);
+#ifdef LIBJPEG_HASRGB565_OUT
+      memcpy(line, row_data, vdw*2);
+#else
       if (dither) {
         libaroma_dither_24to16(y, vdw, line, row_data);
       } else {
         libaroma_color_24to16(line, row_data, vdw);
       }
+#endif
       y++;
     }
     free(row_data);
@@ -283,13 +311,18 @@ byte libaroma_jpeg_draw_ex(LIBAROMA_STREAMP stream, byte freeStream,
     while (cinfo.output_scanline < cinfo.output_height) {
       wordp line = cvt->data + (y * cvt->l);
       jpeg_read_scanlines(&cinfo, &row_data, 1);
+#ifdef LIBJPEG_HASRGB565_OUT
+      memcpy(line, row_data, pcv_w*2);
+#else
       if (dither) {
         libaroma_dither_24to16(y, pcv_w, line, row_data);
       } else {
         libaroma_color_24to16(line, row_data, pcv_w);
       }
       y++;
+#endif
     }
+
     free(row_data);
     libaroma_draw_scale_nearest(cv, cvt, dx, dy, dw, dh, 0, 0, cvt->w, cvt->h);
     libaroma_canvas_free(cvt);
@@ -329,15 +362,24 @@ byte libaroma_jpeg_save(LIBAROMA_CANVASP sc, char *filename, int quality) {
   /* Setting the parameters of the output file here */
   cinfo.image_width = c->w;
   cinfo.image_height = c->h;
+#ifdef LIBJPEG_HASRGB565_IN
+  cinfo.input_components = 2;
+  cinfo.in_color_space = JCS_RGB565;
+#else
   cinfo.input_components = 3;
   cinfo.in_color_space = JCS_RGB;
+#endif
   jpeg_set_defaults(&cinfo);
   jpeg_set_quality(&cinfo, quality, TRUE);
   jpeg_start_compress(&cinfo, TRUE);
   int ypos = 0;
   bytep row = (bytep)malloc(3 * c->w);
   while (cinfo.next_scanline < cinfo.image_height) {
+#ifdef LIBJPEG_HASRGB565_IN
+    memcpy(row, c->data + ypos * c->l, c->w * 2);
+#else
     libaroma_color_copy_rgb24(row, c->data + ypos * c->l, c->w);
+#endif
     row_pointer[0] = row;
     jpeg_write_scanlines(&cinfo, row_pointer, 1);
     ypos++;
@@ -370,9 +412,14 @@ byte libaroma_jpeg_savemem(LIBAROMA_CANVASP sc, unsigned long *jpegSize,
   /* Setting the parameters of the output file here */
   cinfo.image_width = c->w;
   cinfo.image_height = c->h;
+
+#ifdef LIBJPEG_HASRGB565_IN
+  cinfo.input_components = 2;
+  cinfo.in_color_space = JCS_RGB565;
+#else
   cinfo.input_components = 3;
-  // cinfo.input_components = 2;
   cinfo.in_color_space = JCS_RGB;
+#endif
   cinfo.dct_method = JDCT_IFAST;
   jpeg_set_defaults(&cinfo);
   jpeg_set_quality(&cinfo, quality, TRUE);
@@ -380,8 +427,11 @@ byte libaroma_jpeg_savemem(LIBAROMA_CANVASP sc, unsigned long *jpegSize,
   int ypos = 0;
   bytep row = (bytep)malloc(3 * c->w);
   while (cinfo.next_scanline < cinfo.image_height) {
+#ifdef LIBJPEG_HASRGB565_IN
+    memcpy(row, c->data + ypos * c->l, c->w * 2);
+#else
     libaroma_color_copy_rgb24(row, c->data + ypos * c->l, c->w);
-    // memcpy(row,c->data+ypos*c->l,c->w*2);
+#endif
     row_pointer[0] = row;
     jpeg_write_scanlines(&cinfo, row_pointer, 1);
     ypos++;
@@ -421,8 +471,13 @@ byte libaroma_jpeg_savemem_scale(LIBAROMA_CANVASP sc, unsigned long *jpegSize,
   /* Setting the parameters of the output file here */
   cinfo.image_width = c->w;
   cinfo.image_height = c->h;
+#ifdef LIBJPEG_HASRGB565_IN
+  cinfo.input_components = 2;
+  cinfo.in_color_space = JCS_RGB565;
+#else
   cinfo.input_components = 3;
   cinfo.in_color_space = JCS_RGB;
+#endif
   cinfo.dct_method = JDCT_IFAST;
   jpeg_set_defaults(&cinfo);
   jpeg_set_quality(&cinfo, quality, TRUE);
@@ -430,7 +485,11 @@ byte libaroma_jpeg_savemem_scale(LIBAROMA_CANVASP sc, unsigned long *jpegSize,
   int ypos = 0;
   bytep row = (bytep)malloc(3 * c->w);
   while (cinfo.next_scanline < cinfo.image_height) {
+#ifdef LIBJPEG_HASRGB565_IN
+    memcpy(row, c->data + ypos * c->l, c->w * 2);
+#else
     libaroma_color_copy_rgb24(row, c->data + ypos * c->l, c->w);
+#endif
     row_pointer[0] = row;
     jpeg_write_scanlines(&cinfo, row_pointer, 1);
     ypos++;
