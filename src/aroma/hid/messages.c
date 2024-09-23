@@ -258,7 +258,7 @@ byte libaroma_msg_post_ex(byte msg, byte state, int key, int x, int y, voidp d,
 } /* End of libaroma_msg_post */
 
 byte libaroma_msg_post(byte msg, byte state, int key, int x, int y, voidp d) {
-  return libaroma_msg_post(msg, state, key, x, y, d, 0);
+  return libaroma_msg_post_ex(msg, state, key, x, y, d, 0);
 }
 
 /*
