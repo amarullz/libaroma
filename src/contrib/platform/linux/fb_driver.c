@@ -108,6 +108,8 @@ byte LINUXFBDR_config(LIBAROMA_FBP me, const char* name, const char* sval,
     cur.hot.x = mi->pointer_y;
     cur.set = FB_CUR_SETPOS;
     ioctl(mi->fb, FBIO_CURSOR, &cur);
+  } else if (strcmp(name, "depth") == 0) {
+    return mi->depth;
   }
   return 0;
 }

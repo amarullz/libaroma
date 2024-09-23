@@ -31,10 +31,10 @@
  * Descriptions: message queue structure
  */
 typedef struct _LIBAROMA_MSGQUEUE LIBAROMA_MSGQUEUE;
-typedef struct _LIBAROMA_MSGQUEUE * LIBAROMA_MSGQUEUEP;
-struct _LIBAROMA_MSGQUEUE{
-  LIBAROMA_STACKP input; /* input queue data */
-  LIBAROMA_STACKP queue; /* queue data */
+typedef struct _LIBAROMA_MSGQUEUE* LIBAROMA_MSGQUEUEP;
+struct _LIBAROMA_MSGQUEUE {
+  LIBAROMA_STACKP input;        /* input queue data */
+  LIBAROMA_STACKP queue;        /* queue data */
   LIBAROMA_THREAD input_thread; /* input waiter thread */
 };
 
@@ -43,7 +43,7 @@ struct _LIBAROMA_MSGQUEUE{
  * Type        : LIBAROMA_MSGQUEUEP
  * Descriptions: message queue instance storage
  */
-static LIBAROMA_MSGQUEUEP _libaroma_msgqueue=NULL;
+static LIBAROMA_MSGQUEUEP _libaroma_msgqueue = NULL;
 
 /*
  * Variable    : _libaroma_msgqueue_isrun
@@ -51,29 +51,23 @@ static LIBAROMA_MSGQUEUEP _libaroma_msgqueue=NULL;
  * Descriptions: message queue running lock
  */
 static byte _libaroma_msgqueue_isrun = 0;
-static LIBAROMA_COND_MUTEX  _libaroma_msgqueue_mutex;
-static LIBAROMA_COND        _libaroma_msgqueue_cond;
+static LIBAROMA_COND_MUTEX _libaroma_msgqueue_mutex;
+static LIBAROMA_COND _libaroma_msgqueue_cond;
 
 /*
  * Function    : libaroma_msg_post_hid
  * Return Value: byte
  * Descriptions: post hid event
  */
-byte libaroma_msg_post_hid(
-  byte    msg,
-  byte    state,
-  int     key,
-  int     x,
-  int     y
-); /* End of libaroma_msg_post_hid */
+byte libaroma_msg_post_hid(byte msg, byte state, int key, int x,
+                           int y); /* End of libaroma_msg_post_hid */
 
 /*
  * Function    : _libaroma_msgqueue_hid_thread
  * Return Value: static void *
  * Descriptions: hid thread
  */
-static void * _libaroma_msgqueue_hid_thread(
-    void * cookie) {
+static void* _libaroma_msgqueue_hid_thread(void* cookie) {
   /* hid loop */
   while (_libaroma_msgqueue_isrun) {
     /* wait for hid event */
@@ -84,32 +78,15 @@ static void * _libaroma_msgqueue_hid_thread(
       switch (e.type) {
         case LIBAROMA_HID_EV_TYPE_TOUCH:
           /* post touch message */
-          libaroma_msg_post_hid(
-            LIBAROMA_MSG_TOUCH,
-            e.state,
-            e.key,
-            e.x,
-            e.y
-          );
+          libaroma_msg_post_hid(LIBAROMA_MSG_TOUCH, e.state, e.key, e.x, e.y);
           break;
         case LIBAROMA_HID_EV_TYPE_KEY:
           /* post key message */
-          libaroma_msg_post_hid(
-            LIBAROMA_MSG_KEY(ret),
-            e.state,
-            e.key,
-            e.x,
-            e.y
-          );
+          libaroma_msg_post_hid(LIBAROMA_MSG_KEY(ret), e.state, e.key, e.x,
+                                e.y);
           break;
         case LIBAROMA_HID_EV_RET_EXIT:
-          libaroma_msg_post_hid(
-            LIBAROMA_MSG_EXIT,
-            0,
-            0,
-            0,
-            0
-          );
+          libaroma_msg_post_hid(LIBAROMA_MSG_EXIT, 0, 0, 0, 0);
           break;
       }
     }
@@ -127,11 +104,11 @@ byte libaroma_msg_init() {
     ALOGE("message instance already initialized");
     return 0;
   }
-  
+
   libaroma_cond_init(&_libaroma_msgqueue_cond, &_libaroma_msgqueue_mutex);
-  
+
   /* Allocating Instance */
-  _libaroma_msgqueue = (LIBAROMA_MSGQUEUEP) calloc(sizeof(LIBAROMA_MSGQUEUE),1);
+  _libaroma_msgqueue = (LIBAROMA_MSGQUEUEP)calloc(sizeof(LIBAROMA_MSGQUEUE), 1);
   /* Init Queue Data */
   _libaroma_msgqueue->queue = libaroma_stack(NULL);
   /* Init Input Queue Data */
@@ -139,8 +116,8 @@ byte libaroma_msg_init() {
   /* Set Message Queue is Valid */
   _libaroma_msgqueue_isrun = 1;
   /* Init Input Thread */
-  libaroma_thread_create(
-    &_libaroma_msgqueue->input_thread,_libaroma_msgqueue_hid_thread, NULL);
+  libaroma_thread_create(&_libaroma_msgqueue->input_thread,
+                         _libaroma_msgqueue_hid_thread, NULL);
   /* OK */
   return 1;
 } /* End of libaroma_msg_init */
@@ -176,7 +153,6 @@ void libaroma_msg_clean_queue() {
   _libaroma_msgqueue->queue = libaroma_stack(NULL);
   libaroma_cond_unlock(&_libaroma_msgqueue_mutex);
 } /* End of libaroma_msg_clean_queue */
-
 
 /*
  * Function    : libaroma_msg_start
@@ -228,7 +204,7 @@ void libaroma_msg_release() {
   /* Free Instance */
   free(_libaroma_msgqueue);
   _libaroma_msgqueue = NULL;
-  
+
   libaroma_cond_free(&_libaroma_msgqueue_cond, &_libaroma_msgqueue_mutex);
 } /* End of libaroma_msg_release */
 
@@ -237,7 +213,7 @@ void libaroma_msg_release() {
  * Return Value: byte
  * Descriptions: get run state
  */
-byte libaroma_msg_runstate(){
+byte libaroma_msg_runstate() {
   return _libaroma_msgqueue_isrun;
 } /* End of libaroma_msg_runstate */
 
@@ -246,34 +222,32 @@ byte libaroma_msg_runstate(){
  * Return Value: byte
  * Descriptions: post user message
  */
-byte libaroma_msg_post(
-  byte    msg,
-  byte    state,
-  int     key,
-  int     x,
-  int     y,
-  voidp   d
-) {
+byte libaroma_msg_post_ex(byte msg, byte state, int key, int x, int y, voidp d,
+                          byte unshift) {
   /* Ignore Non-Start Messages */
   if (_libaroma_msgqueue_isrun != 2) {
     return 0;
   }
   /* set data */
   LIBAROMA_MSG _msg;
-  _msg.msg    = msg;
-  _msg.state  = state;
-  _msg.key    = key;
-  _msg.x      = x;
-  _msg.y      = y;
-  _msg.d      = d;
-  _msg.sent   = libaroma_tick();
+  _msg.msg = msg;
+  _msg.state = state;
+  _msg.key = key;
+  _msg.x = x;
+  _msg.y = y;
+  _msg.d = d;
+  _msg.sent = libaroma_tick();
   /* mutex lock */
   libaroma_cond_lock(&_libaroma_msgqueue_mutex);
   /* push message */
-  byte ret = libaroma_stack_push(
-    _libaroma_msgqueue->queue,
-    &_msg,
-    sizeof(LIBAROMA_MSG));
+  byte ret = 0;
+  if (unshift) {
+    ret = libaroma_stack_unshift(_libaroma_msgqueue->queue, &_msg,
+                                 sizeof(LIBAROMA_MSG));
+  } else {
+    ret = libaroma_stack_push(_libaroma_msgqueue->queue, &_msg,
+                              sizeof(LIBAROMA_MSG));
+  }
   /* send signal if message was pushed */
   if (ret) {
     libaroma_cond_signal(&_libaroma_msgqueue_cond);
@@ -283,36 +257,34 @@ byte libaroma_msg_post(
   return ret;
 } /* End of libaroma_msg_post */
 
+byte libaroma_msg_post(byte msg, byte state, int key, int x, int y, voidp d) {
+  return libaroma_msg_post(msg, state, key, x, y, d, 0);
+}
+
 /*
  * Function    : libaroma_msg_post_hid
  * Return Value: byte
  * Descriptions: post hid message
  */
-byte libaroma_msg_post_hid(
-  byte    msg,
-  byte    state,
-  int     key,
-  int     x,
-  int     y
-) {
+byte libaroma_msg_post_hid(byte msg, byte state, int key, int x, int y) {
   /* ignore non-start messages */
   if (_libaroma_msgqueue_isrun != 2) {
     return 0;
   }
   /* set data */
   LIBAROMA_MSG _msg;
-  _msg.msg    = msg;
-  _msg.state  = state;
-  _msg.key    = key;
-  _msg.x      = x;
-  _msg.y      = y;
-  _msg.d      = NULL;
-  _msg.sent   = libaroma_tick();
+  _msg.msg = msg;
+  _msg.state = state;
+  _msg.key = key;
+  _msg.x = x;
+  _msg.y = y;
+  _msg.d = NULL;
+  _msg.sent = libaroma_tick();
   /* mutex lock */
   libaroma_cond_lock(&_libaroma_msgqueue_mutex);
   /* push message */
-  byte ret = libaroma_stack_push(
-    _libaroma_msgqueue->input, &_msg, sizeof(LIBAROMA_MSG));
+  byte ret = libaroma_stack_push(_libaroma_msgqueue->input, &_msg,
+                                 sizeof(LIBAROMA_MSG));
   /* send signal if message was pushed */
   if (ret) {
     libaroma_cond_signal(&_libaroma_msgqueue_cond);
@@ -328,8 +300,7 @@ byte libaroma_msg_post_hid(
  * Return Value: byte
  * Descriptions: get message from queue
  */
-byte libaroma_msg(
-    LIBAROMA_MSGP msg) {
+byte libaroma_msg(LIBAROMA_MSGP msg) {
   /* mutex lock */
   libaroma_cond_lock(&_libaroma_msgqueue_mutex);
   /* wait until data available in queue */
@@ -348,8 +319,7 @@ byte libaroma_msg(
   }
   byte ret = LIBAROMA_MSG_NONE;
   /* shift stack */
-  LIBAROMA_MSGP shift_event =
-    (LIBAROMA_MSGP) libaroma_stack_shift(get_stack);
+  LIBAROMA_MSGP shift_event = (LIBAROMA_MSGP)libaroma_stack_shift(get_stack);
   if (shift_event != NULL) {
     /* copy into destination */
     memcpy(msg, shift_event, sizeof(LIBAROMA_MSG));
@@ -363,6 +333,4 @@ byte libaroma_msg(
   return ret;
 } /* End of libaroma_msg */
 
-
 #endif /* __libaroma_messages_c__ */
-
