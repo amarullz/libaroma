@@ -519,7 +519,10 @@ voidp libaroma_stack_shift(
     a->last = NULL;
   }
   else {
-    a->first          = first->next;
+    a->first = first->next;
+    if (a->first && a->first->next){
+      a->first->next->prev = a->first;
+    }
   }
   
   a->n--;
@@ -557,7 +560,10 @@ voidp libaroma_stack_pop(
     a->last = NULL;
   }
   else {
-    a->last           = last->prev;
+    a->last = last->prev;
+    if (a->last){
+      a->last->next = NULL;
+    }
   }
   voidp ret           = last->val;
   a->n--;
@@ -610,6 +616,9 @@ byte libaroma_stack_unshift(
     a->first = item;
     a->last = item;
     return 1;
+  }
+  else {
+    a->first->prev = item;
   }
   a->first = item;
   return 1;
@@ -775,6 +784,13 @@ byte libaroma_stack_item_delete(
     LIBAROMA_STACK_ITEMP next = ai->next;
     next->prev = ai->prev;
   }
+  if (afist != NULL){
+    afist->prev = NULL;
+  }
+  if (alast != NULL){
+    alast->next = NULL;
+  }
+  
   a->first = afist;
   a->last  = alast;
   a->n--;
@@ -782,7 +798,9 @@ byte libaroma_stack_item_delete(
   if (a->cb != NULL) {
     a->cb(ai->val);
   }
-  free(ai->val);
+  if (ai->val){
+    free(ai->val);
+  }
   free(ai);
   return 1;
 } /* End of libaroma_stack_item_delete */
@@ -826,7 +844,7 @@ LIBAROMA_STACK_ITEMP libaroma_stack_at(
     return NULL;
   }
   /* Find Faster Loop */
-  int half = a->n << 1;
+  int half = a->n >> 1;
   LIBAROMA_STACK_ITEMP find = NULL;
   int posfind = 0;
   if (pos <= half) {
@@ -1007,4 +1025,3 @@ byte libaroma_stack_free(
 } /* End of libaroma_stack_free */
 
 #endif /* __libaroma_array_c__ */
-
