@@ -26,6 +26,23 @@
 #include <aroma_internal.h>
 
 byte LIBAROMA_FB_INIT_FUNCTION(LIBAROMA_FBP);
+
+/*
+ * Variable    : _libaroma_fb_driver
+ * Type        : LIBAROMA_FB_DRIVER
+ * Descriptions: framebuffer driver
+ */
+static LIBAROMA_FB_DRIVER _libaroma_fb_driver = NULL;
+
+/*
+ * Function    : libaroma_fb_set_driver
+ * Return Value: void
+ * Descriptions: Set framebuffer driver
+ */
+void libaroma_fb_set_driver(LIBAROMA_FB_DRIVER driver_init) {
+  _libaroma_fb_driver = driver_init;
+}
+
 /*
  * Variable    : _libaroma_fb
  * Type        : LIBAROMA_FBP
@@ -89,7 +106,10 @@ byte libaroma_fb_init() {
     }
   } else {
     ALOGV("Init framebuffer driver - default");
-    if (LIBAROMA_FB_INIT_FUNCTION(_libaroma_fb) == 0) {
+    if (!_libaroma_fb_driver) {
+      _libaroma_fb_driver = LIBAROMA_FB_INIT_FUNCTION;
+    }
+    if (_libaroma_fb_driver(_libaroma_fb) == 0) {
       free(_libaroma_fb);
       _libaroma_fb = NULL;
       ALOGE("libaroma_fb_init driver error");

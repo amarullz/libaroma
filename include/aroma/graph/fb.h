@@ -207,4 +207,8 @@ byte libaroma_fb_sync_enable(byte state);
 #define LIBAROMA_FB_H _LIBAROMA_FB_VALUE(h, 0)
 #define LIBAROMA_FB_DPI _LIBAROMA_FB_VALUE(dpi, 0)
 
+/* driver */
+typedef byte (*LIBAROMA_FB_DRIVER)(LIBAROMA_FBP);
+void libaroma_fb_set_driver(LIBAROMA_FB_DRIVER driver_init);
+
 #endif /* __libaroma_fb_h__ */

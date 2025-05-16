@@ -26,6 +26,23 @@
 #include <aroma_internal.h>
 
 byte LIBAROMA_HID_INIT_FUNCTION(LIBAROMA_HIDP);
+
+/*
+ * Variable    : _libaroma_hid_driver
+ * Type        : LIBAROMA_HID_DRIVER
+ * Descriptions: HID driver
+ */
+static LIBAROMA_HID_DRIVER _libaroma_hid_driver = NULL;
+
+/*
+ * Function    : libaroma_hid_set_driver
+ * Return Value: void
+ * Descriptions: Set HID driver
+ */
+void libaroma_hid_set_driver(LIBAROMA_HID_DRIVER driver_init) {
+  _libaroma_hid_driver = driver_init;
+}
+
 /*
  * Variable    : _libaroma_hid
  * Type        : type_data
@@ -96,7 +113,10 @@ byte libaroma_hid_init() {
     }
   } else {
     ALOGV("Init hid driver - default");
-    if (!LIBAROMA_HID_INIT_FUNCTION(_libaroma_hid)) {
+    if (!_libaroma_hid_driver) {
+      _libaroma_hid_driver = LIBAROMA_HID_INIT_FUNCTION;
+    }
+    if (!_libaroma_hid_driver(_libaroma_hid)) {
       ALOGE("init hid driver failed");
       goto return_error_clean;
     }

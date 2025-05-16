@@ -22,45 +22,45 @@
  *
  */
 #ifndef __libaroma_aroma_h__
-  #error "Include <aroma.h> instead."
+#error "Include <aroma.h> instead."
 #endif
 #ifndef __libaroma_hid_h__
 #define __libaroma_hid_h__
 
 /* hid macros */
-#define LIBAROMA_HID_KEYCODE_MAX      0x200
-#define LIBAROMA_HID_TOUCH_KEYCODE    (LIBAROMA_HID_KEYCODE_MAX-1)
-#define LIBAROMA_HID_WHEEL_KEYCODE    (LIBAROMA_HID_KEYCODE_MAX-2)
+#define LIBAROMA_HID_KEYCODE_MAX 0x200
+#define LIBAROMA_HID_TOUCH_KEYCODE (LIBAROMA_HID_KEYCODE_MAX - 1)
+#define LIBAROMA_HID_WHEEL_KEYCODE (LIBAROMA_HID_KEYCODE_MAX - 2)
 
 /* Input Event Type */
-#define LIBAROMA_HID_EV_TYPE_NONE     0x00 /* Won't processed */
-#define LIBAROMA_HID_EV_TYPE_KEY      0x01 /* Keypad/Keyboards */
-#define LIBAROMA_HID_EV_TYPE_TOUCH    0x02 /* Touch Screen */
+#define LIBAROMA_HID_EV_TYPE_NONE 0x00  /* Won't processed */
+#define LIBAROMA_HID_EV_TYPE_KEY 0x01   /* Keypad/Keyboards */
+#define LIBAROMA_HID_EV_TYPE_TOUCH 0x02 /* Touch Screen */
 
 /* Get Input Return Values */
-#define LIBAROMA_HID_EV_RET_NONE      0x00 /* ignore  */
-#define LIBAROMA_HID_EV_RET_SELECT    0x01 /* enter, select, power, .. */
-#define LIBAROMA_HID_EV_RET_MENU      0x02 /* menu / search button, .. */
-#define LIBAROMA_HID_EV_RET_BACK      0x03 /* back, esc, .. */
-#define LIBAROMA_HID_EV_RET_UP        0x04 /* up */
-#define LIBAROMA_HID_EV_RET_DOWN      0x05 /* down */
-#define LIBAROMA_HID_EV_RET_TOUCH     0x06 /* touch */
-#define LIBAROMA_HID_EV_RET_RAWKEY    0x07 /* raw keycode */
-#define LIBAROMA_HID_EV_RET_EXIT      0xcc /* halt */
-#define LIBAROMA_HID_EV_RET_ERROR     0xdd /* error */
+#define LIBAROMA_HID_EV_RET_NONE 0x00   /* ignore  */
+#define LIBAROMA_HID_EV_RET_SELECT 0x01 /* enter, select, power, .. */
+#define LIBAROMA_HID_EV_RET_MENU 0x02   /* menu / search button, .. */
+#define LIBAROMA_HID_EV_RET_BACK 0x03   /* back, esc, .. */
+#define LIBAROMA_HID_EV_RET_UP 0x04     /* up */
+#define LIBAROMA_HID_EV_RET_DOWN 0x05   /* down */
+#define LIBAROMA_HID_EV_RET_TOUCH 0x06  /* touch */
+#define LIBAROMA_HID_EV_RET_RAWKEY 0x07 /* raw keycode */
+#define LIBAROMA_HID_EV_RET_EXIT 0xcc   /* halt */
+#define LIBAROMA_HID_EV_RET_ERROR 0xdd  /* error */
 
 /* Input Event State */
-#define LIBAROMA_HID_EV_STATE_UP      0x00 /* key/touch up */
-#define LIBAROMA_HID_EV_STATE_DOWN    0x01 /* key/touch down */
-#define LIBAROMA_HID_EV_STATE_MOVE    0x02 /* move */
-#define LIBAROMA_HID_EV_STATE_CANCEL  0x03 /* canceled */
+#define LIBAROMA_HID_EV_STATE_UP 0x00     /* key/touch up */
+#define LIBAROMA_HID_EV_STATE_DOWN 0x01   /* key/touch down */
+#define LIBAROMA_HID_EV_STATE_MOVE 0x02   /* move */
+#define LIBAROMA_HID_EV_STATE_CANCEL 0x03 /* canceled */
 
 /*
  * Typedef     : LIBAROMA_HID
  * Descriptions: hid type structure
  */
 typedef struct _LIBAROMA_HID LIBAROMA_HID;
-typedef struct _LIBAROMA_HID * LIBAROMA_HIDP;
+typedef struct _LIBAROMA_HID *LIBAROMA_HIDP;
 
 /*
  * Typedef     : LIBAROMA_HID_INITIALIZER
@@ -80,7 +80,7 @@ byte libaroma_hid_set_initializer(LIBAROMA_HID_INITIALIZER cb);
  * Descriptions: hid event type structure
  */
 typedef struct _LIBAROMA_HID_EVENT LIBAROMA_HID_EVENT;
-typedef struct _LIBAROMA_HID_EVENT * LIBAROMA_HID_EVENTP;
+typedef struct _LIBAROMA_HID_EVENT *LIBAROMA_HID_EVENTP;
 
 /*
  * Structure   : _LIBAROMA_HID
@@ -89,20 +89,20 @@ typedef struct _LIBAROMA_HID_EVENT * LIBAROMA_HID_EVENTP;
  */
 struct _LIBAROMA_HID {
   voidp internal;
-  
+
   /* driver callbacks */
   void (*release)(LIBAROMA_HIDP);
   byte (*getinput)(LIBAROMA_HIDP, LIBAROMA_HID_EVENTP);
   byte (*config)(LIBAROMA_HIDP, const char *, const char *, dword);
-  
+
   /* libaroma usable data */
-  int   screen_width;
-  int   screen_height;
-  byte  key_pressed[LIBAROMA_HID_KEYCODE_MAX / 8];
-  
+  int screen_width;
+  int screen_height;
+  byte key_pressed[LIBAROMA_HID_KEYCODE_MAX / 8];
+
   /* touch move informations */
-  int   touch_last_x;
-  int   touch_last_y;
+  int touch_last_x;
+  int touch_last_y;
 };
 
 /*
@@ -111,11 +111,11 @@ struct _LIBAROMA_HID {
  * Descriptions: hid structure
  */
 struct _LIBAROMA_HID_EVENT {
-  byte  type;
-  int   key;
-  byte  state;
-  int   x;
-  int   y;
+  byte type;
+  int key;
+  byte state;
+  int x;
+  int y;
 };
 
 /*
@@ -151,8 +151,12 @@ byte libaroma_hid_get(LIBAROMA_HID_EVENTP e);
  * Return Value: byte
  * Descriptions: runtime config
  */
-byte libaroma_hid_config(char * name,char * svalue,dword dvalue);
+byte libaroma_hid_config(char *name, char *svalue, dword dvalue);
 
 void libaroma_hid_restart();
+
+/* driver */
+typedef byte (*LIBAROMA_HID_DRIVER)(LIBAROMA_HIDP);
+void libaroma_hid_set_driver(LIBAROMA_HID_DRIVER driver_init);
 
 #endif /* __libaroma_hid_h__ */
