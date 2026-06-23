@@ -333,7 +333,7 @@ LIBAROMA_STREAMP libaroma_stream(
 #endif
   else if (strcmp(kwd, "mem://") == 0) {
     unsigned int mem;
-    int mem_sz;
+    unsigned int mem_sz;
     int rc;
 
     rc = sscanf(uri+6, "0x%x-0x%x", &mem, &mem_sz);

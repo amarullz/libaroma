@@ -40,7 +40,7 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <unistd.h>
-#include "SDL.h"
+#include <SDL/SDL.h>
 
 /*
  * structure : internal driver data
@@ -113,7 +113,7 @@ byte LINUXHIDRV_getinput(
 
   /* polling loop */
   do {
-    if(SDL_PollEvent(&event)) {
+    if(SDL_WaitEvent(&event)) {
       switch(event.type) {
         case SDL_QUIT:
           return LIBAROMA_HID_EV_RET_EXIT;

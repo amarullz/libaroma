@@ -82,8 +82,7 @@ static void* _libaroma_msgqueue_hid_thread(void* cookie) {
           break;
         case LIBAROMA_HID_EV_TYPE_KEY:
           /* post key message */
-          libaroma_msg_post_hid(LIBAROMA_MSG_KEY(ret), e.state, e.key, e.x,
-                                e.y);
+          libaroma_msg_post_hid(LIBAROMA_MSG_KEY(ret), e.state, e.key, e.x, e.y);
           break;
         case LIBAROMA_HID_EV_RET_EXIT:
           libaroma_msg_post_hid(LIBAROMA_MSG_EXIT, 0, 0, 0, 0);

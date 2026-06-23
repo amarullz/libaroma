@@ -70,12 +70,12 @@ void libaroma_canvas_blank(
     memset(c->data, 0, c->s*2);
     
     if (c->alpha != NULL) {
-      memset(c->alpha, 0xff, c->s);
+      if (c->hicolor != NULL) {
+        memset(c->alpha, 0x00, c->s);
+      }
+      else memset(c->alpha, 0xff, c->s);
     }
     
-    if (c->hicolor != NULL) {
-      memset(c->alpha, 0x00, c->s);
-    }
   }
   else {
     /* Unaligned Canvas */

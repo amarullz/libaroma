@@ -481,7 +481,7 @@ _LIBAROMA_TEXTLINEP libaroma_textline(
       /* return hr now */
       align = chunk->curr_state.flags &
         _LIBAROMA_TEXTCHUNK_ALIGN_BITWISE;
-      indent_size = (int) chunk->pending_data->param;
+      indent_size = (int) chunk->pending_data->dparam;
       limit_width -= indent_size;
       /* set line height */
       line->h = libaroma_font_size_px(
@@ -839,7 +839,7 @@ _LIBAROMA_TEXTLINEP libaroma_textline(
         chunk->pending_data =
           (_LIBAROMA_TEXTPENDINGP) malloc(sizeof(_LIBAROMA_TEXTPENDING));
         chunk->pending_data->type = _LIBAROMA_TEXTSPAN_HR;
-        chunk->pending_data->param = (voidp) indent_size;
+        chunk->pending_data->dparam = (dword) indent_size;
         /* new line first */
         return libaroma_textline_align(
           line, chunk, align, x, indent_size, limit_width);

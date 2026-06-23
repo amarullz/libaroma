@@ -74,7 +74,7 @@ typedef struct __LIBAROMA_CTL_FRAGMENT _LIBAROMA_CTL_FRAGMENT;
 typedef struct __LIBAROMA_CTL_FRAGMENT * _LIBAROMA_CTL_FRAGMENTP;
 struct __LIBAROMA_CTL_FRAGMENT{
   LIBAROMA_WINDOWP * wins;
-  int win_n;
+  unsigned int win_n;
   int win_pos;
   int win_pos_out;
   byte win_cleanup;

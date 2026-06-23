@@ -104,7 +104,8 @@ byte SDLFBDR_init(LIBAROMA_FBP me) {
   }
 
   if(SDL_Init(SDL_INIT_VIDEO) < 0) {
-		ALOGE("Couldn't init SDL: %s", SDL_GetError());
+    ALOGE("Couldn't init SDL: %s", SDL_GetError());
+    free(mi);
     return 0;
   }
   

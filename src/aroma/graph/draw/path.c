@@ -150,13 +150,13 @@ byte _libaroma_path_curve_findpoint(
   float xt, yt;
   libaroma_path_curve_calc(thalf, &xt, &yt,x0,y0,x1,y1,x2,y2,x3,y3);
   
-  if ((abs(xt-xt0)>=2)||(abs(yt-yt0)>=2)) {
+  if ((fabs(xt-xt0)>=2)||(fabs(yt-yt0)>=2)) {
     _libaroma_path_curve_findpoint(
       path,t0,thalf,x0,y0,x1,y1,x2,y2,x3,y3,xt0,yt0,xt,yt);
   }
   libaroma_path_add(path, xt, yt);
   
-  if ((abs(xt-xt1)>=2)||(abs(yt-yt1)>=2)) {
+  if ((fabs(xt-xt1)>=2)||(fabs(yt-yt1)>=2)) {
     _libaroma_path_curve_findpoint(
       path,thalf,t1,x0,y0,x1,y1,x2,y2,x3,y3,xt,yt,xt1,yt1);
   }

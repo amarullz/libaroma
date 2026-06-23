@@ -27,23 +27,21 @@
 #ifndef __libaroma_fallbacks_h__
 #define __libaroma_fallbacks_h__
 
-/* min & max fallback */
+/* min/max fallback*/
 #ifndef MIN
-//  #define MIN(a,b) (((a)<(b))?(a):(b))
-#else
-  #undef MIN
+  #define MIN(a, b) ({ \
+    __typeof__ (a) _a = (a); \
+    __typeof__ (b) _b = (b); \
+    _a > _b ? _a : _b; \
+  })
 #endif
 #ifndef MAX
-//  #define MAX(a,b) (((a)>(b))?(a):(b))
-#else
-  #undef MAX
+  #define MAX(a, b) ({ \
+    __typeof__ (a) _a = (a); \
+    __typeof__ (b) _b = (b); \
+    _a > _b ? _a : _b; \
+  })
 #endif
-
-// #define MAX(a,b) ((__typeof__ (a)) __MAX(a,b))
-// #define MIN(a,b) ((__typeof__ (a)) __MIN(a,b))
-
-#define MAX __MAX
-#define MIN __MIN
 
 #endif /* __libaroma_fallbacks_h__ */
 

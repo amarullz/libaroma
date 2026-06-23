@@ -84,7 +84,7 @@ byte __libaroma_ctl_list_item_reg_thread(
   */
   
   LIBAROMA_CTL_LISTP mi = (LIBAROMA_CTL_LISTP) client->internal;
-  if (mi->threadn==0){
+  if (mi->threadn < 1){
     mi->threads = (LIBAROMA_CTL_LIST_ITEMP *)
       malloc(sizeof(LIBAROMA_CTL_LIST_ITEMP));
     mi->threads[0] = item;

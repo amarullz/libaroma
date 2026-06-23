@@ -31,7 +31,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#include "SDL.h"
+#include <SDL/SDL.h>
 
 #include <aroma_internal.h>
 #ifdef LIBAROMA_CONFIG_OPENMP

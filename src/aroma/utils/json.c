@@ -365,17 +365,18 @@ static const char * parse_string(cJSON * item, const char * str) {
             case 4:
               *--ptr2 = ((uc | 0x80) & 0xBF);
               uc >>= 6;
-              
+              break;
             case 3:
               *--ptr2 = ((uc | 0x80) & 0xBF);
               uc >>= 6;
-              
+              break;
             case 2:
               *--ptr2 = ((uc | 0x80) & 0xBF);
               uc >>= 6;
-              
+              break;
             case 1:
               *--ptr2 = (uc | firstByteMark[len]);
+              break;
           }
           
           ptr2 += len;

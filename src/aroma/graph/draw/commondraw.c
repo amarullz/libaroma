@@ -517,8 +517,8 @@ byte libaroma_draw_subpixel(
       int pos = y * dest->l;
       for (x=floor(dx-ht);x<=ceil(dx+ht);x++){
         if ((x>=0)&&(x<dest->w)){
-          px = abs((dx<x)?dx-x:x-dx)/ht;
-          py = abs((dy<y)?dy-y:y-dy)/ht;
+          px = fabs((dx<x)?dx-x:x-dx)/ht;
+          py = fabs((dy<y)?dy-y:y-dy)/ht;
           int alp = MIN(0xff,MAX((1-(px+py)) * 0xff,0));
           wordp d = dest->data + pos + x;
           word cl = libaroma_alpha(*d, color, alp);
@@ -729,7 +729,7 @@ byte _libaroma_draw_arc_findpoint(
   }
   float xt = dx + radius_w*cos(radian);
   float yt = dy + radius_h*sin(radian);
-  if ((abs(xt-xt0)>=2)||(abs(yt-yt0)>=2)) {
+  if ((fabs(xt-xt0)>=2)||(fabs(yt-yt0)>=2)) {
     _libaroma_draw_arc_findpoint(
       path, dx, dy, radius_w, radius_h,
       xt0, yt0, xt, yt,
@@ -738,7 +738,7 @@ byte _libaroma_draw_arc_findpoint(
   }
   libaroma_path_add(path, xt, yt);
   
-  if ((abs(xt-xt1)>=2)||(abs(yt-yt1)>=2)) {
+  if ((fabs(xt-xt1)>=2)||(fabs(yt-yt1)>=2)) {
     _libaroma_draw_arc_findpoint(
       path, dx, dy, radius_w, radius_h,
       xt, yt, xt1, yt1,

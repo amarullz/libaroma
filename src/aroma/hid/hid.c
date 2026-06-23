@@ -298,13 +298,17 @@ byte libaroma_hid_get(LIBAROMA_HID_EVENTP e) {
         }
         /* clean destination variable */
         memset(e, 0, sizeof(LIBAROMA_HID_EVENT));
-        ALOGI("libaroma_hid_get got LIBAROMA_HID_EV_TYPE_EXIT");
+        ALOGI("libaroma_hid_get got LIBAROMA_HID_EV_RET_EXIT");
+        /* set type in order to post it */
+        e->type=LIBAROMA_HID_EV_RET_EXIT;
         return ret;
         break;
       case LIBAROMA_HID_EV_RET_ERROR:
         /* clean destination variable */
         memset(e, 0, sizeof(LIBAROMA_HID_EVENT));
         ALOGE("libaroma_hid_get got LIBAROMA_HID_EV_RET_ERROR");
+        /* set type in order to post it */
+        e->type=LIBAROMA_HID_EV_RET_ERROR;
         return ret;
         break;
       case LIBAROMA_HID_EV_RET_TOUCH: {

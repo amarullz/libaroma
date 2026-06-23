@@ -751,7 +751,9 @@ int libaroma_png_save_buffer(
   png_write_end(png_ptr, NULL);
   result = adapter->p;
 finalize:
-
+  if (adapter != NULL) {
+    free(adapter);
+  }
   if (info_ptr != NULL) {
     png_free_data(png_ptr, info_ptr, PNG_FREE_ALL, -1);
   }

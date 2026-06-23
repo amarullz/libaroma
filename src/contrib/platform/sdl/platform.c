@@ -22,7 +22,7 @@
  *
  */
 #ifndef __libaroma_platform_c__
-#define __libaroma_platform
+#define __libaroma_platform_c__
 #include <aroma_internal.h>
 
 #include <sys/stat.h>

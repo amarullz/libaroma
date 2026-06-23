@@ -40,6 +40,7 @@ export LIBS_PATH=${LIBAROMA_PATH}/libs
 ## ARCH dependent sources
 ##
 export LIBEXTERNALS_ADD_SRC="
+    ${LIBS_PATH}/jpeg-turbo/jsimd_none.c
 "
 
 export LIBAROMA_ARCH_FLAGS="

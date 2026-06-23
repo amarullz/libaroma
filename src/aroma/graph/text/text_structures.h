@@ -85,6 +85,7 @@ typedef struct __LIBAROMA_TEXTPENDING * _LIBAROMA_TEXTPENDINGP;
 struct __LIBAROMA_TEXTPENDING{
   byte type;
   voidp param;
+  dword dparam;
 };
 
 /*
